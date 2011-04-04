@@ -27,6 +27,7 @@ render :: [Definition] -> JStat
 render defs 
   = [$jmacro| var !sonnet = (function() {
                   `(include)`
+                  var !tests = [];
                   var !sonnet = {}; 
                   `(foldl1 mappend $ map renderDef defs)`;
                   return sonnet;
@@ -81,16 +82,17 @@ renderAxiom (RelationalAxiom patterns expression)
               axioms.push(`(renderPatterns patterns expression)`) |]
 
 renderAxiom ax@(AssertAxiom patterns expression)
-  = [$jmacro| $(function() { 
-                   var cxt = {};
-                   var actual = unwrap(sonnet[name], `(toJArray $ map (renderEvalPattern cxt) (reverse patterns))`);
-                   var expected = `(renderExpression cxt expression)`;
-                   if (!_.isEqual(actual, expected)) {
-                       console.error("FAILED: " ++ name ++ " : " ++ `(show ax)`
-                           ++ "\n" ++ "Expected: " ++ expected ++ "\nActual:   " ++ actual);
-           
-                   };
-              }) |]
+  = [$jmacro| tests.push(function() { 
+                       var cxt = {};
+                       var actual = unwrap(sonnet[name], `(toJArray $ map (renderEvalPattern cxt) (reverse patterns))`);
+                       var expected = `(renderExpression cxt expression)`;
+                       if (!_.isEqual(actual, expected)) {
+                           console.error("FAILED: " ++ name ++ " : " ++ `(show ax)`
+                               ++ "\n" ++ "Expected: " ++ expected ++ "\nActual:   " ++ actual);
+                           return false;
+                       };
+                       return true;
+                   }); |]
 
 renderEvalPattern :: JExpr -> Pattern -> JExpr
 renderEvalPattern cxt (LiteralPattern lit)
@@ -212,10 +214,22 @@ include =
                    for(var arg in args) {
                        if (arg != "type") {
                            f = f(args[arg]); 
-                       }
+                       };
                    };
                    return f;
                };
+
+               var runTests = function() {
+                 var failed = 0;
+                 _.each(tests, function(test) {
+                     if (!test()) {
+                         failed++;
+                     }
+                 });
+                 console.log(tests.length ++ " tests, " ++ failed ++ " failed");
+               };
+
+               $(runTests);
 
                // converts a function expecting n arguments to a curried function
                var !wrap = function(f, n) {
