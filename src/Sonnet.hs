@@ -153,7 +153,7 @@ renderLiteral    (NumLiteral n)     =  [$jmacroE| `(n)` |]
 
 renderExpression :: JExpr -> Expression -> JExpr
 renderExpression cxt (LiteralExpression l) = renderLiteral l
-renderExpression cxt (JSExpression js) = [$jmacroE| `(js)` |]
+renderExpression cxt (JSExpression js) = [$jmacroE| (typeof `(js)` == "function") ? `(js)`(`(cxt)`) : `(js)` |]
 
 renderExpression cxt (PrefixExpression ImplicitIdentifier []) = [$jmacroE| undefined |]
 renderExpression cxt (PrefixExpression ImplicitIdentifier (x:_)) = [$jmacroE| `(renderExpression cxt x)` |]
@@ -401,7 +401,8 @@ typeStatementP  = TypeStatement <$> identifierP <* typeOperatorP <*> typeP
         
 -- Expressions
         
-expressionP = do exp <- try ifExpressionP 
+expressionP = do exp <- jsExpressionP
+                       <|> try ifExpressionP 
                        <|> try letExpressionP 
                        <|> try prefixExpressionP 
                        <|> symbolExpressionP 
@@ -412,6 +413,10 @@ expressionP = do exp <- try ifExpressionP
         infixTail exp = do op <- spaces *> operatorP <* spaces
                            exp2 <- expressionP
                            return (InfixExpression exp op exp2)
+                           
+jsExpressionP     = JSExpression <$> (char '`' *> ((convert . either undefined id . parseJM) <$> (anyChar `manyTill` (char '`'))))
+
+  where  convert expr = [$jmacroE| (function(x) { var !cxt = x; var !ans; `(expr)`; return ans; }) |]
                            
 ifExpressionP     = IfExpression <$> (string "if" *> spaces *> expressionP) 
                     <* spaces <* string "then" <* spaces <*> expressionP
