@@ -6,10 +6,13 @@ module Main where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.State
+import Control.Concurrent.MVar
+
 import System.IO
 import System.IO.Unsafe
 
-import Text.ParserCombinators.Parsec hiding ((<|>), many)
+import Text.ParserCombinators.Parsec hiding ((<|>), many, State)
 import System.Environment
 import Language.Javascript.JMacro
 
@@ -254,95 +257,143 @@ include =
 
 --------------------------------------------------------------------------------
 --
--- Type Checking
+-- Type Checking / Inference
 
-data TypeEquation = TypeEquation Type Type 
-data TypeEnvironment = TypeEnvironment Int (M.Map String Type) deriving Show
+data TypeEquation = TypeEquation Type Type deriving Eq
+type TypeEnv      = M.Map String Type
 
 instance Show TypeEquation where
   show (TypeEquation t u) = show t ++ " = " ++ show u
-
+  
+genUniqueType :: State Int Type
+genUniqueType =  do x <- get
+                    put (x + 1)
+                    return (UnknownType x)
+  
 typeCheck :: [Definition] -> [TypeEquation]
-typeCheck    defs          = let env@(TypeEnvironment _ m) = generateEnvironment defs
-                                 eqs = (checkDef env) <$> defs <*> M.elems m
-                             in  concat eqs
+typeCheck    defs         =  fst $ runState (typeCheckState defs) 0
 
-  where generateEnvironment []                               = TypeEnvironment 0 M.empty
-        generateEnvironment (Struct (Identifier i) t:ds)     = generateEnvironment ds
-        generateEnvironment (Definition (Identifier i) _:ds) = let TypeEnvironment x m = generateEnvironment ds
-                                                               in  TypeEnvironment (x + 1) (M.insert i (UnknownType x) m)
+typeCheckState :: [Definition] -> State Int [TypeEquation]
+typeCheckState    defs
+  =  do env <- genInitEnv defs
+        eqs <- sequence $ checkDef env <$> defs <*> M.elems env
+        return $ concat eqs
 
-checkDef :: TypeEnvironment -> Definition      -> Type     -> [TypeEquation]
-checkDef    env                (Definition _ axs) t        =  concat $ map (checkAxiom env t) axs
-checkDef    env                (Struct (Identifier i) u) t =  [TypeEquation t u]
+  where genInitEnv []                               = return M.empty
+        genInitEnv (Struct (Identifier i) t:ds)     = M.insert i t <$> genInitEnv ds
+        genInitEnv (Definition (Identifier i) _:ds) 
+          = do utype <- genUniqueType
+               rest  <- genInitEnv ds
+               return $ M.insert i utype rest
 
-checkAxiom :: TypeEnvironment -> Type -> Axiom                  -> [TypeEquation]
-checkAxiom    env                t       (RelationalAxiom ps e) =  let (f, l) = genFunType env ps
-                                                                       (TypeEnvironment s m) = (addEnv ps env)
-                                                                       newEnv = TypeEnvironment (s + 1) m
-                                                                   in  TypeEquation t f : checkExpression newEnv e l
-checkAxiom    env                t       (TypeAxiom u)          =  [TypeEquation t u]
-checkAxiom    env                t       (AssertAxiom _ _)      =  []
+checkDef :: TypeEnv -> Definition             -> Type -> State Int [TypeEquation]
+checkDef    env        (Definition _ axs)        t    =  concat <$> (sequence $ map (checkAxiom env t) axs)
+checkDef    env        (Struct (Identifier i) u) t    =  return [TypeEquation t u]
 
-genFunType :: TypeEnvironment    -> [Pattern]                      -> (Type, Type)
-genFunType    (TypeEnvironment s m) []                             =  (UnknownType s, UnknownType s)
-genFunType    (TypeEnvironment s m) (VarPattern (Identifier i):ts) =  let (f, l) = genFunType (TypeEnvironment (s + 1) m) ts
-                                                                      in  (FunType (UnknownType s) f, l)
+checkAxiom :: TypeEnv -> Type -> Axiom                  -> State Int [TypeEquation]
+checkAxiom    env        t       (TypeAxiom u)          =  return [TypeEquation t u]
+checkAxiom    env        t       (AssertAxiom _ _)      =  return []
+checkAxiom    env        t       (RelationalAxiom ps e) 
+  =  do newEnv     <- augmentEnv env ps
+        resultType <- genUniqueType
+        funType    <- return $ genFunType newEnv ps resultType
+        (TypeEquation t funType :) <$> checkExpression newEnv e resultType
+                                                              
+genFunType :: TypeEnv -> [Pattern]                   -> Type  -> Type
+genFunType    env        []                             t     =  t
+genFunType    env        (VarPattern (Identifier i):ps) t     
+  =  case M.lookup i env of
+        Nothing -> InvalidType $ "Symbol " ++ i ++ " is not defined (This is impossible, augmentEnv should have populated me!)"
+        Just x  -> FunType x $ genFunType env ps t
 
+augmentEnv :: TypeEnv -> [Pattern]                      -> State Int TypeEnv
+augmentEnv    env        []                             =  return env
+augmentEnv    env        (VarPattern (Identifier i):ps) =  do utype <- genUniqueType
+                                                              augmentEnv (M.insert i utype env) ps 
+
+checkExpression :: TypeEnv -> Expression                         -> Type -> State Int [TypeEquation]
+checkExpression    env (JSExpression _)                      t = return [TypeEquation t (Type "IO")]
+checkExpression    env (LiteralExpression (StringLiteral _)) t = return [TypeEquation t (Type "String")]
+checkExpression    env (LiteralExpression (NumLiteral _))    t = return [TypeEquation t (Type "Num")]
+checkExpression    env        (PrefixExpression (Identifier i) exs) t
+  =  do resultType   <- genUniqueType
+        argTypes     <- sequence (take (length exs) (repeat genUniqueType))
+        functionType <- return $  case M.lookup i env of
+          Nothing -> (InvalidType $ "Symbol " ++ i ++ " is not defined")
+          Just x  -> x
+        ([ TypeEquation t resultType, TypeEquation (genFunType' $ argTypes ++ [resultType]) functionType ] ++) 
+          <$> concat <$> sequence (checkExpression env <$> exs <*> argTypes)
+                                                               
 genFunType' (x:[]) = x 
 genFunType' (x:xs) = FunType x (genFunType' xs)
 
-addEnv :: [Pattern]                   -> TypeEnvironment       -> TypeEnvironment
-addEnv    []                             x                     =  x
-addEnv    (VarPattern (Identifier i):ps) (TypeEnvironment s m) =  addEnv ps (TypeEnvironment (s + 1) (M.insert i (UnknownType s) m))
-addEnv    (BindPattern i ps:pss)         env                   =  undefined
-
-checkExpression :: TypeEnvironment -> Expression -> Type -> [TypeEquation]
-checkExpression    (TypeEnvironment s m) (PrefixExpression (Identifier i) exs) t = let t1 = UnknownType s
-                                                                                       ts = map UnknownType [s + 1 .. s + length exs]
-                                                                                   in  TypeEquation t t1 :
-                                                                                       concat (checkExpression (TypeEnvironment (s + length exs) m) <$> exs <*> ts)
-                                                                                       ++ case M.lookup i m of
-                                                                                            Nothing -> [TypeEquation t (InvalidType "TYPE ERROR")]
-                                                                                            Just x  -> [TypeEquation t x]
-checkExpression    env (InfixExpression ex1 (Operator i) e2) t = undefined
-checkExpression    env (LetExpression ss ex) t = undefined
-checkExpression    (TypeEnvironment s m) (IfExpression cond ex1 ex2) t = let t1 = UnknownType s 
-                                                                             t2 = UnknownType (s + 1)
-                                                                             t3 = UnknownType (s + 2)
-                                                                             newEnv = TypeEnvironment (s + 3) m
-                                                                         in  [ TypeEquation t1 (Type "Bool"),
-                                                                               TypeEquation t2 t3,
-                                                                               TypeEquation t t2 ] 
-                                                                             ++ checkExpression newEnv cond t1
-                                                                             ++ checkExpression newEnv ex1 t2
-                                                                             ++ checkExpression newEnv ex2 t3
-checkExpression    env (JSExpression _) t = [TypeEquation t (Type "IO")]
-checkExpression    env (LiteralExpression (StringLiteral _)) t = [TypeEquation t (Type "String")]
-checkExpression    env (LiteralExpression (NumLiteral _)) t = [TypeEquation t (Type "Num")]
 
 
+-- checkExpression    seed    env (InfixExpression ex1 (Operator i) e2) t = undefined
+-- checkExpression    seed    env (LetExpression ss ex)                 t = undefined
+-- checkExpression    seed    env (IfExpression cond ex1 ex2)           t 
+--   = undefined
+    
+--     -- let t1 = UnknownType (-1) 
+--     --     t2 = UnknownType (-1)
+--     --     t3 = UnknownType (-1)
+--     --     newEnv = env
+--     -- in  [ TypeEquation t1 (Type "Bool"),
+--     --       TypeEquation t2 t3,
+--     --       TypeEquation t t2 ] 
+--     --     ++ checkExpression newEnv cond t1
+--     --     ++ checkExpression newEnv ex1 t2
+--     --     ++ checkExpression newEnv ex2 t3
+        
+-- checkExpression    seed    env (JSExpression _)                      t = [TypeEquation t (Type "IO")]
+-- checkExpression    seed    env (LiteralExpression (StringLiteral _)) t = [TypeEquation t (Type "String")]
+-- checkExpression    seed    env (LiteralExpression (NumLiteral _))    t = [TypeEquation t (Type "Num")]
 
--- data Expression = PrefixExpression Identifier [Expression]
---                 | InfixExpression Expression Operator Expression
---                 | LetExpression [Statement] Expression
---                 | IfExpression Expression Expression Expression
---                 | LiteralExpression Literal
---                 | JSExpression JExpr
+-- --                 | InfixExpression Expression Operator Expression
+-- --                 | LetExpression [Statement] Expression
 
+-- -- ...
 
--- ...
+-- rUnify :: [TypeEquation] -> [TypeEquation]
+-- rUnify    ts             =  let ans = rReduce' (length ts - 1) $  rUnify' (length ts - 1) ts
+--                                 rReduce' 0 xs = reduce xs
+--                                 rReduce' n xs = rReduce' (n - 1) (reduce xs)
+--                                 rUnify' 0 xs = unify xs
+--                                 rUnify' n xs = rUnify' (n - 1) (unify xs)
+--                             in  case ans /= ts of
+--                                   True  -> rUnify ans
+--                                   False -> ans
 
+-- reduce :: [TypeEquation]          -> [TypeEquation]
+-- reduce    []                      =  []
+-- reduce    (TypeEquation t u : ts) =  reduce' t u ts 
+--   where reduce' t u (TypeEquation v w:others) | t == v    = (resolve t u w) ++ others
+--                                               | otherwise = [TypeEquation v w] ++ reduce' t u others
+--         reduce' t u [] = [ TypeEquation t u ]
+--         resolve t x y | x == y = [ TypeEquation t x ] -- The definitions are identical, remove one
+--         resolve t x@(UnknownType i) y = [ TypeEquation t y, TypeEquation x y ]
+--         resolve t x y@(UnknownType i) = [ TypeEquation t x, TypeEquation y x ]
+--         resolve t x@(FunType a b) y@(FunType c d) = [ TypeEquation t y ] ++ resolve a a c ++ resolve b b d
+--         resolve t x@(InvalidType _) y = [ TypeEquation t x, TypeEquation t y ]
+        
+                                   
+--         resolve t x y = [ TypeEquation t $ InvalidType $ "Cannot resolve " ++ show t ++ " = " ++ show x ++ " with " ++ show t ++ " = " ++ show y ]
+        
 
-
-unify :: [Type]       -> Type -> Type
-unify    []              x    =  x
-
-
-inferLiteral (StringLiteral _) = Type "String"
-inferLiteral (NumLiteral _)    = Type "Num"
-
-
+        
+-- unify :: [TypeEquation]        -> [TypeEquation]
+-- unify    []                    =  []
+-- unify    (TypeEquation t u:ts) =  unify' t u ts ++ [TypeEquation t u]
+--   where unify' t u [] = []
+--         unify' t u (x:xs) = unify'' t u x ++ unify' t u xs
+--         unify'' t u (TypeEquation v w) | t == v    = [TypeEquation v w] -- TODO fix me
+--                                        | otherwise = [TypeEquation v (replace t u w)]
+--         replace t u w | t == w      = u
+--         replace t u (Type x)        = Type x
+--         replace t u (FunType x xs)  = FunType (replace t u x) (replace t u xs)
+--         replace t u (UnknownType x) = UnknownType x
+--         replace t u y@(InvalidType _) = y
+        
 
 --------------------------------------------------------------------------------
 --
@@ -442,12 +493,13 @@ data Type       = Type String
                 | UnknownType Int
                 | InvalidType String
                 | FunType Type Type
+                deriving Eq
                          
 instance Show Type where
   show (FunType t u) = show t ++ " -> " ++ show u
   show (Type t)      = t
   show (UnknownType i) = "t" ++ show i
-  show (InvalidType m) = "ERROR"
+  show (InvalidType m) = "TYPE ERROR: " ++ m
 
 type ScriptLine = (Int, Statement)
 
@@ -552,15 +604,13 @@ main  = do name   <- head <$> getArgs
            src    <- trim <$> hGetContents hFile
            case parse cleanComments "Cleaning Comments" src of
              Left ex -> putStrLn $ show ex
-             Right s -> putStrLn src >> parseSyntax s
+             Right s -> putStrLn ("\n" ++ src ++ "\n") >> parseSyntax s
   
   where parseSyntax s = case parse sonnetP "Parsing Syntax" s of
                           Left ex -> putStrLn $ "\"" ++ show ex ++ "\n" ++ s ++ "\""
-                          Right s -> let code  = show $ renderJs $ render $ resolveScope s
-                                         types = ((++ "\n") . show) <$> (typeCheck $ resolveScope s)
-                                     in  putStrLn $ code
-
-
+                          Right s -> let code    = show $ renderJs $ render $ resolveScope s
+                                         eqs     = typeCheck $ resolveScope s
+                                     in  putStrLn $ code -- (concat $ map ((++"\n") . show) eqs)
 
 --------------------------------------------------------------------------------
 ----
