@@ -15,51 +15,95 @@ struct false: B
 struct nil:  List
 struct cons: Z -> List -> List
 
-head: List      -> V
-    ( nil()     )= error
-    ( cons(x _) )= x
 
-    ( cons(3 nil) ) ? 3
 
-tail: List       -> V
-    ( nil()      )= error
-    ( cons(_ xs) )= xs
+head: 
+-- Returns the first element of a list
+     
+     List       -> V
+   ( nil()     ) = error
+   ( cons(x _) ) = x
+   -------------------
+   ( cons(3 nil) ) ? 3
 
-    ( cons(3 nil) ) ? nil
 
-length: List -> Z
-      ( nil()      )= 0
-      ( cons(_ xs) )= 1 + length(xs)
 
-      ( nil )         ? 0
-      ( cons(1 nil) ) ? 1
+tail: 
+-- Tail is the dual of head;  returns the [1 .. n] elements of the list  
 
-get: Z -> List      -> Z
-   ( 0    cons(x _) )= x
-   ( n    cons(_ x) )= get(n - 1 x)
+     List        -> V
+   ( nil()      ) = error
+   ( cons(_ xs) ) = xs
+   ---------------------
+   ( cons(3 nil) ) ? nil
 
-reverse: List       -> List
-       ( nil()      )= nil
-       ( cons(x xs) )= concat(reverse(xs) cons(x nil))
 
-       ( cons(1 nil) )         ? cons(1 nil)
-       ( cons(1 cons(2 nil)) ) ? cons(2 cons(1 nil))
 
-concat: List    -> List -> List
-      ( nil()      x    )= x
-      ( cons(x xs) y    )= cons(x concat(xs y))
+length:
+-- Returns the cardinality of a list 
+  
+     List        -> Z
+   ( nil()      ) = 0
+   ( cons(_ xs) ) = 1 + length(xs)
+   -------------------------------
+   ( nil )         ? 0
+   ( cons(1 nil) ) ? 1
 
-      ( cons(1 nil) cons(2 nil) ) ? cons(1 cons(2 nil))
 
-map: (Z -> Z) -> List       -> List
-   ( f           nil()      )= nil
-   ( f           cons(x xs) )= cons(f(x) map(f xs))
 
+get: 
+-- Returns the nth element of the list in O(n)
+     
+     Z -> List       -> Z
+   ( 0    cons(x _) ) = x
+   ( n    cons(_ x) ) = get(n - 1 x)
+
+
+
+reverse: 
+-- Generates a list with the same elements in reverse order.  Requires 
+-- traversing the entire list, O(n)
+     
+     List        -> List
+   ( nil()      ) = nil
+   ( cons(x xs) ) = concat(reverse(xs) cons(x nil))
+   ------------------------------------------------
+   ( cons(1 nil) )         ? cons(1 nil)
+   ( cons(1 cons(2 nil)) ) ? cons(2 cons(1 nil))
+
+
+
+concat:
+-- Concatenates two lists end to end, returning the resultant list.  It 
+-- performs in O(n) relative to the length of the first list
+     
+     List     -> List   -> List
+   ( nil()       x     ) = x
+   ( cons(x xs)  y     ) = cons(x concat(xs y))
+   ------------------------------------------
+   ( cons(1 nil) cons(2 nil) ) ? cons(1 cons(2 nil))
+
+
+
+map: 
+-- Applies function f to every element in the list.  Map represents a
+-- functor mapping between the types of f
+
+     (Z -> Z) -> List        -> List
+   ( f           nil()      ) = nil
+   ( f           cons(x xs) ) = cons(f(x) map(f xs))
+   -------------------------------------------------
    ( fib cons(6 nil) ) ? cons(13 nil)
 
-any: (Z -> B) -> List       -> B
-   ( _           nil()      )= false
-   ( f           cons(x xs) )= f(x) | any(f xs)
+
+
+any:
+-- Maps f to list, and returns true if any element of the resultant list is  
+-- true.  Short circuits at first true evaluation.
+
+     (Z -> B) -> List        -> B
+   ( _           nil()      ) = false
+   ( f           cons(x xs) ) = f(x) | any(f xs)
 
 
 
@@ -67,18 +111,20 @@ any: (Z -> B) -> List       -> B
 --
 -- Math
 
-fib: Z -> Z
-   ( 0 )= 1
+fib:Z -> Z
+fib(0)= 1
    ( 1 )= 1
    ( n )= fib(n - 1) + fib(n - 2)
 
    (6) ? 13     
    (7) ? 21
+   
 
 --------------------------------------------------------------------------------
 --
 -- FFI
 
-log( x ) = `console.log(cxt.x)`
+log( x ) = `console.log(cxt.x);`
 
-fill( id x ) = `$(cxt.id).html(cxt.x);`
+jquery( id x ) = `$(cxt.id).html(cxt.x);`
+

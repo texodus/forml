@@ -17,6 +17,7 @@ import Data.Char
 import Data.List
 import Data.Monoid
 
+import qualified Data.Map as M
 
 
 --------------------------------------------------------------------------------
@@ -110,9 +111,9 @@ renderPatterns :: [Pattern] -> Expression -> JExpr
 renderPatterns [] e = renderExpression [$jmacroE| {} |] e
 renderPatterns ps e  
   = [$jmacroE| function(arg) { 
-                  var cxt = {};
-                  return `(renderPatterns' cxt ps e)`(arg);
-              } |]
+                   var cxt = {};
+                   return `(renderPatterns' cxt ps e)`(arg);
+               } |]
 renderPatterns' cxt [] e = renderExpression cxt e
     
 renderPatterns' cxt (IgnorePattern:ps) e         
@@ -253,6 +254,98 @@ include =
 
 --------------------------------------------------------------------------------
 --
+-- Type Checking
+
+data TypeEquation = TypeEquation Type Type 
+data TypeEnvironment = TypeEnvironment Int (M.Map String Type) deriving Show
+
+instance Show TypeEquation where
+  show (TypeEquation t u) = show t ++ " = " ++ show u
+
+typeCheck :: [Definition] -> [TypeEquation]
+typeCheck    defs          = let env@(TypeEnvironment _ m) = generateEnvironment defs
+                                 eqs = (checkDef env) <$> defs <*> M.elems m
+                             in  concat eqs
+
+  where generateEnvironment []                               = TypeEnvironment 0 M.empty
+        generateEnvironment (Struct (Identifier i) t:ds)     = generateEnvironment ds
+        generateEnvironment (Definition (Identifier i) _:ds) = let TypeEnvironment x m = generateEnvironment ds
+                                                               in  TypeEnvironment (x + 1) (M.insert i (UnknownType x) m)
+
+checkDef :: TypeEnvironment -> Definition      -> Type     -> [TypeEquation]
+checkDef    env                (Definition _ axs) t        =  concat $ map (checkAxiom env t) axs
+checkDef    env                (Struct (Identifier i) u) t =  [TypeEquation t u]
+
+checkAxiom :: TypeEnvironment -> Type -> Axiom                  -> [TypeEquation]
+checkAxiom    env                t       (RelationalAxiom ps e) =  let (f, l) = genFunType env ps
+                                                                       (TypeEnvironment s m) = (addEnv ps env)
+                                                                       newEnv = TypeEnvironment (s + 1) m
+                                                                   in  TypeEquation t f : checkExpression newEnv e l
+checkAxiom    env                t       (TypeAxiom u)          =  [TypeEquation t u]
+checkAxiom    env                t       (AssertAxiom _ _)      =  []
+
+genFunType :: TypeEnvironment    -> [Pattern]                      -> (Type, Type)
+genFunType    (TypeEnvironment s m) []                             =  (UnknownType s, UnknownType s)
+genFunType    (TypeEnvironment s m) (VarPattern (Identifier i):ts) =  let (f, l) = genFunType (TypeEnvironment (s + 1) m) ts
+                                                                      in  (FunType (UnknownType s) f, l)
+
+genFunType' (x:[]) = x 
+genFunType' (x:xs) = FunType x (genFunType' xs)
+
+addEnv :: [Pattern]                   -> TypeEnvironment       -> TypeEnvironment
+addEnv    []                             x                     =  x
+addEnv    (VarPattern (Identifier i):ps) (TypeEnvironment s m) =  addEnv ps (TypeEnvironment (s + 1) (M.insert i (UnknownType s) m))
+addEnv    (BindPattern i ps:pss)         env                   =  undefined
+
+checkExpression :: TypeEnvironment -> Expression -> Type -> [TypeEquation]
+checkExpression    (TypeEnvironment s m) (PrefixExpression (Identifier i) exs) t = let t1 = UnknownType s
+                                                                                       ts = map UnknownType [s + 1 .. s + length exs]
+                                                                                   in  TypeEquation t t1 :
+                                                                                       concat (checkExpression (TypeEnvironment (s + length exs) m) <$> exs <*> ts)
+                                                                                       ++ case M.lookup i m of
+                                                                                            Nothing -> [TypeEquation t (InvalidType "TYPE ERROR")]
+                                                                                            Just x  -> [TypeEquation t x]
+checkExpression    env (InfixExpression ex1 (Operator i) e2) t = undefined
+checkExpression    env (LetExpression ss ex) t = undefined
+checkExpression    (TypeEnvironment s m) (IfExpression cond ex1 ex2) t = let t1 = UnknownType s 
+                                                                             t2 = UnknownType (s + 1)
+                                                                             t3 = UnknownType (s + 2)
+                                                                             newEnv = TypeEnvironment (s + 3) m
+                                                                         in  [ TypeEquation t1 (Type "Bool"),
+                                                                               TypeEquation t2 t3,
+                                                                               TypeEquation t t2 ] 
+                                                                             ++ checkExpression newEnv cond t1
+                                                                             ++ checkExpression newEnv ex1 t2
+                                                                             ++ checkExpression newEnv ex2 t3
+checkExpression    env (JSExpression _) t = [TypeEquation t (Type "IO")]
+checkExpression    env (LiteralExpression (StringLiteral _)) t = [TypeEquation t (Type "String")]
+checkExpression    env (LiteralExpression (NumLiteral _)) t = [TypeEquation t (Type "Num")]
+
+
+
+-- data Expression = PrefixExpression Identifier [Expression]
+--                 | InfixExpression Expression Operator Expression
+--                 | LetExpression [Statement] Expression
+--                 | IfExpression Expression Expression Expression
+--                 | LiteralExpression Literal
+--                 | JSExpression JExpr
+
+
+-- ...
+
+
+
+unify :: [Type]       -> Type -> Type
+unify    []              x    =  x
+
+
+inferLiteral (StringLiteral _) = Type "String"
+inferLiteral (NumLiteral _)    = Type "Num"
+
+
+
+--------------------------------------------------------------------------------
+--
 -- Scope Resolution
 
 data Definition = Definition Identifier [Axiom]
@@ -277,7 +370,7 @@ resolveScope    (Script defs)  = snd $ foldl' scope (0, []) defs
           | length (snd list) == 0 = (0, [Definition i [RelationalAxiom p e]])
         
         scope (i, ds) (j, TypeStatement ImplicitIdentifier t) 
-          | j >= i = let (Definition name as) = last ds 
+           = let (Definition name as) = last ds 
                     in  (j, (take (length ds - 1) ds) ++ [Definition name (TypeAxiom t : as)])
         scope (i, ds) (j, TypeStatement (Identifier s) t)
                    = case last ds of 
@@ -286,7 +379,7 @@ resolveScope    (Script defs)  = snd $ foldl' scope (0, []) defs
                        _ -> (j, ds ++ [Definition (Identifier s) [TypeAxiom t]])
                        
         scope (i, ds) (j, FunctionStatement ImplicitIdentifier ps e)
-          | j >= i = let (Definition name as) = last ds
+          = let (Definition name as) = last ds
                      in  (j, (take (length ds - 1) ds) ++ [Definition name (RelationalAxiom ps e : as)])
         scope (i, ds) (j, FunctionStatement (Identifier s) ps e)
                    = case last ds of
@@ -296,7 +389,7 @@ resolveScope    (Script defs)  = snd $ foldl' scope (0, []) defs
                        _ -> (j, ds ++ [Definition (Identifier s) [RelationalAxiom ps e]])
                        
         scope (i, ds) (j, TestStatement ImplicitIdentifier ps e)
-          | j >= i = let (Definition name as) = last ds
+          = let (Definition name as) = last ds
                      in  (j, (take (length ds - 1) ds) ++ [Definition name (AssertAxiom ps e : as)])
         scope (i, ds) (j, TestStatement (Identifier s) ps e)
                    = case last ds of
@@ -304,9 +397,6 @@ resolveScope    (Script defs)  = snd $ foldl' scope (0, []) defs
                          (j, (take (length ds - 1) ds) 
                              ++ [Definition (Identifier name) (AssertAxiom ps e : as)])
                        _ -> (j, ds ++ [Definition (Identifier s) [AssertAxiom ps e]])
-
-        -- Debug!
-        scope (i, _) x = unsafePerformIO (putStrLn "ERROR" >> putStrLn (show x) >> putStrLn (show i) >> return (0, []))
 
 
 
@@ -347,10 +437,18 @@ data Identifier = Identifier String
                 | ImplicitIdentifier
                 deriving (Show, Eq)
 
-data Type       = Type Identifier 
+data Type       = Type String 
+                | PolymorphicType String
+                | UnknownType Int
+                | InvalidType String
                 | FunType Type Type
-                deriving Show
                          
+instance Show Type where
+  show (FunType t u) = show t ++ " -> " ++ show u
+  show (Type t)      = t
+  show (UnknownType i) = "t" ++ show i
+  show (InvalidType m) = "ERROR"
+
 type ScriptLine = (Int, Statement)
 
 newtype Script = Script [ScriptLine]
@@ -397,7 +495,7 @@ typeStatementP  = TypeStatement <$> identifierP <* typeOperatorP <*> typeP
         typeP         = try funTypeP <|> nestedTypeP <|> monoTypeP
         nestedTypeP   = char '(' >> spaces >> typeP <* spaces <* char ')'
         funTypeP      = FunType <$> (nestedTypeP <|> monoTypeP) <* spaces <* string "->" <* spaces <*> typeP
-        monoTypeP     = Type <$> identifierP
+        monoTypeP     = Type <$> symbolP
         
 -- Expressions
         
@@ -438,7 +536,9 @@ literalP = stringP <|> booleanP <|> numP
         numP     = (NumLiteral . read) <$> ((++) <$> many1 digit <*> (radix <|> return ""))
         radix    = (++) <$> string "." <*> many1 digit
         
-identifierP   = Identifier <$> ((:) <$> letter <*> many (alphaNum <|> oneOf "_'"))
+identifierP   = Identifier <$>symbolP
+
+symbolP = (:) <$> letter <*> many (alphaNum <|> oneOf "_'")
 
 
 
@@ -452,11 +552,13 @@ main  = do name   <- head <$> getArgs
            src    <- trim <$> hGetContents hFile
            case parse cleanComments "Cleaning Comments" src of
              Left ex -> putStrLn $ show ex
-             Right s -> parseSyntax s
+             Right s -> putStrLn src >> parseSyntax s
   
   where parseSyntax s = case parse sonnetP "Parsing Syntax" s of
-                          Left ex -> putStrLn $ show ex ++ "\n" ++ s
-                          Right s -> putStrLn $ show $ renderJs $ render $ resolveScope s
+                          Left ex -> putStrLn $ "\"" ++ show ex ++ "\n" ++ s ++ "\""
+                          Right s -> let code  = show $ renderJs $ render $ resolveScope s
+                                         types = ((++ "\n") . show) <$> (typeCheck $ resolveScope s)
+                                     in  putStrLn $ code
 
 
 
