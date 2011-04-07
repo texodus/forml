@@ -3,8 +3,8 @@
 --
 -- Bool
 
-struct true:  B
-struct false: B
+struct true:  Bool
+struct false: Bool
 
 
 
@@ -13,15 +13,15 @@ struct false: B
 -- List
 
 struct nil:  List
-struct cons: Z -> List -> List
+struct cons: Num -> List -> List
 
 
 
 head: 
 -- Returns the first element of a list
      
-     List       -> V
-   ( nil()     ) = error
+     List       -> Num
+--   ( nil()     ) = 0
    ( cons(x _) ) = x
    -------------------
    ( cons(3 nil) ) ? 3
@@ -31,8 +31,8 @@ head:
 tail: 
 -- Tail is the dual of head;  returns the [1 .. n] elements of the list  
 
-     List        -> V
-   ( nil()      ) = error
+     List        -> Num
+--   ( nil()      ) = nil
    ( cons(_ xs) ) = xs
    ---------------------
    ( cons(3 nil) ) ? nil
@@ -42,7 +42,7 @@ tail:
 length:
 -- Returns the cardinality of a list 
   
-     List        -> Z
+     List        -> Num
    ( nil()      ) = 0
    ( cons(_ xs) ) = 1 + length(xs)
    -------------------------------
@@ -54,7 +54,7 @@ length:
 get: 
 -- Returns the nth element of the list in O(n)
      
-     Z -> List       -> Z
+     Num -> List       -> Num
    ( 0    cons(x _) ) = x
    ( n    cons(_ x) ) = get(n - 1 x)
 
@@ -89,7 +89,7 @@ map:
 -- Applies function f to every element in the list.  Map represents a
 -- functor mapping between the types of f
 
-     (Z -> Z) -> List        -> List
+     (Num -> Num) -> List        -> List
    ( f           nil()      ) = nil
    ( f           cons(x xs) ) = cons(f(x) map(f xs))
    -------------------------------------------------
@@ -101,7 +101,7 @@ any:
 -- Maps f to list, and returns true if any element of the resultant list is  
 -- true.  Short circuits at first true evaluation.
 
-     (Z -> B) -> List        -> B
+     (Num -> Bool) -> List        -> Bool
    ( _           nil()      ) = false
    ( f           cons(x xs) ) = f(x) | any(f xs)
 
@@ -111,7 +111,7 @@ any:
 --
 -- Math
 
-fib:Z -> Z
+fib:Num -> Num
 fib(0)= 1
    ( 1 )= 1
    ( n )= fib(n - 1) + fib(n - 2)
