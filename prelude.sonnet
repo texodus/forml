@@ -21,7 +21,6 @@ head:
 -- Returns the first element of a list
      
      List       -> Num
---   ( nil()     ) = 0
    ( cons(x _) ) = x
    -------------------
    ( cons(3 nil) ) ? 3
@@ -33,7 +32,7 @@ tail:
 
      List        -> Num
 --   ( nil()      ) = nil
-   ( cons(_ xs) ) = xs
+   ( cons(_ xs) ) = xs 
    ---------------------
    ( cons(3 nil) ) ? nil
 
@@ -96,14 +95,13 @@ map:
    ( fib cons(6 nil) ) ? cons(13 nil)
 
 
-
 any:
 -- Maps f to list, and returns true if any element of the resultant list is  
 -- true.  Short circuits at first true evaluation.
 
      (Num -> Bool) -> List        -> Bool
-   ( _           nil()      ) = false
-   ( f           cons(x xs) ) = f(x) | any(f xs)
+   ( _                nil()      ) = false
+   ( f                cons(x xs) ) = f(x) | any(f xs)
 
 
 
@@ -111,11 +109,11 @@ any:
 --
 -- Math
 
-fib:Num -> Num
-fib(0)= 1
-   ( 1 )= 1
-   ( n )= fib(n - 1) + fib(n - 2)
-
+fib: Num -> Num
+fib( 0   )= 1
+   ( 1   )= 1
+   ( n   )= fib(n - 1) + fib(n - 2)
+   --------------------------------
    (6) ? 13     
    (7) ? 21
    
@@ -124,7 +122,9 @@ fib(0)= 1
 --
 -- FFI
 
+log: Int -> IO
 log( x ) = `console.log(cxt.x);`
 
+jquery: String -> String -> IO
 jquery( id x ) = `$(cxt.id).html(cxt.x);`
 

@@ -385,7 +385,7 @@ unify    eqs            = let ans = applySubs (genSubs eqs) eqs
         applySubType    s (FunType a b) = FunType (applySubType s a) (applySubType s b)
         applySubType    _ y = y                
         
-        newRules    _ (UnknownType _)            = []
+--        newRules    _ (UnknownType _)            = []
         newRules    y@(UnknownType _) x | x /= y = [TypeEquation y x] 
         newRules    (Type x) (UnknownType y)     = [TypeEquation (UnknownType y) (Type x)]
         newRules    (FunType a b) (FunType x y)  = (newRules a x) ++ (newRules b y)
@@ -399,16 +399,22 @@ unify    eqs            = let ans = applySubs (genSubs eqs) eqs
         merge    _ x@(InvalidType _) = x
         merge    x y = InvalidType $ "Could not resolve types " ++ show x ++ " with " ++ show y
 
-verify :: [TypeEquation] -> Maybe [String]
-verify    eqs = let errors = [ x | x@(TypeEquation _ t) <- eqs, isValid t ]
+verify :: [TypeEquation] -> Either [String] [String]
+verify    eqs = let errors   = [ x | x@(TypeEquation _ t) <- eqs, isValid t ]
+                    warnings = [ x | x@(TypeEquation _ t) <- eqs, isWarning t ]
                 in case length errors of
-                  0 -> Nothing
-                  n -> Just $ map ((++"\n") . show) errors 
+                  0 -> Right $ map ((++"\n") . show) warnings
+                  n -> Left  $ map ((++"\n") . show) errors 
                   
-isValid (InvalidType _) = True
+isWarning (UnknownType _) = True
+isWarning (FunType x y) = isWarning x || isWarning y
+isWarning _ = False
 
-isValid (FunType x y) = isValid x && isValid y
+isValid (InvalidType _) = True
+isValid (FunType x y) = isValid x || isValid y
 isValid _ = False
+
+
 
 --------------------------------------------------------------------------------
 --
@@ -614,20 +620,50 @@ symbolP = (:) <$> letter <*> many (alphaNum <|> oneOf "_'")
 -- Main
 
 main :: IO ()
-main  = do name   <- head <$> getArgs
+main  = do RunConfig inputs output runMode <- parseArgs <$>getArgs
+           let name = head inputs
            hFile  <- openFile name ReadMode
            src    <- trim <$> hGetContents hFile
            case parse cleanComments "Cleaning Comments" src of
              Left ex -> putStrLn $ show ex
-             Right s -> parseSyntax s
-  
-  where parseSyntax s = case parse sonnetP "Parsing Syntax" s of
+             Right s -> parseSyntax s output runMode
+                        
+  where parseSyntax s output runMode = case parse sonnetP "Parsing Syntax" s of
                           Left ex -> putStrLn $ "\"" ++ show ex ++ "\n" ++ s ++ "\""
-                          Right s -> let code    = show $ renderJs $ render $ resolveScope s
-                                         eqs     = unify $ typeCheck $ resolveScope s
+                          Right v -> let code = show $ renderJs $ render $ resolveScope v
+                                         eqs1 = typeCheck $ resolveScope v
+                                         eqs  = unify eqs1
                                      in  case verify eqs of
-                                       Nothing -> putStrLn code
-                                       Just x  -> putStrLn (concat x)
+                                       Right x -> do putStrLn (concat x)
+                                                     case runMode of
+                                                       Compile -> writeFile output code
+                                                       _______ -> do putStrLn $ concat (map ((++ "\n") . show) eqs1)
+                                                                     putStrLn $ concat (map ((++ "\n") . show) eqs)
+                                       Left x  -> putStrLn (concat x)
+                        
+data RunMode   = Compile | JustTypeCheck 
+data RunConfig = RunConfig [String] String RunMode
+
+parseArgs :: [String] -> RunConfig
+parseArgs    args = fst $ runState argsParser args
+
+  where argsParser = do args <- get
+                        case args of
+                          []     -> return $ RunConfig [] "default.js" Compile
+                          (x:xs) -> do put xs
+                                       case x of
+                                         ('-':'t':[]) -> do RunConfig a b _ <- argsParser
+                                                            return $ RunConfig (x:a) b JustTypeCheck
+                                         ('-':'o':[]) -> do (name:ys) <- get
+                                                            put ys
+                                                            RunConfig a _ c <- argsParser
+                                                            return $ RunConfig (x:a) name c                                                            
+                                         ('-':_) -> error "Could not parse options"
+                                         _ -> do RunConfig a b c <- argsParser
+                                                 return $ RunConfig (x:a) b c
+                        
+
+
 
 
 --------------------------------------------------------------------------------
