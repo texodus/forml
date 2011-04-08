@@ -368,30 +368,47 @@ unify    eqs            = let ans = applySubs (genSubs eqs) eqs
                               True  -> unify ans
                               False -> ans
                                        
-  where genSubs :: [TypeEquation] -> [Substitution]
-        genSubs    eqs = concat $ map genSub eqs
+  where genSubs    eqs = concat $ map genSub eqs
         
         genSub (TypeEquation i@(UnknownType _) y)          = [Substitution i y]
         genSub (TypeEquation x@(Type _) i@(UnknownType _)) = [Substitution i x]
         genSub (TypeEquation (FunType x y) (FunType a b))  = Substitution x a : genSub (TypeEquation y b)
         genSub _ = []
         
-        applySubs :: [Substitution] -> [TypeEquation] -> [TypeEquation]
         applySubs    [] ts = ts        
-        applySubs    (s:ss) ts = applySubs ss (map (applySub s) ts)
+        applySubs    (s:ss) ts = applySubs ss (concat $ map (applySub s) ts)
 
-        applySub :: Substitution -> TypeEquation -> TypeEquation
-        applySub    (Substitution a b) (TypeEquation x y@(UnknownType _)) | a == x = TypeEquation y b
-        applySub    sub (TypeEquation t y) = TypeEquation t (applySubType sub y)                              
+        applySub    (Substitution a b) (TypeEquation x y) | a == x = [TypeEquation x (merge b y)] ++ newRules b y
+        applySub    sub (TypeEquation t y) = [TypeEquation t (applySubType sub y)]                              
         
-        applySubType :: Substitution -> Type -> Type
         applySubType    (Substitution x y) z | x == z = y
         applySubType    s (FunType a b) = FunType (applySubType s a) (applySubType s b)
-        applySubType    _ y = y
+        applySubType    _ y = y                
         
+        newRules    _ (UnknownType _)            = []
+        newRules    y@(UnknownType _) x | x /= y = [TypeEquation y x] 
+        newRules    (Type x) (UnknownType y)     = [TypeEquation (UnknownType y) (Type x)]
+        newRules    (FunType a b) (FunType x y)  = (newRules a x) ++ (newRules b y)
+        newRules _ _ = []
 
+        merge    (UnknownType _) x =  x
+        merge    (FunType a b) (FunType x y) = FunType (merge a x) (merge b y)
+        merge    x (UnknownType y)    = x
+        merge    (Type x) (Type y) | x == y = Type y
+        merge    x@(InvalidType _) _ = x
+        merge    _ x@(InvalidType _) = x
+        merge    x y = InvalidType $ "Could not resolve types " ++ show x ++ " with " ++ show y
 
-        
+verify :: [TypeEquation] -> Maybe [String]
+verify    eqs = let errors = [ x | x@(TypeEquation _ t) <- eqs, isValid t ]
+                in case length errors of
+                  0 -> Nothing
+                  n -> Just $ map ((++"\n") . show) errors 
+                  
+isValid (InvalidType _) = True
+
+isValid (FunType x y) = isValid x && isValid y
+isValid _ = False
 
 --------------------------------------------------------------------------------
 --
@@ -608,8 +625,9 @@ main  = do name   <- head <$> getArgs
                           Left ex -> putStrLn $ "\"" ++ show ex ++ "\n" ++ s ++ "\""
                           Right s -> let code    = show $ renderJs $ render $ resolveScope s
                                          eqs     = unify $ typeCheck $ resolveScope s
-                                     in  putStrLn (concat $ map ((++"\n") . show) eqs)
-
+                                     in  case verify eqs of
+                                       Nothing -> putStrLn code
+                                       Just x  -> putStrLn (concat x)
 
 
 --------------------------------------------------------------------------------
