@@ -23,6 +23,7 @@ import Data.Monoid
 import qualified Data.Map as M
 
 
+
 --------------------------------------------------------------------------------
 --
 -- Backend
@@ -107,8 +108,6 @@ renderEvalPattern cxt (VarPattern (Identifier i))
 
 renderEvalPattern cxt (BindPattern (Identifier i) ps)
   = [$jmacroE| unwrap(`(cxt)`[`(i)`] || sonnet[`(i)`], `(toJArray $ map (renderEvalPattern cxt) (reverse ps))`) |]
-
-
    
 renderPatterns :: [Pattern] -> Expression -> JExpr
 renderPatterns [] e = renderExpression [$jmacroE| {} |] e
@@ -140,7 +139,7 @@ renderPatterns' cxt (VarPattern (Identifier i):ps) e
 renderPatterns' cxt (BindPattern (Identifier i) ps:others) e
   = [$jmacroE| function(arg) { 
                    if (arg && arg.type === `(i)`) {
-                       var __cxt = unwrap(`(renderPatterns' cxt ps (JSExpression cxt))`, arg);
+                       var __cxt = unwrap(`(renderPatterns' cxt ps (JSExpression cxt))`, arg); 
                        return `(renderPatterns' __cxt others e)`; 
                    } else {
                        return `(renderStub others)`;
@@ -337,12 +336,11 @@ checkPatternBindings env [] = []
 parsePatternBindings env (FunType x xs) (VarPattern (Identifier i):ps)= case M.lookup i env of
   Nothing -> [ TypeEquation (Type "ERROR") $ InvalidType $ "Symbol " ++ i ++ " is not defined" ] ++ parsePatternBindings env xs ps
   Just y  -> [ TypeEquation y x ] ++ parsePatternBindings env xs ps
-parsePatternBindings env (FunType _ xs) (_:ps) = parsePatternBindings env xs ps
-parsePatternBindings env _ [] = []
 parsePatternBindings env (FunType x xs) (BindPattern (Identifier i) ps:pss)= case M.lookup i env of
   Nothing -> [ TypeEquation (Type "ERROR") $ InvalidType $ "Symbol " ++ i ++ " is not defined" ] ++ parsePatternBindings env xs ps
   Just y  -> parsePatternBindings env y ps ++ parsePatternBindings env xs pss
-
+parsePatternBindings env (FunType _ xs) (_:ps) = parsePatternBindings env xs ps
+parsePatternBindings env _ [] = []
 
 checkExpression :: TypeEnv -> Expression                         -> Type -> State Int [TypeEquation]
 checkExpression    env        (JSExpression _)                      t    =  return [TypeEquation t (Type "IO")]
@@ -525,7 +523,8 @@ data Identifier = Identifier String
                 deriving (Show, Eq)
 
 data Type       = Type String 
-                | PolymorphicType String
+                | PolymorphicType String [Type]
+                | TypeVar String
                 | UnknownType Int
                 | InvalidType String
                 | FunType Type Type
@@ -600,16 +599,15 @@ expressionP = do exp <- jsExpressionP
                            exp2 <- expressionP
                            return (InfixExpression exp op exp2)
                            
-jsExpressionP     = JSExpression <$> (char '`' *> ((convert . either undefined id . parseJM) <$> (anyChar `manyTill` (char '`'))))
-
-  where  convert expr = [$jmacroE| (function(x) { var !cxt = x; var !ans; `(expr)`; return ans; }) |]
+jsExpressionP = JSExpression <$> (char '`' *> ((convert . either undefined id . parseJM) <$> (anyChar `manyTill` (char '`'))))
+  where convert expr = [$jmacroE| (function(x) { var !cxt = x; var !ans; `(expr)`; return ans; }) |]
                            
-ifExpressionP     = IfExpression <$> (string "if" *> spaces *> expressionP) 
-                    <* spaces <* string "then" <* spaces <*> expressionP
-                    <* spaces <* string "else" <* spaces <*> expressionP
+ifExpressionP = IfExpression <$> (string "if" *> spaces *> expressionP) 
+                <* spaces <* string "then" <* spaces <*> expressionP
+                <* spaces <* string "else" <* spaces <*> expressionP
 
-letExpressionP    = LetExpression <$> (string "let" *> spaces *> (try (functionStatementP FunctionStatement '=') `sepEndBy` spaces))
-                    <* spaces <* string "in" <* spaces <*> expressionP
+letExpressionP = LetExpression <$> (string "let" *> spaces *> (try (functionStatementP FunctionStatement '=') `sepEndBy` spaces))
+                 <* spaces <* string "in" <* spaces <*> expressionP
                        
 symbolExpressionP = PrefixExpression <$> identifierP <*> return []
         
@@ -624,7 +622,7 @@ literalP = stringP <|> booleanP <|> numP
         numP     = (NumLiteral . read) <$> ((++) <$> many1 digit <*> (radix <|> return ""))
         radix    = (++) <$> string "." <*> many1 digit
         
-identifierP   = Identifier <$>symbolP
+identifierP = Identifier <$>symbolP
 
 symbolP = (:) <$> letter <*> many (alphaNum <|> oneOf "_'")
 
@@ -678,8 +676,6 @@ parseArgs    args = fst $ runState argsParser args
                                          ('-':_) -> error "Could not parse options"
                                          _ -> do RunConfig a b c <- argsParser
                                                  return $ RunConfig (x:a) b c
-                        
-
 
 
 
