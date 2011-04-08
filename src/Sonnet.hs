@@ -299,7 +299,7 @@ checkAxiom    env        t       (RelationalAxiom ps e)
   =  do newEnv     <- augmentEnv env ps
         resultType <- genUniqueType
         funType    <- genFunType newEnv ps resultType
-        (TypeEquation t funType :) <$> checkExpression newEnv e resultType
+        (([TypeEquation t funType] ++ checkPatternBindings newEnv ps) ++) <$> checkExpression newEnv e resultType
                                                               
 genFunType :: TypeEnv -> [Pattern]                   -> Type  -> State Int Type
 genFunType    env        []                             t     =  return t
@@ -326,7 +326,23 @@ augmentEnv    env        (LiteralPattern lit:ps)             =  augmentEnv env p
 augmentEnv    env        (IgnorePattern:ps)                  =  augmentEnv env ps
 augmentEnv    env        (VarPattern (Identifier i):ps)      =  do utype <- genUniqueType
                                                                    augmentEnv (M.insert i utype env) ps
-augmentEnv    env        (BindPattern (Identifier i) ps:pss) =  do augmentEnv env (ps ++ pss)
+augmentEnv    env        (BindPattern (Identifier i) ps:pss) =  augmentEnv env (ps ++ pss)
+
+checkPatternBindings env (BindPattern (Identifier i) ps:pss) =  case M.lookup i env of
+  Nothing -> [ TypeEquation (Type "ERROR") $ InvalidType $ "Symbol " ++ i ++ " is not defined" ] ++ checkPatternBindings env pss
+  Just x  -> parsePatternBindings env x ps  ++ checkPatternBindings env pss
+checkPatternBindings env (_:ps) = checkPatternBindings env ps
+checkPatternBindings env [] = []                
+
+parsePatternBindings env (FunType x xs) (VarPattern (Identifier i):ps)= case M.lookup i env of
+  Nothing -> [ TypeEquation (Type "ERROR") $ InvalidType $ "Symbol " ++ i ++ " is not defined" ] ++ parsePatternBindings env xs ps
+  Just y  -> [ TypeEquation y x ] ++ parsePatternBindings env xs ps
+parsePatternBindings env (FunType _ xs) (_:ps) = parsePatternBindings env xs ps
+parsePatternBindings env _ [] = []
+parsePatternBindings env (FunType x xs) (BindPattern (Identifier i) ps:pss)= case M.lookup i env of
+  Nothing -> [ TypeEquation (Type "ERROR") $ InvalidType $ "Symbol " ++ i ++ " is not defined" ] ++ parsePatternBindings env xs ps
+  Just y  -> parsePatternBindings env y ps ++ parsePatternBindings env xs pss
+
 
 checkExpression :: TypeEnv -> Expression                         -> Type -> State Int [TypeEquation]
 checkExpression    env        (JSExpression _)                      t    =  return [TypeEquation t (Type "IO")]
@@ -385,7 +401,6 @@ unify    eqs            = let ans = applySubs (genSubs eqs) eqs
         applySubType    s (FunType a b) = FunType (applySubType s a) (applySubType s b)
         applySubType    _ y = y                
         
---        newRules    _ (UnknownType _)            = []
         newRules    y@(UnknownType _) x | x /= y = [TypeEquation y x] 
         newRules    (Type x) (UnknownType y)     = [TypeEquation (UnknownType y) (Type x)]
         newRules    (FunType a b) (FunType x y)  = (newRules a x) ++ (newRules b y)
@@ -634,7 +649,9 @@ main  = do RunConfig inputs output runMode <- parseArgs <$>getArgs
                                          eqs1 = typeCheck $ resolveScope v
                                          eqs  = unify eqs1
                                      in  case verify eqs of
-                                       Right x -> do putStrLn (concat x)
+                                       Right x -> do case length x of
+                                                       0 -> return ()
+                                                       _ -> putStrLn (trim $ concat x)
                                                      case runMode of
                                                        Compile -> writeFile output code
                                                        _______ -> do putStrLn $ concat (map ((++ "\n") . show) eqs1)

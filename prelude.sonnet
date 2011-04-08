@@ -30,8 +30,8 @@ head:
 tail: 
 -- Tail is the dual of head;  returns the [1 .. n] elements of the list  
 
-     List        -> Num
---   ( nil()      ) = nil
+     List        -> List
+   ( nil()      ) = nil
    ( cons(_ xs) ) = xs 
    ---------------------
    ( cons(3 nil) ) ? nil
@@ -79,7 +79,7 @@ concat:
      List     -> List   -> List
    ( nil()       x     ) = x
    ( cons(x xs)  y     ) = cons(x concat(xs y))
-   ------------------------------------------
+   --------------------------------------------
    ( cons(1 nil) cons(2 nil) ) ? cons(1 cons(2 nil))
 
 
@@ -93,6 +93,7 @@ map:
    ( f           cons(x xs) ) = cons(f(x) map(f xs))
    -------------------------------------------------
    ( fib cons(6 nil) ) ? cons(13 nil)
+
 
 
 any:
