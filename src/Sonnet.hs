@@ -339,6 +339,8 @@ parsePatternBindings env (FunType x xs) (VarPattern (Identifier i):ps)= case M.l
 parsePatternBindings env (FunType x xs) (BindPattern (Identifier i) ps:pss)= case M.lookup i env of
   Nothing -> [ TypeEquation (Type "ERROR") $ InvalidType $ "Symbol " ++ i ++ " is not defined" ] ++ parsePatternBindings env xs ps
   Just y  -> parsePatternBindings env y ps ++ parsePatternBindings env xs pss
+parsePatternBindings env (FunType x xs) (LiteralPattern (StringLiteral _):ps) = [ TypeEquation x (Type "String") ] ++ parsePatternBindings env xs ps
+parsePatternBindings env (FunType x xs) (LiteralPattern (NumLiteral _):ps)    = [ TypeEquation x (Type "Num") ] ++ parsePatternBindings env xs ps
 parsePatternBindings env (FunType _ xs) (_:ps) = parsePatternBindings env xs ps
 parsePatternBindings env _ [] = []
 

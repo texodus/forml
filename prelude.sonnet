@@ -53,7 +53,7 @@ length:
 get: 
 -- Returns the nth element of the list in O(n)
      
-     Num -> List       -> Num
+     Num -> List     -> Num
    ( 0    cons(x _) ) = x
    ( n    cons(_ x) ) = get(n - 1 x)
 
