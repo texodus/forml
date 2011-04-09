@@ -41,7 +41,7 @@ renderTest    _ = mempty
 
 renderTestAxiom :: String -> Axiom -> JStat 
 renderTestAxiom name (AssertAxiom ps ex)
- = [$jmacro| it(`(name)` + "(" + `(show ps)` + ") == " + `(show ex)`, function() { 
+ = [$jmacro| it(`(name)` + "(" + `(concat (intersperse " " (map show ps)))` + ") == " + `(show ex)`, function() { 
                  var cxt = {};
                  var actual   = unwrap(sonnet[`(name)`], `(toJArray $ map (renderEvalPattern cxt) (reverse ps))`);
                  var expected = `(renderExpression cxt ex)`;
