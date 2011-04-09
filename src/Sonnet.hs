@@ -26,13 +26,40 @@ import qualified Data.Map as M
 
 --------------------------------------------------------------------------------
 --
+-- Test Backend
+
+renderTests :: String -> [Definition] -> JStat
+renderTests name      defs 
+  = [$jmacro| describe(`(name)` + " test suite", function() {
+                  `(include)`;
+                  `(foldl1 mappend $ map renderTest defs)`;                        
+              }); |]
+
+renderTest :: Definition -> JStat
+renderTest    (Definition (Identifier i) as) = foldl1 mappend $ map (renderTestAxiom i) as
+renderTest    _ = mempty
+
+renderTestAxiom :: String -> Axiom -> JStat 
+renderTestAxiom name (AssertAxiom ps ex)
+ = [$jmacro| it(`(name)` + "(" + `(show ps)` + ") == " + `(show ex)`, function() { 
+                 var cxt = {};
+                 var actual   = unwrap(sonnet[`(name)`], `(toJArray $ map (renderEvalPattern cxt) (reverse ps))`);
+                 var expected = `(renderExpression cxt ex)`;
+                 expect(actual).toEqual(expected)
+             }); |]
+
+renderTestAxiom _ _ = mempty
+
+
+
+--------------------------------------------------------------------------------
+--
 -- Backend
 
 render :: [Definition] -> JStat
 render defs 
   = [$jmacro| var !sonnet = (function() {
                   `(include)`
-                  var !tests = [];
                   var !sonnet = {}; 
                   `(foldl1 mappend $ map renderDef defs)`;
                   return sonnet;
@@ -87,17 +114,7 @@ renderAxiom (RelationalAxiom patterns expression)
               axioms.push(`(renderPatterns patterns expression)`) |]
 
 renderAxiom ax@(AssertAxiom patterns expression)
-  = [$jmacro| tests.push(function() { 
-                       var cxt = {};
-                       var actual = unwrap(sonnet[name], `(toJArray $ map (renderEvalPattern cxt) (reverse patterns))`);
-                       var expected = `(renderExpression cxt expression)`;
-                       if (!_.isEqual(actual, expected)) {
-                           console.error("FAILED: " ++ name ++ " : " ++ `(show ax)`
-                               ++ "\n" ++ "Expected: " ++ expected ++ "\nActual:   " ++ actual);
-                           return false;
-                       };
-                       return true;
-                   }); |]
+  = mempty
 
 renderEvalPattern :: JExpr -> Pattern -> JExpr
 renderEvalPattern cxt (LiteralPattern lit)
@@ -221,18 +238,6 @@ include =
                    };
                    return f;
                };
-
-               var runTests = function() {
-                 var failed = 0;
-                 _.each(tests, function(test) {
-                     if (!test()) {
-                         failed++;
-                     }
-                 });
-                 console.log(tests.length ++ " tests, " ++ failed ++ " failed");
-               };
-
-               $(runTests);
 
                // converts a function expecting n arguments to a curried function
                var !wrap = function(f, n) {
@@ -404,11 +409,11 @@ unify    eqs            = let ans = applySubs (genSubs eqs) eqs
         newRules    y@(UnknownType _) x | x /= y = [TypeEquation y x] 
         newRules    (Type x) (UnknownType y)     = [TypeEquation (UnknownType y) (Type x)]
         newRules    (FunType a b) (FunType x y)  = (newRules a x) ++ (newRules b y)
-        newRules _ _ = []
+        newRules    _              _             = []
 
-        merge    (UnknownType _) x =  x
-        merge    (FunType a b) (FunType x y) = FunType (merge a x) (merge b y)
-        merge    x (UnknownType y)    = x
+        merge    (UnknownType _) x = x
+        merge    (FunType a b  ) (FunType x y) = FunType (merge a x) (merge b y)
+        merge    x               (UnknownType y)              = x
         merge    (Type x) (Type y) | x == y = Type y
         merge    x@(InvalidType _) _ = x
         merge    _ x@(InvalidType _) = x
@@ -502,7 +507,6 @@ data Pattern    = LiteralPattern Literal
                 | IgnorePattern
                 | VarPattern Identifier
                 | BindPattern Identifier [Pattern]
-                deriving Show
 
 data Expression = PrefixExpression Identifier [Expression]
                 | InfixExpression Expression Operator Expression
@@ -510,19 +514,15 @@ data Expression = PrefixExpression Identifier [Expression]
                 | IfExpression Expression Expression Expression
                 | LiteralExpression Literal
                 | JSExpression JExpr
-                deriving Show
                          
 data Literal    = BooleanLiteral Bool
                 | StringLiteral String
                 | NumLiteral Double
-                deriving Show
                          
 data Operator   = Operator String
-                deriving Show
 
 data Identifier = Identifier String
                 | ImplicitIdentifier
-                deriving (Show, Eq)
 
 data Type       = Type String 
                 | PolymorphicType String [Type]
@@ -532,9 +532,35 @@ data Type       = Type String
                 | FunType Type Type
                 deriving Eq
                          
+instance Show Identifier where
+  show (Identifier i) = i
+
+instance Show Pattern where
+  show (LiteralPattern lit) = show lit
+  show IgnorePattern = "_"
+  show (VarPattern (Identifier i)) = i
+  show (BindPattern (Identifier i) ps) = i ++ "(" ++ concat (intersperse " " (map show ps)) ++ ")"
+
+instance Show Expression where 
+  show (PrefixExpression (Identifier i) exs) = i ++ "(" ++ concat (intersperse " " (map show exs)) ++ ")"
+  show (InfixExpression ex1 o ex2) = show ex1 ++ " " ++ show o ++ " " ++ show ex2
+  show (LetExpression ss ex) = undefined
+  show (IfExpression cond ex1 ex2) = "if " ++ show cond ++ " then " ++ show ex1 ++ " else " ++ show ex2
+  show (LiteralExpression l) = show l
+  show (JSExpression j) = show $ renderJs j
+                         
+instance Show Literal where    
+  show (StringLiteral s) = s
+  show (NumLiteral n) = show n
+                         
+instance Show Operator where  
+  show (Operator s) = s
+
 instance Show Type where
   show (FunType t u) = "(" ++ show t ++ " -> " ++ show u ++ ")"
   show (Type t)      = t
+  show (PolymorphicType s t) = s ++ "(" ++ concat (intersperse " " (map show t)) ++ ")"
+  show (TypeVar s) =  s
   show (UnknownType i) = "t" ++ show i
   show (InvalidType m) = "TYPE ERROR: " ++ m
 
@@ -641,11 +667,11 @@ main  = do RunConfig inputs output runMode <- parseArgs <$>getArgs
            src    <- trim <$> hGetContents hFile
            case parse cleanComments "Cleaning Comments" src of
              Left ex -> putStrLn $ show ex
-             Right s -> parseSyntax s output runMode
+             Right s -> parseSyntax s name output runMode
                         
-  where parseSyntax s output runMode = case parse sonnetP "Parsing Syntax" s of
+  where parseSyntax s input output runMode = case parse sonnetP "Parsing Syntax" s of
                           Left ex -> putStrLn $ "\"" ++ show ex ++ "\n" ++ s ++ "\""
-                          Right v -> let code = show $ renderJs $ render $ resolveScope v
+                          Right v -> let scoped = resolveScope v
                                          eqs1 = typeCheck $ resolveScope v
                                          eqs  = unify eqs1
                                      in  case verify eqs of
@@ -653,7 +679,11 @@ main  = do RunConfig inputs output runMode <- parseArgs <$>getArgs
                                                        0 -> return ()
                                                        _ -> putStrLn (trim $ concat x)
                                                      case runMode of
-                                                       Compile -> writeFile output code
+                                                       Compile -> let code = show $ renderJs $ render scoped
+                                                                      tests = show $ renderJs $ renderTests output scoped
+                                                                  in  do writeFile (output ++ ".js") code
+                                                                         writeFile (output ++ ".spec.js") tests
+                                                                         writeFile (output ++ ".html") (genHTML output)
                                                        _______ -> do putStrLn $ concat (map ((++ "\n") . show) eqs1)
                                                                      putStrLn $ concat (map ((++ "\n") . show) eqs)
                                        Left x  -> putStrLn (concat x)
@@ -678,6 +708,23 @@ parseArgs    args = fst $ runState argsParser args
                                          ('-':_) -> error "Could not parse options"
                                          _ -> do RunConfig a b c <- argsParser
                                                  return $ RunConfig (x:a) b c
+
+genHTML name = "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>"
+               ++ "<html><head><title>" ++ name ++ " Test Suite</title><link rel='stylesheet' type='text/css' href='js/jasmine-1.0.1/jasmine.css'>"
+               ++ "<script type='text/javascript' src='js/jasmine-1.0.1/jasmine.js'></script>"
+               ++ "<script type='text/javascript' src='js/jasmine-1.0.1/jasmine-html.js'></script>"
+               ++ "<script type='text/javascript' src='js/jquery.js'></script>"
+               ++ "<script type='text/javascript' src='js/underscore.js' ></script>"
+               ++ "<script type='text/javascript' src='" ++ name ++ ".js'></script>"
+               ++ " <script type='text/javascript' src='" ++ name ++ ".spec.js'></script>"
+               ++ " </head>"
+               ++ "<body>"
+               ++ "<script type='text/javascript'>"
+               ++ "jasmine.getEnv().addReporter(new jasmine.TrivialReporter());"
+               ++ "jasmine.getEnv().execute();"
+               ++ "</script>"
+               ++ "</body>"
+               ++ "</html>"
 
 
 
