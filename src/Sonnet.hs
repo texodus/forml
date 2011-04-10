@@ -192,7 +192,7 @@ renderExpression cxt (InfixExpression e (Operator i) f) = renderOp i e f
         renderOp "==" e f = [$jmacroE| (`(renderExpression cxt e)` === `(renderExpression cxt f)`) |]
 
 renderExpression cxt (LetExpression [] e) = renderExpression cxt e
-renderExpression cxt (LetExpression ((FunctionStatement ImplicitIdentifier ps e):ss) ee)
+renderExpression cxt (LetExpression (FunctionStatement ImplicitIdentifier ps e:ss) ee)
   = [$jmacroE| (function() { 
                    unwrap(`(renderPatterns ps e)`, `(renderExpression cxt e)`) 
                    return `(renderExpression cxt ((LetExpression ss) ee))`
@@ -322,7 +322,6 @@ genFunType    env        (BindPattern (Identifier i) ps:pss) t
         
 getResultType (FunType x y) = getResultType y
 getResultType x = x
-
 
 augmentEnv :: TypeEnv -> [Pattern]                           -> State Int TypeEnv
 augmentEnv    env        []                                  =  return env
@@ -595,13 +594,17 @@ functionStatementP f c = f <$> scopedId <*> option [] (try argumentsP) <* defOpe
 
   where s            = many (oneOf " \t\v\f")
         scopedId     = option ImplicitIdentifier identifierP
-        argumentsP   = s *> char '(' *> s *> argP `sepEndBy` s <* s <* char ')'
+        argumentsP   = s *> char '(' *> s *> argP `sepEndBy` (many (oneOf " \t\v\f,")) <* s <* char ')'
         defOperator  = s *> char c <* s
-        argP         = (LiteralPattern <$> literalP) <|> ignorePatternP <|> try bindPatternP <|> varPattern
+        argP         = (LiteralPattern <$> literalP) <|> ignorePatternP <|> listPatternP <|> try bindPatternP <|> varPattern
         
         ignorePatternP = many1 (char '_') >> return IgnorePattern
-        bindPatternP = BindPattern <$> identifierP <* char '(' <*> (argP `sepEndBy` s) <* char ')'
-        varPattern   = VarPattern <$> identifierP
+        bindPatternP   = BindPattern <$> identifierP <* char '(' <*> (argP `sepEndBy` (many (oneOf " \t\v\f,"))) <* char ')'
+        varPattern     = VarPattern <$> identifierP
+        listPatternP = makePattern <$> (char '[' *> spaces *> (argP `sepEndBy` (many (oneOf " \t\v\f,"))) <* char ']')
+        
+        makePattern [] = BindPattern (Identifier "nil") []
+        makePattern (x:xs) = BindPattern (Identifier "cons") [x, (makePattern xs)]
         
         
 typeStatementP  = TypeStatement <$> identifierP <* typeOperatorP <*> typeP
@@ -615,6 +618,7 @@ typeStatementP  = TypeStatement <$> identifierP <* typeOperatorP <*> typeP
 -- Expressions
         
 expressionP = do exp <- jsExpressionP
+                       <|> listExpressionP
                        <|> try ifExpressionP 
                        <|> try letExpressionP 
                        <|> try prefixExpressionP 
@@ -629,7 +633,11 @@ expressionP = do exp <- jsExpressionP
                            
 jsExpressionP = JSExpression <$> (char '`' *> ((convert . either undefined id . parseJM) <$> (anyChar `manyTill` (char '`'))))
   where convert expr = [$jmacroE| (function(x) { var !cxt = x; var !ans; `(expr)`; return ans; }) |]
-                           
+                       
+listExpressionP = makeList <$> (char '[' *> spaces *> (expressionP `sepEndBy` (many (oneOf " \t\v\f\r\n,"))) <* char ']')
+  where makeList [] = PrefixExpression (Identifier "nil") []
+        makeList (x:xs) = PrefixExpression (Identifier "cons") [x, (makeList xs)]
+    
 ifExpressionP = IfExpression <$> (string "if" *> spaces *> expressionP) 
                 <* spaces <* string "then" <* spaces <*> expressionP
                 <* spaces <* string "else" <* spaces <*> expressionP
@@ -640,7 +648,7 @@ letExpressionP = LetExpression <$> (string "let" *> spaces *> (try (functionStat
 symbolExpressionP = PrefixExpression <$> identifierP <*> return []
         
 prefixExpressionP = PrefixExpression <$> (identifierP <|> return ImplicitIdentifier) 
-                    <* char '(' <* spaces <*> expressionP `sepBy` spaces <* char ')'
+                    <* char '(' <* spaces <*> expressionP `sepBy` (many (oneOf " \t\v\f\r\n,")) <* char ')'
 
 literalExpressionP = LiteralExpression <$> literalP
                      
@@ -710,14 +718,13 @@ parseArgs    args = fst $ runState argsParser args
                                                  return $ RunConfig (x:a) b c
 
 genHTML name = "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>"
-               ++ "<html><head><title>" ++ name ++ " Test Suite</title><link rel='stylesheet' type='text/css' href='js/jasmine-1.0.1/jasmine.css'>"
+               ++ "<html><head><title>" ++ name ++ " test suite</title><link rel='stylesheet' type='text/css' href='js/jasmine-1.0.1/jasmine.css'>"
                ++ "<script type='text/javascript' src='js/jasmine-1.0.1/jasmine.js'></script>"
                ++ "<script type='text/javascript' src='js/jasmine-1.0.1/jasmine-html.js'></script>"
-               ++ "<script type='text/javascript' src='js/jquery.js'></script>"
-               ++ "<script type='text/javascript' src='js/underscore.js' ></script>"
+               ++ "<script type='text/javascript' src='js/zepto.js'></script>"
                ++ "<script type='text/javascript' src='" ++ name ++ ".js'></script>"
-               ++ " <script type='text/javascript' src='" ++ name ++ ".spec.js'></script>"
-               ++ " </head>"
+               ++ "<script type='text/javascript' src='" ++ name ++ ".spec.js'></script>"
+               ++ "</head>"
                ++ "<body>"
                ++ "<script type='text/javascript'>"
                ++ "jasmine.getEnv().addReporter(new jasmine.TrivialReporter());"
