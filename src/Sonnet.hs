@@ -178,7 +178,8 @@ renderExpression cxt (JSExpression js) = [$jmacroE| (typeof `(js)` == "function"
 renderExpression cxt (PrefixExpression ImplicitIdentifier []) = [$jmacroE| undefined |]
 renderExpression cxt (PrefixExpression ImplicitIdentifier (x:_)) = [$jmacroE| `(renderExpression cxt x)` |]
 
-renderExpression cxt (PrefixExpression (Identifier i) []) = [$jmacroE| `(cxt)`[`(i)`] || sonnet[`(i)`] |]
+renderExpression cxt (PrefixExpression (Identifier i) []) 
+  = [$jmacroE| (function() { if (`(cxt)`.hasOwnProperty(`(i)`)) { return `(cxt)`[`(i)`]; } else { return sonnet[`(i)`]; } })() |]
 renderExpression cxt (PrefixExpression (Identifier i) exs)
   = [$jmacroE| unwrap(`(cxt)`[`(i)`] || sonnet[`(i)`], `(toJArray $ map (renderExpression cxt) (reverse exs))`) |]
 
@@ -538,16 +539,28 @@ instance Show Pattern where
   show (LiteralPattern lit) = show lit
   show IgnorePattern = "_"
   show (VarPattern (Identifier i)) = i
+  show (BindPattern (Identifier "nil") ps)  = "[]"
+  show (BindPattern (Identifier "cons") ps) = "[" ++ showList' ps ++ "]"
   show (BindPattern (Identifier i) ps) = i ++ "(" ++ concat (intersperse " " (map show ps)) ++ ")"
 
+showList' :: [Pattern] -> String
+showList' (x:(BindPattern (Identifier "cons") y):[]) = show x ++ " " ++ showList' y
+showList' (x:_:[]) = show x
+
 instance Show Expression where 
+  show (PrefixExpression (Identifier "nil") ps)  = "[]"
+  show (PrefixExpression (Identifier "cons") ps) = "[" ++ showList'' ps ++ "]"
   show (PrefixExpression (Identifier i) exs) = i ++ "(" ++ concat (intersperse " " (map show exs)) ++ ")"
   show (InfixExpression ex1 o ex2) = show ex1 ++ " " ++ show o ++ " " ++ show ex2
   show (LetExpression ss ex) = undefined
   show (IfExpression cond ex1 ex2) = "if " ++ show cond ++ " then " ++ show ex1 ++ " else " ++ show ex2
   show (LiteralExpression l) = show l
   show (JSExpression j) = show $ renderJs j
-                         
+
+showList'' :: [Expression] -> String
+showList'' (x:(PrefixExpression (Identifier "cons") y):[]) = show x ++ " " ++ showList'' y
+showList'' (x:_:[]) = show x
+
 instance Show Literal where    
   show (StringLiteral s) = s
   show (NumLiteral n) = show n
