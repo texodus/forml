@@ -10,7 +10,7 @@ Build-type:          Simple
 Cabal-version:       >=1.2
 
 Executable sonnet
-  hs-source-dirs: src
+  hs-source-dirs: src/hs
   main-is: Sonnet.hs
 
   Build-depends:
