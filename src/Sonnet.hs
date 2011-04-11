@@ -21,6 +21,7 @@ import Data.List
 import Data.Monoid
 
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 
 
@@ -36,7 +37,10 @@ renderTests name      defs
               }); |]
 
 renderTest :: Definition -> JStat
-renderTest    (Definition (Identifier i) as) = foldl1 mappend $ map (renderTestAxiom i) as
+renderTest    (Definition (Identifier i) as) 
+  = [$jmacro| describe(`(i)`, function() {
+                  `(foldl1 mappend $ map (renderTestAxiom i) as)`;
+              }); |]
 renderTest    _ = mempty
 
 renderTestAxiom :: String -> Axiom -> JStat 
@@ -45,7 +49,7 @@ renderTestAxiom name (AssertAxiom ps ex)
                  var cxt = {};
                  var actual   = unwrap(sonnet[`(name)`], `(toJArray $ map (renderEvalPattern cxt) (reverse ps))`);
                  var expected = `(renderExpression cxt ex)`;
-                 expect(actual).toEqual(expected)
+                 expect(actual).toEqual(expected);
              }); |]
 
 renderTestAxiom _ _ = mempty
@@ -269,6 +273,10 @@ type TypeEnv      = M.Map String Type
 
 instance Show TypeEquation where
   show (TypeEquation t u) = show t ++ " = " ++ show u
+                            
+instance Ord TypeEquation where
+  compare (TypeEquation a b) (TypeEquation x y) | a == y && b == x = EQ
+  compare x y = compare (show x) (show y) 
   
 genUniqueType :: State Int Type
 genUniqueType =  do x <- get
@@ -353,6 +361,12 @@ checkExpression :: TypeEnv -> Expression                         -> Type -> Stat
 checkExpression    env        (JSExpression _)                      t    =  return [TypeEquation t (Type "IO")]
 checkExpression    env        (LiteralExpression (StringLiteral _)) t    =  return [TypeEquation t (Type "String")]
 checkExpression    env        (LiteralExpression (NumLiteral _))    t    =  return [TypeEquation t (Type "Num")]
+checkExpression    env        (IfExpression cond ex1 ex2) t
+  =  do condType <- genUniqueType
+        ([ TypeEquation condType (Type "Bool") ] ++)
+          <$> concat <$> sequence [ checkExpression env cond condType,
+                         checkExpression env ex1 t,
+                         checkExpression env ex2 t ]
 checkExpression    env        (PrefixExpression  (Identifier i) exs) t
   =  do resultType   <- genUniqueType
         argTypes     <- sequence (take (length exs) (repeat genUniqueType))
@@ -366,13 +380,13 @@ checkExpression    env        (InfixExpression ex1 (Operator o) ex2) t
         t1 <- genUniqueType
         t2 <- genUniqueType
         functionType <- return $ case o of
-                                   "-" -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
-                                   "+" -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
+                                   "-"  -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
+                                   "+"  -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
                                    "==" -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
-                                   "/" -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
-                                   "*" -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
-                                   "|" -> FunType (Type "Bool") (FunType (Type "Bool") (Type "Bool"))
-                                   "&" -> FunType (Type "Bool") (FunType (Type "Bool") (Type "Bool"))
+                                   "/"  -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
+                                   "*"  -> FunType (Type "Num") (FunType (Type "Num") (Type "Num"))
+                                   "|"  -> FunType (Type "Bool") (FunType (Type "Bool") (Type "Bool"))
+                                   "&"  -> FunType (Type "Bool") (FunType (Type "Bool") (Type "Bool"))
         ([ TypeEquation t resultType, TypeEquation (genFunType' $ [t1, t2] ++ [resultType]) functionType ] ++) 
           <$> concat <$> sequence [checkExpression env ex1 t1, checkExpression env ex2 t2]
 
@@ -385,13 +399,13 @@ data Substitution = Substitution Type Type
 
 unify :: [TypeEquation] -> [TypeEquation]
 unify    eqs            = let ans = applySubs (genSubs eqs) eqs 
-                          in  case ans /= eqs of
+                          in  case S.fromList ans /= S.fromList eqs of
                               True  -> unify ans
                               False -> ans
                                        
   where genSubs    eqs = concat $ map genSub eqs
         
-        genSub (TypeEquation i@(UnknownType _) y)          = [Substitution i y]
+        genSub (TypeEquation i@(UnknownType _) y) | i /= y = [Substitution i y]
         genSub (TypeEquation x@(Type _) i@(UnknownType _)) = [Substitution i x]
         genSub (TypeEquation (FunType x y) (FunType a b))  = Substitution x a : genSub (TypeEquation y b)
         genSub _ = []
@@ -399,6 +413,7 @@ unify    eqs            = let ans = applySubs (genSubs eqs) eqs
         applySubs    [] ts = ts        
         applySubs    (s:ss) ts = applySubs ss (concat $ map (applySub s) ts)
 
+        applySub    (Substitution a b) (TypeEquation x y) | a == y && b == x = [TypeEquation x y]
         applySub    (Substitution a b) (TypeEquation x y) | a == x = [TypeEquation x (merge b y)] ++ newRules b y
         applySub    sub (TypeEquation t y) = [TypeEquation t (applySubType sub y)]                              
         
