@@ -1,0 +1,34 @@
+
+
+this is a comment
+
+palette: →
+
+    type X= Int
+    type X = Int
+    type X a= Int
+    type X a = Int
+
+    type F = Int->Int
+    type F=Int->Int
+
+    type G = Int -> Int -> Int
+
+    type XXX = (Int -> Int)
+
+   I'm a comment!
+
+             -> Int
+
+    type G=(Int→Int)→(Int→Int)
+
+    type H = { x : Int }
+    type H = {x:Int,y:Str}
+
+    type I = {x:Int}->{x:Int,y:Int}->(Int->{x:Int->Int,y:Int})->Int
+
+    type X m a = X a b c -> m d e
+
+    x: Int -> Int
+
+this is another comment

@@ -1,82 +1,282 @@
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
 import Control.Applicative
-import Control.Monad.State
 
 import System.IO
-
 import System.Environment
 
-import Sonnet.Parser
-import Sonnet.TypeCheck
-import Sonnet.Javascript
-import Sonnet.Util
+import Text.ParserCombinators.Parsec as P hiding ((<|>), many, State, spaces)
+import Text.Pandoc
+
+import qualified Data.Map as M
+import Data.Char (ord, isAscii)
 
 
+
+whitespace :: Parser String
+whitespace = many $ oneOf "\t "
+
+spaces :: Parser ()
+spaces = try inter_comments <|> skipMany (oneOf "\t ")
+    where inter_comments = do finish_line 
+                              comment `manyTill` try line_start
+                              return ()
+          finish_line = oneOf "\t " `manyTill` newline
+          line_start = do count 4 (oneOf "\t ")
+                          skipMany (oneOf "\t ")
+
+
+
+
+-- Patterns
+--------------------------------------------------------------------------------
+-- ...
+
+
+data Pattern = VarPattern String
+             | LiteralPattern Literal
+             | JSONPattern JSONLiteral
+             | ListPattern
+             | ViewPattern Pattern
+             deriving (Show)
+
+pattern :: Parser Pattern
+pattern = undefined
+
+
+-- Expressions
+--------------------------------------------------------------------------------
+-- ...
+
+data Expression = Expression deriving (Show)
+
+expression :: Parser Expression
+expression = undefined
+
+-- Literals
+--------------------------------------------------------------------------------
+-- A literal can be any
+
+data Literal = Value ValueLiteral | JSON JSONLiteral | List ListLiteral deriving (Show)
+
+-- ValueLiterals 
+
+data ValueLiteral = StringLiteral String | NumLiteral Int deriving (Show)
+
+literal :: Parser Literal
+literal = try num <|> str
+    where num = Value . NumLiteral . read <$> many digit
+          str = Value . StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
+
+-- JSON Literals
+
+type JSONLiteral = M.Map String Expression
+
+json_literal :: Parser JSONLiteral
+json_literal = M.fromList <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
+
+    where pairs = key_value `sepEndBy` try (comma <|> not_comma)
+
+          not_comma = whitespace >> newline >> spaces >> notFollowedBy (string "}")
+
+          comma = spaces >> string "," >> spaces
+
+          key_value = do key <- many (alphaNum <|> oneOf "_")
+                         spaces
+                         string ":"
+                         spaces
+                         value <- expression
+                         return (key, value)
+
+-- ListLiterals
+
+type ListLiteral = [Expression]
+
+list_literal :: Parser ListLiteral
+list_literal = undefined
+
+
+
+-- Parsing 
+--------------------------------------------------------------------------------
+-- A Sonnet program is represented by a set of statements
+
+data Statement = TypeDeclarationStatement TypeDefinition TypeCase
+               | DefinitionStatement String [Axiom]
+               deriving (Show)
+
+sonnetParser :: Parser [Statement]
+sonnetParser  = do x <- many (statement <|> comment) <* eof
+                   return $ concat x
+
+    where statement = count 4 (oneOf "\t ") >> whitespace >> statement' <* newline
+          statement' = try type_statement <|> definition_statement
+
+comment :: forall a. Parser [a]
+comment = do anyChar `manyTill` newline
+             return []
+
+
+
+-- Statements
+--------------------------------------------------------------------------------
+-- A Statement may be a definition, which is a list of axioms associated with a
+-- symbol
+
+data Axiom = TypeAxiom TypeSignature
+           | EqualityAxiom [Pattern] Expression
+           deriving (Show)
+
+definition_statement :: Parser [Statement]
+definition_statement = do name <- type_var
+                          spaces
+                          string ":"
+                          spaces
+                          sig <- type_signature
+                          spaces
+                          axioms <- try $ many equality_axiom
+                          whitespace
+                          return $ [DefinitionStatement name (TypeAxiom sig : axioms)]
+
+equality_axiom :: Parser Axiom
+equality_axiom = do string "|" 
+                    whitespace
+                    patterns <- pattern `sepBy` whitespace
+                    string "="
+                    spaces
+                    ex <- expression
+                    return $ EqualityAxiom patterns ex
+
+-- A Statement may also be a type definition, which defines a set of values to
+-- a type symbol
+
+data TypeDefinition = TypeDefinition String [String]
+                    deriving (Show)
+
+type_statement :: Parser [Statement]
+type_statement  = do whitespace
+                     string "type "
+                     whitespace
+                     def <- type_definition
+                     whitespace 
+                     string "="
+                     spaces
+                     sig <- type_case
+                     whitespace
+                     return $ [TypeDeclarationStatement def sig]
+
+type_definition :: Parser TypeDefinition
+type_definition = do name <- (:) <$> upper <*> many alphaNum
+                     vars <- try $ do many1 $ oneOf "\t "
+                                      let var = (:) <$> lower <*> many alphaNum
+                                      var `sepEndBy` whitespace
+                             <|> return []
+                     return $ TypeDefinition name vars 
+
+data TypeCase = UnionCase [TypeSignature] | SingleCase TypeSignature deriving (Show)
+
+type_case :: Parser TypeCase
+type_case =  (SingleCase <$> type_signature)
+              
+
+
+
+-- Type Signatures
+--------------------------------------------------------------------------------
+-- This is what a type signature looks like
+
+data TypeSignature = SymbolType String
+                   | VariableType String
+                   | PolymorphicType TypeSignature TypeSignature
+                   | JSONType (M.Map String TypeSignature)
+                   | NamedType String TypeSignature
+                   | FunctionType TypeSignature TypeSignature
+                   deriving (Show)
+
+type_signature :: Parser TypeSignature
+type_signature = try function_type <|> inner_type
+
+    where function_type = do x <- inner_type
+                             spaces
+                             (string "->" <|> string "→")
+                             spaces
+                             y <- type_signature
+                             return $ FunctionType x y
+
+          inner_type = nested_function <|> record_type <|> try poly_type <|> var_type <|> symbol_type
+
+          poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
+                         oneOf "\t "
+                         whitespace
+                         vars <- inner_type `sepEndBy1` whitespace
+                         return $ foldl PolymorphicType name vars
+
+          nested_function = string "(" *> spaces *> type_signature <* spaces <* string ")"
+
+          symbol_type = SymbolType <$> type_name
+
+          var_type = VariableType <$> type_var
+
+          record_type = (JSONType . M.fromList) <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
+
+          pairs = key_value `sepEndBy` try (comma <|> not_comma)
+
+          not_comma = whitespace >> newline >> spaces >> notFollowedBy (string "}")
+
+          comma = spaces >> string "," >> spaces
+
+          key_value = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_signature
+
+type_name :: Parser String
+type_name = (:) <$> upper <*> many alphaNum  
+
+type_var :: Parser String
+type_var = (:) <$> lower <*> many alphaNum  
+
+
+          
 
 --------------------------------------------------------------------------------
 --
 -- Main
 
+toEntities :: String -> String
+toEntities [] = ""
+toEntities (c:cs)
+  | isAscii c = c : toEntities cs
+  | otherwise = "&#" ++ show (ord c) ++ ";" ++ toEntities cs
+
+toHTML :: String -> String
+toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
+
+
 main :: IO ()
-main  = do RunConfig inputs output runMode <- parseArgs <$>getArgs
-           let name = head inputs
+main  = do args <- getArgs
+           let name = head args
            hFile  <- openFile name ReadMode
-           src    <- trim <$> hGetContents hFile
-           case parseSonnet src of
-             Left ex -> putStrLn $ show ex
-             Right s -> let eqs1 = typeCheck $ s
-                            eqs  = unify eqs1
-                        in  case verify eqs of
-                          Left x  -> putStrLn (concat x)
-                          Right x -> do case length x of
-                                          0 -> return ()
-                                          _ -> putStrLn (trim $ concat x)
-                                        case runMode of
-                                          Compile -> let code = render s
-                                                         tests = renderTests output s
-                                                     in  do writeFile (output ++ ".js") code
-                                                            writeFile (output ++ ".spec.js") tests
-                                                            writeFile (output ++ ".html") (genHTML output)
-                                          _______ -> do putStrLn $ concat (map ((++ "\n") . show) eqs1)
-                                                        putStrLn $ concat (map ((++ "\n") . show) eqs)
+           src    <- (\ x -> x ++ "\n") <$> hGetContents hFile
+           writeFile "prelude.html" $ toHTML (header ++ src ++ footer)
+           putStrLn $ concat $ take 80 $ repeat "-"
+           case parse sonnetParser "Parsing" src of
+             Left ex -> do putStrLn $ show ex
+             Right x -> do putStrLn $ show x
+                           putStrLn $ "success"
 
-data RunMode   = Compile | JustTypeCheck
-data RunConfig = RunConfig [String] String RunMode
 
-parseArgs :: [String] -> RunConfig
-parseArgs = fst . runState argsParser
+header :: String
+header = "<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>"
+           ++ "<link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />"
+           ++ "<link href='lib/js/coda.css' type='text/css' rel='stylesheet' />"
+           ++ "<script type='text/javascript' src='lib/js/prettify.js'></script>"
+           ++ "<script type='text/javascript' src='lib/js/lang-hs.js'></script>"
+           ++ "<script type='text/javascript' src='lib/js/jquery.js'></script>"
+           ++ "<style>code{font-family:Menlo;}ul{padding:0px 48px}</style>"
 
-  where argsParser = do args <- get
-                        case args of
-                          []     -> return $ RunConfig [] "default.js" Compile
-                          (x:xs) -> do put xs
-                                       case x of
-                                         ('-':'t':[]) -> do RunConfig a b _ <- argsParser
-                                                            return $ RunConfig (x:a) b JustTypeCheck
-                                         ('-':'o':[]) -> do (name:ys) <- get
-                                                            put ys
-                                                            RunConfig a _ c <- argsParser
-                                                            return $ RunConfig (x:a) name c
-                                         ('-':_) -> error "Could not parse options"
-                                         _ -> do RunConfig a b c <- argsParser
-                                                 return $ RunConfig (x:a) b c
-
-genHTML :: String -> String
-genHTML name = "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>"
-               ++ "<html><head><title>" ++ name ++ " test suite</title><link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>"
-               ++ "<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>"
-               ++ "<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>"
-               ++ "<script type='text/javascript' src='lib/js/zepto.js'></script>"
-               ++ "<script type='text/javascript' src='" ++ name ++ ".js'></script>"
-               ++ "<script type='text/javascript' src='" ++ name ++ ".spec.js'></script>"
-               ++ "</head>"
-               ++ "<body>"
-               ++ "<script type='text/javascript'>"
-               ++ "jasmine.getEnv().addReporter(new jasmine.TrivialReporter());"
-               ++ "jasmine.getEnv().execute();"
-               ++ "</script>"
-               ++ "</body>"
-               ++ "</html>"
-
+footer ::String 
+footer = "<script type='text/javascript'>$('code').addClass('prettyprint lang-hs');prettyPrint()</script>"
