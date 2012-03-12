@@ -17,6 +17,8 @@ import Text.Pandoc
 import qualified Data.Map as M
 import Data.Char (ord, isAscii)
 
+import Language.Javascript.JMacro
+
 
 
 whitespace :: Parser String
@@ -43,7 +45,7 @@ data Pattern = VarPattern String
              | LiteralPattern Literal
              | JSONPattern JSONLiteral
              | ListPattern
-             | ViewPattern Pattern
+             | AliasPattern
              deriving (Show)
 
 pattern :: Parser Pattern
@@ -54,7 +56,11 @@ pattern = undefined
 --------------------------------------------------------------------------------
 -- ...
 
-data Expression = Expression deriving (Show)
+data Expression = ApplyExpression Expression [Expression]
+                | LiteralExpression Literal
+                | SymbolExpression String
+                | JSExpression JExpr
+                deriving (Show)
 
 expression :: Parser Expression
 expression = undefined
@@ -89,7 +95,7 @@ json_literal = M.fromList <$> (string "{" *> spaces *> pairs <* spaces <* string
 
           key_value = do key <- many (alphaNum <|> oneOf "_")
                          spaces
-                         string ":"
+                         string "="
                          spaces
                          value <- expression
                          return (key, value)
@@ -107,8 +113,9 @@ list_literal = undefined
 --------------------------------------------------------------------------------
 -- A Sonnet program is represented by a set of statements
 
-data Statement = TypeDeclarationStatement TypeDefinition TypeCase
+data Statement = TypeStatement TypeDefinition TypeCase
                | DefinitionStatement String [Axiom]
+               | AssertStatement Expression
                deriving (Show)
 
 sonnetParser :: Parser [Statement]
@@ -133,6 +140,7 @@ data Axiom = TypeAxiom TypeSignature
            | EqualityAxiom [Pattern] Expression
            deriving (Show)
 
+-- | TODO Should handle the case of implicit type
 definition_statement :: Parser [Statement]
 definition_statement = do name <- type_var
                           spaces
@@ -169,7 +177,7 @@ type_statement  = do whitespace
                      spaces
                      sig <- type_case
                      whitespace
-                     return $ [TypeDeclarationStatement def sig]
+                     return $ [TypeStatement def sig]
 
 type_definition :: Parser TypeDefinition
 type_definition = do name <- (:) <$> upper <*> many alphaNum
