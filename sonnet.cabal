@@ -20,6 +20,7 @@ Executable sonnet
     bytestring >= 0.9.1 && <0.10,
     template-haskell == 2.5.0.0,
     parsec,
+    indents,
     containers,
     pandoc,
     jmacro

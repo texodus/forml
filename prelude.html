@@ -25,6 +25,7 @@ type H = {x:Int,y:Str}
 type I = {x:Int}-&gt;{x:Int,y:Int}-&gt;(Int-&gt;{x:Int-&gt;Int,y:Int})-&gt;Int
 
 type X m a = X a b c -&gt; m d e
+type Y m a = Y a (m b) -&gt; Y a {x: m a}
 
 x: Int -&gt; Int</code></pre>
 <p>this is another comment</p>

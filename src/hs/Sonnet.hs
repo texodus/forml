@@ -7,22 +7,40 @@
 module Main where
 
 import Control.Applicative
+import Control.Monad.State
 
 import System.IO
 import System.Environment
 
-import Text.ParserCombinators.Parsec as P hiding ((<|>), many, State, spaces)
+import Text.Parsec as P hiding ((<|>), many, State, spaces, parse)
+import Text.Parsec.Indent
 import Text.Pandoc
 
 import qualified Data.Map as M
+import qualified Data.List as L
+
 import Data.Char (ord, isAscii)
 
-import Language.Javascript.JMacro
+-- import Language.Javascript.JMacro
 
 
+
+-- Structure & comments
+--------------------------------------------------------------------------------
+-- ...
+
+type Parser a = ParsecT String () (State SourcePos) a
+
+parse :: Parser a -> SourceName -> String -> Either ParseError a
+parse parser sname input = runIndent sname $ runParserT parser () sname input
 
 whitespace :: Parser String
 whitespace = many $ oneOf "\t "
+
+
+
+-- A special implementation of the spaces parser from Parsec, which also treats
+-- comments as whitespace
 
 spaces :: Parser ()
 spaces = try inter_comments <|> skipMany (oneOf "\t ")
@@ -41,71 +59,70 @@ spaces = try inter_comments <|> skipMany (oneOf "\t ")
 -- ...
 
 
-data Pattern = VarPattern String
-             | LiteralPattern Literal
-             | JSONPattern JSONLiteral
-             | ListPattern
-             | AliasPattern
-             deriving (Show)
+-- data Pattern = VarPattern String
+--              | LiteralPattern Literal
+--              | AliasPattern
+--              deriving (Show)
 
-pattern :: Parser Pattern
-pattern = undefined
+-- pattern :: Parser Pattern
+-- pattern = undefined
 
 
--- Expressions
---------------------------------------------------------------------------------
--- ...
+-- -- Expressions
+-- --------------------------------------------------------------------------------
+-- -- ...
 
-data Expression = ApplyExpression Expression [Expression]
-                | LiteralExpression Literal
-                | SymbolExpression String
-                | JSExpression JExpr
-                deriving (Show)
+-- data Expression = ApplyExpression Expression [Expression]
+--                 | LiteralExpression Literal
+--                 | SymbolExpression String
+--                 | JSExpression JExpr
+--                 deriving (Show)
 
-expression :: Parser Expression
-expression = undefined
+-- expression :: Parser Expression
+-- expression = undefined
 
--- Literals
---------------------------------------------------------------------------------
--- A literal can be any
+-- -- Literals
+-- --------------------------------------------------------------------------------
+-- -- Literals in Sonnet are limited to strings and numbers - 
 
-data Literal = Value ValueLiteral | JSON JSONLiteral | List ListLiteral deriving (Show)
+-- -- 
+-- data Literal = StringLiteral String | NumLiteral Int | JSON (M.Map String Expression) | List [Expression] 
 
--- ValueLiterals 
+-- instance Show Literal where
+--    show (JSON x)  = show x
+--    show (List x)  = show x
 
-data ValueLiteral = StringLiteral String | NumLiteral Int deriving (Show)
+-- -- ValueLiterals 
 
-literal :: Parser Literal
-literal = try num <|> str
-    where num = Value . NumLiteral . read <$> many digit
-          str = Value . StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
 
--- JSON Literals
+-- literal :: Parser Literal
+-- literal = try num <|> str
+--     where num = NumLiteral . read <$> many digit
+--           str = StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
 
-type JSONLiteral = M.Map String Expression
+-- -- JSON Literals
 
-json_literal :: Parser JSONLiteral
-json_literal = M.fromList <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
 
-    where pairs = key_value `sepEndBy` try (comma <|> not_comma)
+-- json_literal :: Parser Literal
+-- json_literal = JSON . M.fromList <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
 
-          not_comma = whitespace >> newline >> spaces >> notFollowedBy (string "}")
+--     where pairs = key_value `sepEndBy` try (comma <|> not_comma)
 
-          comma = spaces >> string "," >> spaces
+--           not_comma = whitespace >> newline >> spaces >> notFollowedBy (string "}")
 
-          key_value = do key <- many (alphaNum <|> oneOf "_")
-                         spaces
-                         string "="
-                         spaces
-                         value <- expression
-                         return (key, value)
+--           comma = spaces >> string "," >> spaces
 
--- ListLiterals
+--           key_value = do key <- many (alphaNum <|> oneOf "_")
+--                          spaces
+--                          string "="
+--                          spaces
+--                          value <- expression
+--                          return (key, value)
 
-type ListLiteral = [Expression]
+-- -- ListLiterals
 
-list_literal :: Parser ListLiteral
-list_literal = undefined
+-- list_literal :: Parser Literal
+-- list_literal = undefined
 
 
 
@@ -113,14 +130,22 @@ list_literal = undefined
 --------------------------------------------------------------------------------
 -- A Sonnet program is represented by a set of statements
 
-data Statement = TypeStatement TypeDefinition TypeCase
+data Statement = TypeStatement TypeDefinition TypeSignature
                | DefinitionStatement String [Axiom]
-               | AssertStatement Expression
-               deriving (Show)
+              -- | ExpressionStatement Expression
 
-sonnetParser :: Parser [Statement]
+instance Show Statement where
+    show (TypeStatement t c) = "type " ++ show t ++ " = " ++ show c ++ "\n"
+    show (DefinitionStatement s as) = let f = concat . fmap show in s ++ f as ++ "\n"
+
+newtype Program = Program [Statement]
+
+instance Show Program where
+     show (Program ss) = concat . fmap show $ ss
+
+sonnetParser :: Parser Program
 sonnetParser  = do x <- many (statement <|> comment) <* eof
-                   return $ concat x
+                   return $ Program $ concat x
 
     where statement = count 4 (oneOf "\t ") >> whitespace >> statement' <* newline
           statement' = try type_statement <|> definition_statement
@@ -137,8 +162,11 @@ comment = do anyChar `manyTill` newline
 -- symbol
 
 data Axiom = TypeAxiom TypeSignature
-           | EqualityAxiom [Pattern] Expression
-           deriving (Show)
+         --  | EqualityAxiom [Pattern] Expression
+
+instance Show Axiom where
+    show (TypeAxiom x) = ":" ++ show x
+    show _ = undefined
 
 -- | TODO Should handle the case of implicit type
 definition_statement :: Parser [Statement]
@@ -148,24 +176,26 @@ definition_statement = do name <- type_var
                           spaces
                           sig <- type_signature
                           spaces
-                          axioms <- try $ many equality_axiom
+                          axioms <- return [] -- try $ many equality_axiom
                           whitespace
                           return $ [DefinitionStatement name (TypeAxiom sig : axioms)]
 
-equality_axiom :: Parser Axiom
-equality_axiom = do string "|" 
-                    whitespace
-                    patterns <- pattern `sepBy` whitespace
-                    string "="
-                    spaces
-                    ex <- expression
-                    return $ EqualityAxiom patterns ex
+-- equality_axiom :: Parser Axiom
+-- equality_axiom = do string "|" 
+--                     whitespace
+--                     patterns <- pattern `sepBy` whitespace
+--                     string "="
+--                     spaces
+--                     ex <- expression
+--                     return $ EqualityAxiom patterns ex
 
 -- A Statement may also be a type definition, which defines a set of values to
 -- a type symbol
 
 data TypeDefinition = TypeDefinition String [String]
-                    deriving (Show)
+
+instance Show TypeDefinition where
+    show (TypeDefinition name vars) = concat . L.intersperse " " $ name : vars
 
 type_statement :: Parser [Statement]
 type_statement  = do whitespace
@@ -175,7 +205,7 @@ type_statement  = do whitespace
                      whitespace 
                      string "="
                      spaces
-                     sig <- type_case
+                     sig <- type_signature
                      whitespace
                      return $ [TypeStatement def sig]
 
@@ -186,11 +216,6 @@ type_definition = do name <- (:) <$> upper <*> many alphaNum
                                       var `sepEndBy` whitespace
                              <|> return []
                      return $ TypeDefinition name vars 
-
-data TypeCase = UnionCase [TypeSignature] | SingleCase TypeSignature deriving (Show)
-
-type_case :: Parser TypeCase
-type_case =  (SingleCase <$> type_signature)
               
 
 
@@ -199,13 +224,27 @@ type_case =  (SingleCase <$> type_signature)
 --------------------------------------------------------------------------------
 -- This is what a type signature looks like
 
-data TypeSignature = SymbolType String
-                   | VariableType String
-                   | PolymorphicType TypeSignature TypeSignature
+data TypeSignature = PolymorphicType SimpleTypeSignature [TypeSignature]
                    | JSONType (M.Map String TypeSignature)
                    | NamedType String TypeSignature
                    | FunctionType TypeSignature TypeSignature
-                   deriving (Show)
+                   | SimpleType SimpleTypeSignature
+
+data SimpleTypeSignature = SymbolType String | VariableType String
+
+instance Show TypeSignature where
+    show (SimpleType y) = show y
+    show (PolymorphicType x y) = "(" ++ show x ++ " " ++ (concat $ L.intersperse " " $ fmap show y) ++ ")"
+    show (NamedType name t) = name ++ " " ++ show t
+    show (FunctionType g@(FunctionType _ _) h) = "(" ++ show g ++ ")" ++ " -> " ++ show h
+    show (FunctionType g h) = show g ++ " -> " ++ show h
+    show (JSONType m) = "{ " ++ (g $ M.mapWithKey f m) ++ " }"
+        where f k v = k ++ ": " ++ show v
+              g = concat . L.intersperse ", " . fmap (\ (_, x) -> x) . M.toAscList
+
+instance Show SimpleTypeSignature where
+    show (SymbolType x) = x
+    show (VariableType x) = x
 
 type_signature :: Parser TypeSignature
 type_signature = try function_type <|> inner_type
@@ -222,14 +261,15 @@ type_signature = try function_type <|> inner_type
           poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
                          oneOf "\t "
                          whitespace
-                         vars <- inner_type `sepEndBy1` whitespace
-                         return $ foldl PolymorphicType name vars
+                         let type_vars = nested_function <|> record_type <|> var_type <|> symbol_type
+                         vars <- type_vars `sepEndBy1` whitespace
+                         return $ PolymorphicType name vars
 
           nested_function = string "(" *> spaces *> type_signature <* spaces <* string ")"
 
-          symbol_type = SymbolType <$> type_name
+          symbol_type = SimpleType . SymbolType <$> type_name
 
-          var_type = VariableType <$> type_var
+          var_type = SimpleType . VariableType <$> type_var
 
           record_type = (JSONType . M.fromList) <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
 
@@ -256,13 +296,11 @@ type_var = (:) <$> lower <*> many alphaNum
 
 toEntities :: String -> String
 toEntities [] = ""
-toEntities (c:cs)
-  | isAscii c = c : toEntities cs
-  | otherwise = "&#" ++ show (ord c) ++ ";" ++ toEntities cs
+toEntities (c:cs) | isAscii c = c : toEntities cs
+                  | otherwise = "&#" ++ show (ord c) ++ ";" ++ toEntities cs
 
 toHTML :: String -> String
 toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
-
 
 main :: IO ()
 main  = do args <- getArgs
@@ -276,15 +314,13 @@ main  = do args <- getArgs
              Right x -> do putStrLn $ show x
                            putStrLn $ "success"
 
+    where header = "<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'>"
+                        ++ "</link>"             
+                        ++ "<link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />"
+                        ++ "<link href='lib/js/coda.css' type='text/css' rel='stylesheet' />"
+                        ++ "<script type='text/javascript' src='lib/js/prettify.js'></script>"
+                        ++ "<script type='text/javascript' src='lib/js/lang-hs.js'></script>"
+                        ++ "<script type='text/javascript' src='lib/js/jquery.js'></script>"
 
-header :: String
-header = "<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>"
-           ++ "<link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />"
-           ++ "<link href='lib/js/coda.css' type='text/css' rel='stylesheet' />"
-           ++ "<script type='text/javascript' src='lib/js/prettify.js'></script>"
-           ++ "<script type='text/javascript' src='lib/js/lang-hs.js'></script>"
-           ++ "<script type='text/javascript' src='lib/js/jquery.js'></script>"
-           ++ "<style>code{font-family:Menlo;}ul{padding:0px 48px}</style>"
-
-footer ::String 
-footer = "<script type='text/javascript'>$('code').addClass('prettyprint lang-hs');prettyPrint()</script>"
+          footer = "<script type='text/javascript'>$('code').addClass('prettyprint lang-hs');"
+                        ++ "prettyPrint()</script>"

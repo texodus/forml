@@ -28,6 +28,7 @@ palette: →
     type I = {x:Int}->{x:Int,y:Int}->(Int->{x:Int->Int,y:Int})->Int
 
     type X m a = X a b c -> m d e
+    type Y m a = Y a (m b) -> Y a {x: m a}
 
     x: Int -> Int
 
