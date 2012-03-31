@@ -85,37 +85,47 @@ data Statement  = TypeStatement Identifier Type
 type ScriptLine = (Int, Statement)
 
 newtype Script = Script [ScriptLine]
-               deriving Show
+                 deriving Show
 
 ---- Structure
 
+cleanComments :: Parser String
 cleanComments  = concat <$> many cc
   where cc      = try (comment >> return "") <|> ((:[]) <$> anyChar)
         comment = string "--" >> (anyChar `manyTill` (newline <|> (eof >> return ' ')))
 
+sonnetP :: Parser Script
 sonnetP  = Script <$> (statementP `sepEndBy` newline) <* spaces <* eof
 
+statementP :: Parser (Int, Statement)
 statementP = try (line structStatementP)
              <|> try (line typeStatementP)
              <|> try (line $  functionStatementP FunctionStatement '=')
              <|> try (line $ functionStatementP TestStatement '?')
              <|> line emptyExpressionP
 
-  where line statement = (,) <$> (length <$> many (oneOf " \v\f\t")) <*> statement <* (many $ oneOf " \v\f\t")
+    where line statement = (,) <$> (length <$> many (oneOf " \v\f\t")) <*> statement <* (many $ oneOf " \v\f\t")
 
+emptyExpressionP :: Parser Statement
 emptyExpressionP =  (many $ oneOf " \v\f\t") >> return EmptyStatement
 
 --- Statements
 
+structStatementP :: Parser Statement
 structStatementP  = StructStatement <$> (string "struct " *> spaces *> (snd <$> statementP))
 
+functionStatementP :: (Identifier -> [Pattern] -> Expression -> Statement) -> Char -> Parser Statement
 functionStatementP f c = f <$> scopedId <*> option [] (try argumentsP) <* defOperator <*> expressionP
 
   where s            = many (oneOf " \t\v\f")
         scopedId     = option ImplicitIdentifier identifierP
         argumentsP   = s *> char '(' *> s *> argP `sepEndBy` (many (oneOf " \t\v\f,")) <* s <* char ')'
         defOperator  = s *> char c <* s
-        argP         = (LiteralPattern <$> literalP) <|> ignorePatternP <|> listPatternP <|> try bindPatternP <|> varPattern
+        argP         = (LiteralPattern <$> literalP) 
+                         <|> ignorePatternP 
+                         <|> listPatternP 
+                         <|> try bindPatternP 
+                         <|> varPattern
 
         ignorePatternP = many1 (char '_') >> return IgnorePattern
         bindPatternP   = BindPattern <$> symbolP <* char '(' <*> (argP `sepEndBy` (many (oneOf " \t\v\f,"))) <* char ')'
@@ -126,6 +136,7 @@ functionStatementP f c = f <$> scopedId <*> option [] (try argumentsP) <* defOpe
         makePattern (x:xs) = BindPattern "cons" [x, (makePattern xs)]
 
 
+typeStatementP :: Parser Statement
 typeStatementP  = TypeStatement <$> identifierP <* typeOperatorP <*> typeP
 
   where typeOperatorP  = spaces *> string ":" *> spaces >> return ()
@@ -140,6 +151,7 @@ typeStatementP  = TypeStatement <$> identifierP <* typeOperatorP <*> typeP
 
 -- Expressions
 
+expressionP :: Parser Expression
 expressionP = do exp <- nestedExpressionP
                        <|> jsExpressionP
                        <|> listExpressionP
@@ -155,36 +167,47 @@ expressionP = do exp <- nestedExpressionP
                            exp2 <- expressionP
                            return (InfixExpression exp op exp2)
 
+nestedExpressionP :: Parser Expression
 nestedExpressionP = char '(' *> spaces *> expressionP <* spaces <* char ')'
 
+jsExpressionP :: Parser Expression
 jsExpressionP = JSExpression <$> (char '`' *> ((convert . either (error "Failed parsing javascript") id . parseJM) <$> (anyChar `manyTill` (char '`'))))
-  where convert expr = [$jmacroE| (function(x) { var !cxt = x; var !ans; `(expr)`; return ans; }) |]
+  where convert expr = [jmacroE| (function(x) { var !cxt = x; var !ans; `(expr)`; return ans; }) |]
 
+listExpressionP :: Parser Expression
 listExpressionP = makeList <$> (char '[' *> spaces *> (expressionP `sepEndBy` (many (oneOf " \t\v\f\r\n,"))) <* char ']')
   where makeList [] = PrefixExpression "nil" []
         makeList (x:xs) = PrefixExpression "cons" [x, (makeList xs)]
 
+ifExpressionP :: Parser Expression
 ifExpressionP = IfExpression <$> (string "if" *> spaces *> expressionP)
                 <* spaces <* string "then" <* spaces <*> expressionP
                 <* spaces <* string "else" <* spaces <*> expressionP
 
+letExpressionP :: Parser Expression
 letExpressionP = error "Let expression not yet implemented" 
                  -- LetExpression <$> (string "let" *> spaces *> (try (functionStatementP FunctionStatement '=') `sepEndBy` spaces))
                  -- <*  spaces <* string "in" <* spaces <*> expressionP
 
+symbolExpressionP :: Parser Expression
 symbolExpressionP = PrefixExpression <$> symbolP <*> return []
 
+prefixExpressionP :: Parser Expression
 prefixExpressionP = PrefixExpression <$> symbolP <* char '(' <* spaces <*> expressionP `sepBy` (many (oneOf " \t\v\f\r\n,")) <* char ')'
 
+literalExpressionP :: Parser Expression
 literalExpressionP = LiteralExpression <$> literalP
 
+literalP :: Parser Literal
 literalP = stringP <|> booleanP <|> numP
   where stringP  = StringLiteral <$> (char '"' *> manyTill anyChar (char '"'))
         booleanP = BooleanLiteral <$> ((string "True" >> return True) <|> (string "False" >> return False))
         numP     = (NumLiteral . read) <$> ((++) <$> many1 digit <*> (radix <|> return ""))
         radix    = (++) <$> string "." <*> many1 digit
 
+identifierP :: Parser Identifier
 identifierP = Identifier <$> symbolP
 
+symbolP :: Parser String
 symbolP = (:) <$> letter <*> many (alphaNum <|> oneOf "_'")
 

@@ -18,18 +18,14 @@ Executable sonnet
     haskell98,
     monads-fd >= 0.1 && <0.2,
     bytestring >= 0.9.1 && <0.10,
-    attoparsec,
-    transformers,
+    template-haskell == 2.5.0.0,
     parsec,
-    text,
-    time,	
-    json,
-    unix,   
+    indents,
     containers,
+    pandoc,
     jmacro,
-    MonadCatchIO-transformers,
-    filepath >= 1.1 && <1.2
-
+    MissingH
+ 
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
                  -fno-warn-unused-do-bind -cpp -threaded

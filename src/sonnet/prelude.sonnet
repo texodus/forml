@@ -1,146 +1,157 @@
 
---------------------------------------------------------------------------------
---
--- Bool
-
-struct true:  Bool
-struct false: Bool
-
-
-
---------------------------------------------------------------------------------
---
--- List
-
-struct nil:  List
-struct cons: Num -> List -> List
-
-
-
--- Returns the first element of a list
-head: List -> Num
-head(cons(x _)) = x
--------------------   
-head([3]) ? 3
-head([5 1 2 3 4 1]) ? 5
-
-
-
-tail: 
--- Tail is the dual of head;  returns the [1 .. n] elements of the list  
-
-      List        -> List
-tail( nil()      ) = nil
-tail( cons(_ xs) ) = xs 
------------------------
-tail( [3] ) ? []
-tail( []  ) ? []
-tail( [1 4 3 2] ) ? [4 3 2]
-tail( [3 1] ) ? [1]
-
-
-
-length:
--- Returns the cardinality of a list 
+# Sonnet # 
+A Programming Language, designed to be read.  
   
-     List        -> Num
-   ( nil()      ) = 0
-   ( cons(_ xs) ) = 1 + length(xs)
-   -------------------------------
-   length([]) ? 0
-   length([1]) ? 1
-   length([1 3 2 4]) ? 4
+* * *
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec at eros dolor, ac mattis neque. Donec eleifend porttitor egestas. Nam rhoncus tincidunt lectus a egestas. Vivamus volutpat iaculis tortor in accumsan. Mauris vitae lorem et tortor condimentum suscipit. Aliquam vitae volutpat velit. Aenean pharetra magna ut leo lobortis volutpat vel aliquet lorem. Aliquam feugiat tristique nulla, sit amet dapibus magna facilisis sit amet. Nunc convallis pretium arcu non tempor. Suspendisse ultrices nisi sed dui commodo iaculis eu congue enim. Sed ornare tincidunt accumsan.
+
+Sonnet is:
+
+*  functional, pure, statically type inferred, eagerly evaluated
+*  flexible syntax that's simple and easy on the eyes
+*  targets V8 Javascript (Chrome & Node.js), Closure Advanced
+*  first class syntax for Javascript, JSON & HTML
+*  first class syntax for assertions & invariant style testing ala QuickCheck, compiler by default generate Jasmine suite
+*  standard lib for events, lazy sequences & comprehensions
+*  directly inspired by Haskell, F#, OCAML, Coffeescript, Clojure, Scala
+
+Data Types
+----------
+In Sonnet, data types are very simple to express
+
+    struct true:  Bool
+    struct false: Bool
+
+    struct nil:  List
+    struct cons: Num -> List -> List
+
+Constructing and destructing them is easy, too!
 
 
--- Returns the nth element of the list in O(n)
-get: Num -> List     -> Num
-   ( 0    cons(x _) ) = x
-   ( n    cons(_ x) ) = get(n - 1, x)
-
-get( 1    [2 3] )     ? 3
-get( 0    [1] )       ? 1
-
+    -- Returns the first element of a list
+    head: List -> Num
+    head(cons(x _)) = x
+    -------------------   
+    head([3]) ? 3
+    head([5 1 2 3 4 1]) ? 5
 
 
-reverse: 
--- Generates a list with the same elements in reverse order.  Requires 
--- traversing the entire list, O(n)
+
+    tail: 
+    -- Tail is the dual of head;  returns the [1 .. n] elements of the list  
+
+          List        -> List
+    tail( nil()      ) = nil
+    tail( cons(_ xs) ) = xs 
+    -----------------------
+    tail( [3] ) ? []
+    tail( []  ) ? []
+    tail( [1 4 3 2] ) ? [4 3 2]
+    tail( [3 1] ) ? [1]
+
+
+
+    length:
+    -- Returns the cardinality of a list 
+      
+         List        -> Num
+       ( nil()      ) = 0
+       ( cons(_ xs) ) = 1 + length(xs)
+       -------------------------------
+       length([]) ? 0
+       length([1]) ? 1
+       length([1 3 2 4]) ? 4
+
+
+    -- Returns the nth element of the list in O(n)
+    get: Num -> List     -> Num
+       ( 0    cons(x _) ) = x
+       ( n    cons(_ x) ) = get(n - 1, x)
+
+    get( 1    [2 3] )     ? 3
+    get( 0    [1] )       ? 1
+
+
+
+    reverse: 
+    -- Generates a list with the same elements in reverse order.  Requires 
+    -- traversing the entire list, O(n)
+         
+         List        -> List
+       ( nil()      ) = nil
+       ( cons(x xs) ) = concat(reverse(xs) cons(x nil))
+       ------------------------------------------------
+       ( [] ) ? []
+       ( [1] ) ? [1]
+       ( [1, 2] ) ? [2, 1]
+       ( [3, 2, 1] ) ? [1, 2, 3]
+
+
+
+    concat:
+    -- Concatenates two lists end to end, returning the resultant list.  It 
+    -- performs in O(n) relative to the length of the first list
+         
+         List     -> List   -> List
+       ( nil()       x     ) = x
+       ( cons(x xs)  y     ) = cons(x, concat(xs y))
+       --------------------------------------------
+       ( [1] [2] ) ? [1, 2]
+       ( [1 3] [4 5] ) ? [1 3 4 5]
+       ( [] [] ) ? []
+       ( [] [1 2] ) ? [1 2]
+
+
+
+    map: 
+    -- Applies function f to every element in the list.  Map represents a
+    -- functor mapping between the types of f
+
+         (Num -> Num) -> List         -> List
+       ( f               nil()       ) = nil
+       ( f               cons(x, xs) ) = cons(f(x) map(f, xs))
+       -------------------------------------------------
+       ( fib             []          ) ? []
+       ( fib             [0, 1]      ) ? [1, 1]
+       ( fib             [6]         ) ? [13]
+       ( fib             [0, 1, 2, 3, 4] ) ? [1, 1, 2, 3, 5]
+
+
+    any:
+    -- Maps f to list, and returns true if any element of the resultant list is  
+    -- true.  Short circuits at first true evaluation.
+
+         (Num -> Bool) -> List        -> Bool
+       ( _                nil        ) = false
+       ( f                cons(x xs) ) = f(x) | any(f, xs)
+       ---------------------------------------------------
+
+    id(x) = x
+
      
-     List        -> List
-   ( nil()      ) = nil
-   ( cons(x xs) ) = concat(reverse(xs) cons(x nil))
-   ------------------------------------------------
-   ( [] ) ? []
-   ( [1] ) ? [1]
-   ( [1, 2] ) ? [2, 1]
-   ( [3, 2, 1] ) ? [1, 2, 3]
+Math
+----
+Etiam tristique suscipit nibh, eget vehicula odio feugiat sed. Sed elementum eleifend lobortis. Phasellus eget tincidunt arcu. Integer imperdiet accumsan purus, sed vehicula nisi venenatis ut. Pellentesque tristique magna eu purus pretium laoreet. Vivamus molestie eros dapibus magna gravida mollis suscipit turpis malesuada. Pellentesque posuere dapibus ligula, a vestibulum risus pulvinar vulputate. Sed pulvinar dui eros. Nullam neque lectus, ultricies quis dictum sit amet, faucibus nec nisi. Nulla commodo arcu vitae lacus scelerisque varius. Nunc eget est vel erat posuere ultrices. Sed aliquet suscipit urna ut tempor. Maecenas erat est, venenatis cursus lacinia eget, vehicula et nunc. Sed egestas placerat arcu vitae pharetra. Etiam dictum erat ut diam pretium mattis. In fermentum, odio quis luctus tempus, lorem urna pharetra mauris, sed placerat mi massa et dui.
+
+    fib: Num -> Num
+    fib( 0   )= 1
+    fib( 1   )= 1
+    fib( n   )= fib(n - 1) + fib(n - 2)
+    -----------------------------------
+    fib(0) ? 1
+    fib(6) ? 13     
+    fib(7) ? 21
 
 
+FFI
+---
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec at eros dolor, ac mattis neque. Donec eleifend porttitor egestas. Nam rhoncus tincidunt lectus a egestas. Vivamus volutpat iaculis tortor in accumsan. Mauris vitae lorem et tortor condimentum suscipit. Aliquam vitae volutpat velit. Aenean pharetra magna ut leo lobortis volutpat vel aliquet lorem. Aliquam feugiat tristique nulla, sit amet dapibus magna facilisis sit amet. Nunc convallis pretium arcu non tempor. Suspendisse ultrices nisi sed dui commodo iaculis eu congue enim. Sed ornare tincidunt accumsan.
 
-concat:
--- Concatenates two lists end to end, returning the resultant list.  It 
--- performs in O(n) relative to the length of the first list
-     
-     List     -> List   -> List
-   ( nil()       x     ) = x
-   ( cons(x xs)  y     ) = cons(x, concat(xs y))
-   --------------------------------------------
-   ( [1] [2] ) ? [1, 2]
-   ( [1 3] [4 5] ) ? [1 3 4 5]
-   ( [] [] ) ? []
-   ( [] [1 2] ) ? [1 2]
+    log: Int -> IO
+    log( x ) = `console.log(cxt.x);`
 
+    jquery: String -> String -> IO
+    jquery( id x ) = `$(cxt.id).html(cxt.x);`
 
-
-map: 
--- Applies function f to every element in the list.  Map represents a
--- functor mapping between the types of f
-
-     (Num -> Num) -> List         -> List
-   ( f               nil()       ) = nil
-   ( f               cons(x, xs) ) = cons(f(x) map(f, xs))
-   -------------------------------------------------
-   ( fib             []          ) ? []
-   ( fib             [0, 1]      ) ? [1, 1]
-   ( fib             [6]         ) ? [13]
-   ( fib             [0, 1, 2, 3, 4] ) ? [1, 1, 2, 3, 5]
-
-
-any:
--- Maps f to list, and returns true if any element of the resultant list is  
--- true.  Short circuits at first true evaluation.
-
-     (Num -> Bool) -> List        -> Bool
-   ( _                nil()      ) = false
-   ( f                cons(x xs) ) = f(x) | any(f, xs)
-   ---------------------------------------------------
-
-id(x) = x
-
- 
---------------------------------------------------------------------------------
---
--- Math
-
-fib: Num -> Num
-fib( 0   )= 1
-fib( 1   )= 1
-fib( n   )= fib(n - 1) + fib(n - 2)
------------------------------------
-fib(0) ? 1
-fib(6) ? 13     
-fib(7) ? 21
-
-
-
-
---------------------------------------------------------------------------------
---
--- FFI
-
-log: Int -> IO
-log( x ) = `console.log(cxt.x);`
-
-jquery: String -> String -> IO
-jquery( id x ) = `$(cxt.id).html(cxt.x);`
-
+Sed enim enim, tincidunt eget pharetra ac, dictum in nisl. Vestibulum ut neque risus. In vel leo diam. Vivamus tempor hendrerit tortor non fringilla. Vestibulum id eleifend purus. Praesent rhoncus elementum turpis, eu consectetur risus convallis at. Nulla ut magna risus. Phasellus venenatis eros non lorem ultrices vel placerat eros molestie. Nullam egestas hendrerit neque non cursus. Morbi quis lacus sit amet nulla rutrum luctus. Fusce in arcu dolor.
