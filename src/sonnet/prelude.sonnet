@@ -1,8 +1,11 @@
 
-Abstract
---------------------------------------------------------------------------------
-An example of the sonnet programming language, written in Knuth's literate 
-style.  Sonnet is:
+Sonnet
+======
+A programming language, designed to be read
+
+* * *
+
+Sonnet is:
 
 *  functional, pure, statically type inferred, eagerly evaluated
 *  flexible syntax that's simple and easy on the eyes
@@ -124,7 +127,7 @@ or via variable "templating" (clojure style):
 
     fmap (λ_ + 1) [1 2 3] ? [2 3 4] 
 
-Assertions and Universal Quantifier
+Assertions
 --------------------------------------------------------------------------------
 
 Patterns

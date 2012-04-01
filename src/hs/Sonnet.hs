@@ -18,8 +18,10 @@ import Text.Pandoc
 
 import qualified Data.Map as M
 import qualified Data.List as L
+import qualified Data.Set as S
 
 import Data.Char (ord, isAscii)
+import Data.String.Utils
 
 -- import Language.Javascript.JMacro
 
@@ -130,7 +132,7 @@ spaces = try inter_comments <|> skipMany (oneOf "\t ")
 --------------------------------------------------------------------------------
 -- A Sonnet program is represented by a set of statements
 
-data Statement = TypeStatement TypeDefinition TypeSignature
+data Statement = TypeStatement TypeDefinition UnionTypeSignature
                | DefinitionStatement String [Axiom]
               -- | ExpressionStatement Expression
 
@@ -161,7 +163,7 @@ comment = do anyChar `manyTill` newline
 -- A Statement may be a definition, which is a list of axioms associated with a
 -- symbol
 
-data Axiom = TypeAxiom TypeSignature
+data Axiom = TypeAxiom UnionTypeSignature
          --  | EqualityAxiom [Pattern] Expression
 
 instance Show Axiom where
@@ -224,20 +226,25 @@ type_definition = do name <- (:) <$> upper <*> many alphaNum
 --------------------------------------------------------------------------------
 -- This is what a type signature looks like
 
-data TypeSignature = PolymorphicType SimpleTypeSignature [TypeSignature]
-                   | JSONType (M.Map String TypeSignature)
-                   | NamedType String TypeSignature
-                   | FunctionType TypeSignature TypeSignature
-                   | SimpleType SimpleTypeSignature
+newtype UnionTypeSignature = UnionTypeSignature (S.Set TypeSignature) deriving (Ord, Eq)
 
-data SimpleTypeSignature = SymbolType String | VariableType String
+data TypeSignature = PolymorphicType SimpleTypeSignature [UnionTypeSignature]
+                   | JSONType (M.Map String UnionTypeSignature)
+                   | NamedType String UnionTypeSignature
+                   | FunctionType UnionTypeSignature UnionTypeSignature
+                   | SimpleType SimpleTypeSignature
+                   deriving (Eq, Ord)
+
+data SimpleTypeSignature = SymbolType String | VariableType String deriving (Ord, Eq)
 
 instance Show TypeSignature where
     show (SimpleType y) = show y
     show (PolymorphicType x y) = "(" ++ show x ++ " " ++ (concat $ L.intersperse " " $ fmap show y) ++ ")"
     show (NamedType name t) = name ++ " " ++ show t
-    show (FunctionType g@(FunctionType _ _) h) = "(" ++ show g ++ ")" ++ " -> " ++ show h
-    show (FunctionType g h) = show g ++ " -> " ++ show h
+    show (FunctionType g@(UnionTypeSignature set) h) = 
+        case S.toList set of 
+          ((FunctionType _ _) : []) -> "(" ++ show g ++ ")" ++ " -> " ++ show h 
+          _ -> show g ++ " -> " ++ show h
     show (JSONType m) = "{ " ++ (g $ M.mapWithKey f m) ++ " }"
         where f k v = k ++ ": " ++ show v
               g = concat . L.intersperse ", " . fmap (\ (_, x) -> x) . M.toAscList
@@ -246,14 +253,18 @@ instance Show SimpleTypeSignature where
     show (SymbolType x) = x
     show (VariableType x) = x
 
-type_signature :: Parser TypeSignature
-type_signature = try function_type <|> inner_type
+instance Show UnionTypeSignature where
+    show (UnionTypeSignature xs) = concat . L.intersperse " | " . map show . S.toList $ xs
 
-    where function_type = do x <- inner_type
+type_signature :: Parser UnionTypeSignature
+type_signature = UnionTypeSignature <$> single_type <* whitespace
+
+    where single_type = S.fromList <$> (try function_type <|> inner_type) `sepBy1` try (spaces *> char '|' <* whitespace)
+          function_type = do x <- try nested_union_type <|> (f <$> inner_type)
                              spaces
                              (string "->" <|> string "→")
                              spaces
-                             y <- type_signature
+                             y <- (f <$> try function_type) <|> try nested_union_type <|> (f <$> inner_type)
                              return $ FunctionType x y
 
           inner_type = nested_function <|> record_type <|> try poly_type <|> var_type <|> symbol_type
@@ -261,17 +272,19 @@ type_signature = try function_type <|> inner_type
           poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
                          oneOf "\t "
                          whitespace
-                         let type_vars = nested_function <|> record_type <|> var_type <|> symbol_type
+                         let type_vars = nested_union_type <|> (f <$> (record_type <|> var_type <|> symbol_type))
                          vars <- type_vars `sepEndBy1` whitespace
                          return $ PolymorphicType name vars
 
-          nested_function = string "(" *> spaces *> type_signature <* spaces <* string ")"
+          nested_function = string "(" *> spaces *> (try function_type <|> inner_type) <* spaces <* string ")"
 
-          symbol_type = SimpleType . SymbolType <$> type_name
+          nested_union_type = string "(" *> spaces *> type_signature <* spaces <* string ")"
 
-          var_type = SimpleType . VariableType <$> type_var
+          symbol_type =  SimpleType . SymbolType <$> type_name
 
-          record_type = (JSONType . M.fromList) <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
+          var_type =  SimpleType . VariableType <$> type_var
+
+          record_type = ( JSONType . M.fromList) <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
 
           pairs = key_value `sepEndBy` try (comma <|> not_comma)
 
@@ -280,6 +293,8 @@ type_signature = try function_type <|> inner_type
           comma = spaces >> string "," >> spaces
 
           key_value = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_signature
+
+          f = UnionTypeSignature . S.fromList . (:[])
 
 type_name :: Parser String
 type_name = (:) <$> upper <*> many alphaNum  
@@ -303,24 +318,70 @@ toHTML :: String -> String
 toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
 
 main :: IO ()
-main  = do args <- getArgs
-           let name = head args
-           hFile  <- openFile name ReadMode
+main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
+           hFile  <- openFile file ReadMode
            src    <- (\ x -> x ++ "\n") <$> hGetContents hFile
-           writeFile "prelude.html" $ toHTML (header ++ src ++ footer)
+           writeFile (output ++ ".html") $ toHTML (wrap_html output src)
            putStrLn $ concat $ take 80 $ repeat "-"
            case parse sonnetParser "Parsing" src of
              Left ex -> do putStrLn $ show ex
              Right x -> do putStrLn $ show x
                            putStrLn $ "success"
 
-    where header = "<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'>"
-                        ++ "</link>"             
-                        ++ "<link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />"
-                        ++ "<link href='lib/js/coda.css' type='text/css' rel='stylesheet' />"
-                        ++ "<script type='text/javascript' src='lib/js/prettify.js'></script>"
-                        ++ "<script type='text/javascript' src='lib/js/lang-hs.js'></script>"
-                        ++ "<script type='text/javascript' src='lib/js/jquery.js'></script>"
 
-          footer = "<script type='text/javascript'>$('code').addClass('prettyprint lang-hs');"
-                        ++ "prettyPrint()</script>"
+
+data RunMode   = Compile | JustTypeCheck
+data RunConfig = RunConfig [String] String RunMode
+
+parseArgs :: [String] -> RunConfig
+parseArgs = fst . runState argsParser
+
+  where argsParser = do args <- get
+                        case args of
+                          []     -> return $ RunConfig [] "default" Compile
+                          (x:xs) -> do put xs
+                                       case x of
+                                         ('-':'t':[]) -> do RunConfig a b _ <- argsParser
+                                                            return $ RunConfig (x:a) b JustTypeCheck
+                                         ('-':'o':[]) -> do (name:ys) <- get
+                                                            put ys
+                                                            RunConfig a _ c <- argsParser
+                                                            return $ RunConfig (x:a) name c
+                                         ('-':_) -> error "Could not parse options"
+                                         z -> do RunConfig a _ c <- argsParser
+                                                 let b = last $ split "/" $ head $ split "." z
+                                                 return $ RunConfig (x:a) b c
+
+
+
+-- Docs
+
+wrap_html :: String -> String -> String
+wrap_html name body =
+
+    "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>"
+        ++ "<html><head><title>" ++ name ++ "</title>"
+        ++ "<link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>"
+        ++ "<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>"
+        ++ "<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>"
+        ++ "<script type='text/javascript' src='lib/js/zepto.js'></script>"
+        ++ "<script type='text/javascript' src='" ++ name ++ ".js'></script>"
+        ++ "<script type='text/javascript' src='" ++ name ++ ".spec.js'></script>"
+        ++ "<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>"
+        ++ "<link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />"
+        ++ "<script type='text/javascript' src='lib/js/prettify.js'></script>"
+        ++ "<script type='text/javascript' src='lib/js/lang-hs.js'></script>"
+        ++ "<script type='text/javascript' src='lib/js/jquery.js'></script>"
+        ++ "<style>ul{padding-left:40px;}</style>"
+        ++ "</head>"
+        ++ "<body><div style='margin: 0 0 50px 0'>"
+        ++ body
+        ++ "</div><script type='text/javascript'>"
+        ++ "jasmine.getEnv().addReporter(new jasmine.TrivialReporter());"
+        ++ "jasmine.getEnv().execute();"
+        ++ "</script>"
+        ++ "<script type='text/javascript'>$('code').addClass('prettyprint lang-hs');"
+        ++ "prettyPrint()</script>"
+        ++ "</body>"
+        ++ "</html>"
+

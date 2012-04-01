@@ -20,7 +20,10 @@ palette: →
 
              -> Int
 
+These are some tricky type signatures to parse
+
     type G=(Int→Int)→(Int→Int)
+    type G=(Int->Int) | Int
 
     type H = { x : Int }
     type H = {x:Int,y:Str}
@@ -30,6 +33,9 @@ palette: →
     type X m a = X a b c -> m d e
     type Y m a = Y a (m b) -> Y a {x: m a}
 
-    x: Int -> Int
+These are union types
+
+    type R = Str | Int
+    type Z = Int
 
 this is another comment
