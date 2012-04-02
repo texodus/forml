@@ -46,13 +46,20 @@ whitespace = many $ oneOf "\t "
 
 spaces :: Parser ()
 spaces = try inter_comments <|> skipMany (oneOf "\t ")
+
     where inter_comments = do finish_line 
                               comment `manyTill` try line_start
                               return ()
-          finish_line = oneOf "\t " `manyTill` newline
-          line_start = do count 4 (oneOf "\t ")
-                          skipMany (oneOf "\t ")
 
+          finish_line = oneOf "\t " `manyTill` newline
+          line_start = whitespace >> indented
+
+comment :: forall a. Parser [a]
+comment = do x <- anyChar `manyTill` newline
+             return []
+             case x of 
+               (' ':' ':' ':' ':_) -> fail "Statement parsing failed"
+               _ -> return []
 
 
 
@@ -132,7 +139,7 @@ spaces = try inter_comments <|> skipMany (oneOf "\t ")
 --------------------------------------------------------------------------------
 -- A Sonnet program is represented by a set of statements
 
-data Statement = TypeStatement TypeDefinition UnionTypeSignature
+data Statement = TypeStatement TypeDefinition UnionType
                | DefinitionStatement String [Axiom]
               -- | ExpressionStatement Expression
 
@@ -149,12 +156,8 @@ sonnetParser :: Parser Program
 sonnetParser  = do x <- many (statement <|> comment) <* eof
                    return $ Program $ concat x
 
-    where statement = count 4 (oneOf "\t ") >> whitespace >> statement' <* newline
+    where statement = count 4 (oneOf "\t ") >> whitespace >> withPos statement' <* newline
           statement' = try type_statement <|> definition_statement
-
-comment :: forall a. Parser [a]
-comment = do anyChar `manyTill` newline
-             return []
 
 
 
@@ -163,7 +166,7 @@ comment = do anyChar `manyTill` newline
 -- A Statement may be a definition, which is a list of axioms associated with a
 -- symbol
 
-data Axiom = TypeAxiom UnionTypeSignature
+data Axiom = TypeAxiom UnionType
          --  | EqualityAxiom [Pattern] Expression
 
 instance Show Axiom where
@@ -224,50 +227,54 @@ type_definition = do name <- (:) <$> upper <*> many alphaNum
 
 -- Type Signatures
 --------------------------------------------------------------------------------
--- This is what a type signature looks like
+-- This is what a type signature looks like 
 
-newtype UnionTypeSignature = UnionTypeSignature (S.Set TypeSignature) deriving (Ord, Eq)
+newtype UnionType = UnionType (S.Set ComplexType) deriving (Ord, Eq)
 
-data TypeSignature = PolymorphicType SimpleTypeSignature [UnionTypeSignature]
-                   | JSONType (M.Map String UnionTypeSignature)
-                   | NamedType String UnionTypeSignature
-                   | FunctionType UnionTypeSignature UnionTypeSignature
-                   | SimpleType SimpleTypeSignature
-                   deriving (Eq, Ord)
+data ComplexType = PolymorphicType SimpleType [UnionType]
+                 | JSONType (M.Map String UnionType)
+                 | NamedType String UnionType
+                 | FunctionType UnionType UnionType
+                 | SimpleType SimpleType
+                 deriving (Eq, Ord)
 
-data SimpleTypeSignature = SymbolType String | VariableType String deriving (Ord, Eq)
+data SimpleType = SymbolType String | VariableType String deriving (Ord, Eq)
 
-instance Show TypeSignature where
+instance Show ComplexType where
     show (SimpleType y) = show y
     show (PolymorphicType x y) = "(" ++ show x ++ " " ++ (concat $ L.intersperse " " $ fmap show y) ++ ")"
     show (NamedType name t) = name ++ " " ++ show t
-    show (FunctionType g@(UnionTypeSignature set) h) = 
+
+    show (FunctionType g@(UnionType set) h) = 
         case S.toList set of 
           ((FunctionType _ _) : []) -> "(" ++ show g ++ ")" ++ " -> " ++ show h 
           _ -> show g ++ " -> " ++ show h
+
     show (JSONType m) = "{ " ++ (g $ M.mapWithKey f m) ++ " }"
         where f k v = k ++ ": " ++ show v
               g = concat . L.intersperse ", " . fmap (\ (_, x) -> x) . M.toAscList
 
-instance Show SimpleTypeSignature where
+instance Show SimpleType where
     show (SymbolType x) = x
     show (VariableType x) = x
 
-instance Show UnionTypeSignature where
-    show (UnionTypeSignature xs) = concat . L.intersperse " | " . map show . S.toList $ xs
+instance Show UnionType where
+    show (UnionType xs) = concat . L.intersperse " | " . map show . S.toList $ xs
 
-type_signature :: Parser UnionTypeSignature
-type_signature = UnionTypeSignature <$> single_type <* whitespace
+type_signature :: Parser UnionType
+type_signature = UnionType <$> single_type <* whitespace
 
     where single_type = S.fromList <$> (try function_type <|> inner_type) `sepBy1` try (spaces *> char '|' <* whitespace)
+          inner_type = nested_function <|> record_type <|> try poly_type <|> var_type <|> symbol_type
+          nested_function = string "(" *> spaces *> (try function_type <|> inner_type) <* spaces <* string ")"
+          nested_union_type = string "(" *> spaces *> type_signature <* spaces <* string ")"
+
           function_type = do x <- try nested_union_type <|> (f <$> inner_type)
                              spaces
                              (string "->" <|> string "→")
                              spaces
                              y <- (f <$> try function_type) <|> try nested_union_type <|> (f <$> inner_type)
                              return $ FunctionType x y
-
-          inner_type = nested_function <|> record_type <|> try poly_type <|> var_type <|> symbol_type
 
           poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
                          oneOf "\t "
@@ -276,25 +283,15 @@ type_signature = UnionTypeSignature <$> single_type <* whitespace
                          vars <- type_vars `sepEndBy1` whitespace
                          return $ PolymorphicType name vars
 
-          nested_function = string "(" *> spaces *> (try function_type <|> inner_type) <* spaces <* string ")"
-
-          nested_union_type = string "(" *> spaces *> type_signature <* spaces <* string ")"
-
           symbol_type =  SimpleType . SymbolType <$> type_name
-
           var_type =  SimpleType . VariableType <$> type_var
 
           record_type = ( JSONType . M.fromList) <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
-
           pairs = key_value `sepEndBy` try (comma <|> not_comma)
-
           not_comma = whitespace >> newline >> spaces >> notFollowedBy (string "}")
-
           comma = spaces >> string "," >> spaces
-
           key_value = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_signature
-
-          f = UnionTypeSignature . S.fromList . (:[])
+          f = UnionType . S.fromList . (:[])
 
 type_name :: Parser String
 type_name = (:) <$> upper <*> many alphaNum  

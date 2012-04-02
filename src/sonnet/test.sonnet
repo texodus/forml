@@ -24,18 +24,21 @@ These are some tricky type signatures to parse
 
     type G=(Int→Int)→(Int→Int)
     type G=(Int->Int) | Int
+          | Str
 
     type H = { x : Int }
     type H = {x:Int,y:Str}
 
-    type I = {x:Int}->{x:Int,y:Int}->(Int->{x:Int->Int,y:Int})->Int
+    type I = {x:Int}->{x:Int,y:Int}->(Int->{x:Int->Int,y:Int|Str})->Int
 
     type X m a = X a b c -> m d e
     type Y m a = Y a (m b) -> Y a {x: m a}
 
 These are union types
 
-    type R = Str | Int
-    type Z = Int
+    type R = Str | Int | Int
+    type Z = Int 
+           | Int -> Int 
+           | Str
 
 this is another comment
