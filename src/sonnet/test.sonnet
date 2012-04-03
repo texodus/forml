@@ -41,4 +41,16 @@ These are union types
            | Int -> Int 
            | Str
 
+These are some named types, with some sneaky whitespace errors
+
+    type Q = true of {} | false of {} 
+    
+      
+  
+    type Option a = { some: a } | none of {}  
+                  | any of Int -> Int | Str | none of {}
+
 this is another comment
+
+     x: Int
+     y: Int -> Int

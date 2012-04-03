@@ -28,16 +28,16 @@ Named JSON - this is basically a special function that takes an anonymous JSON
 as an argument and returns the same value of a new type, with the option of ignoring
 the `{}` in such values which take a `Unit` type as an argument.
 
-    type Point = point { x: Num, y: Num }
+    type Point = point of { x: Num, y: Num }
 
-    type Unit' = unit  
+    type Unitt = unit of {}  
 
 Union JSON - which is simply a set of any of the above or of the native
 JSON types, separated by either new lines w/indentation, or `|`
 
-    type Option a = { some: a } | none 
-    
-    type Bool = true | false
+    type Option a = { some: a } | none of {}
+
+    type Bool = true of {} | false of {}
 
 
 Polymorphic JSON, which are any of the above with an introduction of a some

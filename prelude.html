@@ -25,13 +25,13 @@ prelude
 
 type Complex = { real: Num, img: Num }</code></pre>
 <p>Named JSON - this is basically a special function that takes an anonymous JSON as an argument and returns the same value of a new type, with the option of ignoring the <code>{}</code> in such values which take a <code>Unit</code> type as an argument.</p>
-<pre><code>type Point = point { x: Num, y: Num }
+<pre><code>type Point = point of { x: Num, y: Num }
 
-type Unit&#39; = unit  </code></pre>
+type Unitt = unit of {}  </code></pre>
 <p>Union JSON - which is simply a set of any of the above or of the native JSON types, separated by either new lines w/indentation, or <code>|</code></p>
-<pre><code>type Option a = { some: a } | none 
+<pre><code>type Option a = { some: a } | none of {}
 
-type Bool = true | false</code></pre>
+type Bool = true of {} | false of {}</code></pre>
 <p>Polymorphic JSON, which are any of the above with an introduction of a some type variables into scope:</p>
 <pre><code>type List a = 
     { head: a, tail: List a }
@@ -239,7 +239,4 @@ module Atom
     atom_monad: Monad Atom! =         
         { return = new
           x &gt;&gt;= f = x &gt;&gt;= &#955; get _ &gt;&gt;= f }</code></pre>
-<script type="text/javascript">$("code").addClass("prettyprint lang-hs");prettyPrint()</script>
-
-
 </div><script type='text/javascript'>jasmine.getEnv().addReporter(new jasmine.TrivialReporter());jasmine.getEnv().execute();</script><script type='text/javascript'>$('code').addClass('prettyprint lang-hs');prettyPrint()</script></body></html>

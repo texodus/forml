@@ -52,14 +52,16 @@ spaces = try inter_comments <|> skipMany (oneOf "\t ")
                               return ()
 
           finish_line = oneOf "\t " `manyTill` newline
-          line_start = whitespace >> indented
+          line_start = whitespace >> notFollowedBy newline >> indented
 
 comment :: forall a. Parser [a]
-comment = do x <- anyChar `manyTill` newline
-             return []
-             case x of 
-               (' ':' ':' ':' ':_) -> fail "Statement parsing failed"
-               _ -> return []
+comment = try (whitespace >> newline >> return []) <|> comment'
+
+    where comment' = do x <- anyChar `manyTill` newline
+                        return []
+                        case x of 
+                          (' ':' ':' ':' ':_) -> fail "Statement parsing failed"
+                          _ -> return []
 
 
 
@@ -153,12 +155,11 @@ instance Show Program where
      show (Program ss) = concat . fmap show $ ss
 
 sonnetParser :: Parser Program
-sonnetParser  = do x <- many (statement <|> comment) <* eof
+sonnetParser  = do x <- many (try statement <|> comment) <* eof
                    return $ Program $ concat x
 
     where statement = count 4 (oneOf "\t ") >> whitespace >> withPos statement' <* newline
           statement' = try type_statement <|> definition_statement
-
 
 
 -- Statements
@@ -173,7 +174,6 @@ instance Show Axiom where
     show (TypeAxiom x) = ":" ++ show x
     show _ = undefined
 
--- | TODO Should handle the case of implicit type
 definition_statement :: Parser [Statement]
 definition_statement = do name <- type_var
                           spaces
@@ -229,7 +229,8 @@ type_definition = do name <- (:) <$> upper <*> many alphaNum
 --------------------------------------------------------------------------------
 -- This is what a type signature looks like 
 
-newtype UnionType = UnionType (S.Set ComplexType) deriving (Ord, Eq)
+data UnionType = UnionType (S.Set ComplexType)
+               deriving (Ord, Eq)
 
 data ComplexType = PolymorphicType SimpleType [UnionType]
                  | JSONType (M.Map String UnionType)
@@ -243,7 +244,7 @@ data SimpleType = SymbolType String | VariableType String deriving (Ord, Eq)
 instance Show ComplexType where
     show (SimpleType y) = show y
     show (PolymorphicType x y) = "(" ++ show x ++ " " ++ (concat $ L.intersperse " " $ fmap show y) ++ ")"
-    show (NamedType name t) = name ++ " " ++ show t
+    show (NamedType name t) = name ++ " of " ++ show t
 
     show (FunctionType g@(UnionType set) h) = 
         case S.toList set of 
@@ -252,7 +253,7 @@ instance Show ComplexType where
 
     show (JSONType m) = "{ " ++ (g $ M.mapWithKey f m) ++ " }"
         where f k v = k ++ ": " ++ show v
-              g = concat . L.intersperse ", " . fmap (\ (_, x) -> x) . M.toAscList
+              g = concat . L.intersperse ", " . fmap snd . M.toAscList
 
 instance Show SimpleType where
     show (SymbolType x) = x
@@ -265,7 +266,7 @@ type_signature :: Parser UnionType
 type_signature = UnionType <$> single_type <* whitespace
 
     where single_type = S.fromList <$> (try function_type <|> inner_type) `sepBy1` try (spaces *> char '|' <* whitespace)
-          inner_type = nested_function <|> record_type <|> try poly_type <|> var_type <|> symbol_type
+          inner_type = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
           nested_function = string "(" *> spaces *> (try function_type <|> inner_type) <* spaces <* string ")"
           nested_union_type = string "(" *> spaces *> type_signature <* spaces <* string ")"
 
@@ -282,6 +283,14 @@ type_signature = UnionType <$> single_type <* whitespace
                          let type_vars = nested_union_type <|> (f <$> (record_type <|> var_type <|> symbol_type))
                          vars <- type_vars `sepEndBy1` whitespace
                          return $ PolymorphicType name vars
+
+          named_type = do name <- type_var
+                          whitespace
+                          string "of"
+                          spaces 
+                          NamedType name <$> (try nested_union_type <|> (f <$> inner_type))
+                             
+                          
 
           symbol_type =  SimpleType . SymbolType <$> type_name
           var_type =  SimpleType . VariableType <$> type_var
