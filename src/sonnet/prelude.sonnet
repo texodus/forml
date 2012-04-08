@@ -30,7 +30,7 @@ the `{}` in such values which take a `Unit` type as an argument.
 
     type Point = point of { x: Num, y: Num }
 
-    type Unitt = unit of {}  
+    type Unit' = unit of {}  
 
 Union JSON - which is simply a set of any of the above or of the native
 JSON types, separated by either new lines w/indentation, or `|`
@@ -45,12 +45,13 @@ type variables into scope:
 
     type List a = 
         { head: a, tail: List a }
-        nil
+        | nil
+
+    type T a b = T of { a: a, b: b } 
 
     type Map key value =
-        from_list { items: List (key, value) }
-        empty
-
+        from_list of { items: List (T key value) }
+        | empty
 
     { x = real, y = img } * { u = real, v = img } = 
         { real = x * u - y * v, img = x * v - y * u }  

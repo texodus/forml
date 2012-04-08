@@ -57,10 +57,21 @@ These are some named types, with some sneaky whitespace errors (do not edit)
 
 this is another comment
 
-    x: Int
-    y: Int -> Int
+    x
+     : Int 
+     | = 1
+    
+    x : Int | = 1
 
-    z: (Int | Str)
+    test: Int -> Int
+        | x   = "test" 
+        | y   = "fail"
+        | z   = 1
+
+    xx: Str -> Int
+      | x   = 1
+
+    type X = Int
 
 
 
