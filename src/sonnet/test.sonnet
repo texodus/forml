@@ -18,28 +18,34 @@ palette: →
 
    I'm a comment!
 
-             -> Int
+                          -> Int
 
 These are some tricky type signatures to parse
 
     type G=(Int→Int)→(Int→Int)
     type G=(Int->Int) | Int
-          | Str
+            | Str
 
     type H = { x : Int }
     type H = {x:Int,y:Str}
 
-    type I = {x:Int}->{x:Int,y:Int}->(Int->{x:Int->Int,y:Int|Str})->Int
+    type I = {x:Int}->{x:Int, y:Int}->(Int->{x:Int->Int,y:Int|Str})->Int
+
+    type I = {x:Int}->{ x:Int, 
+                        y:Int
+             }
+             ->(Int->{x:Int
+                      ->Int,y:Int|Str})->Int
 
     type X m a = X a b c -> m d e
     type Y m a = Y a (m b) -> Y a {x: m a}
 
 These are union types
 
-    type R = Str | Int | Int
-    type Z = Int 
-           | Int -> Int 
-           | Str
+    type R = Str | Int 
+             | Int
+
+    type Z = Int | Int -> Int | Str
 
 These are some named types, with some sneaky whitespace errors (do not edit)
 
@@ -47,15 +53,16 @@ These are some named types, with some sneaky whitespace errors (do not edit)
     
       
   
-    type Option a = some of a | none of {}   
-                  | any of Int -> Int | Str | none of {}   
+    type Option a = some of a | none of {} | any of Int -> Int | Str | none of {}   
 
 this is another comment
 
     x: Int
     y: Int -> Int
 
-this didn't work in the last commit
-
     z: (Int | Str)
+
+
+
+
 

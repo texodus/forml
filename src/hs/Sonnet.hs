@@ -6,7 +6,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 
 module Main where
@@ -14,12 +14,13 @@ module Main where
 import Text.InterpolatedString.Perl6
 
 import Control.Applicative
-import Control.Monad.State
+import Control.Monad.Identity
+import Control.Monad.State hiding (lift)
 
 import System.IO
 import System.Environment
 
-import Text.Parsec as P hiding ((<|>), many, State, spaces, parse)
+import Text.Parsec hiding ((<|>), State, many, spaces, parse)
 import Text.Parsec.Indent
 import Text.Pandoc
 
@@ -35,7 +36,7 @@ import Data.String.Utils
 --------------------------------------------------------------------------------
 -- ...
 
-type Parser a = ParsecT String () (State SourcePos) a
+type Parser a = ParsecT String () (StateT SourcePos Identity) a
 
 parse :: Parser a -> SourceName -> String -> Either ParseError a
 parse parser sname input = runIndent sname $ runParserT parser () sname input
@@ -43,28 +44,27 @@ parse parser sname input = runIndent sname $ runParserT parser () sname input
 whitespace :: Parser String
 whitespace = many $ oneOf "\t "
 
-
-
--- A special implementation of the spaces parser from Parsec, which also treats
--- comments as whitespace
+in_block :: Parser ()
+in_block = do pos <- getPosition
+              s <- get
+              if (sourceColumn pos) < (sourceColumn s) 
+                then parserFail "not indented" 
+                else do put $ setSourceLine s (sourceLine pos)
+                        return ()
 
 spaces :: Parser ()
-spaces = try inter_comments <|> skipMany (oneOf "\t ")
+spaces = try emptyline `manyTill` try line_start >> return ()
 
-    where inter_comments = do finish_line 
-                              comment `manyTill` try line_start
-                              return ()
+    where emptyline = whitespace >> newline
+          line_start = whitespace >> notFollowedBy newline >> in_block
 
-          finish_line = oneOf "\t " `manyTill` newline
-          line_start = whitespace >> notFollowedBy newline >> indented
-
-comment :: forall a. Parser [a]
-comment = try (whitespace >> newline >> return []) <|> comment'
+comment :: Parser String
+comment = try (whitespace >> newline >> return "\n") <|> comment'
 
     where comment' = do x <- anyChar `manyTill` newline
                         case x of 
-                          (' ':' ':' ':' ':_) -> fail "Statement parsing failed"
-                          _ -> return []
+                          (' ':' ':' ':' ':_) -> return (x ++ "\n")
+                          _ -> return "\n"
 
 sep_with :: Show a => String -> [a] -> String
 sep_with x = concat . L.intersperse x . fmap show
@@ -161,9 +161,9 @@ instance Show Program where
      show (Program ss) = sep_with "\n" ss
 
 sonnetParser :: Parser Program
-sonnetParser  = Program . concat <$> many (try statement <|> comment) <* eof
+sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
 
-    where statement = count 4 (oneOf "\t ") >> whitespace >> withPos statement' <* newline
+    where statement = whitespace >> withPos statement' <* many newline
           statement' = try type_statement <|> definition_statement
 
 
@@ -176,19 +176,18 @@ data Axiom = TypeAxiom UnionType
          --  | EqualityAxiom [Pattern] Expression
 
 instance Show Axiom where
-    show (TypeAxiom x) = ":" ++ show x
+    show (TypeAxiom x) = ": " ++ show x
     show _ = undefined
 
 definition_statement :: Parser [Statement]
-definition_statement = do name <- type_var
+definition_statement = do whitespace
+                          name <- type_var
                           spaces
                           string ":"
                           spaces
-                          sig <- type_axiom_signature
-                          spaces
-                          axioms <- return [] -- try $ many equality_axiom
+                          sig <- withPos type_axiom_signature
                           whitespace
-                          return $ [DefinitionStatement name (TypeAxiom sig : axioms)]
+                          return $ [DefinitionStatement name (TypeAxiom sig : [])]
 
 -- equality_axiom :: Parser Axiom
 -- equality_axiom = do string "|" 
@@ -215,7 +214,7 @@ type_statement  = do whitespace
                      whitespace 
                      string "="
                      spaces
-                     sig <- type_definition_signature
+                     sig <- withPos type_definition_signature
                      whitespace
                      return $ [TypeStatement def sig]
 
@@ -267,7 +266,6 @@ instance Show SimpleType where
     show (VariableType x) = x
 
 
-
 type_axiom_signature :: Parser UnionType
 type_axiom_signature =  (try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
 
@@ -277,49 +275,69 @@ type_definition_signature = UnionType . S.fromList <$> (try function_type <|> in
 -- Type combinators
 inner_type :: Parser ComplexType
 inner_type        = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
+
+nested_function :: Parser ComplexType
 nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
+
+nested_union_type :: Parser UnionType
 nested_union_type = indentPairs "(" type_definition_signature ")"
 
 -- Types
-function_type = do x <- type_axiom_signature --try nested_union_type <|> (f <$> inner_type)
+function_type :: Parser ComplexType
+function_type = do x <- try nested_union_type <|> (lift inner_type)
                    spaces
                    (string "->" <|> string "→")
                    spaces
-                   y <- (f <$> try function_type) <|> try nested_union_type <|> (f <$> inner_type)
+                   y <- (lift $ try function_type) <|> try nested_union_type <|> (lift inner_type)
                    return $ FunctionType x y
 
+poly_type :: Parser ComplexType
 poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
                oneOf "\t "
                whitespace
-               let type_vars = nested_union_type <|> (f <$> (record_type <|> var_type <|> symbol_type))
+               let type_vars = nested_union_type <|> (lift (record_type <|> var_type <|> symbol_type))
                vars <- type_vars `sepEndBy1` whitespace
                return $ PolymorphicType name vars
 
+named_type :: Parser ComplexType
 named_type = do name <- type_var
                 whitespace
                 string "of"
                 spaces 
-                NamedType name <$> (try nested_union_type <|> (f <$> inner_type))
+                NamedType name <$> (try nested_union_type <|> (lift inner_type))
 
+record_type :: Parser ComplexType
 record_type = (JSONType . M.fromList) <$> indentPairs "{" pairs "}"
                 
+symbol_type :: Parser ComplexType
 symbol_type = SimpleType . SymbolType <$> type_name
-var_type    = SimpleType . VariableType <$> type_var
 
--- Utilities
-type_sep    = try (spaces *> char '|' <* whitespace)
-indentPairs sep1 p sep2 = string sep1 *> spaces *> withPos p <* spaces <* string sep2
-pairs       = key_value `sepEndBy` try (comma <|> not_comma)
-not_comma   = whitespace >> newline >> spaces >> notFollowedBy (string "}")
-comma       = spaces >> string "," >> spaces
-key_value   = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_definition_signature
-f = UnionType . S.fromList . (:[])
+var_type :: Parser ComplexType
+var_type    = SimpleType . VariableType <$> type_var
 
 type_name :: Parser String
 type_name = (:) <$> upper <*> many alphaNum  
 
 type_var :: Parser String
 type_var = (:) <$> lower <*> many alphaNum  
+
+-- Utilities
+
+type_sep    :: Parser Char
+indentPairs :: String -> Parser a -> String -> Parser a
+pairs       :: Parser [(String, UnionType)]
+not_comma   :: Parser ()
+comma       :: Parser ()
+lift        :: Parser ComplexType -> Parser UnionType
+key_value   :: Parser (String, UnionType)
+
+type_sep          = try (spaces *> char '|' <* whitespace)
+indentPairs a p b = string a *> spaces *> withPos p <* spaces <* string b
+pairs             = key_value `sepEndBy` try (comma <|> not_comma)
+not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}")
+comma             = spaces >> string "," >> spaces
+key_value         = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_definition_signature
+lift              = fmap $ UnionType . S.fromList . (:[])
 
 
           
@@ -342,10 +360,12 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
            writeFile (output ++ ".html") $ toHTML (wrap_html output src)
            putStrLn $ concat $ take 80 $ repeat "-"
-           case parse sonnetParser "Parsing" src of
-             Left ex -> do putStrLn $ show ex
-             Right x -> do putStrLn $ show x
-                           putStrLn $ "success"
+           case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of
+             Left ex -> putStrLn (show ex)
+             Right src' -> do case parse sonnetParser "Parsing" (concat src') of
+                                Left ex -> do putStrLn $ show ex
+                                Right x -> do putStrLn $ show x
+                                              putStrLn $ "success"
 
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode
@@ -364,7 +384,7 @@ parseArgs = fst . runState argsParser
                                                        put ys
                                                        RunConfig a _ c <- argsParser
                                                        return $ RunConfig (x:a) name c
-                                         ('-':_) -> error "Could not parse options"
+                                         ('-':_) -> do error "Could not parse options"
                                          z       -> do RunConfig a _ c <- argsParser
                                                        let b = last $ split "/" $ head $ split "." z
                                                        return $ RunConfig (x:a) b c
