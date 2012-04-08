@@ -41,16 +41,21 @@ These are union types
            | Int -> Int 
            | Str
 
-These are some named types, with some sneaky whitespace errors
+These are some named types, with some sneaky whitespace errors (do not edit)
 
-    type Q = true of {} | false of {} 
+    type Q = true of {} | false of {}  
     
       
   
-    type Option a = { some: a } | none of {}  
-                  | any of Int -> Int | Str | none of {}
+    type Option a = some of a | none of {}   
+                  | any of Int -> Int | Str | none of {}   
 
 this is another comment
 
-     x: Int
-     y: Int -> Int
+    x: Int
+    y: Int -> Int
+
+this didn't work in the last commit
+
+    z: (Int | Str)
+

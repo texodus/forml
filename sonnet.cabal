@@ -24,7 +24,8 @@ Executable sonnet
     containers,
     pandoc,
     jmacro,
-    MissingH
+    MissingH,
+    interpolatedstring-perl6
  
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2

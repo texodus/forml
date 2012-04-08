@@ -3,8 +3,15 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 
 module Main where
+
+import Text.InterpolatedString.Perl6
 
 import Control.Applicative
 import Control.Monad.State
@@ -22,9 +29,6 @@ import qualified Data.Set as S
 
 import Data.Char (ord, isAscii)
 import Data.String.Utils
-
--- import Language.Javascript.JMacro
-
 
 
 -- Structure & comments
@@ -58,10 +62,12 @@ comment :: forall a. Parser [a]
 comment = try (whitespace >> newline >> return []) <|> comment'
 
     where comment' = do x <- anyChar `manyTill` newline
-                        return []
                         case x of 
                           (' ':' ':' ':' ':_) -> fail "Statement parsing failed"
                           _ -> return []
+
+sep_with :: Show a => String -> [a] -> String
+sep_with x = concat . L.intersperse x . fmap show
 
 
 
@@ -143,20 +149,19 @@ comment = try (whitespace >> newline >> return []) <|> comment'
 
 data Statement = TypeStatement TypeDefinition UnionType
                | DefinitionStatement String [Axiom]
-              -- | ExpressionStatement Expression
+              --- | ExpressionStatement Expression
 
 instance Show Statement where
-    show (TypeStatement t c) = "type " ++ show t ++ " = " ++ show c ++ "\n"
-    show (DefinitionStatement s as) = let f = concat . fmap show in s ++ f as ++ "\n"
+    show (TypeStatement t c)        = [qq|type $t = $c|]
+    show (DefinitionStatement s as) = [qq|$s {sep_with "" as}|]
 
 newtype Program = Program [Statement]
 
 instance Show Program where
-     show (Program ss) = concat . fmap show $ ss
+     show (Program ss) = sep_with "\n" ss
 
 sonnetParser :: Parser Program
-sonnetParser  = do x <- many (try statement <|> comment) <* eof
-                   return $ Program $ concat x
+sonnetParser  = Program . concat <$> many (try statement <|> comment) <* eof
 
     where statement = count 4 (oneOf "\t ") >> whitespace >> withPos statement' <* newline
           statement' = try type_statement <|> definition_statement
@@ -179,7 +184,7 @@ definition_statement = do name <- type_var
                           spaces
                           string ":"
                           spaces
-                          sig <- type_signature
+                          sig <- type_axiom_signature
                           spaces
                           axioms <- return [] -- try $ many equality_axiom
                           whitespace
@@ -210,7 +215,7 @@ type_statement  = do whitespace
                      whitespace 
                      string "="
                      spaces
-                     sig <- type_signature
+                     sig <- type_definition_signature
                      whitespace
                      return $ [TypeStatement def sig]
 
@@ -221,7 +226,7 @@ type_definition = do name <- (:) <$> upper <*> many alphaNum
                                       var `sepEndBy` whitespace
                              <|> return []
                      return $ TypeDefinition name vars 
-              
+
 
 
 
@@ -241,66 +246,74 @@ data ComplexType = PolymorphicType SimpleType [UnionType]
 
 data SimpleType = SymbolType String | VariableType String deriving (Ord, Eq)
 
+
+
+
+instance Show UnionType where 
+    show (UnionType xs)        = [qq|{sep_with " | " $ S.toList xs}|]
+    
 instance Show ComplexType where
-    show (SimpleType y) = show y
-    show (PolymorphicType x y) = "(" ++ show x ++ " " ++ (concat $ L.intersperse " " $ fmap show y) ++ ")"
-    show (NamedType name t) = name ++ " of " ++ show t
+    show (SimpleType y)        = [qq|$y|]
+    show (PolymorphicType x y) = [qq|($x {sep_with " " y})|]
+    show (NamedType name t)    = [qq|$name of $t|]
+    show (JSONType m)          = [qq|\{ {g m} \}|] 
+        where g = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x: $y|]) . M.toAscList
 
-    show (FunctionType g@(UnionType set) h) = 
-        case S.toList set of 
-          ((FunctionType _ _) : []) -> "(" ++ show g ++ ")" ++ " -> " ++ show h 
-          _ -> show g ++ " -> " ++ show h
-
-    show (JSONType m) = "{ " ++ (g $ M.mapWithKey f m) ++ " }"
-        where f k v = k ++ ": " ++ show v
-              g = concat . L.intersperse ", " . fmap snd . M.toAscList
+    show (FunctionType g@(UnionType (S.toList -> ((FunctionType _ _):[]))) h) = [qq|($g -> $h)|]
+    show (FunctionType g h) = [qq|$g -> $h|]
 
 instance Show SimpleType where
-    show (SymbolType x) = x
+    show (SymbolType x)   = x
     show (VariableType x) = x
 
-instance Show UnionType where
-    show (UnionType xs) = concat . L.intersperse " | " . map show . S.toList $ xs
 
-type_signature :: Parser UnionType
-type_signature = UnionType <$> single_type <* whitespace
 
-    where single_type = S.fromList <$> (try function_type <|> inner_type) `sepBy1` try (spaces *> char '|' <* whitespace)
-          inner_type = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
-          nested_function = string "(" *> spaces *> (try function_type <|> inner_type) <* spaces <* string ")"
-          nested_union_type = string "(" *> spaces *> type_signature <* spaces <* string ")"
+type_axiom_signature :: Parser UnionType
+type_axiom_signature =  (try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
 
-          function_type = do x <- try nested_union_type <|> (f <$> inner_type)
-                             spaces
-                             (string "->" <|> string "→")
-                             spaces
-                             y <- (f <$> try function_type) <|> try nested_union_type <|> (f <$> inner_type)
-                             return $ FunctionType x y
+type_definition_signature :: Parser UnionType
+type_definition_signature = UnionType <$> single_type <* whitespace
 
-          poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
-                         oneOf "\t "
-                         whitespace
-                         let type_vars = nested_union_type <|> (f <$> (record_type <|> var_type <|> symbol_type))
-                         vars <- type_vars `sepEndBy1` whitespace
-                         return $ PolymorphicType name vars
+-- Type combinators
+single_type       = S.fromList <$> (try function_type <|> inner_type) `sepBy1` type_sep
+inner_type        = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
+nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
+nested_union_type = indentPairs "(" type_definition_signature ")"
 
-          named_type = do name <- type_var
-                          whitespace
-                          string "of"
-                          spaces 
-                          NamedType name <$> (try nested_union_type <|> (f <$> inner_type))
-                             
-                          
+-- Types
+function_type = do x <- try nested_union_type <|> (f <$> inner_type)
+                   spaces
+                   (string "->" <|> string "→")
+                   spaces
+                   y <- (f <$> try function_type) <|> try nested_union_type <|> (f <$> inner_type)
+                   return $ FunctionType x y
 
-          symbol_type =  SimpleType . SymbolType <$> type_name
-          var_type =  SimpleType . VariableType <$> type_var
+poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
+               oneOf "\t "
+               whitespace
+               let type_vars = nested_union_type <|> (f <$> (record_type <|> var_type <|> symbol_type))
+               vars <- type_vars `sepEndBy1` whitespace
+               return $ PolymorphicType name vars
 
-          record_type = ( JSONType . M.fromList) <$> (string "{" *> spaces *> pairs <* spaces <* string "}")
-          pairs = key_value `sepEndBy` try (comma <|> not_comma)
-          not_comma = whitespace >> newline >> spaces >> notFollowedBy (string "}")
-          comma = spaces >> string "," >> spaces
-          key_value = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_signature
-          f = UnionType . S.fromList . (:[])
+named_type = do name <- type_var
+                whitespace
+                string "of"
+                spaces 
+                NamedType name <$> (try nested_union_type <|> (f <$> inner_type))
+
+record_type = (JSONType . M.fromList) <$> indentPairs "{" pairs "}"
+                
+symbol_type = SimpleType . SymbolType <$> type_name
+var_type    = SimpleType . VariableType <$> type_var
+
+-- Utilities
+type_sep    = try (spaces *> char '|' <* whitespace)
+indentPairs sep1 p sep2 = string sep1 *> spaces *> withPos p <* spaces <* string sep2
+pairs       = key_value `sepEndBy` try (comma <|> not_comma)
+not_comma   = whitespace >> newline >> spaces >> notFollowedBy (string "}")
+comma       = spaces >> string "," >> spaces
+key_value   = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_definition_signature
+f = UnionType . S.fromList . (:[])
 
 type_name :: Parser String
 type_name = (:) <$> upper <*> many alphaNum  
@@ -318,7 +331,7 @@ type_var = (:) <$> lower <*> many alphaNum
 toEntities :: String -> String
 toEntities [] = ""
 toEntities (c:cs) | isAscii c = c : toEntities cs
-                  | otherwise = "&#" ++ show (ord c) ++ ";" ++ toEntities cs
+                  | otherwise = [qq|&#{ord c};{toEntities cs}|]
 
 toHTML :: String -> String
 toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
@@ -326,15 +339,13 @@ toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaul
 main :: IO ()
 main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            hFile  <- openFile file ReadMode
-           src    <- (\ x -> x ++ "\n") <$> hGetContents hFile
+           src <- (\ x -> x ++ "\n") <$> hGetContents hFile
            writeFile (output ++ ".html") $ toHTML (wrap_html output src)
            putStrLn $ concat $ take 80 $ repeat "-"
            case parse sonnetParser "Parsing" src of
              Left ex -> do putStrLn $ show ex
              Right x -> do putStrLn $ show x
                            putStrLn $ "success"
-
-
 
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode
@@ -347,47 +358,51 @@ parseArgs = fst . runState argsParser
                           []     -> return $ RunConfig [] "default" Compile
                           (x:xs) -> do put xs
                                        case x of
-                                         ('-':'t':[]) -> do RunConfig a b _ <- argsParser
-                                                            return $ RunConfig (x:a) b JustTypeCheck
-                                         ('-':'o':[]) -> do (name:ys) <- get
-                                                            put ys
-                                                            RunConfig a _ c <- argsParser
-                                                            return $ RunConfig (x:a) name c
+                                         "-t"    -> do RunConfig a b _ <- argsParser
+                                                       return $ RunConfig (x:a) b JustTypeCheck
+                                         "-o"    -> do (name:ys) <- get
+                                                       put ys
+                                                       RunConfig a _ c <- argsParser
+                                                       return $ RunConfig (x:a) name c
                                          ('-':_) -> error "Could not parse options"
-                                         z -> do RunConfig a _ c <- argsParser
-                                                 let b = last $ split "/" $ head $ split "." z
-                                                 return $ RunConfig (x:a) b c
-
+                                         z       -> do RunConfig a _ c <- argsParser
+                                                       let b = last $ split "/" $ head $ split "." z
+                                                       return $ RunConfig (x:a) b c
 
 
 -- Docs
 
 wrap_html :: String -> String -> String
-wrap_html name body =
+wrap_html name body = [qq|
 
-    "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>"
-        ++ "<html><head><title>" ++ name ++ "</title>"
-        ++ "<link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>"
-        ++ "<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>"
-        ++ "<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>"
-        ++ "<script type='text/javascript' src='lib/js/zepto.js'></script>"
-        ++ "<script type='text/javascript' src='" ++ name ++ ".js'></script>"
-        ++ "<script type='text/javascript' src='" ++ name ++ ".spec.js'></script>"
-        ++ "<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>"
-        ++ "<link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />"
-        ++ "<script type='text/javascript' src='lib/js/prettify.js'></script>"
-        ++ "<script type='text/javascript' src='lib/js/lang-hs.js'></script>"
-        ++ "<script type='text/javascript' src='lib/js/jquery.js'></script>"
-        ++ "<style>ul{padding-left:40px;}</style>"
-        ++ "</head>"
-        ++ "<body><div style='margin: 0 0 50px 0'>"
-        ++ body
-        ++ "</div><script type='text/javascript'>"
-        ++ "jasmine.getEnv().addReporter(new jasmine.TrivialReporter());"
-        ++ "jasmine.getEnv().execute();"
-        ++ "</script>"
-        ++ "<script type='text/javascript'>$('code').addClass('prettyprint lang-hs');"
-        ++ "prettyPrint()</script>"
-        ++ "</body>"
-        ++ "</html>"
+   <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>
+   <html>
+   <head>
+   <title>$name</title>
+   <link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
+   <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
+   <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
+   <script type='text/javascript' src='lib/js/zepto.js'></script>
+   <script type='text/javascript' src='$name.js'></script>
+   <script type='text/javascript' src='$name.spec.js'></script>
+   <link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>
+   <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
+   <script type='text/javascript' src='lib/js/prettify.js'></script>
+   <script type='text/javascript' src='lib/js/lang-hs.js'></script>
+   <script type='text/javascript' src='lib/js/jquery.js'></script>
+   <style>ul\{padding-left:40px;\}</style>
+   </head>
+   <body>
+   <div style='margin: 0 0 50px 0'>$body</div>
+   <script type='text/javascript'>
+   jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+   jasmine.getEnv().execute();
+   </script>
+   <script type='text/javascript'>$('code').addClass('prettyprint lang-hs');
+   prettyPrint()
+   </script>
+   </body>
+   </html>
+
+|]
 
