@@ -272,16 +272,16 @@ type_axiom_signature :: Parser UnionType
 type_axiom_signature =  (try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
 
 type_definition_signature :: Parser UnionType
-type_definition_signature = UnionType <$> single_type <* whitespace
+type_definition_signature = UnionType . S.fromList <$> (try function_type <|> inner_type) `sepBy1` type_sep <* whitespace
 
 -- Type combinators
-single_type       = S.fromList <$> (try function_type <|> inner_type) `sepBy1` type_sep
+inner_type :: Parser ComplexType
 inner_type        = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
 nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
 nested_union_type = indentPairs "(" type_definition_signature ")"
 
 -- Types
-function_type = do x <- try nested_union_type <|> (f <$> inner_type)
+function_type = do x <- type_axiom_signature --try nested_union_type <|> (f <$> inner_type)
                    spaces
                    (string "->" <|> string "→")
                    spaces
