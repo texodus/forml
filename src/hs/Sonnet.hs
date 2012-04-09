@@ -175,6 +175,7 @@ type_definition = do name <- (:) <$> upper <*> many alphaNum
 -- ...
 
 data Pattern = VarPattern String
+             | AnyPattern
              | LiteralPattern Literal
              | RecordPattern (M.Map String Pattern)
              | ListPattern [Pattern]
@@ -187,22 +188,34 @@ literal_pattern :: Parser Pattern
 record_pattern  :: Parser Pattern
 list_pattern    :: Parser Pattern
 named_pattern   :: Parser Pattern
+any_pattern     :: Parser Pattern
 
 pattern         = var_pattern 
+                  <|> any_pattern
                   <|> literal_pattern
                   <|> record_pattern
                   <|> list_pattern
                   <|> indentPairs "(" (try named_pattern <|> pattern) ")"
 
 var_pattern     = VarPattern <$> type_var
-
 literal_pattern = LiteralPattern <$> literal          
-
-record_pattern  = parserFail "record"
-
-list_pattern    = parserFail "list"
+any_pattern     = many1 (string "_") *> return AnyPattern
 
 named_pattern   = parserFail "named"
+
+record_pattern = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
+
+    where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
+          key_eq_val = do key <- many (alphaNum <|> oneOf "_")
+                          spaces
+                          string "="
+                          spaces
+                          value <- pattern
+                          return (key, value)
+
+list_pattern = ListPattern <$> indentPairs "[" (pattern `sepBy` comma) "]"
+
+
 
 -- Expressions
 --------------------------------------------------------------------------------
@@ -307,6 +320,7 @@ list_literal = parserFail "Failed to parse list"
 -- The type algebra of Sonnet is broken into 3 types to preserve the 
 -- associativity of UnionTypes: (x | y) | z = x | y | z
 
+
 data UnionType = UnionType (S.Set ComplexType)
                deriving (Ord, Eq)
 
@@ -336,6 +350,7 @@ instance Show SimpleType where
     show (SymbolType x)   = x
     show (VariableType x) = x
 
+
 -- Where a type signature may be used in Sonnet had two slightly different parsers
 -- in order to allow for somewhat overloaded surrounding characters (eg "|" - when
 -- declaring the type of an axiom, one must be careful to disambiguate UnionTypes
@@ -344,15 +359,18 @@ instance Show SimpleType where
 -- type of a Definition (Note, however, that in the case of NamedTypes, the
 -- names introduced into scope will be inaccessible in the case of a Definition).
 
+
 type_axiom_signature      :: Parser UnionType
 type_definition_signature :: Parser UnionType
 
 type_axiom_signature      = (try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
 type_definition_signature = UnionType . S.fromList <$> (try function_type <|> inner_type) `sepBy1` type_sep <* whitespace
 
+
 -- Through various complexities of the recursive structure of these types, we will
 -- need a few mutually recursive parsers to express these slightly different
 -- signature parsers:
+
 
 inner_type        :: Parser ComplexType
 nested_function   :: Parser ComplexType
@@ -362,10 +380,12 @@ inner_type        = nested_function <|> record_type <|> try named_type <|> try p
 nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
 nested_union_type = indentPairs "(" type_definition_signature ")"
 
+
 -- Now that we've expressed the possible parses of a UnionType, we can move on to
 -- parsing the ComplexType and SimpleType layers.  While these are also mutually
 -- recursive, the recursion is uniform, as the various allowable combinations
 -- have already been defined above.
+
 
 function_type :: Parser ComplexType
 poly_type     :: Parser ComplexType
@@ -396,10 +416,12 @@ named_type    = NamedType <$> type_var <* whitespace <* string "of" <* spaces <*
 symbol_type   = SimpleType . SymbolType <$> type_name
 var_type      = SimpleType . VariableType <$> type_var
 
+
 -- Lastly, all type combinators above must eventuall reach a terminal, of which
 -- there are only two: type names start with an upper case letter, and type
 -- variables start with a lower case letter.  Note the scoping & resolution of
 -- type variables is handled in the type checker.
+
 
 type_name :: Parser String
 type_var  :: Parser String
@@ -407,8 +429,10 @@ type_var  :: Parser String
 type_name = (:) <$> upper <*> many (alphaNum <|> oneOf "_'")  
 type_var  = (:) <$> lower <*> many (alphaNum <|> oneOf "_'")  
 
+
 -- Of course, there are many common idioms from type parsing which may be factored
 -- out for reuse:
+
 
 type_sep    :: Parser Char
 indentPairs :: String -> Parser a -> String -> Parser a

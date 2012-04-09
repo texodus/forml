@@ -73,6 +73,21 @@ this is another comment
 
     type X = Int
 
+    yy: Int
+      | "tes" = "test"
+      | 1 = "fail"
+      | x = { x = 2 }
+      | { x = 2 } = 1
+      | [ 1,
+          2, x] = 4
+
+
+      | x y = { x = x, y = "test" }
+
+
+      | { x = { y = "test" }} = { z = 4, y = { x = {}}}
+
+
 
 
 
