@@ -87,7 +87,8 @@ this is another comment
 
       | { x = { y = "test" }} = { z = 4, y = { x = {}}}
 
-
+    zz: Int
+      | x = (\x = 3 | y = 4)
 
 
 
