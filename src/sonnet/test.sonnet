@@ -66,7 +66,7 @@ this is another comment
     test: Int -> Int
         | x   = "test" 
         | y   = "fail"
-        | z   = 1
+        | z   = g 1 2 4 5 (3 + 5 + 7)
 
     xx: Str -> Int
       | x   = 1
@@ -77,9 +77,9 @@ this is another comment
       | "tes" = "test"
       | 1 = "fail"
       | x = { x = 2 }
-      | { x = 2 } = 1
+      | { x = 2 } = true:
       | [ 1,
-          2, x] = 4
+          2, x] = f 4
 
 
       | x y = { x = x, y = "test" }
@@ -88,8 +88,11 @@ this is another comment
       | { x = { y = "test" }} = { z = 4, y = { x = {}}}
 
     zz: Int
-      | x = (\x = 3 | y = 4)
+      | x = monad: (\x = 3 | y = 4)
       | 2 = x ^ 3 + y ^ 2 / 2 + (3 - 4) < 2 + 4
+
+    xxx: String
+       | x = if test: (3 < x + 2) then "true" else "false"
 
 
 

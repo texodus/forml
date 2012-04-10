@@ -41,7 +41,7 @@ A programming language, designed to be read
 > import System.IO
 > import System.Environment
 
-> import Text.Parsec hiding ((<|>), State, many, spaces, parse)
+> import Text.Parsec hiding ((<|>), State, many, spaces, parse, label)
 > import Text.Parsec.Indent
 > import Text.Parsec.Expr
 > import Text.Pandoc
@@ -247,9 +247,10 @@ Patterns
 
 Expressions
 -----------------------------------------------------------------------------
-TODO Infix expressions
+TODO Conditionals
 
 > data Expression = ApplyExpression Expression [Expression]
+>                 | IfExpression Expression Expression Expression
 >                 | LiteralExpression Literal
 >                 | SymbolExpression String
 >                 | JSExpression JStat
@@ -259,6 +260,7 @@ TODO Infix expressions
 
 > instance Show Expression where
 >     show (ApplyExpression x y)   = [qq|$x {sep_with " " y}|]
+>     show (IfExpression a b c)    = [qq|if $a then $b else $c|]
 >     show (LiteralExpression x)   = show x
 >     show (SymbolExpression x)    = x
 >     show (ListExpression x)      = [qq|[ {sep_with ", " x} ]|]
@@ -276,17 +278,30 @@ TODO Infix expressions
 > literal_expression  :: Parser Expression
 > symbol_expression   :: Parser Expression
 > list_expression     :: Parser Expression
+> if_expression       :: Parser Expression
 
-> expression = try infix_expression <|> other_expression
+> expression = try if_expression <|> try infix_expression <|> other_expression
 
 > other_expression = try apply_expression
->                    <|> function_expression
+>                    <|> try function_expression
 >                    <|> indentPairs "(" expression ")" 
 >                    <|> js_expression 
 >                    <|> record_expression 
 >                    <|> literal_expression
 >                    <|> symbol_expression
 >                    <|> list_expression
+
+> if_expression = withPos $ do string "if"
+>                              whitespace1
+>                              e <- (try infix_expression <|> other_expression)
+>                              spaces
+>                              string "then"
+>                              whitespace1
+>                              t <- (try infix_expression <|> other_expression)
+>                              spaces
+>                              string "else"
+>                              whitespace1
+>                              IfExpression e  t <$> (try infix_expression <|> other_expression) 
 
 > infix_expression = buildExpressionParser table term 
 
@@ -306,8 +321,11 @@ TODO Infix expressions
 >                             spaces
 >                             return (\x y -> ApplyExpression op' [x, y])
 
-> apply_expression = ApplyExpression <$> app <* whitespace <*> (expression `sepBy` whitespace1)
->     where app = indentPairs "(" (function_expression <|> apply_expression) ")" <|> symbol_expression
+> -- TODO app should be a full expression parser 
+> apply_expression = ApplyExpression <$> app <* whitespace1 <*> (expression `sepEndBy1` whitespace1)
+>     where app = indentPairs "(" (function_expression <|> apply_expression) ")" 
+>                 <|> try (LiteralExpression <$> try label)
+>                 <|> symbol_expression
 
 > function_expression = do string "\\" <|> string "λ"
 >                          t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
@@ -355,25 +373,24 @@ Literals
 Literals in Sonnet are limited to strings and numbers - 
 
 
-> data Literal = StringLiteral String | NumLiteral Int
+> data Literal = StringLiteral String | NumLiteral Int | LabelLiteral String
 
 > instance Show Literal where
 >    show (StringLiteral x) = show x
 >    show (NumLiteral x)    = show x
+>    show (LabelLiteral x)  = x ++ ":"
 
-ValueLiterals 
-
-
+> -- TODO string escaping
+> -- TODO heredoc
+> -- TODO string interpolation
 > literal :: Parser Literal
-> literal = try num <|> str
+> literal = try num <|> try str <|> try label 
 >     where num = NumLiteral . read <$> many1 digit
 >           str = StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
 
+> label :: Parser Literal
+> label = LabelLiteral <$> (many1 letter <* string ":")
 
-ListLiterals
-
-> list_literal :: Parser Literal
-> list_literal = parserFail "Failed to parse list"
 
 
 
