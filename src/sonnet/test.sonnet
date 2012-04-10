@@ -89,6 +89,7 @@ this is another comment
 
     zz: Int
       | x = (\x = 3 | y = 4)
+      | 2 = x ^ 3 + y ^ 2 / 2 + (3 - 4) < 2 + 4
 
 
 

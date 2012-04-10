@@ -12,6 +12,13 @@
 <script type='text/javascript' src='lib/js/jquery.js'></script>
 <style>pre{max-width:1600px;}</style>
 
+Sonnet
+======
+
+A programming language, designed to be read
+
+* * *
+
 > {-# LANGUAGE QuasiQuotes #-}
 > {-# LANGUAGE NamedFieldPuns #-}
 > {-# LANGUAGE RecordWildCards #-}
@@ -36,6 +43,7 @@
 
 > import Text.Parsec hiding ((<|>), State, many, spaces, parse)
 > import Text.Parsec.Indent
+> import Text.Parsec.Expr
 > import Text.Pandoc
 
 > import qualified Data.Map as M
@@ -193,7 +201,6 @@ Patterns
 >              | LiteralPattern Literal
 >              | RecordPattern (M.Map String Pattern)
 >              | ListPattern [Pattern]
->              | NamedPattern String Pattern
 
 > instance Show Pattern where
 >     show (VarPattern x)     = x
@@ -260,7 +267,9 @@ TODO Infix expressions
 >         where g                  = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
 
 > expression          :: Parser Expression
+> other_expression    :: Parser Expression
 > apply_expression    :: Parser Expression
+> infix_expression    :: Parser Expression
 > function_expression :: Parser Expression
 > js_expression       :: Parser Expression
 > record_expression   :: Parser Expression
@@ -268,14 +277,34 @@ TODO Infix expressions
 > symbol_expression   :: Parser Expression
 > list_expression     :: Parser Expression
 
-> expression = try apply_expression
->              <|> function_expression
->              <|> indentPairs "(" expression ")" 
->              <|> js_expression 
->              <|> record_expression 
->              <|> literal_expression
->              <|> symbol_expression
->              <|> list_expression
+> expression = try infix_expression <|> other_expression
+
+> other_expression = try apply_expression
+>                    <|> function_expression
+>                    <|> indentPairs "(" expression ")" 
+>                    <|> js_expression 
+>                    <|> record_expression 
+>                    <|> literal_expression
+>                    <|> symbol_expression
+>                    <|> list_expression
+
+> infix_expression = buildExpressionParser table term 
+
+>     where table  = [ [ix "^"]
+>                    , [ix "*", ix "/"]
+>                    , [ix "+", ix "-"]
+>                    , [ix "&&", ix "||"]
+>                    , [px "not"]
+>                    , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "/="] ]
+
+>           ix s   = Infix (op $ string s) AssocLeft
+>           px s   = Prefix $ (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
+>           term   = try other_expression
+
+>           op p   = try $ do whitespace
+>                             op' <- SymbolExpression <$> p
+>                             spaces
+>                             return (\x y -> ApplyExpression op' [x, y])
 
 > apply_expression = ApplyExpression <$> app <* whitespace <*> (expression `sepBy` whitespace1)
 >     where app = indentPairs "(" (function_expression <|> apply_expression) ")" <|> symbol_expression
@@ -297,10 +326,7 @@ TODO Infix expressions
 >                           ex <- withPos expression
 >                           return $ EqualityAxiom patterns ex
 
-
-
-TODO allow ` escaping
-
+> --TODO allow ` escaping
 > js_expression = do expr <- indentPairs "`" (many $ noneOf "`") "`"
 >                    case parseJM expr of
 >                      Left ex -> parserFail $ show ex
@@ -359,7 +385,7 @@ TODO ! (IO type)
 ? TODO List, Map, Set shorthand?
 
 The type algebra of Sonnet is broken into 3 types to preserve the 
-associativity of UnionTypes: (x | y) | z = x | y | z
+associativity of UnionTypes: (x | y) | z == x | y | z
 
 
 > data UnionType = UnionType (S.Set ComplexType)
@@ -367,7 +393,6 @@ associativity of UnionTypes: (x | y) | z = x | y | z
 
 > data ComplexType = PolymorphicType SimpleType [UnionType]
 >                  | JSONType (M.Map String UnionType)
->                  | NamedType String UnionType
 >                  | FunctionType UnionType UnionType
 >                  | SimpleType SimpleType
 >                  deriving (Eq, Ord)
@@ -380,7 +405,6 @@ associativity of UnionTypes: (x | y) | z = x | y | z
 > instance Show ComplexType where
 >     show (SimpleType y)        = [qq|$y|]
 >     show (PolymorphicType x y) = [qq|($x {sep_with " " y})|]
->     show (NamedType name t)    = [qq|$name of $t|]
 >     show (JSONType m)          = [qq|\{ {g m} \}|] 
 >         where g = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x: $y|]) . M.toAscList
 
@@ -410,14 +434,13 @@ names introduced into scope will be inaccessible in the case of a Definition).
 
 Through various complexities of the recursive structure of these types, we will
 need a few mutually recursive parsers to express these slightly different
-signature parsers:
-
+signature parsers.  
 
 > inner_type        :: Parser ComplexType
 > nested_function   :: Parser ComplexType
 > nested_union_type :: Parser UnionType
 
-> inner_type        = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
+> inner_type        = nested_function <|> record_type <|> {- try named_type <|> -} try poly_type <|> var_type <|> symbol_type
 > nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
 > nested_union_type = indentPairs "(" type_definition_signature ")"
 
@@ -430,7 +453,7 @@ have already been defined above.
 
 > function_type :: Parser ComplexType
 > poly_type     :: Parser ComplexType
-> named_type    :: Parser ComplexType
+> -- named_type    :: Parser ComplexType
 > record_type   :: Parser ComplexType
 > symbol_type   :: Parser ComplexType
 > var_type      :: Parser ComplexType
@@ -453,7 +476,7 @@ have already been defined above.
 >                     pairs     = key_value `sepEndBy` try (comma <|> not_comma) in
 >                 (JSONType . M.fromList) <$> indentPairs "{" pairs "}"
 
-> named_type    = NamedType <$> type_var <* whitespace <* string "of" <* spaces <*> (try nested_union_type <|> lift inner_type)
+> -- named_type    = NamedType <$> type_var <* whitespace <* string "of" <* spaces <*> (try nested_union_type <|> lift inner_type)
 > symbol_type   = SimpleType . SymbolType <$> type_name
 > var_type      = SimpleType . VariableType <$> type_var
 
