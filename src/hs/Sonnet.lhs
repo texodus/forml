@@ -107,7 +107,7 @@ A Sonnet program is represented by a set of statements
 
 > data Statement = TypeStatement TypeDefinition UnionType
 >                | DefinitionStatement String [Axiom]
->                -- | ExpressionStatement Expression
+>               -- | ExpressionStatement Expression
 
 > instance Show Program where
 >      show (Program ss) = sep_with "\n" ss
@@ -133,6 +133,7 @@ symbol
 >     show (TypeAxiom x) = ": " ++ show x
 >     show (EqualityAxiom ps ex) = [qq| | {concat . map show $ ps} = $ex|]
 
+> -- TODO type axiom should be optional - syntax?
 > definition_statement :: Parser [Statement]
 > definition_statement = do whitespace
 >                           name <- type_var
@@ -201,12 +202,14 @@ Patterns
 >              | LiteralPattern Literal
 >              | RecordPattern (M.Map String Pattern)
 >              | ListPattern [Pattern]
+>              | ApplyPattern Literal Pattern
 
 > instance Show Pattern where
 >     show (VarPattern x)     = x
 >     show AnyPattern         = "_"
 >     show (LiteralPattern x) = show x
 >     show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
+>     show (ApplyPattern x y) = [qq|($x $y)|]
 >     show (RecordPattern m)  = [qq|\{ {g m} \}|] 
 >         where g             = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
 
@@ -215,23 +218,22 @@ Patterns
 > literal_pattern :: Parser Pattern
 > record_pattern  :: Parser Pattern
 > list_pattern    :: Parser Pattern
-> named_pattern   :: Parser Pattern
 > any_pattern     :: Parser Pattern
+> apply_pattern   :: Parser Pattern
 
-> pattern         = var_pattern 
->                   <|> any_pattern
->                   <|> literal_pattern
->                   <|> record_pattern
->                   <|> list_pattern
->                   <|> indentPairs "(" (try named_pattern <|> pattern) ")"
+> pattern = try literal_pattern
+>           <|> try var_pattern
+>           <|> any_pattern
+>           <|> record_pattern
+>           <|> list_pattern
+>           <|> indentPairs "(" (try apply_pattern <|> pattern) ")"
 
 > var_pattern     = VarPattern <$> type_var
 > literal_pattern = LiteralPattern <$> literal          
 > any_pattern     = many1 (string "_") *> return AnyPattern
+> apply_pattern   = ApplyPattern <$> literal <* whitespace1 <*> pattern
 
-> named_pattern   = parserFail "named"
-
-> record_pattern = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
+> record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 
 >     where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
 >           key_eq_val = do key <- many (alphaNum <|> oneOf "_")
@@ -247,7 +249,6 @@ Patterns
 
 Expressions
 -----------------------------------------------------------------------------
-TODO Conditionals
 
 > data Expression = ApplyExpression Expression [Expression]
 >                 | IfExpression Expression Expression Expression
@@ -351,7 +352,6 @@ TODO Conditionals
 >                      Right s -> return $ JSExpression s
 
 > record_expression = RecordExpression . M.fromList <$> indentPairs "{" pairs' "}"
-
 >     where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
 >           key_eq_val = do key <- many (alphaNum <|> oneOf "_")
 >                           spaces
@@ -361,10 +361,8 @@ TODO Conditionals
 >                           return (key, value)
 
 > literal_expression = LiteralExpression <$> literal
-
-> symbol_expression = SymbolExpression <$> type_var
-
-> list_expression = ListExpression <$> indentPairs "[" (expression `sepBy` comma) "]"
+> symbol_expression  = SymbolExpression <$> type_var
+> list_expression    = ListExpression <$> indentPairs "[" (expression `sepBy` comma) "]"
 
 
 

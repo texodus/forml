@@ -1,8 +1,8 @@
 
 
-this is a comment
+-- this is a comment
 
-palette: →
+-- palette: →
 
     type X= Int
     type X = Int
@@ -20,7 +20,7 @@ palette: →
 
                           -> Int
 
-These are some tricky type signatures to parse
+-- These are some tricky type signatures to parse
 
     type G=(Int→Int)→(Int→Int)
     type G=(Int->Int) | Int
@@ -40,14 +40,14 @@ These are some tricky type signatures to parse
     type X m a = X a b c -> m d e
     type Y m a = Y a (m b) -> Y a {x: m a}
 
-These are union types
+-- These are union types
 
     type R = Str | Int 
              | Int
 
     type Z = Int | Int -> Int | Str
 
-These are some named types, with some sneaky whitespace errors (do not edit)
+-- These are some named types, with some sneaky whitespace errors (do not edit)
 
     type Q = true of {} | false of {}  
     
@@ -55,7 +55,7 @@ These are some named types, with some sneaky whitespace errors (do not edit)
   
     type Option a = some of a | none of {} | any of Int -> Int | Str | none of {}   
 
-this is another comment
+-- These are some actual definitions
 
     x
      : Int 
@@ -76,16 +76,20 @@ this is another comment
     yy: Int
       | "tes" = "test"
       | 1 = "fail"
-      | x = { x = 2 }
+      | true: = { x = 2 }
+      | (true: 4) = 14
       | { x = 2 } = true:
       | [ 1,
           2, x] = f 4
 
+--and some weird cases
 
       | x y = { x = x, y = "test" }
 
 
       | { x = { y = "test" }} = { z = 4, y = { x = {}}}
+
+-- some infix expressions and labels
 
     zz: Int
       | x = monad: (\x = 3 | y = 4)
