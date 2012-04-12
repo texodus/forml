@@ -110,7 +110,7 @@ A Sonnet program is represented by a set of statements
 >               -- | ExpressionStatement Expression
 
 > instance Show Program where
->      show (Program ss) = sep_with "\n" ss
+>      show (Program ss) = sep_with "\n\n" ss
 
 > instance Show Statement where
 >     show (TypeStatement t c)        = [qq|type $t = $c|]
@@ -202,14 +202,15 @@ Patterns
 >              | LiteralPattern Literal
 >              | RecordPattern (M.Map String Pattern)
 >              | ListPattern [Pattern]
->              | ApplyPattern Literal Pattern
+>              | NamedPattern String (Maybe Pattern)
 
 > instance Show Pattern where
 >     show (VarPattern x)     = x
 >     show AnyPattern         = "_"
 >     show (LiteralPattern x) = show x
 >     show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
->     show (ApplyPattern x y) = [qq|($x $y)|]
+>     show (NamedPattern n (Just x)) = [qq|$n: ($x)|]
+>     show (NamedPattern n Nothing)  = n ++ ":"
 >     show (RecordPattern m)  = [qq|\{ {g m} \}|] 
 >         where g             = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
 
@@ -219,9 +220,11 @@ Patterns
 > record_pattern  :: Parser Pattern
 > list_pattern    :: Parser Pattern
 > any_pattern     :: Parser Pattern
+> naked_apply_pattern :: Parser Pattern
 > apply_pattern   :: Parser Pattern
 
 > pattern = try literal_pattern
+>           <|> try naked_apply_pattern
 >           <|> try var_pattern
 >           <|> any_pattern
 >           <|> record_pattern
@@ -231,7 +234,11 @@ Patterns
 > var_pattern     = VarPattern <$> type_var
 > literal_pattern = LiteralPattern <$> literal          
 > any_pattern     = many1 (string "_") *> return AnyPattern
-> apply_pattern   = ApplyPattern <$> literal <* whitespace1 <*> pattern
+> naked_apply_pattern = NamedPattern <$> many1 letter <* string ":" <*> return Nothing
+> apply_pattern   = NamedPattern 
+>                   <$> many1 letter 
+>                   <* string ":" 
+>                   <*> (Just <$> (whitespace1 *> pattern))
 
 > record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 
@@ -251,6 +258,7 @@ Expressions
 -----------------------------------------------------------------------------
 
 > data Expression = ApplyExpression Expression [Expression]
+>                 | NamedExpression String (Maybe Expression)
 >                 | IfExpression Expression Expression Expression
 >                 | LiteralExpression Literal
 >                 | SymbolExpression String
@@ -266,6 +274,8 @@ Expressions
 >     show (SymbolExpression x)    = x
 >     show (ListExpression x)      = [qq|[ {sep_with ", " x} ]|]
 >     show (FunctionExpression as) = [qq|λ{sep_with "" as}|]
+>     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
+>     show (NamedExpression n Nothing)  = n ++ ":"
 >     show (RecordExpression m)    = [qq|\{ {g m} \}|] 
 >         where g                  = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
 
@@ -273,6 +283,7 @@ Expressions
 > other_expression    :: Parser Expression
 > apply_expression    :: Parser Expression
 > infix_expression    :: Parser Expression
+> named_expression    :: Parser Expression
 > function_expression :: Parser Expression
 > js_expression       :: Parser Expression
 > record_expression   :: Parser Expression
@@ -283,7 +294,8 @@ Expressions
 
 > expression = try if_expression <|> try infix_expression <|> other_expression
 
-> other_expression = try apply_expression
+> other_expression = try named_expression
+>                    <|> try apply_expression
 >                    <|> try function_expression
 >                    <|> indentPairs "(" expression ")" 
 >                    <|> js_expression 
@@ -322,11 +334,13 @@ Expressions
 >                             spaces
 >                             return (\x y -> ApplyExpression op' [x, y])
 
+> named_expression = NamedExpression 
+>                    <$> (many1 alphaNum <* string ":") 
+>                    <*> option Nothing (Just <$> try (whitespace1 *> other_expression))
+
 > -- TODO app should be a full expression parser 
 > apply_expression = ApplyExpression <$> app <* whitespace1 <*> (expression `sepEndBy1` whitespace1)
->     where app = indentPairs "(" (function_expression <|> apply_expression) ")" 
->                 <|> try (LiteralExpression <$> try label)
->                 <|> symbol_expression
+>     where app = indentPairs "(" (function_expression <|> apply_expression) ")" <|> symbol_expression
 
 > function_expression = do string "\\" <|> string "λ"
 >                          t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
@@ -371,23 +385,19 @@ Literals
 Literals in Sonnet are limited to strings and numbers - 
 
 
-> data Literal = StringLiteral String | NumLiteral Int | LabelLiteral String
+> data Literal = StringLiteral String | NumLiteral Int
 
 > instance Show Literal where
 >    show (StringLiteral x) = show x
 >    show (NumLiteral x)    = show x
->    show (LabelLiteral x)  = x ++ ":"
 
 > -- TODO string escaping
 > -- TODO heredoc
 > -- TODO string interpolation
 > literal :: Parser Literal
-> literal = try num <|> try str <|> try label 
+> literal = try num <|> try str
 >     where num = NumLiteral . read <$> many1 digit
 >           str = StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
-
-> label :: Parser Literal
-> label = LabelLiteral <$> (many1 letter <* string ":")
 
 
 
@@ -397,6 +407,7 @@ Type Signatures
 TODO Implicits
 TODO Record Extensions
 TODO ! (IO type)
+TODO type axioms need nominative types?
 ? TODO List, Map, Set shorthand?
 
 The type algebra of Sonnet is broken into 3 types to preserve the 
@@ -410,21 +421,24 @@ associativity of UnionTypes: (x | y) | z == x | y | z
 >                  | JSONType (M.Map String UnionType)
 >                  | FunctionType UnionType UnionType
 >                  | SimpleType SimpleType
+>                  | NamedType String (Maybe UnionType)
 >                  deriving (Eq, Ord)
 
 > data SimpleType = SymbolType String | VariableType String deriving (Ord, Eq)
 
 > instance Show UnionType where 
->     show (UnionType xs)        = [qq|{sep_with " | " $ S.toList xs}|]
+>     show (UnionType xs)         = [qq|{sep_with " | " $ S.toList xs}|]
    
 > instance Show ComplexType where
->     show (SimpleType y)        = [qq|$y|]
->     show (PolymorphicType x y) = [qq|($x {sep_with " " y})|]
->     show (JSONType m)          = [qq|\{ {g m} \}|] 
+>     show (SimpleType y)         = [qq|$y|]
+>     show (PolymorphicType x y)  = [qq|($x {sep_with " " y})|]
+>     show (NamedType n (Just x)) = [qq|$n: ($x)|]
+>     show (NamedType n Nothing)  = n ++ ":"
+>     show (JSONType m)           = [qq|\{ {g m} \}|] 
 >         where g = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x: $y|]) . M.toAscList
 
 >     show (FunctionType g@(UnionType (S.toList -> ((FunctionType _ _):[]))) h) = [qq|($g -> $h)|]
->     show (FunctionType g h) = [qq|$g -> $h|]
+>     show (FunctionType g h)     = [qq|$g -> $h|]
 
 > instance Show SimpleType where
 >     show (SymbolType x)   = x
@@ -455,7 +469,7 @@ signature parsers.
 > nested_function   :: Parser ComplexType
 > nested_union_type :: Parser UnionType
 
-> inner_type        = nested_function <|> record_type <|> {- try named_type <|> -} try poly_type <|> var_type <|> symbol_type
+> inner_type        = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
 > nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
 > nested_union_type = indentPairs "(" type_definition_signature ")"
 
@@ -468,8 +482,8 @@ have already been defined above.
 
 > function_type :: Parser ComplexType
 > poly_type     :: Parser ComplexType
-> -- named_type    :: Parser ComplexType
 > record_type   :: Parser ComplexType
+> named_type    :: Parser ComplexType
 > symbol_type   :: Parser ComplexType
 > var_type      :: Parser ComplexType
 
@@ -491,7 +505,7 @@ have already been defined above.
 >                     pairs     = key_value `sepEndBy` try (comma <|> not_comma) in
 >                 (JSONType . M.fromList) <$> indentPairs "{" pairs "}"
 
-> -- named_type    = NamedType <$> type_var <* whitespace <* string "of" <* spaces <*> (try nested_union_type <|> lift inner_type)
+> named_type    = NamedType <$> type_var <* string ":" <* whitespace <*> option Nothing (Just <$> (try nested_union_type <|> lift inner_type))
 > symbol_type   = SimpleType . SymbolType <$> type_name
 > var_type      = SimpleType . VariableType <$> type_var
 
