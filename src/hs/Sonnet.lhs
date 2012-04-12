@@ -151,16 +151,11 @@ symbol
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
 >                           name <- type_var
+>                           sig <- option [] $ try type_axiom
 >                           spaces
->                           indented
->                           string ":"
->                           spaces
->                           indented
->                           sig <- withPos type_axiom_signature
->                           spaces
->                           eqs <- withPos (many $ try eq_axiom)
+>                           eqs <- withPos (many1 $ try eq_axiom)
 >                           whitespace
->                           return $ [Definition name (TypeAxiom sig : eqs)]
+>                           return $ [Definition name (sig ++ eqs)]
 
 >     where eq_axiom   = do spaces
 >                           string "|" 
@@ -171,6 +166,13 @@ symbol
 >                           indented
 >                           ex <- withPos expression
 >                           return $ EqualityAxiom patterns ex
+
+>           type_axiom = do spaces
+>                           indented
+>                           string ":"
+>                           spaces
+>                           indented
+>                           (:[]) . TypeAxiom <$> withPos type_axiom_signature
 
 
 

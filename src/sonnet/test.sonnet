@@ -59,10 +59,9 @@
     
     x : Int | = 1
 
-    test: Int -> Int
-        | x   = "test" 
-        | y   = "fail"
-        | z   = g 1 2 4 5 (3 + 5 + 7)
+    test | x   = "test" 
+         | y   = "fail"
+         | z   = g 1 2 4 5 (3 + 5 + 7)
 
     xx: Str -> Int
       | x   = 1
@@ -93,12 +92,8 @@
            x + y
 
     z: Int
-     | _ = let x: Int 
-                | = 1
-
-               z: Int -> Int 
-                | x = 2
-
+     | _ = let x | = 1
+               z | x = 2
            x + y
 
     z: Int
