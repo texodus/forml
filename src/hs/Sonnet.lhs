@@ -42,7 +42,7 @@ A programming language, designed to be read
 > import System.Environment
 
 > import Text.Parsec hiding ((<|>), State, many, spaces, parse, label)
-> import Text.Parsec.Indent
+> import Text.Parsec.Indent hiding (same)
 > import Text.Parsec.Expr
 > import Text.Pandoc
 
@@ -79,6 +79,14 @@ lore ipsum
 >                 else do put $ setSourceLine s (sourceLine pos)
 >                         return ()
 
+> same :: Parser ()
+> same = do pos <- getPosition
+>           s <- get
+>           if (sourceColumn pos) /= (sourceColumn s) 
+>              then parserFail "not indented" 
+>              else do put $ setSourceLine s (sourceLine pos)
+>                      return ()
+
 > spaces :: Parser ()
 > spaces = try emptyline `manyTill` try line_start >> return ()
 
@@ -106,19 +114,25 @@ A Sonnet program is represented by a set of statements
 > newtype Program = Program [Statement]
 
 > data Statement = TypeStatement TypeDefinition UnionType
->                | DefinitionStatement String [Axiom]
+>                | DefinitionStatement Definition
 >               -- | ExpressionStatement Expression
+
+> data Definition = Definition String [Axiom]
 
 > instance Show Program where
 >      show (Program ss) = sep_with "\n\n" ss
 
 > instance Show Statement where
->     show (TypeStatement t c)        = [qq|type $t = $c|]
->     show (DefinitionStatement s as) = [qq|$s {sep_with "\\n" as}|]
+>     show (TypeStatement t c)     = [qq|type $t = $c|]
+>     show (DefinitionStatement d) = show d
+
+> instance Show Definition where
+>     show (Definition name ax) =[qq|$name {sep_with "\\n" ax}|]
+
 
 > sonnetParser :: Parser Program
 > sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
->     where statement = whitespace >> withPos (try type_statement <|> definition_statement) <* many newline
+>     where statement = whitespace >> withPos (try type_statement <|> (map DefinitionStatement <$> definition_statement)) <* many newline
 
 
 Statements
@@ -134,7 +148,7 @@ symbol
 >     show (EqualityAxiom ps ex) = [qq| | {concat . map show $ ps} = $ex|]
 
 > -- TODO type axiom should be optional - syntax?
-> definition_statement :: Parser [Statement]
+> definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
 >                           name <- type_var
 >                           spaces
@@ -146,7 +160,7 @@ symbol
 >                           spaces
 >                           eqs <- withPos (many $ try eq_axiom)
 >                           whitespace
->                           return $ [DefinitionStatement name (TypeAxiom sig : eqs)]
+>                           return $ [Definition name (TypeAxiom sig : eqs)]
 
 >     where eq_axiom   = do spaces
 >                           string "|" 
@@ -231,14 +245,14 @@ Patterns
 >           <|> list_pattern
 >           <|> indentPairs "(" (try apply_pattern <|> pattern) ")"
 
-> var_pattern     = VarPattern <$> type_var
-> literal_pattern = LiteralPattern <$> literal          
-> any_pattern     = many1 (string "_") *> return AnyPattern
+> var_pattern         = VarPattern <$> type_var
+> literal_pattern     = LiteralPattern <$> literal          
+> any_pattern         = many1 (string "_") *> return AnyPattern
 > naked_apply_pattern = NamedPattern <$> many1 letter <* string ":" <*> return Nothing
-> apply_pattern   = NamedPattern 
->                   <$> many1 letter 
->                   <* string ":" 
->                   <*> (Just <$> (whitespace1 *> pattern))
+> apply_pattern       = NamedPattern 
+>                       <$> many1 letter 
+>                       <* string ":" 
+>                       <*> (Just <$> (whitespace1 *> pattern))
 
 > record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 
@@ -265,6 +279,7 @@ Expressions
 >                 | JSExpression JStat
 >                 | FunctionExpression [Axiom]
 >                 | RecordExpression (M.Map String Expression)
+>                 | LetExpression [Definition] Expression
 >                 | ListExpression [Expression]
 
 > instance Show Expression where
@@ -276,11 +291,13 @@ Expressions
 >     show (FunctionExpression as) = [qq|λ{sep_with "" as}|]
 >     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedExpression n Nothing)  = n ++ ":"
+>     show (LetExpression ax e)    = [qq|let {sep_with "\\n" ax} in ($e)|]
 >     show (RecordExpression m)    = [qq|\{ {g m} \}|] 
 >         where g                  = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
 
 > expression          :: Parser Expression
 > other_expression    :: Parser Expression
+> let_expression      :: Parser Expression
 > apply_expression    :: Parser Expression
 > infix_expression    :: Parser Expression
 > named_expression    :: Parser Expression
@@ -294,7 +311,8 @@ Expressions
 
 > expression = try if_expression <|> try infix_expression <|> other_expression
 
-> other_expression = try named_expression
+> other_expression = try let_expression
+>                    <|> try named_expression
 >                    <|> try apply_expression
 >                    <|> try function_expression
 >                    <|> indentPairs "(" expression ")" 
@@ -303,6 +321,13 @@ Expressions
 >                    <|> literal_expression
 >                    <|> symbol_expression
 >                    <|> list_expression
+
+> let_expression = withPos $ do string "let"
+>                               whitespace1
+>                               defs <- concat <$> withPos (try (same *> definition_statement) `sepBy1` try spaces)
+>                               spaces
+>                               same
+>                               LetExpression <$> return defs <*> expression
 
 > if_expression = withPos $ do string "if"
 >                              whitespace1
@@ -520,7 +545,13 @@ type variables is handled in the type checker.
 > type_var  :: Parser String
 
 > type_name = (:) <$> upper <*> many (alphaNum <|> oneOf "_'")  
-> type_var  = (:) <$> lower <*> many (alphaNum <|> oneOf "_'")  
+> type_var  = ((:) <$> lower <*> many (alphaNum <|> oneOf "_'")) >>= f
+
+>     where f x = if x `elem` reserved
+>                     then parserFail "reserved word"
+>                     else return x
+
+>           reserved = [ "if", "then", "else", "type", "let" ]
 
 
 Of course, there are many common idioms from type parsing which may be factored

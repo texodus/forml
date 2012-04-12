@@ -87,12 +87,31 @@
 
 -- some infix expressions and labels
 
+    z: Int
+     | _ = let x: Int 
+                | = 1
+           x + y
+
+    z: Int
+     | _ = let x: Int 
+                | = 1
+
+               z: Int -> Int 
+                | x = 2
+
+           x + y
+
+    z: Int
+     | _ = let x: Int 
+               | = 1
+           x + y
+
     zz: Int
       | x = monad: (\x = 3 | y = 4)
       | 2 = x ^ 3 + y ^ 2 / 2 + (3 - 4) < 2 + 4
 
     xxx: String
-       | x = if test: (3 < x + 2) then "true" else "false"
+       | x = if test: (3 < x + 2) then true: else false: 5  
 
 
 
