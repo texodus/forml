@@ -104,10 +104,14 @@
     zz: Int
       | x = monad: (\x = 3 | y = 4)
       | 2 = x ^ 3 + y ^ 2 / 2 + (3 - 4) < 2 + 4
+      | _ = \ x = 2
+            | y = 3
+
+      | z = \x = 2 | y = 5
 
     xxx: String
        | x = if test: (3 < x + 2) then true: else false: 5  
 
 
-
+    x | x = 2 | y = 3
 

@@ -157,7 +157,7 @@ symbol
 >                           whitespace
 >                           return $ [Definition name (sig ++ eqs)]
 
->     where eq_axiom   = do spaces
+>     where eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
 >                           string "|" 
 >                           whitespace
 >                           patterns <- pattern `sepEndBy` whitespace1
@@ -369,10 +369,11 @@ Expressions
 > apply_expression = ApplyExpression <$> app <* whitespace1 <*> (expression `sepEndBy1` whitespace1)
 >     where app = indentPairs "(" (function_expression <|> apply_expression) ")" <|> symbol_expression
 
-> function_expression = do string "\\" <|> string "λ"
->                          t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
->                          eqs <- withPos (try eq_axiom `sepBy1` (spaces *> string "|" <* whitespace))
->                          return $ FunctionExpression (t ++ eqs)
+> function_expression = withPos $ do string "\\" <|> string "λ"
+>                                    whitespace
+>                                    t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
+>                                    eqs <- try eq_axiom `sepBy1` try ((try (spaces *> same) <|> (whitespace *> return ())) *> string "|" <* whitespace)
+>                                    return $ FunctionExpression (t ++ eqs)
 
 >     where type_axiom = do string ":"
 >                           spaces
