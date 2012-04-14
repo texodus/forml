@@ -219,6 +219,7 @@ Patterns
 >              | LiteralPattern Literal
 >              | RecordPattern (M.Map String Pattern)
 >              | ListPattern [Pattern]
+>              | ViewPattern Expression Pattern
 >              | NamedPattern String (Maybe Pattern)
 
 > instance Show Pattern where
@@ -226,6 +227,7 @@ Patterns
 >     show AnyPattern         = "_"
 >     show (LiteralPattern x) = show x
 >     show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
+>     show (ViewPattern x y)  = [qq|[($x -> $y)|]
 >     show (NamedPattern n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedPattern n Nothing)  = n ++ ":"
 >     show (RecordPattern m)  = [qq|\{ {g m} \}|] 
@@ -239,6 +241,7 @@ Patterns
 > any_pattern     :: Parser Pattern
 > naked_apply_pattern :: Parser Pattern
 > apply_pattern   :: Parser Pattern
+> view_pattern    :: Parser Pattern
 
 > pattern = try literal_pattern
 >           <|> try naked_apply_pattern
@@ -246,8 +249,9 @@ Patterns
 >           <|> any_pattern
 >           <|> record_pattern
 >           <|> list_pattern
->           <|> indentPairs "(" (try apply_pattern <|> pattern) ")"
+>           <|> indentPairs "(" (try view_pattern <|> try apply_pattern <|> pattern) ")"
 
+> view_pattern        = ViewPattern <$> expression <* spaces <* string "->" <* whitespace <*> pattern 
 > var_pattern         = VarPattern <$> type_var
 > literal_pattern     = LiteralPattern <$> literal          
 > any_pattern         = many1 (string "_") *> return AnyPattern
@@ -447,7 +451,8 @@ associativity of UnionTypes: (x | y) | z == x | y | z
 >                deriving (Ord, Eq)
 
 > data ComplexType = PolymorphicType SimpleType [UnionType]
->                  | JSONType (M.Map String UnionType)
+>                  | RecordType (M.Map String UnionType)
+>                  | InheritType String (M.Map String UnionType)
 >                  | FunctionType UnionType UnionType
 >                  | SimpleType SimpleType
 >                  | NamedType String (Maybe UnionType)
@@ -463,7 +468,9 @@ associativity of UnionTypes: (x | y) | z == x | y | z
 >     show (PolymorphicType x y)  = [qq|($x {sep_with " " y})|]
 >     show (NamedType n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedType n Nothing)  = n ++ ":"
->     show (JSONType m)           = [qq|\{ {g m} \}|] 
+>     show (InheritType n m)      = [qq|\{ $n with {g m} \}|]
+>         where g = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x: $y|]) . M.toAscList
+>     show (RecordType m)         = [qq|\{ {g m} \}|] 
 >         where g = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x: $y|]) . M.toAscList
 
 >     show (FunctionType g@(UnionType (S.toList -> ((FunctionType _ _):[]))) h) = [qq|($g -> $h)|]
@@ -531,8 +538,18 @@ have already been defined above.
 >                    return $ PolymorphicType name vars
 
 > record_type   = let key_value = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_definition_signature
->                     pairs     = key_value `sepEndBy` try (comma <|> not_comma) in
->                 (JSONType . M.fromList) <$> indentPairs "{" pairs "}"
+>                     pairs     = key_value `sepEndBy` try (comma <|> not_comma)
+>                     inner     = RecordType . M.fromList <$> pairs 
+>                     inherit   = do n <- type_name
+>                                    spaces
+>                                    indented
+>                                    string "with"
+>                                    spaces
+>                                    indented
+>                                    p <- pairs
+>                                    return $ InheritType n (M.fromList p) in
+
+>                 indentPairs "{" (inherit <|> inner) "}"
 
 > named_type    = NamedType <$> type_var <* string ":" <* whitespace <*> option Nothing (Just <$> (try nested_union_type <|> lift inner_type))
 > symbol_type   = SimpleType . SymbolType <$> type_name

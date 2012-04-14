@@ -1,11 +1,22 @@
-<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>
-<html><head><title>
-prelude
-</title>
-<link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
-<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script><script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script><script type='text/javascript' src='lib/js/zepto.js'></script><script type='text/javascript' src='prelude.js'></script><script type='text/javascript' src='prelude.spec.js'></script>
-<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link><link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
-<script type='text/javascript' src='lib/js/prettify.js'></script><script type='text/javascript' src='lib/js/lang-hs.js'></script><script type='text/javascript' src='lib/js/jquery.js'></script><style>ul{padding-left:40px;}</style></head><body><div style='margin: 0 0 50px 0'>
+<pre><code> &lt;!DOCTYPE HTML PUBLIC &#39;-//W3C//DTD HTML 4.01 Transitional//EN&#39; &#39;http://www.w3.org/TR/html4/loose.dtd&#39;&gt;
+ &lt;html&gt;
+ &lt;head&gt;
+ &lt;title&gt;prelude&lt;/title&gt;
+ &lt;link rel=&#39;stylesheet&#39; type=&#39;text/css&#39; href=&#39;lib/js/jasmine-1.0.1/jasmine.css&#39;&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;lib/js/jasmine-1.0.1/jasmine.js&#39;&gt;&lt;/script&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;lib/js/jasmine-1.0.1/jasmine-html.js&#39;&gt;&lt;/script&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;lib/js/zepto.js&#39;&gt;&lt;/script&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;prelude.js&#39;&gt;&lt;/script&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;prelude.spec.js&#39;&gt;&lt;/script&gt;
+ &lt;link href=&#39;http://kevinburke.bitbucket.org/markdowncss/markdown.css&#39; rel=&#39;stylesheet&#39;&gt;&lt;/link&gt;
+ &lt;link href=&#39;lib/js/prettify.css&#39; type=&#39;text/css&#39; rel=&#39;stylesheet&#39; /&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;lib/js/prettify.js&#39;&gt;&lt;/script&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;lib/js/lang-hs.js&#39;&gt;&lt;/script&gt;
+ &lt;script type=&#39;text/javascript&#39; src=&#39;lib/js/jquery.js&#39;&gt;&lt;/script&gt;
+ &lt;style&gt;ul{padding-left:40px;}&lt;/style&gt;
+ &lt;/head&gt;
+ &lt;body&gt;
+ &lt;div style=&#39;margin: 0 0 50px 0&#39;&gt;</code></pre>
 <h1 id="sonnet">Sonnet</h1>
 <p>A programming language, designed to be read</p>
 <hr />
@@ -27,7 +38,7 @@ type Complex = { real: Num, img: Num }</code></pre>
 <p>Named JSON - this is basically a special function that takes an anonymous JSON as an argument and returns the same value of a new type, with the option of ignoring the <code>{}</code> in such values which take a <code>Unit</code> type as an argument.</p>
 <pre><code>type Point = point of { x: Num, y: Num }
 
-type Unitt = unit of {}  </code></pre>
+type Unit&#39; = unit of {}  </code></pre>
 <p>Union JSON - which is simply a set of any of the above or of the native JSON types, separated by either new lines w/indentation, or <code>|</code></p>
 <pre><code>type Option a = { some: a } | none of {}
 
@@ -35,15 +46,16 @@ type Bool = true of {} | false of {}</code></pre>
 <p>Polymorphic JSON, which are any of the above with an introduction of a some type variables into scope:</p>
 <pre><code>type List a = 
     { head: a, tail: List a }
-    nil
+    | nil:
+
+type T a b = T of { a: a, b: b } 
 
 type Map key value =
-    from_list { items: List (key, value) }
-    empty
+    from_list: { items: List (T key value) }
+    | empty:
 
-
-{ x = real, y = img } * { u = real, v = img } = 
-    { real = x * u - y * v, img = x * v - y * u }  
+mult | { x = real, y = img } { u = real, v = img } = 
+       { real = x * u - y * v, img = x * v - y * u }  
 
 -- Alternatively:
 -- x * y = { real = x.real * y.real - x.img * y.img
@@ -239,4 +251,15 @@ module Atom
     atom_monad: Monad Atom! =         
         { return = new
           x &gt;&gt;= f = x &gt;&gt;= &#955; get _ &gt;&gt;= f }</code></pre>
-</div><script type='text/javascript'>jasmine.getEnv().addReporter(new jasmine.TrivialReporter());jasmine.getEnv().execute();</script><script type='text/javascript'>$('code').addClass('prettyprint lang-hs');prettyPrint()</script></body></html>
+</div>
+     <script type='text/javascript'>
+     jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+     jasmine.getEnv().execute();
+     </script>
+     <script type='text/javascript'>$('code').addClass('prettyprint lang-hs');
+     prettyPrint()
+     </script>
+     </body>
+     </html>
+
+
