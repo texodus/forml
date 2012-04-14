@@ -45,16 +45,16 @@ type variables into scope:
 
     type List a = 
         { head: a, tail: List a }
-        | nil
+        | nil:
 
     type T a b = T of { a: a, b: b } 
 
     type Map key value =
-        from_list of { items: List (T key value) }
-        | empty
+        from_list: { items: List (T key value) }
+        | empty:
 
-    { x = real, y = img } * { u = real, v = img } = 
-        { real = x * u - y * v, img = x * v - y * u }  
+    mult | { x = real, y = img } { u = real, v = img } = 
+           { real = x * u - y * v, img = x * v - y * u }  
 
     -- Alternatively:
     -- x * y = { real = x.real * y.real - x.img * y.img

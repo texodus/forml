@@ -71,14 +71,6 @@ lore ipsum
 > whitespace1 :: Parser String
 > whitespace1 = space >> whitespace
 
-> in_block :: Parser ()
-> in_block = do pos <- getPosition
->               s <- get
->               if (sourceColumn pos) < (sourceColumn s) 
->                 then parserFail "not indented" 
->                 else do put $ setSourceLine s (sourceLine pos)
->                         return ()
-
 > same :: Parser ()
 > same = do pos <- getPosition
 >           s <- get
@@ -93,13 +85,23 @@ lore ipsum
 >     where emptyline  = whitespace >> newline
 >           line_start = whitespace >> notFollowedBy newline >> in_block
 
-> comment :: Parser String
-> comment = try (whitespace >> newline >> return "\n") <|> comment'
+>           in_block = do pos <- getPosition
+>                         s <- get
+>                         if (sourceColumn pos) < (sourceColumn s) 
+>                            then parserFail "not indented" 
+>                            else do put $ setSourceLine s (sourceLine pos)
+>                                    return ()
 
->     where comment' = do x <- anyChar `manyTill` newline
->                         case x of 
->                           (' ':' ':' ':' ':_) -> return (x ++ "\n")
->                           _ -> return "\n"
+
+> comment :: Parser String
+> comment = try empty_line <|> try commented_code <|> try code <|> markdown_comment
+
+>     where markdown_comment = anyChar `manyTill` newline *> return "\n"
+>           empty_line = whitespace *> newline *> return "\n"
+>           code = (\x y -> x ++ y ++ "\n") <$> string "    " <*> (anyChar `manyTill` newline)
+>           commented_code = do x <- anyChar `manyTill` string "--"
+>                               anyChar `manyTill` newline
+>                               return $ x ++ "\n"
 
 > sep_with :: Show a => String -> [a] -> String
 > sep_with x = concat . L.intersperse x . fmap show
@@ -147,7 +149,6 @@ symbol
 >     show (TypeAxiom x) = ": " ++ show x
 >     show (EqualityAxiom ps ex) = [qq| | {concat . map show $ ps} = $ex|]
 
-> -- TODO type axiom should be optional - syntax?
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
 >                           name <- type_var
@@ -333,15 +334,15 @@ Expressions
 
 > if_expression = withPos $ do string "if"
 >                              whitespace1
->                              e <- (try infix_expression <|> other_expression)
+>                              e <- try infix_expression <|> other_expression
 >                              spaces
 >                              string "then"
 >                              whitespace1
->                              t <- (try infix_expression <|> other_expression)
+>                              t <- try infix_expression <|> other_expression
 >                              spaces
 >                              string "else"
 >                              whitespace1
->                              IfExpression e  t <$> (try infix_expression <|> other_expression) 
+>                              IfExpression e t <$> (try infix_expression <|> other_expression) 
 
 > infix_expression = buildExpressionParser table term 
 

@@ -64,23 +64,23 @@
          | z   = g 1 2 4 5 (3 + 5 + 7)
 
     xx: Str -> Int
+      -- This is a comment
       | x   = 1
 
     type X = Int
 
     yy: Int
-      | "tes" = "test"
+      | "tes" = "test"  -- this is also a comment
       | 1 = "fail"
       | true: = { x = 2 }
       | (true: 4) = 14
       | { x = 2 } = true:
-      | [ 1,
+      | [ 1, -- mid list comment
           2, x] = f 4
 
 --and some weird cases
 
       | x y = { x = x, y = "test" }
-
 
       | { x = { y = "test" }} = { z = 4, y = { x = {}}}
 
@@ -88,11 +88,11 @@
 
     z: Int
      | _ = let x: Int 
-                | = 1
+               | = 1
            x + y
 
     z: Int
-     | _ = let x | = 1
+     | _ = let x | 14 "test" = 1 | x = 1
                z | x = 2
            x + y
 
@@ -103,9 +103,9 @@
 
     zz: Int
       | x = monad: (\x = 3 | y = 4)
-      | 2 = x ^ 3 + y ^ 2 / 2 + (3 - 4) < 2 + 4
-      | _ = \ x = 2
-            | y = 3
+      | 2 = x^3 + y^2 / 2 + (3- 4) < 2 + 4
+      |_=\x=2
+         |y=3
 
       | z = \x = 2 | y = 5
 
