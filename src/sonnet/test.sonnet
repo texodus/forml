@@ -76,11 +76,11 @@
       | (true: 4) = 14
       | { x = 2 } = true:
       | [ 1, -- mid list comment
-          2, x] = f 4
+          2, x ] = f 4
 
 --and some weird cases
 
-      | x y = { x = x, y = "test" }
+      | x when x == 3 = { x = x, y = "test" }
 
       | { x = { y = "test" }} = { z = 4, y = { x = {}}}
 

@@ -99,9 +99,10 @@ lore ipsum
 >     where markdown_comment = anyChar `manyTill` newline *> return "\n"
 >           empty_line = whitespace *> newline *> return "\n"
 >           code = (\x y -> x ++ y ++ "\n") <$> string "    " <*> (anyChar `manyTill` newline)
->           commented_code = do x <- anyChar `manyTill` string "--"
+>           commented_code = do string "    "
+>                               x <- (noneOf "\n") `manyTill` string "--"
 >                               anyChar `manyTill` newline
->                               return $ x ++ "\n"
+>                               return $ if length (strip x) > 0 then "    " ++ x ++ "\n" else "\n"
 
 > sep_with :: Show a => String -> [a] -> String
 > sep_with x = concat . L.intersperse x . fmap show
@@ -117,7 +118,7 @@ A Sonnet program is represented by a set of statements
 
 > data Statement = TypeStatement TypeDefinition UnionType
 >                | DefinitionStatement Definition
->               -- | ExpressionStatement Expression
+>                | ExpressionStatement Expression
 
 > data Definition = Definition String [Axiom]
 
@@ -127,6 +128,7 @@ A Sonnet program is represented by a set of statements
 > instance Show Statement where
 >     show (TypeStatement t c)     = [qq|type $t = $c|]
 >     show (DefinitionStatement d) = show d
+>     show (ExpressionStatement x) = show x
 
 > instance Show Definition where
 >     show (Definition name ax) =[qq|$name {sep_with "\\n" ax}|]
@@ -134,7 +136,11 @@ A Sonnet program is represented by a set of statements
 
 > sonnetParser :: Parser Program
 > sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
->     where statement = whitespace >> withPos (try type_statement <|> (map DefinitionStatement <$> definition_statement)) <* many newline
+>     where statement = whitespace >> withPos statement_types <* many newline
+>           statement_types = try type_statement 
+>                 <|> try (map DefinitionStatement <$> definition_statement)
+>                 <|> expression_statement
+>                 <?> "Statement"
 
 
 Statements
@@ -143,11 +149,11 @@ A Statement may be a definition, which is a list of axioms associated with a
 symbol
 
 > data Axiom = TypeAxiom UnionType
->            | EqualityAxiom [Pattern] Expression
+>            | EqualityAxiom Match Expression
 
 > instance Show Axiom where
 >     show (TypeAxiom x) = ": " ++ show x
->     show (EqualityAxiom ps ex) = [qq| | {concat . map show $ ps} = $ex|]
+>     show (EqualityAxiom ps ex) = [qq| | $ps = $ex|]
 
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
@@ -161,7 +167,8 @@ symbol
 >     where eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
 >                           string "|" 
 >                           whitespace
->                           patterns <- pattern `sepEndBy` whitespace1
+>                           patterns <- match -- pattern `sepEndBy` whitespace1
+>                           whitespace
 >                           string "="
 >                           spaces
 >                           indented
@@ -175,7 +182,9 @@ symbol
 >                           indented
 >                           (:[]) . TypeAxiom <$> withPos type_axiom_signature
 
-
+> expression_statement :: Parser [Statement]
+> expression_statement = do whitespace
+>                           (:[]) . ExpressionStatement <$> expression
 
 Type definitions
 
@@ -212,7 +221,9 @@ Type definitions
 
 Patterns
 -----------------------------------------------------------------------------
+TODO when patterns
 
+> data Match = Match [Pattern] (Maybe Expression)
 
 > data Pattern = VarPattern String
 >              | AnyPattern
@@ -221,6 +232,10 @@ Patterns
 >              | ListPattern [Pattern]
 >              | ViewPattern Expression Pattern
 >              | NamedPattern String (Maybe Pattern)
+
+> instance Show Match where
+>     show (Match p Nothing)  = show p
+>     show (Match p (Just x)) = [qq|$p when $x|]
 
 > instance Show Pattern where
 >     show (VarPattern x)     = x
@@ -232,6 +247,18 @@ Patterns
 >     show (NamedPattern n Nothing)  = n ++ ":"
 >     show (RecordPattern m)  = [qq|\{ {g m} \}|] 
 >         where g             = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
+
+> match :: Parser Match
+> match = try conditional <|> ((\x -> Match x Nothing) <$> (pattern `sepEndBy` whitespace1))
+
+>     where conditional = do x <- try pattern `sepEndBy` try whitespace1
+>                            string "when"
+>                            spaces
+>                            indented
+>                            ex <- withPos expression
+>                            spaces
+>                            indented
+>                            return $ Match x (Just ex)
 
 > pattern         :: Parser Pattern
 > var_pattern     :: Parser Pattern
@@ -271,12 +298,13 @@ Patterns
 >                           value <- pattern
 >                           return (key, value)
 
-> list_pattern = ListPattern <$> indentPairs "[" (pattern `sepBy` comma) "]"
+> list_pattern = ListPattern <$> indentPairs "[" (pattern `sepBy` try comma) "]"
 
 
 
 Expressions
 -----------------------------------------------------------------------------
+TODO record accessors ("dot" notation)
 
 > data Expression = ApplyExpression Expression [Expression]
 >                 | NamedExpression String (Maybe Expression)
@@ -385,7 +413,7 @@ Expressions
 >                           indented
 >                           TypeAxiom <$> withPos type_axiom_signature
 
->           eq_axiom   = do patterns <- pattern `sepEndBy` whitespace1
+>           eq_axiom   = do patterns <- match
 >                           string "="
 >                           spaces
 >                           indented
@@ -493,7 +521,7 @@ names introduced into scope will be inaccessible in the case of a Definition).
 > type_axiom_signature      :: Parser UnionType
 > type_definition_signature :: Parser UnionType
 
-> type_axiom_signature      = (try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
+> type_axiom_signature      = ((UnionType . S.fromList . (:[]) <$> try function_type) <|> try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
 > type_definition_signature = UnionType . S.fromList <$> (try function_type <|> inner_type) `sepBy1` type_sep <* whitespace
 
 
@@ -565,14 +593,14 @@ type variables is handled in the type checker.
 > type_name :: Parser String
 > type_var  :: Parser String
 
-> type_name = (:) <$> upper <*> many (alphaNum <|> oneOf "_'")  
+> type_name = ((:) <$> upper <*> many (alphaNum <|> oneOf "_'")) <|> string "!"
 > type_var  = ((:) <$> lower <*> many (alphaNum <|> oneOf "_'")) >>= f
 
 >     where f x = if x `elem` reserved
 >                     then parserFail "reserved word"
 >                     else return x
 
->           reserved = [ "if", "then", "else", "type", "let" ]
+>           reserved = [ "if", "then", "else", "type", "let", "when" ]
 
 
 Of course, there are many common idioms from type parsing which may be factored

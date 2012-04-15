@@ -28,16 +28,16 @@ Named JSON - this is basically a special function that takes an anonymous JSON
 as an argument and returns the same value of a new type, with the option of ignoring
 the `{}` in such values which take a `Unit` type as an argument.
 
-    type Point = point of { x: Num, y: Num }
+    type Point = point: { x: Num, y: Num }
 
-    type Unit' = unit of {}  
+    type Unitt = unit: {}  
 
 Union JSON - which is simply a set of any of the above or of the native
 JSON types, separated by either new lines w/indentation, or `|`
 
-    type Option a = { some: a } | none of {}
+    type Option a = some: a | none: {}
 
-    type Bool = true of {} | false of {}
+    type Bool = true: | false:
 
 
 Polymorphic JSON, which are any of the above with an introduction of a some
@@ -56,62 +56,64 @@ type variables into scope:
     mult | { x = real, y = img } { u = real, v = img } = 
            { real = x * u - y * v, img = x * v - y * u }  
 
-    -- Alternatively:
-    -- x * y = { real = x.real * y.real - x.img * y.img
-    --           img =  x.real * y.img - x.img * y.real }
+   -- Alternatively:
+   -- x * y = { real = x.real * y.real - x.img * y.img
+   --           img =  x.real * y.img - x.img * y.real }
 
 Inherited JSON, which is polymorphic to the type it inherits from, and is declared
 using the `with` keyword:
 
     type Semigroup a = { zero: a }
-    
-    type Monoid a = { Semigroup with + : a → a → a }
+
+    type Monoid a = { Semigroup with plus: a → a → a }
+
+
 
 Definitions
 --------------------------------------------------------------------------------
 Modules define a scope for a collection of definitions.  Nesting modules is
 allowed, but only when the nesting is explicit via indentation.
 
-    module List
+   module List
 
 Definitions are specified via `=`, types via `:`, and assertions via `?`.  A 
 definition must be named once, and defines an indented scope for further 
 specifiers.  These may redeclare their scope if preferred.
  
-    --- Returns the first element of a list
-    head: [a]        → a
-        | [x & _]    = x
-        | nil         = undefined   -- head is not defined for an empty list.   
+   --- Returns the first element of a list
+    head: List a → a
+        | nil         = undefined 
+  -- head is not defined for an empty list.   
 
 
 JSON may also be destructed positionally if all keys are accounted for:
 
     tail: 
 
-        [a] → a
-      | [_ & x] = x
+        List a → a
+      | (cons -> { tail = 4 }) = x
       | []       = undefined 
 
       tail [3] == 3
-      tail [5 1 2] == [1 2]
+      tail [5, 1, 2] == [1, 2]
 
     --- Applies f recursively from the last element of the list.  Consumes 
     --  much stack (Haskell style)
 
-    foldr: (a → b → a) → b → [a] → b
-    foldr f x [] = x
-    foldr f x {y, ys} = f y (foldr f x ys) 
+    foldr:  (a → b → a) → b → List a → b
+    | f x [] = x
+    | f x (cons->{head=y,tail=ys}) = f y (foldr f x ys) 
 
     length:
     --- Returns the cardinality of a list (mixed style)
 
-        [_]      → Int
+        List a    → Int
       | []        = 0
-      | [ _, xs ] = 1 + length xs
+      | [_, xs] = 1 + length xs
 
     length [] == 0
     length [1] == 1
-    length [1 3 2 4] == 4
+    length [1, 3, 2, 4] == 4
 
 Though comments are defined via --, the alternative --- defines metadata in the
 form of a string which applies to the previous symbol.  The use of undefined above
@@ -121,12 +123,12 @@ function itself.
 Anonymous functions may be declared with `λ` in two different forms, via pattern 
 match (haskell-style) or via variable "templating" (clojure style):
 
-    tail = λ [_ & y] = y
-           | []      = undefined
+    tail | = λ (cons -> {tail = y}) = y
+             | []      = undefined
 
 or via variable "templating" (clojure style):
 
-    fmap (λ_ + 1) [1 2 3] ? [2 3 4] 
+    --fmap (λ_ + 1) [1 2 3] ? [2 3 4] 
 
 Assertions
 --------------------------------------------------------------------------------
@@ -134,19 +136,19 @@ Assertions
 Patterns
 --------------------------------------------------------------------------------
 
-    type ReverseList = reverse_list { reverse_list: [] }
+    type ReverseList a = reverse_list: List a
 
-    reverse [x & xs] = reverse xs + x | [] = []
+    reverse | (cons -> {head=x,tail=xs}) = reverse xs + x | [] = []
 
-    last: [a]                 → a
-        | (reverse [x & _]) = x
-        | _                    = undefined
+    last: List a            → a
+        | (reverse -> (cons -> {head=x})) = x
+        | _ = undefined
 
-    type Parity = even | odd
+    type Parity = even: | odd:
 
-    length_parity [_ & (length_parity → even)] = odd | _ = even    
+    length_parity | (cons -> {tail=(length_parity -> even)}) = odd | _ = even    
 
-    length_parity' [_ & xs] = length_parity xs |> (λ even = odd | _ = even)
+    length_parityy | (cons -> {tail=xs}) = ap (length_parity xs) (\ even: = odd: | _ = even:)
 
 Implicits
 --------------------------------------------------------------------------------
@@ -158,7 +160,7 @@ easily implemented as a function with an implicit return type:
 
     complex_to_string: 
 
-        Complex          → ^Str
+        Complex          → Str
       | x when x.img == 0 = string x.real
       | x when x.img > 0  = string x.real + " + " + x.img + "i"
       | x                 = string x.real + " - " + x.img + "i"
@@ -167,7 +169,7 @@ The `{}` makes this function implicit.  As there is now a unique implicit instan
 of a function which converts `Complex` to `Str`, we may now use `Complex` types
 in places where we would otherwise use a string.
 
-    length { real = 2.0, img = 3.0 } == 10
+   -- length { real = 2.0, img = 3.0 } == 10
     
 Implicit parameters other than the return type may be optionally left out of the
 function invocation - as long as there is a unique instance in scope which
