@@ -169,15 +169,19 @@ The `{}` makes this function implicit.  As there is now a unique implicit instan
 of a function which converts `Complex` to `Str`, we may now use `Complex` types
 in places where we would otherwise use a string.
 
-   -- length { real = 2.0, img = 3.0 } == 10
+    length { real = 2, img = 3 } == 10
     
 Implicit parameters other than the return type may be optionally left out of the
 function invocation - as long as there is a unique instance in scope which
 satisfies the type signature, it will be inserted automatically.
 
     type Functor f = { map: (a → b) → f a → f b }
+
+    _ | f = f { map = let mapp | x = f head (mapp f xs)
+                      mapp }
+    
    
-    fmap: ^(Functor f) → (a - > b) → f a → f b
+    fmap: Functor f -> (a -> b) → f a → f b
         | functor         g            m    = functor.map g m
 
     fmap func (f . g) x == fmap func f <| fmap func g x

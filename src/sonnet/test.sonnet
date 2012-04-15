@@ -62,6 +62,7 @@
     test | x   = "test" 
          | y   = "fail"
          | z   = g 1 2 4 5 (3 + 5 + 7)
+	 | f   = f g x
 
     xx: Str -> Int
       -- This is a comment
@@ -114,4 +115,15 @@
 
 
     x | (z -> x) = 2 | y = 3
+
+    x | f = f { map = let mapp | x = f head (mapp f xs)
+                      mapp }
+
+    x | x = f 
+
+    x: Int 
+      | f = let f: Int 
+                | = f x 
+            f + 2
+
 

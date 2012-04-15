@@ -352,7 +352,10 @@ TODO record accessors ("dot" notation)
 >                    <|> try apply_expression
 >                    <|> try function_expression
 >                    <|> try accessor_expression
->                    <|> indentPairs "(" expression ")" 
+>                    <|> inner_expression
+
+> inner_expression :: Parser Expression
+> inner_expression = indentPairs "(" expression ")" 
 >                    <|> js_expression 
 >                    <|> record_expression 
 >                    <|> literal_expression
@@ -361,7 +364,7 @@ TODO record accessors ("dot" notation)
 
 > let_expression = withPos $ do string "let"
 >                               whitespace1
->                               defs <- concat <$> withPos (try (same *> definition_statement) `sepBy1` try spaces)
+>                               defs <- concat <$> withPos (try definition_statement `sepBy1` try (spaces *> same))
 >                               spaces
 >                               same
 >                               LetExpression <$> return defs <*> expression
@@ -403,8 +406,10 @@ TODO record accessors ("dot" notation)
 > accessor_expression = do x <- indentPairs "(" expression ")" 
 >                               <|> js_expression 
 >                               <|> record_expression 
+>                               <|> literal_expression
 >                               <|> symbol_expression
 >                               <|> list_expression
+
 >                          string "."
 >                          z <- type_var
 >                          return $ ApplyExpression 
@@ -415,8 +420,8 @@ TODO record accessors ("dot" notation)
 >                                     [x]
 
 > -- TODO app should be a full expression parser 
-> apply_expression = ApplyExpression <$> app <* whitespace1 <*> (expression `sepEndBy1` whitespace1)
->     where app = indentPairs "(" (function_expression <|> apply_expression) ")" <|> symbol_expression
+> apply_expression = ApplyExpression <$> app <*> many1 (try (whitespace *> (try accessor_expression <|> inner_expression)))
+>     where app = indentPairs "(" (try function_expression <|> apply_expression) ")" <|> symbol_expression
 
 > function_expression = withPos $ do string "\\" <|> string "λ"
 >                                    whitespace
