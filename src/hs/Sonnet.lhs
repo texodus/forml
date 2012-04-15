@@ -98,11 +98,11 @@ lore ipsum
 
 >     where markdown_comment = anyChar `manyTill` newline *> return "\n"
 >           empty_line = whitespace *> newline *> return "\n"
->           code = (\x y -> x ++ y ++ "\n") <$> string "    " <*> (anyChar `manyTill` newline)
+>           code = (\x y -> x ++ rstrip y ++ "\n") <$> string "    " <*> (anyChar `manyTill` newline)
 >           commented_code = do string "    "
 >                               x <- (noneOf "\n") `manyTill` string "--"
 >                               anyChar `manyTill` newline
->                               return $ if length (strip x) > 0 then "    " ++ x ++ "\n" else "\n"
+>                               return $ if length (strip x) > 0 then "    " ++ (rstrip x) ++ "\n" else "\n"
 
 > sep_with :: Show a => String -> [a] -> String
 > sep_with x = concat . L.intersperse x . fmap show
@@ -157,7 +157,7 @@ symbol
 
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
->                           name <- type_var
+>                           name <- try type_var <|> many1 (char '_')
 >                           sig <- option [] $ try type_axiom
 >                           spaces
 >                           eqs <- withPos (many1 $ try eq_axiom)
@@ -234,8 +234,8 @@ TODO when patterns
 >              | NamedPattern String (Maybe Pattern)
 
 > instance Show Match where
->     show (Match p Nothing)  = show p
->     show (Match p (Just x)) = [qq|$p when $x|]
+>     show (Match p Nothing)  = sep_with " " p
+>     show (Match p (Just x)) = [qq|{sep_with " " p} when $x|]
 
 > instance Show Pattern where
 >     show (VarPattern x)     = x
@@ -467,18 +467,23 @@ Literals
 Literals in Sonnet are limited to strings and numbers - 
 
 
-> data Literal = StringLiteral String | NumLiteral Int
+> data Literal = StringLiteral String | IntLiteral Int | FloatLiteral Float
 
 > instance Show Literal where
 >    show (StringLiteral x) = show x
->    show (NumLiteral x)    = show x
+>    show (IntLiteral x)    = show x
+>    show (FloatLiteral x)  = show x
 
 > -- TODO string escaping
 > -- TODO heredoc
 > -- TODO string interpolation
 > literal :: Parser Literal
-> literal = try num <|> try str
->     where num = NumLiteral . read <$> many1 digit
+> literal = try flt <|> try num <|> try str
+>     where flt = FloatLiteral . read <$> do x <- many1 digit 
+>                                            string "."
+>                                            y <- many1 digit
+>                                            return $ x ++ "." ++ y
+>           num = IntLiteral . read <$> many1 digit
 >           str = StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
 
 

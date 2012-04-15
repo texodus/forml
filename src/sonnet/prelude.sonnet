@@ -152,24 +152,24 @@ Patterns
 
 Implicits
 --------------------------------------------------------------------------------
-Any number of consecutive starting parameters of a function, and/or the last
-parameter, may be marked as implicit, which simply means that if the type
+Any definition may be marked as implicit, which simply means that if the type
 checker fails, the compiler will attempt to "fill in" parameters marked implicit
 with a unique instance in scope.  For example, Haskell's Show type class can be
 easily implemented as a function with an implicit return type:
 
-    complex_to_string: 
+    ____: 
 
         Complex          → Str
       | x when x.img == 0 = string x.real
       | x when x.img > 0  = string x.real + " + " + x.img + "i"
       | x                 = string x.real + " - " + x.img + "i"
         
-The `{}` makes this function implicit.  As there is now a unique implicit instance
-of a function which converts `Complex` to `Str`, we may now use `Complex` types
-in places where we would otherwise use a string.
+The `___` makes this function implicit; it is by extension uninvokable by name.
+As there is now a unique implicit instance of a function which converts
+`Complex` to `Str`, we may now use `Complex` types in places where we would
+otherwise use a string:
 
-    length { real = 2, img = 3 } == 10
+    length { real = 2.0, img = 3.0 } == 10
     
 Implicit parameters other than the return type may be optionally left out of the
 function invocation - as long as there is a unique instance in scope which
@@ -177,23 +177,22 @@ satisfies the type signature, it will be inserted automatically.
 
     type Functor f = { map: (a → b) → f a → f b }
 
-    _ | f = f { map = let mapp | x = f head (mapp f xs)
-                      mapp }
+    ___ | f = let mapp | f (cons->{head=x,tail=xs}) = append [f x] (mapp f xs)
+                       | f [] = []
+              f { map = mapp }
     
    
     fmap: Functor f -> (a -> b) → f a → f b
         | functor         g            m    = functor.map g m
 
-    fmap func (f . g) x == fmap func f <| fmap func g x
+    fmap func (comp f g) x == fmap func f (fmap func g x)
     fmap func id x == x
     
-    { map _ [] = [] 
-      map f [x & xs] = f x & map f xs }
       
 There is a single instance of Functor List in scope (even though it
 has no name), so fmap can be invoked on lists with no Functor param
 
-    fmap (λ_ + 1) [1 2 3] ? [2 3 4] 
+    fmap (λ x = x + 1) [1, 2, 3] == [2, 3, 4]    
 
 Here's a few sample Haskell type classes encoded as regular ADTs, then
 instantiated such that they may be useful as implicit parameters:                            
