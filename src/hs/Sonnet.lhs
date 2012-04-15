@@ -341,6 +341,7 @@ TODO record accessors ("dot" notation)
 > record_expression   :: Parser Expression
 > literal_expression  :: Parser Expression
 > symbol_expression   :: Parser Expression
+> accessor_expression :: Parser Expression
 > list_expression     :: Parser Expression
 > if_expression       :: Parser Expression
 
@@ -350,6 +351,7 @@ TODO record accessors ("dot" notation)
 >                    <|> try named_expression
 >                    <|> try apply_expression
 >                    <|> try function_expression
+>                    <|> try accessor_expression
 >                    <|> indentPairs "(" expression ")" 
 >                    <|> js_expression 
 >                    <|> record_expression 
@@ -397,6 +399,20 @@ TODO record accessors ("dot" notation)
 > named_expression = NamedExpression 
 >                    <$> (many1 alphaNum <* string ":") 
 >                    <*> option Nothing (Just <$> try (whitespace1 *> other_expression))
+
+> accessor_expression = do x <- indentPairs "(" expression ")" 
+>                               <|> js_expression 
+>                               <|> record_expression 
+>                               <|> symbol_expression
+>                               <|> list_expression
+>                          string "."
+>                          z <- type_var
+>                          return $ ApplyExpression 
+>                                     (FunctionExpression 
+>                                          [ EqualityAxiom 
+>                                            (Match [RecordPattern (M.fromList [(z, VarPattern "x")])] Nothing)
+>                                            (SymbolExpression "x") ] )
+>                                     [x]
 
 > -- TODO app should be a full expression parser 
 > apply_expression = ApplyExpression <$> app <* whitespace1 <*> (expression `sepEndBy1` whitespace1)
