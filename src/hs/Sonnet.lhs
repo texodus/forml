@@ -423,7 +423,7 @@ TODO record accessors ("dot" notation)
 > apply_expression = ApplyExpression <$> app <*> many1 (try (whitespace *> (try accessor_expression <|> inner_expression)))
 >     where app = indentPairs "(" (try function_expression <|> apply_expression) ")" <|> symbol_expression
 
-> function_expression = withPos $ do string "\\" <|> string "λ"
+> function_expression = withPos $ do string "\\" <|> string "\955" --"λ"
 >                                    whitespace
 >                                    t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
 >                                    eqs <- try eq_axiom `sepBy1` try ((try (spaces *> same) <|> (whitespace *> return ())) *> string "|" <* whitespace)
@@ -697,34 +697,34 @@ Docs
 > wrap_html :: String -> String -> String
 > wrap_html name body = [qq|
 
->    <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>
->    <html>
->    <head>
->    <title>$name</title>
->    <link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
->    <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
->    <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
->    <script type='text/javascript' src='lib/js/zepto.js'></script>
->    <script type='text/javascript' src='$name.js'></script>
->    <script type='text/javascript' src='$name.spec.js'></script>
->    <link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>
->    <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
->    <script type='text/javascript' src='lib/js/prettify.js'></script>
->    <script type='text/javascript' src='lib/js/lang-hs.js'></script>
->    <script type='text/javascript' src='lib/js/jquery.js'></script>
->    <style>ul\{padding-left:40px;\}</style>
->    </head>
->    <body>
->    <div style='margin: 0 0 50px 0'>$body</div>
->    <script type='text/javascript'>
->    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
->    jasmine.getEnv().execute();
->    </script>
->    <script type='text/javascript'>$('code').addClass('prettyprint lang-hs');
->    prettyPrint()
->    </script>
->    </body>
->    </html>
+>  <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>
+>  <html>
+>  <head>
+>  <title>$name</title>
+>  <link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
+>  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
+>  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
+>  <script type='text/javascript' src='lib/js/zepto.js'></script>
+>  <script type='text/javascript' src='$name.js'></script>
+>  <script type='text/javascript' src='$name.spec.js'></script>
+>  <link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>
+>  <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
+>  <script type='text/javascript' src='lib/js/prettify.js'></script>
+>  <script type='text/javascript' src='lib/js/lang-hs.js'></script>
+>  <script type='text/javascript' src='lib/js/jquery.js'></script>
+>  <style>ul\{padding-left:40px;\}</style>
+>  </head>
+>  <body>
+>  <div style='margin: 0 0 50px 0'>$body</div>
+>  <script type='text/javascript'>
+>  jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+>  jasmine.getEnv().execute();
+>  </script>
+>  <script type='text/javascript'>$('code').addClass('prettyprint lang-hs');
+>  prettyPrint()
+>  </script>
+>  </body>
+>  </html>
 
 > |]
 
