@@ -220,12 +220,12 @@ instantiated such that they may be useful as implicit parameters:
     type Applicative f =
 
         { Functor f with
-              return: a → f a,
+              return: a -> f a,
               ap:    f (a → b) → f a → f b }
   
     f | x = x ** 1
 
-    applicative = abstract: { map = \f x = return f * x }  
+    applicative = abstract: { map f x = return f * x }  
 
   --  forall u v w x y 	
  
@@ -243,9 +243,9 @@ instantiated such that they may be useful as implicit parameters:
     monad = abstract:
 
         { applicative with
-              ap = \x y = x >>= (\ f = map f y)
-              bind = \ x y = join (map f x)
-              join = \x = x >>= id }
+              ap x y = x >>= (\ f = map f y)
+              bind x y = join (map f x)
+              join x = x >>= id }
         
     return x >>= f == f x                   -- Left identity
     x >>= return == x                       -- Right identity              
@@ -255,11 +255,12 @@ Since the type of this instance is inferable and we aren't naming it, we can
 declare instance simply like this:
 
     { zero         = []
-      (x :: y) + z = x :: (y + z)
-      []       + x = x }
 
-    ? zero + [1] + zero = [1]
-    ? [2 3] + zero + [1] = [2 3 1]
+      plus (cons: {h=x,t=y}) = x ++ (y + z)
+         | []                = x }
+
+    zero + [1] + zero == [1]
+    [2 3] + zero + [1] == [2 3 1]
 
 Though in some cases, we may want to give it a name and or type annotation:
     
@@ -267,8 +268,8 @@ Though in some cases, we may want to give it a name and or type annotation:
 
         { monad with 
               return x = [x]
-              xs >>= f = reduce (λ_ + _) (map f y)
-              [] >>= f = zero }
+              bind xs f = reduce (\ x y = x + y) (map f y)
+              bind [] f = zero }
      
     map list_monad fib [] == zero
     map list_monad fib [0 1] == [1 1]
@@ -283,14 +284,14 @@ allowed to occur in quoted javascript, which has slightly different rules than
 standard javascript, but compiles into basically what you expect.
 
     log: Str → !
-    log x = `console.log(x)`
+       | x = `console.log(x)`
 
 The return type of any quoted javascript is a special IO type `a!`, where a is
 inferred to be `()` when not provided.
 
-    io_monad: Monad !
-        = { return x = `function() { return x }`
-            x >>= f  =  `f(x())` }
+    io_monad: Monad String
+        | = { return x = `function() { return x }`
+              bind x f  =  `f(x())` }
 
     module JQuery
     --  Library of useful JQuery wrappers

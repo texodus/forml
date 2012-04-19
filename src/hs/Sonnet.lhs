@@ -53,8 +53,6 @@ A programming language, designed to be read
 > import Data.Char (ord, isAscii)
 > import Data.String.Utils
 
-> import Language.Javascript.JMacro
-
 
 Structure & comments
 --------------------------------------------------------------------------------
@@ -325,7 +323,7 @@ TODO custom operators
 >                 | IfExpression Expression Expression Expression
 >                 | LiteralExpression Literal
 >                 | SymbolExpression String
->                 | JSExpression JStat
+>                 | JSExpression String
 >                 | FunctionExpression [Axiom]
 >                 | RecordExpression (M.Map String Expression)
 >                 | InheritExpression Expression (M.Map String Expression)
@@ -333,16 +331,18 @@ TODO custom operators
 >                 | ListExpression [Expression]
 
 > instance Show Expression where
->     show (ApplyExpression x y)   = [qq|$x {sep_with " " y}|]
->     show (IfExpression a b c)    = [qq|if $a then $b else $c|]
->     show (LiteralExpression x)   = show x
->     show (SymbolExpression x)    = x
->     show (ListExpression x)      = [qq|[ {sep_with ", " x} ]|]
->     show (FunctionExpression as) = [qq|λ{sep_with "" as}|]
+>     show (ApplyExpression x y)        = [qq|$x {sep_with " " y}|]
+>     show (IfExpression a b c)         = [qq|if $a then $b else $c|]
+>     show (LiteralExpression x)        = show x
+>     show (SymbolExpression x)         = x
+>     show (ListExpression x)           = [qq|[ {sep_with ", " x} ]|]
+>     show (FunctionExpression as)      = [qq|λ{sep_with "" as}|]
 >     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedExpression n Nothing)  = n ++ ":"
->     show (LetExpression ax e)    = [qq|let {sep_with "\\n" ax} in ($e)|]
->     show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|] 
+>     show (JSExpression x)             = "`" ++ x ++ "`"
+>     show (LetExpression ax e)         = [qq|let {sep_with "\\n" ax} in ($e)|]
+>     show (RecordExpression m)         = [qq|\{ {unsep_with " = " m} \}|] 
+>     show (InheritExpression x m)      = [qq|\{ $x with {unsep_with " = " m} \}|] 
 
 > expression          :: Parser Expression
 > other_expression    :: Parser Expression
@@ -381,7 +381,7 @@ TODO custom operators
 >                               whitespace1
 >                               defs <- concat <$> withPos (try definition_statement `sepBy1` try (spaces *> same))
 >                               spaces
->                            --   same
+>                               same
 >                               LetExpression <$> return defs <*> expression
 
 > if_expression = withPos $ do string "if"
@@ -406,21 +406,21 @@ TODO custom operators
 >                    , [px "not"]
 >                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
->           ix s   = Infix (op $ string s <* notFollowedBy (oneOf "!@#$%^&*<>?/|=\\~,.")) AssocLeft
+>           ix s   = Infix (op $ string s <* notFollowedBy (oneOf "!@#$%^&*<>?/|=\\~,.+-")) AssocLeft
 >           px s   = Prefix $ (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
 >           term   = try other_expression
 
->           reserved_ops = [ "|", "\\", "=", ".", ":", ",", "==" ]
+>           reserved_ops = [ "|", "\\", "=", ".", ":", ",", "==", "-", "->", "<=", ">=", "<", ">" ]
 
 >           user_op_left = try $ do whitespace
->                                   op' <- (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.")
+>                                   op' <- (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.+-")
 >                                   spaces
 >                                   if op' `elem` reserved_ops
 >                                       then parserFail "Non-reserved operator"
 >                                       else return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
 
 >           user_op_right = try $ do whitespace
->                                    op' <- ((++) <$> (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.") <*> string ":")
+>                                    op' <- ((++) <$> (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.+-") <*> string ":")
 >                                    spaces
 >                                    if op' `elem` reserved_ops
 >                                        then parserFail "Non-reserved operator"
@@ -458,7 +458,7 @@ TODO left recursive accessors
 > function_expression = withPos $ do string "\\" <|> string "λ" <|> string "\955"
 >                                    whitespace
 >                                    t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
->                                    eqs <- try eq_axiom `sepBy1` try ((try (spaces *> same) <|> (whitespace *> return ())) *> string "|" <* whitespace)
+>                                    eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
 >                                    return $ FunctionExpression (t ++ eqs)
 
 >     where type_axiom = do string ":"
@@ -474,17 +474,28 @@ TODO left recursive accessors
 >                           return $ EqualityAxiom patterns ex
 
 TODO allow ` escaping
+TODO it would be nice if we parsed javascript too ...
 
-> js_expression = do expr <- indentPairs "`" (many $ noneOf "`") "`"
->                    case parseJM expr of
->                      Left ex -> parserFail $ show ex
->                      Right s -> return $ JSExpression s
+> js_expression = JSExpression <$> indentPairs "`" (many $ noneOf "`") "`"
+
 
 TODO allow sugar for declaring method dictionaries as records, eg `{ f x = x + 1 }`
 instead of `{ f = \ x = x + 1 }`
 
 > record_expression = indentPairs "{" (try inherit <|> RecordExpression . M.fromList <$>  pairs') "}"
->     where pairs' = withPos key_eq_val `sepBy` try (try comma <|> not_comma)
+>     where pairs' = (withPos $ try key_eq_val <|> try function) `sepBy` try (try comma <|> not_comma)
+
+>           function = do n <- type_var 
+>                         whitespace
+>                         eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
+>                         return $ (n, FunctionExpression eqs)
+
+>           eq_axiom   = do patterns <- match
+>                           string "="
+>                           spaces
+>                           indented
+>                           ex <- withPos expression
+>                           return $ EqualityAxiom patterns ex
 
 >           inherit = do ex <- expression
 >                        spaces *> indented
