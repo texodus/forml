@@ -45,17 +45,17 @@ Polymorphic JSON, which are any of the above with an introduction of a some
 type variables into scope: 
 
     type List a = 
-        { head: a, tail: List a }
+        | cons: { h: a, t: List a }
         | nil:
 
     type T a b = T of { a: a, b: b } 
 
     type Map key value =
-        from_list: { items: List (T key value) }
+        | from_list: { items: List (T key value) }
         | empty:
 
-    mult | { x = real, y = img } { u = real, v = img } = 
-           { real = x * u - y * v, img = x * v - y * u }  
+    mult { x = real, y = img } { u = real, v = img } = 
+         { real = x * u - y * v, img = x * v - y * u }  
 
    -- Alternatively:
    -- mult | x y = { real = x.real * y.real - x.img * y.img
@@ -97,6 +97,8 @@ JSON may also be destructed positionally if all keys are accounted for:
       tail [3] == 3
       tail [5, 1, 2] == [1, 2]
 
+    cons: List a -> { head: a, tail: List a }
+
     --- Applies f recursively from the last element of the list.  Consumes 
     --  much stack (Haskell style)
 
@@ -123,8 +125,8 @@ function itself.
 Anonymous functions may be declared with `λ` in two different forms, via pattern 
 match (haskell-style) or via variable "templating" (clojure style):
 
-    tail | = λ (cons -> {tail = y}) = y
-             | []      = undefined
+    tail = λ (cons -> {tail = y}) = y
+           | []      = undefined
 
 or via variable "templating" (clojure style):
 
@@ -149,7 +151,7 @@ Patterns
 
     type ReverseList a = reverse_list: List a
 
-    reverse | (cons -> {head=x,tail=xs}) = reverse xs + x | [] = []
+    reverse (cons -> {head=x,tail=xs}) = reverse xs + x | [] = []
 
     last: List a            → a
         | (reverse -> (cons -> {head=x})) = x
@@ -157,9 +159,9 @@ Patterns
 
     type Parity = even: | odd:
 
-    length_parity | (cons -> {tail=(length_parity -> even)}) = odd | _ = even    
+    length_parity (cons -> {tail=(length_parity -> even)}) = odd | _ = even    
 
-    length_parityy | (cons -> {tail=xs}) = ap (length_parity xs) (\ even: = odd: | _ = even:)
+    length_parityy (cons -> {tail=xs}) = ap (length_parity xs) (\ even: = odd: | _ = even:)
 
 Implicits
 --------------------------------------------------------------------------------
@@ -170,7 +172,7 @@ easily implemented as a function with an implicit return type:
 
     ____: 
 
-        Complex           → Str
+        Complex          -> Str
       | x when x.img == 0 = string x.real
       | x when x.img > 0  = string x.real + " + " + x.img + "i"
       | x                 = string x.real + " - " + x.img + "i"
@@ -186,15 +188,22 @@ Implicit parameters other than the return type may be optionally left out of the
 function invocation - as long as there is a unique instance in scope which
 satisfies the type signature, it will be inserted automatically.
 
-    type Functor f = { map: (a → b) → f a → f b }
+    type Class a = (a -> b) -> b
 
-    ___ | f = let g | f (cons->{head=x,tail=xs}) = append [f x] (mapp f xs)
-                    | f [] = []
-              f { map = g }
-    
-   
-    fmap: Functor f -> (a -> b) → f a → f b
-        | functor         g            m    = functor.map g m
+    ___ : (class: a) -> Class a 
+        | x             f = f x
+
+    type Functor f = { map: (a -> b) -> f a -> f b }
+
+    ___: Class (Functor List) = class:
+
+         { map = \ f (cons->{head=x,tail=xs}) = append [f x] (mapp f xs)
+                 | f [] = [] }
+
+    map | f = f.map
+
+    incF: (class: Functor f) -> f Int → f Int
+        | functor                 g   = functor.map inc m
 
     fmap func (comp f g) x == fmap func f (fmap func g x)
     fmap func id x == x
@@ -203,38 +212,40 @@ satisfies the type signature, it will be inserted automatically.
 There is a single instance of Functor List in scope (even though it
 has no name), so fmap can be invoked on lists with no Functor param
 
-    fmap (λ x = x + 1) [1, 2, 3] == [2, 3, 4]    
+    fmap (\ x = x + 1) [1, 2, 3] == [2, 3, 4]    
 
 Here's a few sample Haskell type classes encoded as regular ADTs, then
 instantiated such that they may be useful as implicit parameters:                            
               
     type Applicative f =
 
-        { Functor f where 
-              return: a → f a
-              ** :    f (a → b) → f a → f b }
+        { Functor f with
+              return: a → f a,
+              ap:    f (a → b) → f a → f b }
   
-    applicative = { map f x = return f ** x ... }  
+    f | x = x ** 1
 
-    forall f u v w x y 	
+    applicative = abstract: { map = \f x = return f * x }  
+
+  --  forall u v w x y 	
  
-        return id ** v == v                        -- Identity
-        return (.) ** u ** v ** w == u ** (v ** w) -- Composition
+        return id * v == v f                        -- Identity
+        return comp ** u ** v ** w == u ** (v ** w) -- Composition
         return f ** return x == return (f x)       -- Homomorphism
-        u ** return y == return (λ _ y) ** u       -- Interchange      
+        u ** return y == return (\ f = f y) ** u       -- Interchange      
 
     type Monad m =
 
         { Applicative m with
-              >>= : m a → (a → m b) → m b
+              bind: m a → (a → m b) → m b,
               join: m (m a) → m a }
 
-    monad = 
+    monad = abstract:
+
         { applicative with
               x ** y  = x >>= λ map _ y
               x >>= f = join (map f x)
-              join x  = x >>= id
-              ... }
+              join x  = x >>= id }
         
     return x >>= f == f x                   -- Left identity
     x >>= return == x                       -- Right identity              

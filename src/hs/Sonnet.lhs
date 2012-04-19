@@ -72,12 +72,12 @@ lore ipsum
 > whitespace1 = space >> whitespace
 
 > same :: Parser ()
-> same = do pos <- getPosition
->           s <- get
->           if (sourceColumn pos) /= (sourceColumn s) 
->              then parserFail "not indented" 
->              else do put $ setSourceLine s (sourceLine pos)
->                      return ()
+> same = spaces >> do pos <- getPosition
+>                     s <- get
+>                     if (sourceColumn pos) /= (sourceColumn s) 
+>                        then parserFail "not indented" 
+>                        else do put $ setSourceLine s (sourceLine pos)
+>                                return ()
 
 > spaces :: Parser ()
 > spaces = try emptyline `manyTill` try line_start >> return ()
@@ -107,7 +107,8 @@ lore ipsum
 > sep_with :: Show a => String -> [a] -> String
 > sep_with x = concat . L.intersperse x . fmap show
 
-
+> unsep_with :: forall a. Show a => String -> (M.Map String a) -> String
+> unsep_with z = concat . L.intersperse ", " . fmap (\(x, y) -> concat [x, z, show y]) . M.toAscList
 
 
 Parsing 
@@ -116,9 +117,13 @@ A Sonnet program is represented by a set of statements
 
 > newtype Program = Program [Statement]
 
+> newtype Namespace = Namespace [String]
+
 > data Statement = TypeStatement TypeDefinition UnionType
 >                | DefinitionStatement Definition
 >                | ExpressionStatement Expression
+>                | ImportStatement Namespace
+>                | ModuleStatement Namespace Statement
 
 > data Definition = Definition String [Axiom]
 
@@ -137,10 +142,9 @@ A Sonnet program is represented by a set of statements
 > sonnetParser :: Parser Program
 > sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
 >     where statement = whitespace >> withPos statement_types <* many newline
->           statement_types = try type_statement 
->                 <|> try (map DefinitionStatement <$> definition_statement)
->                 <|> expression_statement
->                 <?> "Statement"
+>           statement_types = (try type_statement  <?> "Type Definition")
+>                 <|> (try (map DefinitionStatement <$> definition_statement) <?> "Symbol Definition")
+>                 <|> (expression_statement <?> "Assertion")
 
 
 Statements
@@ -158,29 +162,37 @@ symbol
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
 >                           name <- try type_var <|> many1 (char '_')
->                           sig <- option [] $ try type_axiom
+>                           sig <- try ((:) <$> type_axiom <*> option [] ((:[]) <$> try (spaces *> no_args_eq_axiom (Match [] Nothing))))
+>                                  <|> ((:[]) <$> try naked_eq_axiom) 
+>                                  <|> return []
 >                           spaces
->                           eqs <- withPos (many1 $ try eq_axiom)
+>                           eqs <- withPos (many $ try eq_axiom)
 >                           whitespace
->                           return $ [Definition name (sig ++ eqs)]
+>                           if length sig == 0 && length eqs == 0 
+>                              then parserFail "Deinition Axioms"
+>                              else return $ [Definition name (sig ++ eqs)]
 
 >     where eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
->                           string "|" 
->                           whitespace
->                           patterns <- match -- pattern `sepEndBy` whitespace1
->                           whitespace
->                           string "="
->                           spaces
->                           indented
->                           ex <- withPos expression
->                           return $ EqualityAxiom patterns ex
+>                           string "|"
+>                           naked_eq_axiom
+
+>           naked_eq_axiom = do whitespace
+>                               patterns <- match
+>                               no_args_eq_axiom patterns
+
+>           no_args_eq_axiom patterns = do whitespace
+>                                          string "=" 
+>                                          spaces
+>                                          indented
+>                                          ex <- withPos expression
+>                                          return $ EqualityAxiom patterns ex
 
 >           type_axiom = do spaces
 >                           indented
 >                           string ":"
 >                           spaces
 >                           indented
->                           (:[]) . TypeAxiom <$> withPos type_axiom_signature
+>                           TypeAxiom <$> withPos type_axiom_signature
 
 > expression_statement :: Parser [Statement]
 > expression_statement = do whitespace
@@ -205,7 +217,8 @@ Type definitions
 >                      whitespace 
 >                      string "="
 >                      spaces
->                      sig <- withPos type_definition_signature
+>                      sig <- withPos $ do option "" (string "|" <* spaces)
+>                                          type_definition_signature
 >                      whitespace
 >                      return $ [TypeStatement def sig]
 
@@ -242,11 +255,10 @@ TODO when patterns
 >     show AnyPattern         = "_"
 >     show (LiteralPattern x) = show x
 >     show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
->     show (ViewPattern x y)  = [qq|[($x -> $y)|]
+>     show (ViewPattern x y)  = [qq|($x -> $y)|]
 >     show (NamedPattern n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedPattern n Nothing)  = n ++ ":"
->     show (RecordPattern m)  = [qq|\{ {g m} \}|] 
->         where g             = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
+>     show (RecordPattern m)  = [qq|\{ {unsep_with " = " m} \}|] 
 
 > match :: Parser Match
 > match = try conditional <|> ((\x -> Match x Nothing) <$> (pattern `sepEndBy` whitespace1))
@@ -304,7 +316,9 @@ TODO when patterns
 
 Expressions
 -----------------------------------------------------------------------------
-TODO record accessors ("dot" notation)
+TODO nested record accessors
+TODO recursive applyexpression
+TODO custom operators
 
 > data Expression = ApplyExpression Expression [Expression]
 >                 | NamedExpression String (Maybe Expression)
@@ -327,8 +341,7 @@ TODO record accessors ("dot" notation)
 >     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedExpression n Nothing)  = n ++ ":"
 >     show (LetExpression ax e)    = [qq|let {sep_with "\\n" ax} in ($e)|]
->     show (RecordExpression m)    = [qq|\{ {g m} \}|] 
->         where g                  = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x = $y|]) . M.toAscList
+>     show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|] 
 
 > expression          :: Parser Expression
 > other_expression    :: Parser Expression
@@ -359,6 +372,7 @@ TODO record accessors ("dot" notation)
 >                    <|> js_expression 
 >                    <|> record_expression 
 >                    <|> literal_expression
+>                    <|> try accessor_expression
 >                    <|> symbol_expression
 >                    <|> list_expression
 
@@ -386,13 +400,30 @@ TODO record accessors ("dot" notation)
 >     where table  = [ [ix "^"]
 >                    , [ix "*", ix "/"]
 >                    , [ix "+", ix "-"]
->                    , [ix "&&", ix "||"]
+>                    , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
+>                    , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "/="]
 >                    , [px "not"]
->                    , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "/="] ]
+>                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
->           ix s   = Infix (op $ string s) AssocLeft
+>           ix s   = Infix (op $ string s <* notFollowedBy (oneOf "!@#$%^&*<>?/|=\\~,.")) AssocLeft
 >           px s   = Prefix $ (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
 >           term   = try other_expression
+
+>           reserved_ops = [ "|", "\\", "=", ".", ":", ",", "==" ]
+
+>           user_op_left = try $ do whitespace
+>                                   op' <- (many1 $ oneOf "!@#$%^&*<>?/\\~,.")
+>                                   spaces
+>                                   if op' `elem` reserved_ops
+>                                       then parserFail "Non-reserved operator"
+>                                       else return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
+
+>           user_op_right = try $ do whitespace
+>                                    op' <- ((++) <$> (many1 $ oneOf "!@#$%^&*<>?/\\~,.") <*> string ":")
+>                                    spaces
+>                                    if op' `elem` reserved_ops
+>                                        then parserFail "Non-reserved operator"
+>                                        else return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
 
 >           op p   = try $ do whitespace
 >                             op' <- SymbolExpression <$> p
@@ -401,7 +432,9 @@ TODO record accessors ("dot" notation)
 
 > named_expression = NamedExpression 
 >                    <$> (many1 alphaNum <* string ":") 
->                    <*> option Nothing (Just <$> try (whitespace1 *> other_expression))
+>                    <*> option Nothing (Just <$> try (spaces *> indented *> other_expression))
+
+TODO left recursive accessors
 
 > accessor_expression = do x <- indentPairs "(" expression ")" 
 >                               <|> js_expression 
@@ -419,11 +452,9 @@ TODO record accessors ("dot" notation)
 >                                            (SymbolExpression "x") ] )
 >                                     [x]
 
-> -- TODO app should be a full expression parser 
-> apply_expression = ApplyExpression <$> app <*> many1 (try (whitespace *> (try accessor_expression <|> inner_expression)))
->     where app = indentPairs "(" (try function_expression <|> apply_expression) ")" <|> symbol_expression
+> apply_expression = ApplyExpression <$> inner_expression <*> (many1 . try $ whitespace *> inner_expression)
 
-> function_expression = withPos $ do string "\\" <|> string "\955" --"λ"
+> function_expression = withPos $ do string "\\" <|> string "λ" <|> string "\955"
 >                                    whitespace
 >                                    t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
 >                                    eqs <- try eq_axiom `sepBy1` try ((try (spaces *> same) <|> (whitespace *> return ())) *> string "|" <* whitespace)
@@ -441,11 +472,15 @@ TODO record accessors ("dot" notation)
 >                           ex <- withPos expression
 >                           return $ EqualityAxiom patterns ex
 
-> --TODO allow ` escaping
+TODO allow ` escaping
+
 > js_expression = do expr <- indentPairs "`" (many $ noneOf "`") "`"
 >                    case parseJM expr of
 >                      Left ex -> parserFail $ show ex
 >                      Right s -> return $ JSExpression s
+
+TODO allow sugar for declaring method dictionaries as records, eg `{ f x = x + 1 }`
+instead of `{ f = \ x = x + 1 }`
 
 > record_expression = RecordExpression . M.fromList <$> indentPairs "{" pairs' "}"
 >     where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
@@ -491,8 +526,6 @@ Literals in Sonnet are limited to strings and numbers -
 
 Type Signatures
 -----------------------------------------------------------------------------
-TODO Implicits
-TODO Record Extensions
 TODO ! (IO type)
 TODO type axioms need nominative types?
 ? TODO List, Map, Set shorthand?
@@ -504,33 +537,33 @@ associativity of UnionTypes: (x | y) | z == x | y | z
 > data UnionType = UnionType (S.Set ComplexType)
 >                deriving (Ord, Eq)
 
-> data ComplexType = PolymorphicType SimpleType [UnionType]
->                  | RecordType (M.Map String UnionType)
->                  | InheritType String (M.Map String UnionType)
+> data ComplexType = RecordType (M.Map String UnionType)
+>                  | InheritType SimpleType (M.Map String UnionType)
 >                  | FunctionType UnionType UnionType
 >                  | SimpleType SimpleType
 >                  | NamedType String (Maybe UnionType)
 >                  deriving (Eq, Ord)
 
-> data SimpleType = SymbolType String | VariableType String deriving (Ord, Eq)
+> data SimpleType = PolymorphicType SimpleType [UnionType]
+>                 | SymbolType String 
+>                 | VariableType String
+>                 deriving (Ord, Eq)
 
 > instance Show UnionType where 
 >     show (UnionType xs)         = [qq|{sep_with " | " $ S.toList xs}|]
    
 > instance Show ComplexType where
 >     show (SimpleType y)         = [qq|$y|]
->     show (PolymorphicType x y)  = [qq|($x {sep_with " " y})|]
 >     show (NamedType n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedType n Nothing)  = n ++ ":"
->     show (InheritType n m)      = [qq|\{ $n with {g m} \}|]
->         where g = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x: $y|]) . M.toAscList
->     show (RecordType m)         = [qq|\{ {g m} \}|] 
->         where g = concat . L.intersperse ", " . fmap (\(x, y) -> [qq|$x: $y|]) . M.toAscList
+>     show (InheritType n m)      = [qq|\{ $n with {unsep_with ": " m} \}|]
+>     show (RecordType m)         = [qq|\{ {unsep_with ": " m} \}|] 
 
 >     show (FunctionType g@(UnionType (S.toList -> ((FunctionType _ _):[]))) h) = [qq|($g -> $h)|]
 >     show (FunctionType g h)     = [qq|$g -> $h|]
 
 > instance Show SimpleType where
+>     show (PolymorphicType x y)  = [qq|($x {sep_with " " y})|]
 >     show (SymbolType x)   = x
 >     show (VariableType x) = x
 
@@ -547,7 +580,9 @@ names introduced into scope will be inaccessible in the case of a Definition).
 > type_axiom_signature      :: Parser UnionType
 > type_definition_signature :: Parser UnionType
 
-> type_axiom_signature      = ((UnionType . S.fromList . (:[]) <$> try function_type) <|> try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
+> type_axiom_signature      = do option "" (string "|" <* whitespace)
+>                                ((UnionType . S.fromList . (:[]) <$> try function_type) <|> try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
+
 > type_definition_signature = UnionType . S.fromList <$> (try function_type <|> inner_type) `sepBy1` type_sep <* whitespace
 
 
@@ -584,26 +619,22 @@ have already been defined above.
 >                    y <- (lift $ try function_type) <|> try nested_union_type <|> lift inner_type
 >                    return $ FunctionType x y
 
-> poly_type     = do name <- (SymbolType <$> type_name) <|> (VariableType <$> type_var)
->                    oneOf "\t "
->                    whitespace
->                    let type_vars = nested_union_type <|> lift (record_type <|> var_type <|> symbol_type)
->                    vars <- type_vars `sepEndBy1` whitespace
->                    return $ PolymorphicType name vars
+> poly_type     = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try type_var)
+>                    whitespace1
+>                    let type_vars = try nested_union_type <|> lift (try (record_type <|> var_type <|> symbol_type))
+>                    SimpleType . PolymorphicType name <$> type_vars `sepEndBy1` whitespace
 
 > record_type   = let key_value = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_definition_signature
 >                     pairs     = key_value `sepEndBy` try (comma <|> not_comma)
 >                     inner     = RecordType . M.fromList <$> pairs 
->                     inherit   = do n <- type_name
+>                     inherit   = do SimpleType n <- try poly_type <|> try symbol_type <|> var_type
 >                                    spaces
 >                                    indented
 >                                    string "with"
->                                    spaces
->                                    indented
->                                    p <- pairs
->                                    return $ InheritType n (M.fromList p) in
+>                                    spaces *> indented
+>                                    InheritType n . M.fromList <$> pairs
 
->                 indentPairs "{" (inherit <|> inner) "}"
+>                 in indentPairs "{" (try inherit <|> inner) "}"
 
 > named_type    = NamedType <$> type_var <* string ":" <* whitespace <*> option Nothing (Just <$> (try nested_union_type <|> lift inner_type))
 > symbol_type   = SimpleType . SymbolType <$> type_name
@@ -623,10 +654,10 @@ type variables is handled in the type checker.
 > type_var  = ((:) <$> lower <*> many (alphaNum <|> oneOf "_'")) >>= f
 
 >     where f x = if x `elem` reserved
->                     then parserFail "reserved word"
+>                     then parserFail "symbol"
 >                     else return x
 
->           reserved = [ "if", "then", "else", "type", "let", "when" ]
+>           reserved = [ "if", "then", "else", "type", "let", "when", "with", "and", "or" ]
 
 
 Of course, there are many common idioms from type parsing which may be factored

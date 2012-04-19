@@ -104,9 +104,9 @@
 
     zz: Int
       | x = monad: (\x = 3 | y = 4)
-      | 2 = x^3 + y^2 / 2 + (3- 4) < 2 + 4
-      |_=\x=2
-         |y=3
+      | 2 = x^3 + y^2 / 2 + (3- 4) < 2 + 4 * 4 
+      | _ = \ x = 2
+            | y = 3
 
       | z = \x = 2 | y = 5
 
@@ -119,7 +119,7 @@
     x | f = f { map = let mapp | x = f head (mapp f xs)
                       mapp }
 
-    x | x = f 
+    x x = f 
 
     x: Int 
       | f = let f: Int 
