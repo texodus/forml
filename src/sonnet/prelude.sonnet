@@ -243,13 +243,13 @@ instantiated such that they may be useful as implicit parameters:
     monad = abstract:
 
         { applicative with
-              x ** y  = x >>= λ map _ y
-              x >>= f = join (map f x)
-              join x  = x >>= id }
+              ap = \x y = x >>= (\ f = map f y)
+              bind = \ x y = join (map f x)
+              join = \x = x >>= id }
         
     return x >>= f == f x                   -- Left identity
     x >>= return == x                       -- Right identity              
-    (f >>= g) >>= h == f >>= (λ g _ >>= h)  -- Commutatative 
+    (f >>= g) >>= h == f >>= (\ x = g x >>= h)  -- Commutatative 
 
 Since the type of this instance is inferable and we aren't naming it, we can 
 declare instance simply like this:

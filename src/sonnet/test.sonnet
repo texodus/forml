@@ -70,6 +70,12 @@
 
     type X = Int
 
+
+    { z = 4, 
+      y = 5 }
+
+
+
     yy: Int
       | "tes" = "test"  -- this is also a comment
       | 1 = "fail"
@@ -83,7 +89,9 @@
 
       | x when x == 3 = { x = x, y = "test" }
 
-      | { x = { y = "test" }} = { z = 4, y = { x = {}}}
+      | { x = { y = "test" }} = { z = 4, 
+                                     y = { x = {}},
+                                         r = 2 }
 
 -- some infix expressions and labels
 

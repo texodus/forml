@@ -328,6 +328,7 @@ TODO custom operators
 >                 | JSExpression JStat
 >                 | FunctionExpression [Axiom]
 >                 | RecordExpression (M.Map String Expression)
+>                 | InheritExpression Expression (M.Map String Expression)
 >                 | LetExpression [Definition] Expression
 >                 | ListExpression [Expression]
 
@@ -380,7 +381,7 @@ TODO custom operators
 >                               whitespace1
 >                               defs <- concat <$> withPos (try definition_statement `sepBy1` try (spaces *> same))
 >                               spaces
->                               same
+>                            --   same
 >                               LetExpression <$> return defs <*> expression
 
 > if_expression = withPos $ do string "if"
@@ -412,14 +413,14 @@ TODO custom operators
 >           reserved_ops = [ "|", "\\", "=", ".", ":", ",", "==" ]
 
 >           user_op_left = try $ do whitespace
->                                   op' <- (many1 $ oneOf "!@#$%^&*<>?/\\~,.")
+>                                   op' <- (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.")
 >                                   spaces
 >                                   if op' `elem` reserved_ops
 >                                       then parserFail "Non-reserved operator"
 >                                       else return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
 
 >           user_op_right = try $ do whitespace
->                                    op' <- ((++) <$> (many1 $ oneOf "!@#$%^&*<>?/\\~,.") <*> string ":")
+>                                    op' <- ((++) <$> (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.") <*> string ":")
 >                                    spaces
 >                                    if op' `elem` reserved_ops
 >                                        then parserFail "Non-reserved operator"
@@ -482,8 +483,16 @@ TODO allow ` escaping
 TODO allow sugar for declaring method dictionaries as records, eg `{ f x = x + 1 }`
 instead of `{ f = \ x = x + 1 }`
 
-> record_expression = RecordExpression . M.fromList <$> indentPairs "{" pairs' "}"
->     where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
+> record_expression = indentPairs "{" (try inherit <|> RecordExpression . M.fromList <$>  pairs') "}"
+>     where pairs' = withPos key_eq_val `sepBy` try (try comma <|> not_comma)
+
+>           inherit = do ex <- expression
+>                        spaces *> indented
+>                        string "with"
+>                        spaces *> indented
+>                        ps <- pairs'
+>                        return $ InheritExpression ex (M.fromList ps)
+
 >           key_eq_val = do key <- many (alphaNum <|> oneOf "_")
 >                           spaces
 >                           string "="
@@ -673,7 +682,7 @@ out for reuse:
 > type_sep          = try (spaces *> char '|' <* whitespace)
 > indentPairs a p b = string a *> spaces *> withPos p <* spaces <* string b
 > not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}")
-> comma             = spaces >> string "," >> spaces
+> comma             = spaces *> string "," *> spaces
 > lift              = fmap $ UnionType . S.fromList . (:[])
 
 Main
