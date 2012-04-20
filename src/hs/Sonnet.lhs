@@ -178,7 +178,7 @@ symbol
 
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
->                           name <- try type_var <|> many1 (char '_')
+>                           name <- try symbol_name <|> many1 (char '_')
 >                           sig <- try ((:) <$> type_axiom <*> option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing))))
 >                                  <|> ((:[]) <$> try naked_eq_axiom) 
 >                                  <|> return []
@@ -196,10 +196,7 @@ symbol
 >                               patterns <- match
 >                               no_args_eq_axiom patterns
 
->           no_args_eq_axiom patterns = do whitespace
->                                          string "=" 
->                                          spaces
->                                          indented
+>           no_args_eq_axiom patterns = do whitespace *> string "=" *> spaces *> indented
 >                                          ex <- withPos expression
 >                                          return $ EqualityAxiom patterns ex
 
@@ -288,15 +285,15 @@ TODO when patterns
 >                            indented
 >                            return $ Match x (Just ex)
 
-> pattern         :: Parser Pattern
-> var_pattern     :: Parser Pattern
-> literal_pattern :: Parser Pattern
-> record_pattern  :: Parser Pattern
-> list_pattern    :: Parser Pattern
-> any_pattern     :: Parser Pattern
+> pattern             :: Parser Pattern
+> var_pattern         :: Parser Pattern
+> literal_pattern     :: Parser Pattern
+> record_pattern      :: Parser Pattern
+> list_pattern        :: Parser Pattern
+> any_pattern         :: Parser Pattern
 > naked_apply_pattern :: Parser Pattern
-> apply_pattern   :: Parser Pattern
-> view_pattern    :: Parser Pattern
+> apply_pattern       :: Parser Pattern
+> view_pattern        :: Parser Pattern
 
 > pattern = try literal_pattern
 >           <|> try naked_apply_pattern
@@ -449,27 +446,19 @@ TODO do expressions
 >                    , [px "not"]
 >                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
->           ix s   = Infix (op $ string s <* notFollowedBy valid_chars) AssocLeft
+>           ix s   = Infix (op $ string s <* notFollowedBy operator) AssocLeft
 >           px s   = Prefix $ (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
 >           term   = try other_expression
 
->           reserved_ops = [ "|", "\\", "=", ".", ":", ",", "==", "-", "->", "<=", ">=", "<", ">", "<-" ]
-
->           valid_chars = oneOf "!@#$%^&*<>?/|=\\~,.+-"
-
 >           user_op_left = try $ do whitespace
->                                   op' <- (many1 valid_chars)
+>                                   op' <- not_reserved (many1 operator)
 >                                   spaces
->                                   if op' `elem` reserved_ops
->                                       then parserFail "Non-reserved operator"
->                                       else return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
+>                                   return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
 
 >           user_op_right = try $ do whitespace
->                                    op' <- ((++) <$> (many1 valid_chars) <*> string ":")
+>                                    op' <- not_reserved ((++) <$> (many1 operator) <*> string ":")
 >                                    spaces
->                                    if op' `elem` reserved_ops
->                                        then parserFail "Non-reserved operator"
->                                        else return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
+>                                    return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
 
 >           op p   = try $ do whitespace
 >                             op' <- SymbolExpression <$> p
@@ -524,7 +513,7 @@ TODO it would be nice if we parsed javascript too ...
 > record_expression = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
 >     where pairs' = withPos $ (try key_eq_val <|> try function) `sepBy` try (try comma <|> not_comma)
 
->           function = do n <- type_var 
+>           function = do n <- symbol_name 
 >                         whitespace
 >                         eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
 >                         return $ (n, FunctionExpression eqs)
@@ -543,7 +532,7 @@ TODO it would be nice if we parsed javascript too ...
 >                        ps <- pairs'
 >                        return $ InheritExpression ex (M.fromList ps)
 
->           key_eq_val = do key <- many (alphaNum <|> oneOf "_")
+>           key_eq_val = do key <- symbol_name
 >                           whitespace
 >                           string "=" <|> string ":"
 >                           spaces
@@ -551,7 +540,7 @@ TODO it would be nice if we parsed javascript too ...
 >                           return (key, value)
 
 > literal_expression = LiteralExpression <$> literal
-> symbol_expression  = SymbolExpression <$> type_var
+> symbol_expression  = SymbolExpression <$> symbol_name
 > list_expression    = ListExpression <$> indentPairs "[" (expression `sepBy` comma) "]"
 
 
@@ -683,7 +672,7 @@ have already been defined above.
 >                    let type_vars = try nested_union_type <|> lift (try (record_type <|> var_type <|> symbol_type))
 >                    SimpleType . PolymorphicType name <$> type_vars `sepEndBy1` whitespace
 
-> record_type   = let key_value = (,) <$> many (alphaNum <|> oneOf "_") <* spaces <* string ":" <* spaces <*> type_definition_signature
+> record_type   = let key_value = (,) <$> symbol_name <* spaces <* string ":" <* spaces <*> type_definition_signature
 >                     pairs     = key_value `sepEndBy` try (comma <|> not_comma)
 >                     inner     = RecordType . M.fromList <$> pairs 
 >                     inherit   = do SimpleType n <- try poly_type <|> try symbol_type <|> var_type
@@ -706,18 +695,28 @@ variables start with a lower case letter.  Note the scoping & resolution of
 type variables is handled in the type checker.
 
 
-> type_name :: Parser String
-> type_var  :: Parser String
+> type_name   :: Parser String
+> type_var    :: Parser String
+> symbol_name :: Parser String
 
-> type_name = ((:) <$> upper <*> many (alphaNum <|> oneOf "_'")) <|> string "!"
-> type_var  = ((:) <$> lower <*> many (alphaNum <|> oneOf "_'")) >>= f
+> type_name   = not_reserved (upper <:> many (alphaNum <|> oneOf "_'")) <|> string "!"
+> type_var    = not_reserved (lower <:> many (alphaNum <|> oneOf "_'"))
+> symbol_name = not_reserved (lower <:> many (alphaNum <|> oneOf "_'") <|> (string "(" *> many1 operator <* string ")"))
 
->     where f x = if x `elem` reserved
->                     then parserFail "symbol"
->                     else return x
+> (<:>) :: Parser a -> Parser [a] -> Parser [a]
+> (<:>) x y = (:) <$> x <*> y
 
->           reserved = [ "if", "then", "else", "type", "let", "when", "with", "and", "or", "do" ]
+> operator :: Parser Char
+> operator = oneOf "!@#$%^&*<>?/|=\\~,.+-"
 
+> not_reserved :: Parser String -> Parser String
+> not_reserved x = do y <- x
+>                     if y `elem` reserved_words
+>                        then parserFail "non-reserved word"
+>                        else return y
+
+>     where reserved_words = [ "if", "then", "else", "type", "let", "when", "with", "and", "or", "do",
+>                              "|", "\\", "=", ".", ":", ",", "==", "-", "->", "<=", ">=", "<", ">", "<-" ]
 
 Of course, there are many common idioms from type parsing which may be factored
 out for reuse:

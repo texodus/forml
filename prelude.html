@@ -182,53 +182,61 @@ fmap func id x == x</code></pre>
 
     { Functor f with
           return: a -&gt; f a,
-          ap:    f (a &#8594; b) &#8594; f a &#8594; f b }
-
-f | x = x ** 1
+          (**):   f (a &#8594; b) &#8594; f a &#8594; f b }
 
 applicative = abstract: { map f x = return f * x }  </code></pre>
 <p>-- forall u v w x y</p>
 <pre><code>    return id * v == v f                        -- Identity
     return comp ** u ** v ** w == u ** (v ** w) -- Composition
-    return f ** return x == return (f x)       -- Homomorphism
-    u ** return y == return (\ f = f y) ** u       -- Interchange      
+    return f ** return x == return (f x)        -- Homomorphism
+    u ** return y == return (\ f = f y) ** u    -- Interchange      
 
 type Monad m =
 
     { Applicative m with
-          bind: m a &#8594; (a &#8594; m b) &#8594; m b,
+          (&gt;&gt;=): m a &#8594; (a &#8594; m b) &#8594; m b,
           join: m (m a) &#8594; m a }
 
 monad = abstract:
 
     { applicative with
-          ap x y = x &gt;&gt;= (\ f = map f y)
-          bind x y = join (map f x)
+          (**) x y = x &gt;&gt;= (\ f = map f y)
+          (&gt;&gt;=) x y = join (map f x)
           join x = x &gt;&gt;= id }
 
-return x &gt;&gt;= f == f x                   -- Left identity
-x &gt;&gt;= return == x                       -- Right identity              
-(f &gt;&gt;= g) &gt;&gt;= h == f &gt;&gt;= (\ x = g x &gt;&gt;= h)  -- Commutatative </code></pre>
-<p>Since the type of this instance is inferable and we aren't naming it, we can declare instance simply like this:</p>
-<pre><code>{ zero = []
+return x &gt;&gt;= f == f x                       -- Left identity
+x &gt;&gt;= return == x                           -- Right identity              
+(f &gt;&gt;= g) &gt;&gt;= h == f &gt;&gt;= (\ x = g x &gt;&gt;= h)  -- Commutatative 
 
-  plus (cons: {h=x,t=y}) = x ++ (y + z)
-     | []                = x }
+_____: Class (Semigroup List) = 
 
-zero + [1] + zero == [1]
-[2 3] + zero + [1] == [2 3 1]</code></pre>
-<p>Though in some cases, we may want to give it a name and or type annotation:</p>
-<pre><code>list_monad =
+    { zero = []
+      (&lt;+&gt;) (cons: {h=x,t=y}) z = x ++ (y &lt;+&gt; z)
+          | []                x = x }
+
+zero &lt;+&gt; [1] &lt;+&gt; zero  == [1]
+[2 3] &lt;+&gt; zero &lt;+&gt; [1] == [2 3 1]</code></pre>
+<p>Though in some cases, we may want to give it a name and or type annotation, as per the example below. Note the type of list_monad is actually <code>class: Monad List</code>, while the type of the implicit conversion is <code>Class (Monad List)</code>, which is an alias for the type <code>(class: Monad List -&gt; b) -&gt; b</code></p>
+<pre><code>____: Class (Monad List) = list_monad
+
+list_monad = class:
 
     { monad with 
-          return x = [x]
-          bind xs f = reduce (\ x y = x + y) (map f y)
-          bind [] f = zero }
+          return x   = [x]
+          (&gt;&gt;=) xs f = reduce (\x y = x + y) (map f y)
+          (&gt;&gt;=) [] f = zero }
 
-map list_monad fib [] == zero
-map list_monad fib [0 1] == [1 1]
-map list_monad fib [6] == [13]
-map list_monad fib [2 3 4 5] == [1 2 3 5]</code></pre>
+map list_monad fib []        == zero
+map list_monad fib [0 1]     == [1 1]
+map list_monad fib [6]       == [13]
+map list_monad fib [2 3 4 5] == [1 2 3 5]
+
+-- these also compile due to implicit conversion of map
+
+map fib []        == zero
+map fib [0 1]     == [1 1]
+map fib [6]       == [13]
+map fib [2 3 4 5] == [1 2 3 5]</code></pre>
 <h2 id="javascript-html">Javascript &amp; HTML</h2>
 <p>Sonnet's standard IO library covers many common browser &amp; node.js libraries, but the language itself has no support for IO per se. Rather, side effects are only allowed to occur in quoted javascript, which has slightly different rules than standard javascript, but compiles into basically what you expect.</p>
 <pre><code>log: Str &#8594; !

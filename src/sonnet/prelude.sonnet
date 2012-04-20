@@ -236,60 +236,71 @@ instantiated such that they may be useful as implicit parameters:
 
         { Functor f with
               return: a -> f a,
-              ap:    f (a → b) → f a → f b }
+              (**):   f (a → b) → f a → f b }
   
-    f | x = x ** 1
-
     applicative = abstract: { map f x = return f * x }  
 
   --  forall u v w x y 	
  
         return id * v == v f                        -- Identity
         return comp ** u ** v ** w == u ** (v ** w) -- Composition
-        return f ** return x == return (f x)       -- Homomorphism
-        u ** return y == return (\ f = f y) ** u       -- Interchange      
+        return f ** return x == return (f x)        -- Homomorphism
+        u ** return y == return (\ f = f y) ** u    -- Interchange      
 
     type Monad m =
 
         { Applicative m with
-              bind: m a → (a → m b) → m b,
+              (>>=): m a → (a → m b) → m b,
               join: m (m a) → m a }
 
     monad = abstract:
 
         { applicative with
-              ap x y = x >>= (\ f = map f y)
-              bind x y = join (map f x)
+              (**) x y = x >>= (\ f = map f y)
+              (>>=) x y = join (map f x)
               join x = x >>= id }
         
-    return x >>= f == f x                   -- Left identity
-    x >>= return == x                       -- Right identity              
+    return x >>= f == f x                       -- Left identity
+    x >>= return == x                           -- Right identity              
     (f >>= g) >>= h == f >>= (\ x = g x >>= h)  -- Commutatative 
 
-Since the type of this instance is inferable and we aren't naming it, we can 
-declare instance simply like this:
+    _____: Class (Semigroup List) = 
 
-    { zero = []
+        { zero = []
+          (<+>) (cons: {h=x,t=y}) z = x ++ (y <+> z)
+              | []                x = x }
 
-      plus (cons: {h=x,t=y}) = x ++ (y + z)
-         | []                = x }
+    zero <+> [1] <+> zero  == [1]
+    [2 3] <+> zero <+> [1] == [2 3 1]
 
-    zero + [1] + zero == [1]
-    [2 3] + zero + [1] == [2 3 1]
+Though in some cases, we may want to give it a name and or type annotation, as per 
+the example below.  Note the type of list_monad is actually `class: Monad List`, while
+the type of the implicit conversion is `Class (Monad List)`, which is an alias for 
+the type `(class: Monad List -> b) -> b`
 
-Though in some cases, we may want to give it a name and or type annotation:
-    
-    list_monad =
+    ____: Class (Monad List) = list_monad
+
+    list_monad = class:
 
         { monad with 
-              return x = [x]
-              bind xs f = reduce (\ x y = x + y) (map f y)
-              bind [] f = zero }
-     
-    map list_monad fib [] == zero
-    map list_monad fib [0 1] == [1 1]
-    map list_monad fib [6] == [13]
+              return x   = [x]
+              (>>=) xs f = reduce (\x y = x + y) (map f y)
+              (>>=) [] f = zero }
+
+    map list_monad fib []        == zero
+    map list_monad fib [0 1]     == [1 1]
+    map list_monad fib [6]       == [13]
     map list_monad fib [2 3 4 5] == [1 2 3 5]
+
+    -- these also compile due to implicit conversion of map
+
+    map fib []        == zero
+    map fib [0 1]     == [1 1]
+    map fib [6]       == [13]
+    map fib [2 3 4 5] == [1 2 3 5]
+
+
+
         
 Javascript & HTML
 --------------------------------------------------------------------------------
