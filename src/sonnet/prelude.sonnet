@@ -36,7 +36,7 @@ the `{}` in such values which take a `Unit` type as an argument.
 Union JSON - which is simply a set of any of the above or of the native
 JSON types, separated by either new lines w/indentation, or `|`
 
-    type Option a = some: a | none: {}
+    type Option a = some: a | none:
 
     type Bool = true: | false:
 
@@ -139,7 +139,7 @@ logs its metadata when it is evaluated, and provides documentation for the
 function itself.
 
 Anonymous functions may be declared with `λ` in two different forms, via pattern 
-match (haskell-style) or via variable "templating" (clojure style):
+match (haskell-style):
 
     tail = λ (cons -> {tail = y}) = y
            | []      = undefined
@@ -219,10 +219,10 @@ satisfies the type signature, it will be inserted automatically.
     map | f = f.map
 
     incF: (class: Functor f) -> f Int → f Int
-        | functor                 g   = functor.map inc m
+        | functor               g     = functor.map inc m
 
     fmap func (comp f g) x == fmap func f (fmap func g x)
-    fmap func id x == x
+    fmap func id x         == x
           
 There is a single instance of Functor List in scope (even though it has no
 name), so fmap can be invoked on lists with no Functor param
@@ -243,25 +243,25 @@ instantiated such that they may be useful as implicit parameters:
   --  forall u v w x y 	
  
         return id * v == v f                        -- Identity
-        return comp ** u ** v ** w == u ** (v ** w) -- Composition
-        return f ** return x == return (f x)        -- Homomorphism
+        u ** (v ** w) == return comp ** u ** v ** w -- Composition
+        return (f x)  == return f ** return x       -- Homomorphism
         u ** return y == return (\ f = f y) ** u    -- Interchange      
 
     type Monad m =
 
         { Applicative m with
               (>>=): m a → (a → m b) → m b,
-              join: m (m a) → m a }
+              join:  m (m a) → m a }
 
     monad = abstract:
 
         { applicative with
-              (**) x y = x >>= (\ f = map f y)
+              (**) x y  = x >>= (\ f = map f y)
               (>>=) x y = join (map f x)
-              join x = x >>= id }
+              join x    = x >>= id }
         
-    return x >>= f == f x                       -- Left identity
-    x >>= return == x                           -- Right identity              
+    return x >>= f  == f x                      -- Left identity
+    x >>= return    == x                        -- Right identity              
     (f >>= g) >>= h == f >>= (\ x = g x >>= h)  -- Commutatative 
 
     _____: Class (Semigroup List) = 
@@ -312,12 +312,13 @@ standard javascript, but compiles into basically what you expect.
     log: Str → !
        | x = `console.log(x)`
 
-The return type of any quoted javascript is a special IO type `a!`, where a is
+The return type of any quoted javascript is a special IO type `! a`, where a is
 inferred to be `()` when not provided.
 
-    io_monad: Monad String
-        | = { return x = `function() { return x }`
-              bind x f  =  `f(x())` }
+    io_monad: Monad ! =
+
+        { return x = `function() { return x }`
+          bind x f  =  `f(x())` }
 
     module jquery
     --  Library of useful JQuery wrappers
@@ -343,9 +344,6 @@ Side effects types via !, implicit monadic composition
 
         copy_html' id1 id2 = get_html id1 >>= set_html id2
 
-        -- _ binds to the nth parameter of the
-        -- nearest function scope
-
         copy_html = join <<< map (\ x = set_html x) <<< get_html
 
     module atom
@@ -353,16 +351,18 @@ Side effects types via !, implicit monadic composition
         type Atom a = { get: ! a, set: a → ! }
         
         new : a → ! (Atom a)
-            | x = `function(){var y=x;return {get:function(){return y},set:function(z){y=z}}}`
+            | x = `function() { var y = x;
+                                return { get: function()  { return y },
+                                         set: function(z) { y = z } } }`
 
         get: Atom a → ! a
         | x = `x.get()`
         
         swap: Atom a → (a → Option a) → ! a
            | a f = do x ← `a.get()`
-                      f x $ \ none: = return x
-                            | some: x = do `a.set(x)`
-                                           return x 
+                      f x $> \ none: = return x
+                             | some: x = do `a.set(x)`
+                                            return x 
 
 
         atom_monad: Monad (! (Atom a)) =

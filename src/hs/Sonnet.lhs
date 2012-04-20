@@ -1,24 +1,3 @@
-
-<link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
-<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
-<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
-<script type='text/javascript' src='lib/js/zepto.js'></script>
-<script type='text/javascript' src='$name.js'></script>
-<script type='text/javascript' src='$name.spec.js'></script>
-<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>
-<link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
-<script type='text/javascript' src='lib/js/prettify.js'></script>
-<script type='text/javascript' src='lib/js/lang-hs.js'></script>
-<script type='text/javascript' src='lib/js/jquery.js'></script>
-<style>pre{max-width:1600px;}</style>
-
-Sonnet
-======
-
-A programming language, designed to be read
-
-* * *
-
 > {-# LANGUAGE QuasiQuotes #-}
 > {-# LANGUAGE NamedFieldPuns #-}
 > {-# LANGUAGE RecordWildCards #-}
@@ -100,7 +79,9 @@ lore ipsum
 >           commented_code = do string "    "
 >                               x <- (noneOf "\n") `manyTill` string "--"
 >                               anyChar `manyTill` newline
->                               return $ if length (strip x) > 0 then "    " ++ (rstrip x) ++ "\n" else "\n"
+>                               return $ if length (strip x) > 0 
+>                                            then "    " ++ (rstrip x) ++ "\n" 
+>                                            else "\n"
 
 > sep_with :: Show a => String -> [a] -> String
 > sep_with x = concat . L.intersperse x . fmap show
@@ -136,7 +117,10 @@ A Sonnet program is represented by a set of statements
 >     show (DefinitionStatement d) = show d
 >     show (ExpressionStatement x) = show x
 >     show (ImportStatement x) = [qq|import $x|]
->     show (ModuleStatement x xs) = "module " ++ show x ++ "\n\n    " ++ sep_with "\n\n    " xs
+>     show (ModuleStatement x xs) = replace "\n |" "\n     |" 
+>                                   $ replace "\n\n" "\n\n    " 
+>                                   $ "module " 
+>                                   ++ show x ++ "\n\n" ++ sep_with "\n\n" xs
 
 > instance Show Definition where
 >     show (Definition name ax) =[qq|$name {sep_with "\\n" ax}|]
@@ -146,11 +130,13 @@ A Sonnet program is represented by a set of statements
 > sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
 
 >     where statement       = whitespace >> withPos statement_types <* many newline
->           statement_types = (try type_statement  <?> "Type Definition")
+>           statement_types = (try type_statement       <?> "Type Definition")
 >                             <|> (try import_statement <?> "Import Statement")
 >                             <|> (try module_statement <?> "Module Declaration")
->                             <|> (try (map DefinitionStatement <$> definition_statement) <?> "Symbol Definition")
+>                             <|> (try def_statement    <?> "Symbol Definition")
 >                             <|> (expression_statement <?> "Assertion")
+
+>           def_statement = map DefinitionStatement <$> definition_statement
 
 >           import_statement = do string "import"
 >                                 whitespace
@@ -160,7 +146,8 @@ A Sonnet program is represented by a set of statements
 >                                 whitespace1
 >                                 name <- Namespace <$> namespace
 >                                 spaces *> indented
->                                 (:[]) . ModuleStatement name . concat <$> withPos (many1 (many (string "\n") >> same >> try statement))
+>                                 (:[]) . ModuleStatement name . concat 
+>                                     <$> withPos (many1 (many (string "\n") >> same >> try statement))
 
 >           namespace = many1 lower `sepBy1` char '.'
 
@@ -179,16 +166,22 @@ symbol
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
 >                           name <- try symbol_name <|> many1 (char '_')
->                           sig <- try ((:) <$> type_axiom <*> option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing))))
->                                  <|> ((:[]) <$> try naked_eq_axiom) 
->                                  <|> return []
+>                           sig <- first
 >                           eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom)) <|> return []
 >                           whitespace
 >                           if length sig == 0 && length eqs == 0 
 >                              then parserFail "Definition Axioms"
 >                              else return $ [Definition name (sig ++ eqs)]
 
->     where eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
+>     where first = try type_or_first
+>                   <|> ((:[]) <$> try naked_eq_axiom) 
+>                   <|> return []
+
+>           type_or_first = (:) <$> type_axiom <*> second
+
+>           second = option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing)))
+
+>           eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
 >                           string "|"
 >                           naked_eq_axiom
 
@@ -351,11 +344,11 @@ TODO do expressions
 >     show (LiteralExpression x)        = show x
 >     show (SymbolExpression x)         = x
 >     show (ListExpression x)           = [qq|[ {sep_with ", " x} ]|]
->     show (FunctionExpression as)      = [qq|λ{sep_with "" as}|]
+>     show (FunctionExpression as)      = replace "\n |" "\n     |" $ [qq|λ{sep_with "" as}|]
 >     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
 >     show (NamedExpression n Nothing)  = n ++ ":"
 >     show (JSExpression x)             = "`" ++ x ++ "`"
->     show (LetExpression ax e)         = [qq|let {sep_with "\\n" ax} in ($e)|]
+>     show (LetExpression ax e)         = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n" ax} in ($e)|]
 >     show (RecordExpression m)         = [qq|\{ {unsep_with " = " m} \}|] 
 >     show (InheritExpression x m)      = [qq|\{ $x with {unsep_with " = " m} \}|] 
 
@@ -396,10 +389,12 @@ TODO do expressions
 
 > let_expression = withPos $ do string "let"
 >                               whitespace1
->                               defs <- concat <$> withPos (try definition_statement `sepBy1` try (spaces *> same))
+>                               defs <- concat <$> withPos def
 >                               spaces
 >                               same
 >                               LetExpression <$> return defs <*> expression
+
+>     where def = try definition_statement `sepBy1` try (spaces *> same)
 
 > do_expression  = do string "do"
 >                     whitespace1
@@ -412,8 +407,10 @@ TODO do expressions
 >                                f ex p <$> (try bind_expression <|> try return_expression)
 
 >           return_expression = do v <- expression
->                                  option v $ try $ do spaces *> same
->                                                      f v AnyPattern <$> (try bind_expression <|> try return_expression)
+>                                  option v $ try $ unit_bind v
+
+>           unit_bind v = do spaces *> same
+>                            f v AnyPattern <$> (try bind_expression <|> try return_expression)
 
 >           f ex pat zx=  ApplyExpression 
 >                            (SymbolExpression ">>=")
@@ -628,10 +625,15 @@ names introduced into scope will be inaccessible in the case of a Definition).
 > type_axiom_signature      :: Parser UnionType
 > type_definition_signature :: Parser UnionType
 
-> type_axiom_signature      = do option "" (string "|" <* whitespace)
->                                ((UnionType . S.fromList . (:[]) <$> try function_type) <|> try nested_union_type <|> (UnionType . S.fromList . (:[]) <$> (try function_type <|> inner_type))) <* whitespace
+> type_axiom_signature = do option "" (string "|" <* whitespace)
+>                           t <- (u $ try function_type) <|> try nested_union_type <|> u inner_type
+>                           whitespace
+>                           return t
 
-> type_definition_signature = UnionType . S.fromList <$> (try function_type <|> inner_type) `sepBy1` type_sep <* whitespace
+>     where u = (<$>) $ UnionType . S.fromList . (:[])
+
+> type_definition_signature = UnionType . S.fromList <$> types <* whitespace
+>     where types = (try function_type <|> inner_type) `sepBy1` type_sep
 
 
 Through various complexities of the recursive structure of these types, we will
@@ -642,7 +644,13 @@ signature parsers.
 > nested_function   :: Parser ComplexType
 > nested_union_type :: Parser UnionType
 
-> inner_type        = nested_function <|> record_type <|> try named_type <|> try poly_type <|> var_type <|> symbol_type
+> inner_type  = nested_function 
+>               <|> record_type 
+>               <|> try named_type 
+>               <|> try poly_type 
+>               <|> var_type 
+>               <|> symbol_type
+
 > nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
 > nested_union_type = indentPairs "(" type_definition_signature ")"
 
@@ -669,10 +677,13 @@ have already been defined above.
 
 > poly_type     = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try type_var)
 >                    whitespace1
->                    let type_vars = try nested_union_type <|> lift (try (record_type <|> var_type <|> symbol_type))
+>                    let type_vars = try nested_union_type <|> lift (try rvs)
 >                    SimpleType . PolymorphicType name <$> type_vars `sepEndBy1` whitespace
 
-> record_type   = let key_value = (,) <$> symbol_name <* spaces <* string ":" <* spaces <*> type_definition_signature
+>      where rvs = record_type <|> var_type <|> symbol_type
+
+> record_type   = let key_value = (,) <$> symbol_name <* div' <*> type_definition_signature
+>                     div'      = spaces <* string ":" <* spaces
 >                     pairs     = key_value `sepEndBy` try (comma <|> not_comma)
 >                     inner     = RecordType . M.fromList <$> pairs 
 >                     inherit   = do SimpleType n <- try poly_type <|> try symbol_type <|> var_type
@@ -684,7 +695,9 @@ have already been defined above.
 
 >                 in indentPairs "{" (try inherit <|> inner) "}"
 
-> named_type    = NamedType <$> type_var <* string ":" <* whitespace <*> option Nothing (Just <$> (try nested_union_type <|> lift inner_type))
+> named_type = NamedType <$> name <*> option Nothing (Just <$> (try nested_union_type <|> lift inner_type))
+>     where name = type_var <* string ":" <* whitespace
+
 > symbol_type   = SimpleType . SymbolType <$> type_name
 > var_type      = SimpleType . VariableType <$> type_var
 
@@ -701,7 +714,8 @@ type variables is handled in the type checker.
 
 > type_name   = not_reserved (upper <:> many (alphaNum <|> oneOf "_'")) <|> string "!"
 > type_var    = not_reserved (lower <:> many (alphaNum <|> oneOf "_'"))
-> symbol_name = not_reserved (lower <:> many (alphaNum <|> oneOf "_'") <|> (string "(" *> many1 operator <* string ")"))
+> symbol_name = not_reserved (lower <:> many (alphaNum <|> oneOf "_'") <|> imp_infix)
+>     where imp_infix = string "(" *> many1 operator <* string ")"
 
 > (<:>) :: Parser a -> Parser [a] -> Parser [a]
 > (<:>) x y = (:) <$> x <*> y
@@ -793,6 +807,7 @@ Docs
 >  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
 >  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
 >  <script type='text/javascript' src='lib/js/zepto.js'></script>
+>  <script type='text/javascript' src='src/js/table_of_contents.js'></script>
 >  <script type='text/javascript' src='$name.js'></script>
 >  <script type='text/javascript' src='$name.spec.js'></script>
 >  <link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>
@@ -800,26 +815,30 @@ Docs
 >  <script type='text/javascript' src='lib/js/prettify.js'></script>
 >  <script type='text/javascript' src='lib/js/lang-hs.js'></script>
 >  <script type='text/javascript' src='lib/js/jquery.js'></script>
->  <style>ul\{padding-left:40px;\}</style>
+>  <style>
+>      ul\{
+>          padding-left:40px;
+>      \};
+>      .jasmine_reporter\{
+>          position: absolute;
+>          bottom: 0px;
+>      \}
+>      a, a:visited, a:active, a:link \{
+>          text-decoration: none;
+>          color: #cccccc;
+>      \}
+>  </style>
 >  </head>
 >  <body>
->  <div style='margin: 0 0 50px 0'>$body</div>
->  <script type='text/javascript'>
->  jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
->  jasmine.getEnv().execute();
->  </script>
->  <script type='text/javascript'>$('code').addClass('prettyprint lang-hs');
->  prettyPrint()
->  </script>
+>  <div style='position:fixed;top:0px;bottom:0px;width:100%;background:none;padding:105px 0px 0px 20px;line-height:1.5'>
+>  <div style='position:absolute;left:0px;width:15%'>
+>  <div id="contents" style='float:right'>
+>  </div></div></div>
+>  <div style='position:absolute;top:0px;left:0px;margin-left:15%; width:85%'>
+>  <div style='margin: 0 0 50px 10%'>$body</div>
+>  </div>
 >  </body>
 >  </html>
 
 > |]
 
-<script type='text/javascript'>
-jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
-jasmine.getEnv().execute();
-</script>
-<script type='text/javascript'>$('code').addClass('prettyprint lang-hs');
-prettyPrint()
-</script>
