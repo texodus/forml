@@ -89,9 +89,9 @@
 
       | x when x == 3 = { x = x, y = "test" }
 
-      | { x = { y = "test" }} = { z = 4, 
-                                     y = { x = {}},
-                                         r = 2 }
+      | { x = { y = "test" }} = { z = 4
+                                  y = { x = {}}
+                                  r = 2 }
 
 -- some infix expressions and labels
 
@@ -127,11 +127,20 @@
     x | f = f { map = let mapp | x = f head (mapp f xs)
                       mapp }
 
-    x x = f 
+    x x = if x < 3 then false: else true:
 
     x: Int 
       | f = let f: Int 
                 | = f x 
             f + 2
+
+    swap: Atom a -> (a -> Option a) -> ! a
+       | a f = 1
+
+    atom_monad: Monad (! (Atom a)) 
+
+        | = { return = new
+              bind x f = x >>= (\ x = get x >>= f) }
+
 
 

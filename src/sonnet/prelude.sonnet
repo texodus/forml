@@ -45,21 +45,19 @@ Polymorphic JSON, which are any of the above with an introduction of a some
 type variables into scope: 
 
     type List a = 
-        | cons: { h: a, t: List a }
+        | { head: a, tail: List a }
         | nil:
-
-    type T a b = T of { a: a, b: b } 
 
     type Map key value =
         | from_list: { items: List (T key value) }
         | empty:
 
-    mult { x = real, y = img } { u = real, v = img } = 
-         { real = x * u - y * v, img = x * v - y * u }  
+    mult { x: real, y: img } { u: real, v: img } = 
+         { real: x * u - y * v, img: x * v - y * u }  
 
-   -- Alternatively:
-   -- mult | x y = { real = x.real * y.real - x.img * y.img
-   --                img =  x.real * y.img - x.img * y.real }
+    -- Alternatively:
+    mult x y = { real: x.real * y.real - x.img * y.img
+                 img:  x.real * y.img - x.img * y.real }
 
 Inherited JSON, which is polymorphic to the type it inherits from, and is declared
 using the `with` keyword:
@@ -72,42 +70,60 @@ using the `with` keyword:
 
 Definitions
 --------------------------------------------------------------------------------
-Modules define a scope for a collection of definitions.  Nesting modules is
-allowed, but only when the nesting is explicit via indentation.
+Modules define a scope for a collection of definitions, including other modules.
+While one need not indent the contents of a module, sequential module
+definitions in a file will be considered nested unless explicitly sequential via
+indentation.
 
-   module List
+    module list
 
-Definitions are specified via `=`, types via `:`, and assertions via `?`.  A 
-definition must be named once, and defines an indented scope for further 
-specifiers.  These may redeclare their scope if preferred.
- 
-   --- Returns the first element of a list
-    head: List a → a
-        | nil    = undefined -- head is not defined for an empty list.   
+    import seq
+    import webgl
+
+Definitions themselves are somposed of a name, and a collection of cases,
+optionally prefaced by a type annotation.  The syntax itself is designed to be
+flexible to facilitate readable code for definitions of all shapes and sizes,
+but in general is designed to emulate a tabular layout.  For example, one could
+write a simple head function in several different ways:
+
+    -- destructured, tabular
+    head: List a             → a
+        | cons: { head = x } = x
+        | nil:               = undefined -- head is not defined for an empty list.   
+
+    -- via record accessors
+    head' (cons: x) = x.head | nil: = undefined
+
+    -- anonymous function
+    head'' = \ (cons:{head:x}) = x
+             | _ = undefined
 
 
-JSON may also be destructed positionally if all keys are accounted for:
 
-    tail: 
+    tail:
+    -- This is an embellished, overly readable version of tail, designed
+    -- to illustrate a long-form way of writing definitions in Sonnet. 
 
-        List a → a
-      | (cons -> { tail = 4 }) = x
-      | []       = undefined 
+          List a    → a
+        | (cons: x) = x.tail
+        | []        = undefined 
 
-      tail [3] == 3
-      tail [5, 1, 2] == [1, 2]
+        -- Unit tests
 
-    cons: List a -> { head: a, tail: List a }
+        tail [3] == 3
+        tail [5, 1, 2] == [1, 2]
+
+
 
     --- Applies f recursively from the last element of the list.  Consumes 
-    --  much stack (Haskell style)
+    --  much stack
 
     foldr:  (a → b → a) → b → List a → b
     | f x [] = x
     | f x (cons->{head=y,tail=ys}) = f y (foldr f x ys) 
 
     length:
-    --- Returns the cardinality of a list (mixed style)
+    --- Returns the cardinality of a list
 
         List a    → Int
       | []        = 0
@@ -207,10 +223,9 @@ satisfies the type signature, it will be inserted automatically.
 
     fmap func (comp f g) x == fmap func f (fmap func g x)
     fmap func id x == x
-    
-      
-There is a single instance of Functor List in scope (even though it
-has no name), so fmap can be invoked on lists with no Functor param
+          
+There is a single instance of Functor List in scope (even though it has no
+name), so fmap can be invoked on lists with no Functor param
 
     fmap (\ x = x + 1) [1, 2, 3] == [2, 3, 4]    
 
@@ -254,7 +269,7 @@ instantiated such that they may be useful as implicit parameters:
 Since the type of this instance is inferable and we aren't naming it, we can 
 declare instance simply like this:
 
-    { zero         = []
+    { zero = []
 
       plus (cons: {h=x,t=y}) = x ++ (y + z)
          | []                = x }
@@ -293,19 +308,17 @@ inferred to be `()` when not provided.
         | = { return x = `function() { return x }`
               bind x f  =  `f(x())` }
 
-    module JQuery
+    module jquery
     --  Library of useful JQuery wrappers
 
-        set_html:
         --  Sets nodes which match id to html
-
-            Str → Str  → !
-          | id    html = `$(id).html(html)`
+        set_html: Str → Str  → !
+                | id    html = `$(id).html(html)`
 
         get_html:
         --  Gets the html context of node id
 
-            Str → Str!
+            Str → ! Str
           | id  = `$(id).html()`
 
              
@@ -314,37 +327,36 @@ Side effects types via !, implicit monadic composition
         copy_html:
 
             Str → Str → !
-          | id1    id2  = x ← get_html id1
-                          set_html id2 x
+          | id1    id2  = do x <- get_html id1
+                             set_html id2 x
 
         copy_html' id1 id2 = get_html id1 >>= set_html id2
 
         -- _ binds to the nth parameter of the
         -- nearest function scope
 
-        copy_html'' = join . map (set_html _) . get_html
+        copy_html = join <<< map (\ x = set_html x) <<< get_html
 
-    module Atom
+    module atom
     
-        type Atom a = { get: a!, set: a → ! }
+        type Atom a = { get: ! a, set: a → ! }
         
-        new: a → Atom! a
-        new x = `function(){var y=x;return {get:function(){return y},set:function(z){y=z}}}`
+        new : a → ! (Atom a)
+            | x = `function(){var y=x;return {get:function(){return y},set:function(z){y=z}}}`
 
-        get: Atom a → a!
-        get x = `x.get()`
+        get: Atom a → ! a
+        | x = `x.get()`
         
-        swap: Atom a → (a → Option a) → a!
-        swap a f = x ← `a.get()`
-                   match f x with 
-                         none → return x
-                         some x → `a.set(x)`
-                                   return x 
+        swap: Atom a → (a → Option a) → ! a
+           | a f = do x ← `a.get()`
+                      f x $ \ none: = return x
+                            | some: x = do `a.set(x)`
+                                           return x 
 
-        atom_monad: Monad Atom! =         
-            { return = new
-              x >>= f = x >>= λ get _ >>= f }
-              
 
+        atom_monad: Monad (! (Atom a)) =
+  
+             { return = new
+               bind x f = x >>= (\ x = get x >>= f) }
 
 

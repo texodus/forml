@@ -121,17 +121,22 @@ A Sonnet program is represented by a set of statements
 >                | DefinitionStatement Definition
 >                | ExpressionStatement Expression
 >                | ImportStatement Namespace
->                | ModuleStatement Namespace Statement
+>                | ModuleStatement Namespace [Statement]
 
 > data Definition = Definition String [Axiom]
 
 > instance Show Program where
 >      show (Program ss) = sep_with "\n\n" ss
 
+> instance Show Namespace where
+>     show (Namespace x) = sep_with "." x
+
 > instance Show Statement where
 >     show (TypeStatement t c)     = [qq|type $t = $c|]
 >     show (DefinitionStatement d) = show d
 >     show (ExpressionStatement x) = show x
+>     show (ImportStatement x) = [qq|import $x|]
+>     show (ModuleStatement x xs) = "module " ++ show x ++ "\n\n    " ++ sep_with "\n\n    " xs
 
 > instance Show Definition where
 >     show (Definition name ax) =[qq|$name {sep_with "\\n" ax}|]
@@ -139,11 +144,25 @@ A Sonnet program is represented by a set of statements
 
 > sonnetParser :: Parser Program
 > sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
->     where statement = whitespace >> withPos statement_types <* many newline
->           statement_types = (try type_statement  <?> "Type Definition")
->                 <|> (try (map DefinitionStatement <$> definition_statement) <?> "Symbol Definition")
->                 <|> (expression_statement <?> "Assertion")
 
+>     where statement       = whitespace >> withPos statement_types <* many newline
+>           statement_types = (try type_statement  <?> "Type Definition")
+>                             <|> (try import_statement <?> "Import Statement")
+>                             <|> (try module_statement <?> "Module Declaration")
+>                             <|> (try (map DefinitionStatement <$> definition_statement) <?> "Symbol Definition")
+>                             <|> (expression_statement <?> "Assertion")
+
+>           import_statement = do string "import"
+>                                 whitespace
+>                                 (:[]) . ImportStatement . Namespace <$> namespace
+
+>           module_statement = do string "module"
+>                                 whitespace1
+>                                 name <- Namespace <$> namespace
+>                                 spaces *> indented
+>                                 (:[]) . ModuleStatement name . concat <$> withPos (many1 (many (string "\n") >> same >> try statement))
+
+>           namespace = many1 lower `sepBy1` char '.'
 
 Statements
 -----------------------------------------------------------------------------
@@ -160,14 +179,13 @@ symbol
 > definition_statement :: Parser [Definition]
 > definition_statement = do whitespace
 >                           name <- try type_var <|> many1 (char '_')
->                           sig <- try ((:) <$> type_axiom <*> option [] ((:[]) <$> try (spaces *> no_args_eq_axiom (Match [] Nothing))))
+>                           sig <- try ((:) <$> type_axiom <*> option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing))))
 >                                  <|> ((:[]) <$> try naked_eq_axiom) 
 >                                  <|> return []
->                           spaces
->                           eqs <- withPos (many $ try eq_axiom)
+>                           eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom)) <|> return []
 >                           whitespace
 >                           if length sig == 0 && length eqs == 0 
->                              then parserFail "Deinition Axioms"
+>                              then parserFail "Definition Axioms"
 >                              else return $ [Definition name (sig ++ eqs)]
 
 >     where eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
@@ -296,14 +314,14 @@ TODO when patterns
 > apply_pattern       = NamedPattern 
 >                       <$> many1 letter 
 >                       <* string ":" 
->                       <*> (Just <$> (whitespace1 *> pattern))
+>                       <*> (Just <$> (whitespace *> pattern))
 
 > record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 
 >     where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
 >           key_eq_val = do key <- many (alphaNum <|> oneOf "_")
 >                           spaces
->                           string "="
+>                           string "=" <|> string ":"
 >                           spaces
 >                           value <- pattern
 >                           return (key, value)
@@ -316,7 +334,7 @@ Expressions
 -----------------------------------------------------------------------------
 TODO nested record accessors
 TODO recursive applyexpression
-TODO custom operators
+TODO do expressions
 
 > data Expression = ApplyExpression Expression [Expression]
 >                 | NamedExpression String (Maybe Expression)
@@ -347,6 +365,7 @@ TODO custom operators
 > expression          :: Parser Expression
 > other_expression    :: Parser Expression
 > let_expression      :: Parser Expression
+> do_expression       :: Parser Expression
 > apply_expression    :: Parser Expression
 > infix_expression    :: Parser Expression
 > named_expression    :: Parser Expression
@@ -362,6 +381,7 @@ TODO custom operators
 > expression = try if_expression <|> try infix_expression <|> other_expression
 
 > other_expression = try let_expression
+>                    <|> try do_expression
 >                    <|> try named_expression
 >                    <|> try apply_expression
 >                    <|> try function_expression
@@ -383,6 +403,29 @@ TODO custom operators
 >                               spaces
 >                               same
 >                               LetExpression <$> return defs <*> expression
+
+> do_expression  = do string "do"
+>                     whitespace1
+>                     withPos $ try bind_expression <|> try return_expression
+
+>     where bind_expression = do p <- pattern
+>                                whitespace <* (string "<-" <|> string "←") <* whitespace 
+>                                ex <- withPos expression 
+>                                spaces *> same
+>                                f ex p <$> (try bind_expression <|> try return_expression)
+
+>           return_expression = do v <- expression
+>                                  option v $ try $ do spaces *> same
+>                                                      f v AnyPattern <$> (try bind_expression <|> try return_expression)
+
+>           f ex pat zx=  ApplyExpression 
+>                            (SymbolExpression ">>=")
+>                            [ ex, (FunctionExpression 
+>                                       [ EqualityAxiom 
+>                                         (Match [pat] Nothing)
+>                                         zx ]) ]
+
+
 
 > if_expression = withPos $ do string "if"
 >                              whitespace1
@@ -406,21 +449,23 @@ TODO custom operators
 >                    , [px "not"]
 >                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
->           ix s   = Infix (op $ string s <* notFollowedBy (oneOf "!@#$%^&*<>?/|=\\~,.+-")) AssocLeft
+>           ix s   = Infix (op $ string s <* notFollowedBy valid_chars) AssocLeft
 >           px s   = Prefix $ (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
 >           term   = try other_expression
 
->           reserved_ops = [ "|", "\\", "=", ".", ":", ",", "==", "-", "->", "<=", ">=", "<", ">" ]
+>           reserved_ops = [ "|", "\\", "=", ".", ":", ",", "==", "-", "->", "<=", ">=", "<", ">", "<-" ]
+
+>           valid_chars = oneOf "!@#$%^&*<>?/|=\\~,.+-"
 
 >           user_op_left = try $ do whitespace
->                                   op' <- (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.+-")
+>                                   op' <- (many1 valid_chars)
 >                                   spaces
 >                                   if op' `elem` reserved_ops
 >                                       then parserFail "Non-reserved operator"
 >                                       else return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
 
 >           user_op_right = try $ do whitespace
->                                    op' <- ((++) <$> (many1 $ oneOf "!@#$%^&*<>?/|=\\~,.+-") <*> string ":")
+>                                    op' <- ((++) <$> (many1 valid_chars) <*> string ":")
 >                                    spaces
 >                                    if op' `elem` reserved_ops
 >                                        then parserFail "Non-reserved operator"
@@ -434,8 +479,6 @@ TODO custom operators
 > named_expression = NamedExpression 
 >                    <$> (many1 alphaNum <* string ":") 
 >                    <*> option Nothing (Just <$> try (spaces *> indented *> other_expression))
-
-TODO left recursive accessors
 
 > accessor_expression = do x <- indentPairs "(" expression ")" 
 >                               <|> js_expression 
@@ -478,12 +521,8 @@ TODO it would be nice if we parsed javascript too ...
 
 > js_expression = JSExpression <$> indentPairs "`" (many $ noneOf "`") "`"
 
-
-TODO allow sugar for declaring method dictionaries as records, eg `{ f x = x + 1 }`
-instead of `{ f = \ x = x + 1 }`
-
-> record_expression = indentPairs "{" (try inherit <|> RecordExpression . M.fromList <$>  pairs') "}"
->     where pairs' = (withPos $ try key_eq_val <|> try function) `sepBy` try (try comma <|> not_comma)
+> record_expression = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
+>     where pairs' = withPos $ (try key_eq_val <|> try function) `sepBy` try (try comma <|> not_comma)
 
 >           function = do n <- type_var 
 >                         whitespace
@@ -505,10 +544,10 @@ instead of `{ f = \ x = x + 1 }`
 >                        return $ InheritExpression ex (M.fromList ps)
 
 >           key_eq_val = do key <- many (alphaNum <|> oneOf "_")
+>                           whitespace
+>                           string "=" <|> string ":"
 >                           spaces
->                           string "="
->                           spaces
->                           value <- expression
+>                           value <- withPos expression
 >                           return (key, value)
 
 > literal_expression = LiteralExpression <$> literal
@@ -677,7 +716,7 @@ type variables is handled in the type checker.
 >                     then parserFail "symbol"
 >                     else return x
 
->           reserved = [ "if", "then", "else", "type", "let", "when", "with", "and", "or" ]
+>           reserved = [ "if", "then", "else", "type", "let", "when", "with", "and", "or", "do" ]
 
 
 Of course, there are many common idioms from type parsing which may be factored
@@ -716,9 +755,8 @@ Main
 >            case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of
 >              Left ex -> putStrLn (show ex)
 >              Right src' -> do case parse sonnetParser "Parsing" (concat src') of
->                                 Left ex -> do putStrLn $ show ex
->                                 Right x -> do putStrLn $ show x
->                                               putStrLn $ "success"
+>                                 Left ex -> putStrLn $ show ex
+>                                 Right x -> putStrLn $ show x
 
 > data RunMode   = Compile | JustTypeCheck
 > data RunConfig = RunConfig [String] String RunMode
