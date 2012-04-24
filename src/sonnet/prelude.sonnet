@@ -77,8 +77,8 @@ indentation.
 
     module list
 
-    import seq
-    import webgl
+    open seq
+    open webgl
 
 Definitions themselves are somposed of a name, and a collection of cases,
 optionally prefaced by a type annotation.  The syntax itself is designed to be
@@ -157,7 +157,7 @@ included in the genreated documentation, such that loading the documentation
 
     filter: (a -> bool) -> List a -> List a
           | f [] = []
-          | f (cons->{head=x,tail=xs}) = append (f x) (filter f xs)
+          | f {head=x,tail=xs} = append (f x) (filter f xs)
 
     filter (\x = x < 2) [0, 1, 3, 4, 1, 4] == [0, 1, 1]
 
@@ -232,7 +232,7 @@ name), so fmap can be invoked on lists with no Functor param
 Here's a few sample Haskell type classes encoded as regular ADTs, then
 instantiated such that they may be useful as implicit parameters:                            
               
-    type Applicative f =
+    type Applicative f =    -- type Applicative: (* -> *) -> * | f =
 
         { Functor f with
               return: a -> f a,
@@ -240,7 +240,7 @@ instantiated such that they may be useful as implicit parameters:
   
     applicative = abstract: { map f x = return f * x }  
 
-  --  forall u v w x y 	
+    --  forall u v w x y 	
  
         return id * v == v f                        -- Identity
         u ** (v ** w) == return comp ** u ** v ** w -- Composition

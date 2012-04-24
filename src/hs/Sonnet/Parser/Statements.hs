@@ -1,0 +1,471 @@
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+
+module Sonnet.Parser.Statements where
+
+import Text.InterpolatedString.Perl6
+
+import Control.Applicative
+
+import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
+import Text.Parsec.Indent  hiding (same)
+import Text.Parsec.Expr
+
+import qualified Data.Map as M
+import qualified Data.List as L
+
+import Data.String.Utils
+
+import Sonnet.Parser.Utils
+import Sonnet.Parser.Types
+
+-- Statements
+-- -----------------------------------------------------------------------------
+-- A Statement may be a definition, which is a list of axioms associated with a
+-- symbol
+
+data Definition = Definition String [Axiom]
+
+data Statement = TypeStatement TypeDefinition UnionType
+               | DefinitionStatement Definition
+               | ExpressionStatement Expression
+               | ImportStatement Namespace
+               | ModuleStatement Namespace [Statement]
+
+newtype Namespace = Namespace [String]
+
+instance Show Namespace where
+    show (Namespace x) = sep_with "." x
+
+instance Show Statement where
+    show (TypeStatement t c)     = [qq|type $t = $c|]
+    show (DefinitionStatement d) = show d
+    show (ExpressionStatement x) = show x
+    show (ImportStatement x) = [qq|import $x|]
+    show (ModuleStatement x xs) = replace "\n |" "\n     |" 
+                                  $ replace "\n\n" "\n\n    " 
+                                  $ "module " 
+                                  ++ show x ++ "\n\n" ++ sep_with "\n\n" xs
+
+instance Show Definition where
+    show (Definition name ax) =[qq|$name {sep_with "\\n" ax}|]
+
+
+
+data Axiom = TypeAxiom UnionType
+           | EqualityAxiom Match Expression
+
+instance Show Axiom where
+    show (TypeAxiom x) = ": " ++ show x
+    show (EqualityAxiom ps ex) = [qq| | $ps = $ex|]
+
+definition_statement :: Parser [Definition]
+definition_statement = do whitespace
+                          name <- try symbol_name <|> many1 (char '_')
+                          sig <- first
+                          eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom)) <|> return []
+                          whitespace
+                          if length sig == 0 && length eqs == 0 
+                             then parserFail "Definition Axioms"
+                             else return $ [Definition name (sig ++ eqs)]
+
+    where first = try type_or_first
+                  <|> ((:[]) <$> try naked_eq_axiom) 
+                  <|> return []
+
+          type_or_first = (:) <$> type_axiom <*> second
+
+          second = option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing)))
+
+          eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
+                          string "|"
+                          naked_eq_axiom
+
+          naked_eq_axiom = do whitespace
+                              patterns <- match
+                              no_args_eq_axiom patterns
+
+          no_args_eq_axiom patterns = do whitespace *> string "=" *> spaces *> indented
+                                         ex <- withPos expression
+                                         return $ EqualityAxiom patterns ex
+
+          type_axiom = do spaces
+                          indented
+                          string ":"
+                          spaces
+                          indented
+                          TypeAxiom <$> withPos type_axiom_signature
+
+expression_statement :: Parser [Statement]
+expression_statement = do whitespace
+                          (:[]) . ExpressionStatement <$> expression
+
+-- Type definitions
+
+data TypeDefinition = TypeDefinition String [String]
+
+instance Show TypeDefinition where
+    show (TypeDefinition name vars) = concat . L.intersperse " " $ name : vars
+
+
+
+type_definition :: Parser TypeDefinition
+type_statement  :: Parser [Statement]
+
+type_statement  = do whitespace
+                     string "type"
+                     whitespace1
+                     def <- type_definition
+                     whitespace 
+                     string "="
+                     spaces
+                     sig <- withPos $ do option "" (string "|" <* spaces)
+                                         type_definition_signature
+                     whitespace
+                     return $ [TypeStatement def sig]
+
+type_definition = do name <- (:) <$> upper <*> many alphaNum
+                     vars <- try vars' <|> return []
+                     return $ TypeDefinition name vars
+
+    where vars' = do many1 $ oneOf "\t "
+                     let var = (:) <$> lower <*> many alphaNum
+                     var `sepEndBy` whitespace
+
+
+
+-- Patterns
+-- -----------------------------------------------------------------------------
+-- TODO when patterns
+
+data Match = Match [Pattern] (Maybe Expression)
+
+data Pattern = VarPattern String
+             | AnyPattern
+             | LiteralPattern Literal
+             | RecordPattern (M.Map String Pattern)
+             | ListPattern [Pattern]
+             | ViewPattern Expression Pattern
+             | NamedPattern String (Maybe Pattern)
+
+instance Show Match where
+    show (Match p Nothing)  = sep_with " " p
+    show (Match p (Just x)) = [qq|{sep_with " " p} when $x|]
+
+instance Show Pattern where
+    show (VarPattern x)     = x
+    show AnyPattern         = "_"
+    show (LiteralPattern x) = show x
+    show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
+    show (ViewPattern x y)  = [qq|($x -> $y)|]
+    show (NamedPattern n (Just x)) = [qq|$n: ($x)|]
+    show (NamedPattern n Nothing)  = n ++ ":"
+    show (RecordPattern m)  = [qq|\{ {unsep_with " = " m} \}|] 
+
+match :: Parser Match
+match = try conditional <|> ((\x -> Match x Nothing) <$> (pattern `sepEndBy` whitespace1))
+
+    where conditional = do x <- try pattern `sepEndBy` try whitespace1
+                           string "when"
+                           spaces
+                           indented
+                           ex <- withPos expression
+                           spaces
+                           indented
+                           return $ Match x (Just ex)
+
+pattern             :: Parser Pattern
+var_pattern         :: Parser Pattern
+literal_pattern     :: Parser Pattern
+record_pattern      :: Parser Pattern
+list_pattern        :: Parser Pattern
+any_pattern         :: Parser Pattern
+naked_apply_pattern :: Parser Pattern
+apply_pattern       :: Parser Pattern
+view_pattern        :: Parser Pattern
+
+pattern = try literal_pattern
+          <|> try naked_apply_pattern
+          <|> try var_pattern
+          <|> any_pattern
+          <|> record_pattern
+          <|> list_pattern
+          <|> indentPairs "(" (try view_pattern <|> try apply_pattern <|> pattern) ")"
+
+view_pattern        = ViewPattern <$> expression <* spaces <* string "->" <* whitespace <*> pattern 
+var_pattern         = VarPattern <$> type_var
+literal_pattern     = LiteralPattern <$> literal          
+any_pattern         = many1 (string "_") *> return AnyPattern
+naked_apply_pattern = NamedPattern <$> many1 letter <* string ":" <*> return Nothing
+apply_pattern       = NamedPattern 
+                      <$> many1 letter 
+                      <* string ":" 
+                      <*> (Just <$> (whitespace *> pattern))
+
+record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
+
+    where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
+          key_eq_val = do key <- many (alphaNum <|> oneOf "_")
+                          spaces
+                          string "=" <|> string ":"
+                          spaces
+                          value <- pattern
+                          return (key, value)
+
+list_pattern = ListPattern <$> indentPairs "[" (pattern `sepBy` try comma) "]"
+
+
+
+-- Expressions
+-- -----------------------------------------------------------------------------
+-- TODO nested record accessors
+-- TODO recursive applyexpression
+-- TODO do expressions
+
+data Expression = ApplyExpression Expression [Expression]
+                | NamedExpression String (Maybe Expression)
+                | IfExpression Expression Expression Expression
+                | LiteralExpression Literal
+                | SymbolExpression String
+                | JSExpression String
+                | FunctionExpression [Axiom]
+                | RecordExpression (M.Map String Expression)
+                | InheritExpression Expression (M.Map String Expression)
+                | LetExpression [Definition] Expression
+                | ListExpression [Expression]
+
+instance Show Expression where
+    show (ApplyExpression x y)        = [qq|$x {sep_with " " y}|]
+    show (IfExpression a b c)         = [qq|if $a then $b else $c|]
+    show (LiteralExpression x)        = show x
+    show (SymbolExpression x)         = x
+    show (ListExpression x)           = [qq|[ {sep_with ", " x} ]|]
+    show (FunctionExpression as)      = replace "\n |" "\n     |" $ [qq|λ{sep_with "" as}|]
+    show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
+    show (NamedExpression n Nothing)  = n ++ ":"
+    show (JSExpression x)             = "`" ++ x ++ "`"
+    show (LetExpression ax e)         = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n" ax} in ($e)|]
+    show (RecordExpression m)         = [qq|\{ {unsep_with " = " m} \}|] 
+    show (InheritExpression x m)      = [qq|\{ $x with {unsep_with " = " m} \}|] 
+
+expression          :: Parser Expression
+other_expression    :: Parser Expression
+let_expression      :: Parser Expression
+do_expression       :: Parser Expression
+apply_expression    :: Parser Expression
+infix_expression    :: Parser Expression
+named_expression    :: Parser Expression
+function_expression :: Parser Expression
+js_expression       :: Parser Expression
+record_expression   :: Parser Expression
+literal_expression  :: Parser Expression
+symbol_expression   :: Parser Expression
+accessor_expression :: Parser Expression
+list_expression     :: Parser Expression
+if_expression       :: Parser Expression
+
+expression = try if_expression <|> try infix_expression <|> other_expression
+
+other_expression = try let_expression
+                   <|> try do_expression
+                   <|> try named_expression
+                   <|> try apply_expression
+                   <|> try function_expression
+                   <|> try accessor_expression
+                   <|> inner_expression
+
+inner_expression :: Parser Expression
+inner_expression = indentPairs "(" expression ")" 
+                   <|> js_expression 
+                   <|> record_expression 
+                   <|> literal_expression
+                   <|> try accessor_expression
+                   <|> symbol_expression
+                   <|> list_expression
+
+let_expression = withPos $ do string "let"
+                              whitespace1
+                              defs <- concat <$> withPos def
+                              spaces
+                              same
+                              LetExpression <$> return defs <*> expression
+
+    where def = try definition_statement `sepBy1` try (spaces *> same)
+
+do_expression  = do string "do"
+                    whitespace1
+                    withPos $ try bind_expression <|> try return_expression
+
+    where bind_expression = do p <- pattern
+                               whitespace <* (string "<-" <|> string "←") <* whitespace 
+                               ex <- withPos expression 
+                               spaces *> same
+                               f ex p <$> (try bind_expression <|> try return_expression)
+
+          return_expression = do v <- expression
+                                 option v $ try $ unit_bind v
+
+          unit_bind v = do spaces *> same
+                           f v AnyPattern <$> (try bind_expression <|> try return_expression)
+
+          f ex pat zx=  ApplyExpression 
+                           (SymbolExpression ">>=")
+                           [ ex, (FunctionExpression 
+                                      [ EqualityAxiom 
+                                        (Match [pat] Nothing)
+                                        zx ]) ]
+
+
+
+if_expression = withPos $ do string "if"
+                             whitespace1
+                             e <- try infix_expression <|> other_expression
+                             spaces
+                             string "then"
+                             whitespace1
+                             t <- try infix_expression <|> other_expression
+                             spaces
+                             string "else"
+                             whitespace1
+                             IfExpression e t <$> (try infix_expression <|> other_expression) 
+
+infix_expression = buildExpressionParser table term 
+
+    where table  = [ [ix "^"]
+                   , [ix "*", ix "/"]
+                   , [ix "+", ix "-"]
+                   , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
+                   , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "/="]
+                   , [px "not"]
+                   , [ix "&&", ix "||", ix "and", ix "or" ] ]
+
+          ix s   = Infix (op $ string s <* notFollowedBy operator) AssocLeft
+          px s   = Prefix $ (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
+          term   = try other_expression
+
+          user_op_left = try $ do whitespace
+                                  op' <- not_reserved (many1 operator)
+                                  spaces
+                                  return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
+
+          user_op_right = try $ do whitespace
+                                   op' <- not_reserved ((++) <$> (many1 operator) <*> string ":")
+                                   spaces
+                                   return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
+
+          op p   = try $ do whitespace
+                            op' <- SymbolExpression <$> p
+                            spaces
+                            return (\x y -> ApplyExpression op' [x, y])
+
+named_expression = NamedExpression 
+                   <$> (many1 alphaNum <* string ":") 
+                   <*> option Nothing (Just <$> try (spaces *> indented *> other_expression))
+
+accessor_expression = do x <- indentPairs "(" expression ")" 
+                              <|> js_expression 
+                              <|> record_expression 
+                              <|> literal_expression
+                              <|> symbol_expression
+                              <|> list_expression
+
+                         string "."
+                         z <- type_var
+                         return $ ApplyExpression 
+                                    (FunctionExpression 
+                                         [ EqualityAxiom 
+                                           (Match [RecordPattern (M.fromList [(z, VarPattern "x")])] Nothing)
+                                           (SymbolExpression "x") ] )
+                                    [x]
+
+apply_expression = ApplyExpression <$> inner_expression <*> (many1 . try $ whitespace *> inner_expression)
+
+function_expression = withPos $ do string "\\" <|> string "λ" <|> string "\955"
+                                   whitespace
+                                   t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
+                                   eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
+                                   return $ FunctionExpression (t ++ eqs)
+
+    where type_axiom = do string ":"
+                          spaces
+                          indented
+                          TypeAxiom <$> withPos type_axiom_signature
+
+          eq_axiom   = do patterns <- match
+                          string "="
+                          spaces
+                          indented
+                          ex <- withPos expression
+                          return $ EqualityAxiom patterns ex
+
+-- TODO allow ` escaping
+-- TODO it would be nice if we parsed javascript too ...
+
+js_expression = JSExpression <$> indentPairs "`" (many $ noneOf "`") "`"
+
+record_expression = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
+    where pairs' = withPos $ (try key_eq_val <|> try function) `sepBy` try (try comma <|> not_comma)
+
+          function = do n <- symbol_name 
+                        whitespace
+                        eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
+                        return $ (n, FunctionExpression eqs)
+
+          eq_axiom   = do patterns <- match
+                          string "="
+                          spaces
+                          indented
+                          ex <- withPos expression
+                          return $ EqualityAxiom patterns ex
+
+          inherit = do ex <- expression
+                       spaces *> indented
+                       string "with"
+                       spaces *> indented
+                       ps <- pairs'
+                       return $ InheritExpression ex (M.fromList ps)
+
+          key_eq_val = do key <- symbol_name
+                          whitespace
+                          string "=" <|> string ":"
+                          spaces
+                          value <- withPos expression
+                          return (key, value)
+
+literal_expression = LiteralExpression <$> literal
+symbol_expression  = SymbolExpression <$> symbol_name
+list_expression    = ListExpression <$> indentPairs "[" (expression `sepBy` comma) "]"
+
+
+
+-- Literals
+-- -----------------------------------------------------------------------------
+-- Literals in Sonnet are limited to strings and numbers - 
+
+
+data Literal = StringLiteral String | IntLiteral Int | FloatLiteral Float
+
+instance Show Literal where
+   show (StringLiteral x) = show x
+   show (IntLiteral x)    = show x
+   show (FloatLiteral x)  = show x
+
+-- TODO string escaping
+-- TODO heredoc
+-- TODO string interpolation
+literal :: Parser Literal
+literal = try flt <|> try num <|> try str
+    where flt = FloatLiteral . read <$> do x <- many1 digit 
+                                           string "."
+                                           y <- many1 digit
+                                           return $ x ++ "." ++ y
+          num = IntLiteral . read <$> many1 digit
+          str = StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
+
