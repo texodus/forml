@@ -17,10 +17,7 @@ import Text.Parsec.Indent  hiding (same)
 
 import Sonnet.Parser.Utils
 import Sonnet.Parser.Statements
-
-parseSonnet :: String -> Either ParseError Program
-parseSonnet src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of 
-                    Right x -> parse sonnetParser "parsing syntax" (concat x)
+import Sonnet.AST
 
 
 
@@ -28,10 +25,9 @@ parseSonnet src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleanin
 -- -----------------------------------------------------------------------------
 -- A Sonnet program is represented by a set of statements
 
-newtype Program = Program [Statement]
-
-instance Show Program where
-     show (Program ss) = sep_with "\n\n" ss
+parseSonnet :: String -> Either ParseError Program
+parseSonnet src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of 
+                    Right x -> parse sonnetParser "parsing syntax" (concat x)
 
 
 sonnetParser :: Parser Program

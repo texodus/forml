@@ -10,8 +10,6 @@
 
 module Sonnet.Parser.Types where
 
-import Text.InterpolatedString.Perl6
-
 import Control.Applicative
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
@@ -21,7 +19,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Sonnet.Parser.Utils
-
+import Sonnet.AST
 
 
 
@@ -34,39 +32,6 @@ import Sonnet.Parser.Utils
 -- The type algebra of Sonnet is broken into 3 types to preserve the 
 -- associativity of UnionTypes: (x | y) | z == x | y | z
 
-
-data UnionType = UnionType (S.Set ComplexType)
-               deriving (Ord, Eq)
-
-data ComplexType = RecordType (M.Map String UnionType)
-                 | InheritType SimpleType (M.Map String UnionType)
-                 | FunctionType UnionType UnionType
-                 | SimpleType SimpleType
-                 | NamedType String (Maybe UnionType)
-                 deriving (Eq, Ord)
-
-data SimpleType = PolymorphicType SimpleType [UnionType]
-                | SymbolType String 
-                | VariableType String
-                deriving (Ord, Eq)
-
-instance Show UnionType where 
-    show (UnionType xs)         = [qq|{sep_with " | " $ S.toList xs}|]
-   
-instance Show ComplexType where
-    show (SimpleType y)         = [qq|$y|]
-    show (NamedType n (Just x)) = [qq|$n: ($x)|]
-    show (NamedType n Nothing)  = n ++ ":"
-    show (InheritType n m)      = [qq|\{ $n with {unsep_with ": " m} \}|]
-    show (RecordType m)         = [qq|\{ {unsep_with ": " m} \}|] 
-
-    show (FunctionType g@(UnionType (S.toList -> ((FunctionType _ _):[]))) h) = [qq|($g -> $h)|]
-    show (FunctionType g h)     = [qq|$g -> $h|]
-
-instance Show SimpleType where
-    show (PolymorphicType x y)  = [qq|($x {sep_with " " y})|]
-    show (SymbolType x)   = x
-    show (VariableType x) = x
 
 
 -- Where a type signature may be used in Sonnet had two slightly different parsers

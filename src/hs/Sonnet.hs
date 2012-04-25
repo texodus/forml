@@ -25,6 +25,7 @@ import Data.Char (ord, isAscii)
 import Data.String.Utils
 
 import Sonnet.Parser
+import Sonnet.Javascript
 
 
 -- Main
@@ -43,10 +44,14 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            hFile  <- openFile file ReadMode
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
            writeFile (output ++ ".html") $ toHTML (wrap_html output src)
-           putStrLn $ concat $ take 80 $ repeat "-"
+           putStr "[ ] Parsing"
            case parseSonnet src of
-             Left ex -> putStrLn (show ex)
-             Right src' -> putStrLn $ show src'
+             Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
+             Right src' -> do putStrLn "\r[*] Parsing"
+                              putStr "[ ] Generating Javascript"
+                              case render src' of
+                                Left ex -> putStrLn "\r[x] Parsing" >> putStrLn ex
+                                Right src'' -> putStrLn "\r[*] Parsing" >> putStrLn src''
 
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode
