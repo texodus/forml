@@ -1,6 +1,9 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Sonnet.Javascript (render) where
 
@@ -18,60 +21,86 @@ import qualified Data.Set as S
 
 import Sonnet.AST
 
-render :: Program -> Either String String
-render (Program xs) = Right . show . renderJs . render' $ xs
+render :: Program -> String
+render (Program xs) = show . renderJs . toStat $ xs
 
-render' :: [Statement] -> JStat
-render' = foldl1 mappend . map statement
+instance ToStat [Statement] where
+    toStat = foldl1 mappend . map toStat
 
-statement :: Statement -> JStat
-statement (TypeStatement d x)     = mempty
-statement (ExpressionStatement e) = mempty
-statement (ImportStatement d)     = mempty
+instance ToStat Statement where
+    toStat (TypeStatement d x)     = mempty
+    toStat (ExpressionStatement e) = mempty
+    toStat (ImportStatement d)     = mempty
 
-statement (ModuleStatement ns xs) = 
+    toStat (ModuleStatement ns xs) = 
 
-    [jmacro| this[`(ns)`] = new (function() { 
-                 `(render' xs)`; 
-             })(); |]
+        [jmacro| `(ns)` = new (function() { 
+                     `(xs)`; 
+                 })(); |]
 
-statement (DefinitionStatement (Definition name as)) = 
+    toStat (DefinitionStatement (Definition name as)) = 
 
-    [jmacro| this[`(name)`] = `(axioms as)` |]
+        [jmacro| this[`(name)`] = `(as)` |]
 
-axioms :: [Axiom] -> JExpr
-axioms (TypeAxiom _ : xs) = axioms xs
-axioms [] = 
+instance ToJExpr Namespace where
+    toJExpr (Namespace xs) = f (reverse xs)
+        where f (y:ys)     = [jmacroE| `(f ys)`[`(y)`] |]
+              f []         = [jmacroE| this |]
 
-    [jmacroE| (function() { throw "ERROR" })() |]
+instance ToJExpr [Axiom] where
+    toJExpr [] = [jmacroE| null |]
+    toJExpr (TypeAxiom _:xs) = toJExpr xs
+    toJExpr xs @ (EqualityAxiom (Match ps _) _ : _) = 
 
-axioms (EqualityAxiom (Match [] Nothing) ex : _) = expression ex
-axioms (EqualityAxiom (Match [] (Just cond)) ex : as) =
+        let num_params = length ps
 
-    [jmacroE| (function() {
-                  if (`(expression cond)`) {
-                      return `(expression ex)`;
-                  } else {
-                      return `(axioms as)`;
-                  }
-              })() |]
+            conv 0 jexpr = jexpr
+            conv n jexpr = [jmacroE| function(y) { args.push(y); return `(conv (n - 1) jexpr)`; } |]
 
-axioms (EqualityAxiom (Match (p:ps) cond) ex : as) =
+            body [] = [jmacroE| console.log("Pattern match exhausted") |]
+            body (EqualityAxiom (Match ps cond) ex : xs) = 
 
-    [jmacroE| (function() {
-                  if (`(pattern p)`) {
-                      return `(axioms $ EqualityAxiom (Match ps cond) ex : as)`;
-                  } else {
-                      return `(axioms as)`;
-                  }
-              }) |]
-                 
+                [jmacroE| (function() {
+                             if (`(ps)` && `(cond)`) {
+                                 return `(ex)`;
+                             } else {
+                                 return `(body xs)`;
+                             }
+                          })() |]
 
-expression :: Expression -> JExpr
-expression _ = [jmacroE| false |]
+        in  [jmacroE| (function() {
+                          var !args = [];
+                          var !bindings = {};
+                          var !current = 0;
+                          return `(conv num_params $ body xs)`;
+                      })() |]
 
-pattern :: Pattern -> JExpr
-pattern _ = [jmacroE| false |]
+-- This instance handles pattern guards
+instance ToJExpr (Maybe Expression) where
+    toJExpr Nothing  = toJExpr True
+    toJExpr (Just x) = toJExpr x
+
+instance ToJExpr Expression where
+    toJExpr (LiteralExpression l) = toJExpr l
+    toJExpr (ApplyExpression (SymbolExpression "+") [x, y]) = [jmacroE| `(x)` + `(y)` |]
+    toJExpr (SymbolExpression x) = [jmacroE| bindings[`(x)`] |]
+    toJExpr x = error $ show x
+
+instance ToJExpr [Pattern] where
+    toJExpr [] = toJExpr True
+    toJExpr (x:[]) = toJExpr x
+    toJExpr (x:xs) = [jmacroE| `(x)` && (function() { current++; return `(xs)`; })() |]
+
+instance ToJExpr Pattern where
+    toJExpr AnyPattern = toJExpr True
+    toJExpr (VarPattern x) = [jmacroE| (function() { bindings[`(x)`] = args[current]; return true; })() |]
+
+instance ToJExpr Literal where
+    toJExpr (StringLiteral s) = toJExpr s
+    toJExpr (IntLiteral s)    = toJExpr s
+    toJExpr (DoubleLiteral s) = toJExpr s
+
+
 
 --------------------------------------------------------------------------------
 --

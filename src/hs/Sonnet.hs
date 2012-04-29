@@ -49,9 +49,9 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
              Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
              Right src' -> do putStrLn "\r[*] Parsing"
                               putStr "[ ] Generating Javascript"
-                              case render src' of
-                                Left ex -> putStrLn "\r[x] Parsing" >> putStrLn ex
-                                Right src'' -> putStrLn "\r[*] Parsing" >> putStrLn src''
+                              let src'' = render src'
+                              putStrLn src''
+                              writeFile (output ++ ".js") src''
 
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode

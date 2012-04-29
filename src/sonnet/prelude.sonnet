@@ -333,7 +333,9 @@ inferred to be `()` when not provided.
             Str → ! Str
           | id  = `$(id).html()`
 
-             
+        
+        test: test: test: 1 == test: 1 
+
 Side effects types via !, implicit monadic composition
 
         copy_html:
@@ -347,6 +349,9 @@ Side effects types via !, implicit monadic composition
         copy_html = join <<< map (\ x = set_html x) <<< get_html
 
     module atom
+
+        module internal.public
+            type Test a = { x: Str }
     
         type Atom a = { get: ! a, set: a → ! }
         

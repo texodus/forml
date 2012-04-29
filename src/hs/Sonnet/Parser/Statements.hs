@@ -359,10 +359,10 @@ list_expression    = ListExpression <$> indentPairs "[" (expression `sepBy` comm
 -- TODO string interpolation
 literal :: Parser Literal
 literal = try flt <|> try num <|> try str
-    where flt = FloatLiteral . read <$> do x <- many1 digit 
-                                           string "."
-                                           y <- many1 digit
-                                           return $ x ++ "." ++ y
+    where flt = DoubleLiteral . read <$> do x <- many1 digit 
+                                            string "."
+                                            y <- many1 digit
+                                            return $ x ++ "." ++ y
           num = IntLiteral . read <$> many1 digit
           str = StringLiteral <$> (char '"' >> (anyChar `manyTill` char '"'))
 
