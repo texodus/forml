@@ -49,9 +49,14 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
              Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
              Right src' -> do putStrLn "\r[*] Parsing"
                               putStr "[ ] Generating Javascript"
-                              let src'' = render src'
-                              putStrLn src''
-                              writeFile (output ++ ".js") src''
+                              let js = render src'
+                              writeFile (output ++ ".js") js
+                              putStrLn "\r[*] Generating Javascript"
+                              putStr "[ ] Generating Tests"
+                              let spec = render_spec src'
+                              writeFile (output ++ ".spec.js") spec
+                              putStrLn "\r[*] Generating Tests"
+                              
 
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode
@@ -109,6 +114,12 @@ wrap_html name body = [qq|
          text-decoration: none;
          color: #cccccc;
      \}
+     .jasmine_reporter a, .jasmine_reporter a:visited, .jasmine_reporter a:active, .jasmine_reporter a:link \{
+         text-decoration: none;
+         color: #000000;
+     \}
+
+
  </style>
  </head>
  <body>
@@ -117,7 +128,7 @@ wrap_html name body = [qq|
  <div id="contents" style='float:right'>
  </div></div></div>
  <div style='position:absolute;top:0px;left:0px;margin-left:15%; width:85%'>
- <div style='margin: 0 0 50px 10%'>$body</div>
+ <div id='main' style='margin: 0 0 50px 10%'>$body</div>
  </div>
  </body>
  </html>

@@ -8,7 +8,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Sonnet.AST where
+module Sonnet.Parser.AST where
 
 import Text.InterpolatedString.Perl6
 

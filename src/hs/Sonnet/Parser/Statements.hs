@@ -20,7 +20,7 @@ import qualified Data.Map as M
 
 import Sonnet.Parser.Utils
 import Sonnet.Parser.Types
-import Sonnet.AST
+import Sonnet.Parser.AST
 
 -- Statements
 -- -----------------------------------------------------------------------------
@@ -252,7 +252,7 @@ infix_expression = buildExpressionParser table term
                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
           ix s   = Infix (op $ string s <* notFollowedBy operator) AssocLeft
-          px s   = Prefix $ (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
+          px s   = Prefix $ try (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
           term   = try other_expression
 
           user_op_left = try $ do whitespace

@@ -1,4 +1,29 @@
 
 
     module test
-        f x y = x + y
+
+        f x 0 = 1000
+        | x y = 1 + y
+
+        f 10 0 == 1000
+        f 100 0 == 1000
+        f (f 1 0) 10 == 11
+
+        module fibonacci
+
+            fib 0 = 0
+              | 1 = 1
+              | n = fib (n - 1) + fib (n - 2)
+
+            fib 0 == 0
+            fib 1 == 1
+            fib 5 == 5
+
+
+        --g = 10
+
+        --h = true:
+
+        
+
+        --z = false: (1 + 3)

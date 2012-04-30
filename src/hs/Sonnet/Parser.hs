@@ -17,7 +17,7 @@ import Text.Parsec.Indent  hiding (same)
 
 import Sonnet.Parser.Utils
 import Sonnet.Parser.Statements
-import Sonnet.AST
+import Sonnet.Parser.AST
 
 
 

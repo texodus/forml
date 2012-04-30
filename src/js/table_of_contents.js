@@ -15,6 +15,32 @@ $(function() {
     $('body').css('margin', '0 0');
     $('pre').css('margin', '0 0 23px 0');
 
-    prettyPrint()
+    prettyPrint();
 
+    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+    jasmine.getEnv().execute();
+
+    var reporter = $(".jasmine_reporter").detach();
+
+    $("#main").append(reporter)
 });
+
+function time(f) {
+    var start = new Date().getTime();
+    
+    f();
+
+    var end = new Date().getTime();
+    var time = end - start;
+    console.log('Execution time: ' + time); 
+};
+
+function fib(n) {
+    if (n == 0) {
+	return 0;
+    } else if (n == 1) {
+	return 1;
+    } else {
+	return fib(n - 1) + fib(n - 2)
+    }
+}
