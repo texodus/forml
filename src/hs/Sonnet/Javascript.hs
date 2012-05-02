@@ -147,7 +147,7 @@ instance ToJExpr Expression where
     toJExpr (ApplyExpression (SymbolExpression f) xs) = 
 
         let app (x:xs) = [jmacroE| `(app xs)`(`(x)`) |]
-            app []     = [jmacroE| this[`(f)`] |]
+            app []     = [jmacroE| typeof `(ref f)` === "undefined" ? this[`(f)`] : `(ref f)` |]  -- TODO inject deps via walking tree
 
         in app (reverse xs)
 

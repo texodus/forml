@@ -19,6 +19,8 @@
             fib 1 == 1
             fib 5 == 5
 
+            map f x = f x
+
 
         --g = 10
 
