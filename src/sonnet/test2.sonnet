@@ -11,15 +11,16 @@
 
         module fibonacci
 
-            fib 0 = 0
-              | 1 = 1
-              | n = fib (n - 1) + fib (n - 2)
+            fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
 
             fib 0 == 0
             fib 1 == 1
             fib 5 == 5
 
             map f x = f x
+           
+            map fib 6 == 8
+            map fib 7 == 13
 
 
         --g = 10

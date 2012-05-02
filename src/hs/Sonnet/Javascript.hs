@@ -8,25 +8,14 @@
 
 module Sonnet.Javascript (render, render_spec) where
 
-import Control.Applicative
-
 import Language.Javascript.JMacro
 
-import Data.Char
-import Data.List
 import Data.Monoid
-import Data.Functor.Identity
-import Control.Monad.State.Strict as D
-
-
-import qualified Data.Map as M
-import qualified Data.Set as S
-import qualified Data.List as L
 
 import Sonnet.Parser.AST
 
 render :: Program -> String
-render (Program xs) = show . renderJs . toStat $ xs
+render (Program xs) = "" --show . renderJs . toStat $ xs
 
 -- Tests
 
@@ -154,11 +143,12 @@ instance ToJExpr Expression where
     toJExpr (SymbolExpression x) = ref x
     toJExpr (NamedExpression x y) = [jmacroE| (function(){ var g = {}; g[`(x)`] = `(y)`; return g})() |]
     toJExpr (IfExpression x y z)  = [jmacroE| (function(){ if (`(x)`) { return `(y)`; } else { return `(z)` }})() |] 
-    toJExpr (JSExpression z) = undefined
+    toJExpr (JSExpression z) = toJExpr False
     toJExpr (FunctionExpression x) = toJExpr x
     toJExpr (RecordExpression m) = toJExpr m
-    toJExpr (InheritExpression a b) = undefined
+    toJExpr (InheritExpression a b) = toJExpr False
     toJExpr (LetExpression bs ex) = [jmacroE| new function() { `(bs)`; return `(ex)` } |]
+    toJExpr _ = toJExpr False
 
 instance ToJExpr [PatternPair] where
     toJExpr [] = toJExpr True
@@ -169,7 +159,7 @@ instance ToJExpr PatternPair where
     toJExpr (PP _ AnyPattern) = toJExpr True
     toJExpr (PP n (VarPattern x)) = [jmacroE| (function() { `(ref x)` = `(ref n)`; return true; })() |]
     toJExpr (PP n (LiteralPattern x)) = [jmacroE| `(ref n)` === `(x)` |]
-    toJExpr (PP _ x) = error $ show x
+    toJExpr (PP _ x) = toJExpr False -- error $ show x
 
 instance ToJExpr Literal where
     toJExpr (StringLiteral s) = toJExpr s
