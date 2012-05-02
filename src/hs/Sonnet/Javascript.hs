@@ -21,6 +21,7 @@ import Control.Monad.State.Strict as D
 
 import qualified Data.Map as M
 import qualified Data.Set as S
+import qualified Data.List as L
 
 import Sonnet.Parser.AST
 
@@ -46,10 +47,12 @@ declare name expr = BlockStat [ DeclStat (StrI name) Nothing
 
 ref :: String -> JExpr 
 ref name = (ValExpr (JVar (StrI name)))
+
+func :: String -> JStat -> JStat
+func var ex = ReturnStat (ValExpr (JFunc [StrI var] (BlockStat [ex])))
               
 open :: [String] -> JStat
 open (reverse -> xs) = [jmacro| for (el in `(ref $ show $ Namespace xs)`) { 
-                       console.log el;
                        this[el] = `(ref $ show $ Namespace xs)`[el]; 
                    } |]
 
@@ -57,7 +60,6 @@ instance ToStat Spec where
     toStat (Spec (Namespace n) (ModuleStatement (Namespace ns) xs))  = 
 
         [jmacro| describe(`(show $ Namespace ns)`, function() {
-                     // this["test"] = 1;
                      var x = new (function {
                          `(map (Spec (Namespace $ ns ++ n)) xs)`;
                      }());
@@ -101,13 +103,17 @@ instance ToJExpr Namespace where
         where f (y:ys)     = [jmacroE| `(f ys)`[`(y)`] |]
               f []         = [jmacroE| this |]
 
+data PatternPair = PP String Pattern
+
 instance ToJExpr [Axiom] where
     toJExpr [] = [jmacroE| null |]
     toJExpr (TypeAxiom _:xs) = toJExpr xs
     toJExpr xs @ (EqualityAxiom (Match ps _) _ : _) = 
 
         let curry 0 jexpr = jexpr
-            curry n jexpr = [jmacro| return function(y) { args.push y; `(curry (n - 1) jexpr)`; } |]
+            curry n jexpr = func (local $ n - 1) (curry (n - 1) jexpr) --[jmacro| return function(y) { args.push y; `(curry (n - 1) jexpr)`; } |]
+
+            local n = "__" ++ ["abcdefghijklmnopqrstuvqxyz" !! n]
 
             declare_bindings :: [Pattern] -> JStat
             declare_bindings [] = mempty
@@ -117,17 +123,14 @@ instance ToJExpr [Axiom] where
 
             body [] = [jmacro| args = []; console.log "Pattern match exhausted" |]
             body (EqualityAxiom (Match pss cond) ex : xss) = 
-
-                [jmacro| current = 0;
-                         `(declare_bindings pss)`;
-                         if (`(pss)` && `(cond)`) {
-                             args = [];
+                let x :: [PatternPair]
+                    x = zipWith PP (reverse . take (length pss) . map local $ [0 .. 26]) pss in
+                [jmacro| `(declare_bindings pss)`;
+                         if (`(x)` && `(cond)`) {
                              return `(ex)`;
                          } else `(body xss)`; |]
 
         in  [jmacroE| (function() {
-                          var !args = [];
-                          var !current;
                           `(curry (length ps) (body xs))`;
                       })() |]
 
@@ -157,16 +160,16 @@ instance ToJExpr Expression where
     toJExpr (InheritExpression a b) = undefined
     toJExpr (LetExpression bs ex) = [jmacroE| new function() { `(bs)`; return `(ex)` } |]
 
-instance ToJExpr [Pattern] where
+instance ToJExpr [PatternPair] where
     toJExpr [] = toJExpr True
     toJExpr (x:[]) = toJExpr x
-    toJExpr (x:xs) = [jmacroE| `(x)` && (function() { current++; return `(xs)`; })() |]
+    toJExpr (x:xs) = [jmacroE| `(x)` && `(xs)` |]
 
-instance ToJExpr Pattern where
-    toJExpr AnyPattern = toJExpr True
-    toJExpr (VarPattern x) = [jmacroE| (function() { `(ref x)` = args[current]; return true; })() |]
-    toJExpr (LiteralPattern x) = [jmacroE| args[current] === `(x)` |]
-    toJExpr x = error $ show x
+instance ToJExpr PatternPair where
+    toJExpr (PP _ AnyPattern) = toJExpr True
+    toJExpr (PP n (VarPattern x)) = [jmacroE| (function() { `(ref x)` = `(ref n)`; return true; })() |]
+    toJExpr (PP n (LiteralPattern x)) = [jmacroE| `(ref n)` === `(x)` |]
+    toJExpr (PP _ x) = error $ show x
 
 instance ToJExpr Literal where
     toJExpr (StringLiteral s) = toJExpr s
