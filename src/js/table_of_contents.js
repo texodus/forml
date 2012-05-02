@@ -35,7 +35,7 @@ function time(f) {
     console.log('Execution time: ' + time); 
 };
 
-function fib(n) {
+function fibb(n) {
     if (n == 0) {
 	return 0;
     } else if (n == 1) {

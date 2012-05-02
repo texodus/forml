@@ -26,8 +26,8 @@ Anonymous JSON:
     type Complex = { real: Num, img: Num }
 
 Named JSON - this is basically a special function that takes an anonymous JSON
-as an argument and returns the same value of a new type, with the option of ignoring
-the `{}` in such values which take a `Unit` type as an argument.
+as an argument and returns the same value of a new type, with the option of
+ignoring the `{}` in such values which take a `Unit` type as an argument.
 
     type Point = point: { x: Num, y: Num }
 

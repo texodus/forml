@@ -16,6 +16,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.List as L
 
+import Data.Monoid
 import Data.String.Utils
 
 import Sonnet.Parser.Utils
@@ -33,6 +34,10 @@ data Statement = TypeStatement TypeDefinition UnionType
                | ModuleStatement Namespace [Statement]
 
 newtype Namespace = Namespace [String]
+
+instance Monoid Namespace where
+    mempty = Namespace []
+    mappend (Namespace x) (Namespace y) = Namespace (x ++ y)
 
 data Axiom = TypeAxiom UnionType
            | EqualityAxiom Match Expression
@@ -124,14 +129,10 @@ instance Show Pattern where
     show (NamedPattern n Nothing)  = n ++ ":"
     show (RecordPattern m)  = [qq|\{ {unsep_with " = " m} \}|] 
 
-
--- Expressions
--- -----------------------------------------------------------------------------
--- TODO nested record accessors
--- TODO recursive applyexpression
--- TODO do expressions
-
 instance Show Expression where
+    show (ApplyExpression x @ (SymbolExpression (f : _)) y) 
+        | f `elem` "abcdefghijklmnopqrstuvwxyz" = [qq|$x {sep_with " " y}|]
+        | length y == 2                         = [qq|{y !! 0} $x {y !! 1}|]
     show (ApplyExpression x y)        = [qq|$x {sep_with " " y}|]
     show (IfExpression a b c)         = [qq|if $a then $b else $c|]
     show (LiteralExpression x)        = show x

@@ -1,4 +1,5 @@
 
+This is a test file
 
     module test
 
@@ -8,6 +9,10 @@
         f 10 0 == 1000
         f 100 0 == 1000
         f (f 1 0) 10 == 11
+
+Modules
+-------
+These are some tests to make sure modules work as advertised
 
         module fibonacci
 
@@ -22,11 +27,8 @@
             map fib 6 == 8
             map fib 7 == 13
 
+These should only be visible externally if we open the module
 
-        --g = 10
-
-        --h = true:
-
-        
-
-        --z = false: (1 + 3)
+        open fibonacci
+		
+        fib 7 == 13

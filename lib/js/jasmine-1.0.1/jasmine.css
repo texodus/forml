@@ -19,13 +19,22 @@ body {
 }
 
 .jasmine_reporter {
-  margin: 0 5px;
+  margin: 0px 40px 0px 0px;
 }
 
 .banner {
   color: #303;
   padding: 5px;
 }
+
+.runner.failed {
+  background-color: #fdd;
+}
+
+.runner.passed {
+    background-color: #dfd;
+}
+
 
 .logo {
   float: left;
@@ -52,12 +61,14 @@ body {
 
 
 .suite {
-  margin: 5px 0;
+  margin: 5px 0px 5px 5px;
   padding-left: 1em;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 .suite .suite {
-  margin: 5px; 
+  margin: 5px 0px 5px 5px; 
 }
 
 .suite.passed {
@@ -69,7 +80,7 @@ body {
 }
 
 .spec {
-  margin: 5px;
+  margin: 5px 0px 5px 5px;
   padding-left: 1em;
   clear: both;
 }
@@ -99,14 +110,15 @@ body {
 }
 
 .passed {
-  background-color: #cfc;
+ /* background-color: #cfc; */
   display: none;
 }
 
+/*
 .failed {
   background-color: #fbb;
 }
-
+*/
 .skipped {
   color: #777;
   background-color: #eee;
@@ -157,6 +169,7 @@ body {
 
 .runner {
   display: block;
-  margin: 5px 0;
+  margin: 5px 0px -5px 5px;
   padding: 2px 0 2px 10px;
 }
+

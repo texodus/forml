@@ -15,14 +15,29 @@ import Data.Monoid
 import Sonnet.Parser.AST
 
 render :: Program -> String
-render (Program xs) = "" --show . renderJs . toStat $ xs
+render (Program xs) = show . renderJs . toStat . map (Qual (Namespace []) (build_modules xs)) $ xs
 
 -- Tests
 
-data Spec = Spec Namespace Statement
+data Spec = Spec Namespace [Module] Statement
+
+data Qual a = Qual Namespace [Module] a
+
+data Module = Module Namespace [Module]
+            | Var String
+
+instance Show Module where
+    show (Module (Namespace (reverse -> (x:xs))) _) = x
+    show (Var s) = s
 
 render_spec :: Program -> String
-render_spec (Program xs) = show . renderJs . toStat . map (Spec $ Namespace []) $ xs
+render_spec (Program xs) = show . renderJs . toStat . map (Spec (Namespace []) (build_modules xs)) $ xs
+
+build_modules :: [Statement] -> [Module]
+build_modules (ModuleStatement n ns : xs) = Module n (build_modules ns) : build_modules xs
+build_modules (DefinitionStatement (Definition n _): xs) = Var n : build_modules xs
+build_modules (_ : xs) = build_modules xs
+build_modules [] = []
 
 declare_this :: String -> JExpr -> JStat
 declare_this name expr = BlockStat [ DeclStat (StrI name) Nothing
@@ -40,26 +55,40 @@ ref name = (ValExpr (JVar (StrI name)))
 func :: String -> JStat -> JStat
 func var ex = ReturnStat (ValExpr (JFunc [StrI var] (BlockStat [ex])))
               
-open :: [String] -> JStat
-open (reverse -> xs) = [jmacro| for (el in `(ref $ show $ Namespace xs)`) { 
-                       this[el] = `(ref $ show $ Namespace xs)`[el]; 
-                   } |]
+open :: [String] -> [Statement] -> JStat
+open _ [] = mempty
+open ns (DefinitionStatement (Definition n _):xs) =
+
+    let x = [jmacroE| `(ref $ show $ Namespace (reverse ns))`[`(n)`] |] in
+
+    [jmacro| `(declare n x)`;
+             `(open ns xs)`; |]
+
+open nss (ModuleStatement (Namespace ns @ (head . reverse -> n)) _:xs) =
+
+    [jmacro| `(declare n (ref . show . Namespace $ nss ++ ns))`;
+             `(open nss xs)`; |]
+
+open ns (_:xs) = [jmacro| `(open ns xs)`; |]
+
 
 instance ToStat Spec where
-    toStat (Spec (Namespace n) (ModuleStatement (Namespace ns) xs))  = 
+    toStat (Spec (Namespace n) ms (ModuleStatement (Namespace ns) xs))  = 
 
         [jmacro| describe(`(show $ Namespace ns)`, function() {
+                     `(open (ns ++ n) xs)`;
                      var x = new (function {
-                         `(map (Spec (Namespace $ ns ++ n)) xs)`;
+                         `(map (Spec (Namespace $ ns ++ n) ms) xs)`;
                      }());
                  }); |]
 
-    toStat (Spec (Namespace n) (ExpressionStatement e)) =
+    toStat (Spec n ms i @ (ImportStatement _))  = toStat $ Qual n ms i
+
+    toStat (Spec _ _ (ExpressionStatement e)) =
 
         [jmacro| it(`(show e)`, function() {
                      expect(function() {
                          var x = new (function() {
-                             `(open n)`;
                              this.__result__ = `(e)`;
                          });
                          return x.__result__;
@@ -71,21 +100,44 @@ instance ToStat Spec where
 instance (ToStat a) => ToStat [a] where
     toStat = foldl1 mappend . map toStat
 
-instance ToStat Statement where
-    toStat (TypeStatement d x)     = mempty
-    toStat (ExpressionStatement e) = mempty
-    toStat (ImportStatement d)     = mempty
+instance ToStat (Qual Statement) where
+    toStat (Qual _ _ (TypeStatement d x))     = mempty
+    toStat (Qual _ _ (ExpressionStatement e)) = mempty
+    toStat (Qual name m (ImportStatement d))  =
 
-    toStat (ModuleStatement ns xs) = 
+        let find (Var s : ss) n @ (Namespace []) = s : find ss n
+            find (Module _ xs : ms) n @ (Namespace []) = map show xs ++ find ms n
+            find [] (Namespace []) = []
+            find [] n = find m (name `mappend` n) --error $ "\nUnknown namespace " ++ show n
+            find (Var _: xs) ns = find xs ns
+            find (Module (Namespace ys) x : zs) n @ (Namespace xs)
+                 | length xs >= length ys && take (length ys) xs == ys  = find x (Namespace $ drop (length ys) xs)
+                 | otherwise = find zs n
+            find a b = error $ "\n" ++ show a ++ "\n" ++ show b
+            
+            print' []     = error "Empty Namespace"
+            print' (x:[]) = [jmacroE| `(ref x)` |]
+            print' (x:xs) = [jmacroE| `(print' xs)`[`(x)`] |]
 
-        [jmacro| `(ns)` = new (function() { 
-                     `(xs)`; 
-                 })(); |]
+            open' [] _ = mempty
+            open' (x:xs) (Namespace ns) =
 
-    toStat (DefinitionStatement d) = toStat d
+                declare x [jmacroE| `(print' $ reverse ns)`[`(x)`] |] `mappend` open' xs (Namespace ns)
+
+        in open' (find m d) d
+
+    toStat (Qual (Namespace pns) m (ModuleStatement ns @ (Namespace nnn) xs)) = 
+        
+        declare_this (show ns) [jmacroE| new (function() { `(fmap (Qual (Namespace (pns ++ nnn)) m) xs)`; }) |]
+
+        -- [jmacro| `(ns)` = new (function() { 
+        --              `(fmap (Qual m) xs)`; 
+        --          })(); |]
+
+    toStat (Qual _ _ (DefinitionStatement d)) = toStat d
 
 instance ToStat Definition where
-    toStat (Definition name as) = declare_this name (toJExpr as) -- [jmacroE| this[`(name)`] = `(as)` |]
+    toStat (Definition name as) = declare_this name $ toJExpr as
 
 instance ToJExpr Namespace where
     toJExpr (Namespace xs) = f (reverse xs)
@@ -100,9 +152,9 @@ instance ToJExpr [Axiom] where
     toJExpr xs @ (EqualityAxiom (Match ps _) _ : _) = 
 
         let curry 0 jexpr = jexpr
-            curry n jexpr = func (local $ n - 1) (curry (n - 1) jexpr) --[jmacro| return function(y) { args.push y; `(curry (n - 1) jexpr)`; } |]
+            curry n jexpr = func (local $ n - 1) (curry (n - 1) jexpr)
 
-            local n = "__" ++ ["abcdefghijklmnopqrstuvqxyz" !! n]
+            local n = "__" ++ [ "abcdefghijklmnopqrstuvqxyz" !! n ]
 
             declare_bindings :: [Pattern] -> JStat
             declare_bindings [] = mempty
@@ -136,7 +188,7 @@ instance ToJExpr Expression where
     toJExpr (ApplyExpression (SymbolExpression f) xs) = 
 
         let app (x:xs) = [jmacroE| `(app xs)`(`(x)`) |]
-            app []     = [jmacroE| typeof `(ref f)` === "undefined" ? this[`(f)`] : `(ref f)` |]  -- TODO inject deps via walking tree
+            app []     = ref f
 
         in app (reverse xs)
 
