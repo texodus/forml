@@ -33,7 +33,7 @@ data Statement = TypeStatement TypeDefinition UnionType
                | ImportStatement Namespace
                | ModuleStatement Namespace [Statement]
 
-newtype Namespace = Namespace [String]
+newtype Namespace = Namespace [String] deriving (Eq)
 
 instance Monoid Namespace where
     mempty = Namespace []
@@ -87,6 +87,7 @@ instance Show Program where
      show (Program ss) = sep_with "\n\n" ss
 
 instance Show Namespace where
+    show (Namespace []) = "global"
     show (Namespace x) = concat $ L.intersperse "." x
 
 instance Show Statement where

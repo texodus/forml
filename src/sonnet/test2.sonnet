@@ -29,6 +29,19 @@ These are some tests to make sure modules work as advertised
 
 These should only be visible externally if we open the module
 
-        open fibonacci
-		
-        fib 7 == 13
+
+        module outer
+            module inner
+                open fibonacci
+        
+                fib 7 == 13
+                fff = 0
+                
+            module foo
+                open inner
+				
+                fff == 0
+
+        open outer.inner
+        fff == 0
+				

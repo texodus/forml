@@ -49,9 +49,10 @@ sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* e
           module_statement = do string "module"
                                 whitespace1
                                 name <- Namespace <$> namespace
+                                whitespace *> newline
                                 spaces *> indented
                                 (:[]) . ModuleStatement name . concat 
-                                    <$> withPos (many1 (many (string "\n") >> same >> try statement))
+                                    <$> withPos (many1 ((many (string "\n") >> same >> try statement)))
 
           namespace = many1 lower `sepBy1` char '.'
 

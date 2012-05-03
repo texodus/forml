@@ -33,16 +33,16 @@ ignoring the `{}` in such values which take a `Unit` type as an argument.
 
     type Unitt = unit: {}  
 
-Union JSON - which is simply a set of any of the above or of the native
-JSON types, separated by either new lines w/indentation, or `|`
+Union JSON - which is simply a set of any of the above or of the native JSON
+types, separated by either new lines w/indentation, or `|`
 
     type Option a = some: a | none:
 
     type Bool = true: | false:
 
 
-Polymorphic JSON, which are any of the above with an introduction of a some
-type variables into scope: 
+Polymorphic JSON, which are any of the above with an introduction of a some type
+variables into scope:
 
     type List a = 
         | { head: a, tail: List a }
@@ -77,8 +77,8 @@ indentation.
 
     module list
 
-    open seq
-    open webgl
+        open seq
+        open webgl
 
 Definitions themselves are somposed of a name, and a collection of cases,
 optionally prefaced by a type annotation.  The syntax itself is designed to be
@@ -86,52 +86,52 @@ flexible to facilitate readable code for definitions of all shapes and sizes,
 but in general is designed to emulate a tabular layout.  For example, one could
 write a simple head function in several different ways:
 
-    -- destructured, tabular
-    head: List a             → a
-        | cons: { head = x } = x
-        | nil:               = undefined -- head is not defined for an empty list.   
+	    -- destructured, tabular
+	    head: List a             → a
+	        | cons: { head = x } = x
+	        | nil:               = undefined -- head is not defined for an empty list.   
 
-    -- via record accessors
-    head' (cons: x) = x.head | nil: = undefined
+	    -- via record accessors
+	    head' (cons: x) = x.head | nil: = undefined
 
-    -- anonymous function
-    head'' = \ (cons:{head:x}) = x
-             | _ = undefined
-
-
-
-    tail:
-    -- This is an embellished, overly readable version of tail, designed
-    -- to illustrate a long-form way of writing definitions in Sonnet. 
-
-          List a    → a
-        | (cons: x) = x.tail
-        | []        = undefined 
-
-        -- Unit tests
-
-        tail [3] == 3
-        tail [5, 1, 2] == [1, 2]
+	    -- anonymous function
+	    head'' = \ (cons:{head:x}) = x
+	             | _ = undefined
 
 
 
-    --- Applies f recursively from the last element of the list.  Consumes 
-    --  much stack
+	    tail:
+	    -- This is an embellished, overly readable version of tail, designed
+	    -- to illustrate a long-form way of writing definitions in Sonnet. 
 
-    foldr:  (a → b → a) → b → List a → b
-    | f x [] = x
-    | f x (cons->{head=y,tail=ys}) = f y (foldr f x ys) 
+	          List a    → a
+	        | (cons: x) = x.tail
+	        | []        = undefined 
 
-    length:
-    --- Returns the cardinality of a list
+	        -- Unit tests
 
-        List a    → Int
-      | []        = 0
-      | [_, xs] = 1 + length xs
+	        tail [3] == 3
+	        tail [5, 1, 2] == [1, 2]
 
-    length [] == 0
-    length [1] == 1
-    length [1, 3, 2, 4] == 4
+
+
+	    --- Applies f recursively from the last element of the list.  Consumes 
+	    --  much stack
+
+	    foldr:  (a → b → a) → b → List a → b
+	    | f x [] = x
+	    | f x (cons->{head=y,tail=ys}) = f y (foldr f x ys) 
+
+	    length:
+	    --- Returns the cardinality of a list
+
+	        List a    → Int
+	      | []        = 0
+	      | [_, xs] = 1 + length xs
+
+	    length [] == 0
+	    length [1] == 1
+	    length [1, 3, 2, 4] == 4
 
 Though comments are defined via --, the alternative --- defines metadata in the
 form of a string which applies to the previous symbol.  The use of undefined above

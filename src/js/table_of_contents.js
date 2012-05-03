@@ -36,11 +36,11 @@ function time(f) {
 };
 
 function fibb(n) {
-    if (n == 0) {
-	return 0;
-    } else if (n == 1) {
-	return 1;
+    if (n === 0) {
+    	return 0;
+    } else if (n === 1) {
+    	return 1;
     } else {
-	return fib(n - 1) + fib(n - 2)
+    	return fibb(n - 1) + fibb(n - 2)
     }
 }

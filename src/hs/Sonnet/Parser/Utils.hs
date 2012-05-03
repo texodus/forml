@@ -96,6 +96,7 @@ not_reserved x = do y <- x
                        else return y
 
     where reserved_words = [ "if", "then", "else", "type", "let", "when", "with", "and", "or", "do",
+                             "module", "open", "import",
                              "|", "\\", "=", ".", ":", ",", "==", "-", "->", "<=", ">=", "<", ">", "<-" ]
 
 type_sep    :: Parser Char
