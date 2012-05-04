@@ -254,6 +254,7 @@ instance ToJExpr Expression where
     toJExpr (ApplyExpression (SymbolExpression "+") [x, y])  = [jmacroE| `(x)` + `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression "-") [x, y])  = [jmacroE| `(x)` - `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression "==") [x, y]) = [jmacroE| equals(`(x)`, `(y)`) |]
+    toJExpr (ApplyExpression (SymbolExpression "/=") [x, y]) = [jmacroE| !equals(`(x)`, `(y)`) |]
     toJExpr (ApplyExpression (SymbolExpression f) [])        = ref f
     toJExpr (ApplyExpression f (end -> x : xs))              = [jmacroE| `(ApplyExpression f xs)`(`(x)`) |]
 
@@ -264,6 +265,7 @@ instance ToJExpr Expression where
     toJExpr (FunctionExpression x)  = toJExpr x
     toJExpr (RecordExpression m)    = toJExpr m
     toJExpr (LetExpression bs ex)   = [jmacroE| new function() { `(bs)`; return `(ex)` } |]
+    toJExpr (JSExpression s) = s
     toJExpr x                       = error $ "Unimplemented " ++ show x
 
 instance ToJExpr [PatternMatch] where

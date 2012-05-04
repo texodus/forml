@@ -11,6 +11,7 @@
 module Sonnet.Parser.AST where
 
 import Text.InterpolatedString.Perl6
+import Language.Javascript.JMacro
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -59,7 +60,7 @@ data Expression = ApplyExpression Expression [Expression]
                 | IfExpression Expression Expression Expression
                 | LiteralExpression Literal
                 | SymbolExpression String
-                | JSExpression String
+                | JSExpression JExpr
                 | FunctionExpression [Axiom]
                 | RecordExpression (M.Map String Expression)
                 | InheritExpression Expression (M.Map String Expression)
@@ -142,7 +143,7 @@ instance Show Expression where
     show (FunctionExpression as)      = replace "\n |" "\n     |" $ [qq|λ{sep_with "" as}|]
     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
     show (NamedExpression n Nothing)  = n ++ ":"
-    show (JSExpression x)             = "`" ++ x ++ "`"
+    show (JSExpression x)             = "`" ++ show (renderJs x) ++ "`"
     show (LetExpression ax e)         = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n" ax} in ($e)|]
     show (RecordExpression m)         = [qq|\{ {unsep_with " = " m} \}|] 
     show (InheritExpression x m)      = [qq|\{ $x with {unsep_with " = " m} \}|] 

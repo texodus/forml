@@ -69,11 +69,21 @@ These are some tests for record expressions & patterns
 		
         module record
             y = { x = 2 }
-		
-            y == { x = 2 }
-		
             g { x = { y = x } } = x + 4
 		
+            y == { x = 2 }
             g { x = { y = 2 } } == 6
+
+            true: == true:
+            true: /= false:
+			
+Javascript
+----------
+These are some javascript tests
+
+        module jscript
+            log x = `(function() { console.log(x); return x })()`
+			
+            log "Hello World" == "Hello World"
 				
 

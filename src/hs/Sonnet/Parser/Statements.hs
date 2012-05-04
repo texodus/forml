@@ -10,7 +10,10 @@
 
 module Sonnet.Parser.Statements where
 
+import Language.Javascript.JMacro
+
 import Control.Applicative
+import Control.Monad
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Text.Parsec.Indent  hiding (same)
@@ -313,7 +316,11 @@ function_expression = withPos $ do string "\\" <|> string "λ" <|> string "\955"
 -- TODO allow ` escaping
 -- TODO it would be nice if we parsed javascript too ...
 
-js_expression = JSExpression <$> indentPairs "`" (many $ noneOf "`") "`"
+js_expression = JSExpression <$> join (p . wrap <$> indentPairs "`" (many $ noneOf "`") "`")
+    where p (parseJM -> Left x)  = parserFail $ show x
+          p (parseJM -> Right x) = return [jmacroE| (function() { `(x)`; return x; })() |] 
+
+          wrap x = "var __ans__; __ans__ = " ++ x ++ ";"
 
 record_expression = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
     where pairs' = withPos $ (try key_eq_val <|> try function) `sepBy` try (try comma <|> not_comma)
