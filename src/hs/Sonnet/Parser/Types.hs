@@ -124,3 +124,15 @@ var_type      = SimpleType . VariableType <$> type_var
 
 lift        :: Parser ComplexType -> Parser UnionType
 lift              = fmap $ UnionType . S.fromList . (:[])
+
+
+type_name   :: Parser Symbol
+type_var    :: Parser String
+symbol_name :: Parser Symbol
+
+type_name   = Symbol <$> not_reserved (upper <:> many (alphaNum <|> oneOf "_'"))
+type_var    = not_reserved (lower <:> many (alphaNum <|> oneOf "_'"))
+symbol_name = (Symbol <$> not_reserved (lower <:> many (alphaNum <|> oneOf "_'"))) 
+              <|> (Operator <$> not_reserved imp_infix)
+    where imp_infix = string "(" *> many1 operator <* string ")"
+

@@ -21,11 +21,16 @@ These are some function applications
             
             z 1 = \ y 0 = 1000
                   | y t = 1 + y + t
+
             | _ = \ _ _ = 900
                   
             z 1 1 0 == 1000
             z 1 1 1 == 3
             z 0 1 1 == 900
+
+            (%) x y = x + y
+
+            3 % 4 == 7
                   
 
 Modules
@@ -54,6 +59,8 @@ These should only be visible externally if we open the module
         
                 fib 7 == 13
                 fff = 0
+
+                (<&>) x y = x * y
                 
             module foo
                 open inner
@@ -61,6 +68,8 @@ These should only be visible externally if we open the module
                 fff == 0
 
         open outer.inner
+        3 <&> 4 == 2 <&> 6
+        3 <&> 4 != 2 * 5
         fff == 0
 		
 Records
@@ -75,7 +84,7 @@ These are some tests for record expressions & patterns
             g { x = { y = 2 } } == 6
 
             true: == true:
-            true: /= false:
+            true: != false:
 			
 Javascript
 ----------
@@ -85,5 +94,7 @@ These are some javascript tests
             log x = `(function() { console.log(x); return x })()`
 			
             log "Hello World" == "Hello World"
+
+
 				
 

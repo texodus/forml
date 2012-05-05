@@ -26,7 +26,7 @@ import Sonnet.Parser.Utils
 
 newtype Program = Program [Statement]
 
-data Definition = Definition String [Axiom]
+data Definition = Definition Symbol [Axiom]
 
 data Statement = TypeStatement TypeDefinition UnionType
                | DefinitionStatement Definition
@@ -50,20 +50,20 @@ data Match = Match [Pattern] (Maybe Expression)
 data Pattern = VarPattern String
              | AnyPattern
              | LiteralPattern Literal
-             | RecordPattern (M.Map String Pattern)
+             | RecordPattern (M.Map Symbol Pattern)
              | ListPattern [Pattern]
              | ViewPattern Expression Pattern
              | NamedPattern String (Maybe Pattern)
 
 data Expression = ApplyExpression Expression [Expression]
-                | NamedExpression String (Maybe Expression)
+                | NamedExpression Symbol (Maybe Expression)
                 | IfExpression Expression Expression Expression
                 | LiteralExpression Literal
-                | SymbolExpression String
+                | SymbolExpression Symbol
                 | JSExpression JExpr
                 | FunctionExpression [Axiom]
-                | RecordExpression (M.Map String Expression)
-                | InheritExpression Expression (M.Map String Expression)
+                | RecordExpression (M.Map Symbol Expression)
+                | InheritExpression Expression (M.Map Symbol Expression)
                 | LetExpression [Definition] Expression
                 | ListExpression [Expression]
 
@@ -72,17 +72,21 @@ data Literal = StringLiteral String | IntLiteral Int | DoubleLiteral Double
 data UnionType = UnionType (S.Set ComplexType)
                deriving (Ord, Eq)
 
-data ComplexType = RecordType (M.Map String UnionType)
-                 | InheritType SimpleType (M.Map String UnionType)
+data ComplexType = RecordType (M.Map Symbol UnionType)
+                 | InheritType SimpleType (M.Map Symbol UnionType)
                  | FunctionType UnionType UnionType
                  | SimpleType SimpleType
                  | NamedType String (Maybe UnionType)
                  deriving (Eq, Ord)
 
 data SimpleType = PolymorphicType SimpleType [UnionType]
-                | SymbolType String 
+                | SymbolType Symbol 
                 | VariableType String
                 deriving (Ord, Eq)
+
+data Symbol = Symbol String
+            | Operator String
+            deriving (Ord, Eq)
 
 instance Show Program where
      show (Program ss) = sep_with "\n\n" ss
@@ -131,18 +135,22 @@ instance Show Pattern where
     show (NamedPattern n Nothing)  = n ++ ":"
     show (RecordPattern m)  = [qq|\{ {unsep_with " = " m} \}|] 
 
+instance Show Symbol where
+    show (Symbol s)   = s
+    show (Operator x) = x
+
 instance Show Expression where
-    show (ApplyExpression x @ (SymbolExpression (f : _)) y) 
+    show (ApplyExpression x @ (SymbolExpression (show -> f : _)) y) 
         | f `elem` "abcdefghijklmnopqrstuvwxyz" = [qq|$x {sep_with " " y}|]
         | length y == 2                         = [qq|{y !! 0} $x {y !! 1}|]
     show (ApplyExpression x y)        = [qq|$x {sep_with " " y}|]
     show (IfExpression a b c)         = [qq|if $a then $b else $c|]
     show (LiteralExpression x)        = show x
-    show (SymbolExpression x)         = x
+    show (SymbolExpression x)         = show x
     show (ListExpression x)           = [qq|[ {sep_with ", " x} ]|]
     show (FunctionExpression as)      = replace "\n |" "\n     |" $ [qq|λ{sep_with "" as}|]
     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
-    show (NamedExpression n Nothing)  = n ++ ":"
+    show (NamedExpression n Nothing)  = show n ++ ":"
     show (JSExpression x)             = "`" ++ show (renderJs x) ++ "`"
     show (LetExpression ax e)         = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n" ax} in ($e)|]
     show (RecordExpression m)         = [qq|\{ {unsep_with " = " m} \}|] 
@@ -180,6 +188,6 @@ instance Show ComplexType where
 
 instance Show SimpleType where
     show (PolymorphicType x y)  = [qq|($x {sep_with " " y})|]
-    show (SymbolType x)   = x
+    show (SymbolType x)   = show x
     show (VariableType x) = x
 

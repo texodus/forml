@@ -71,23 +71,35 @@ comment = try empty_line <|> try commented_code <|> try code <|> markdown_commen
 sep_with :: Show a => String -> [a] -> String
 sep_with x = concat . L.intersperse x . fmap show
 
-unsep_with :: forall a. Show a => String -> (M.Map String a) -> String
-unsep_with z = concat . L.intersperse ", " . fmap (\(x, y) -> concat [x, z, show y]) . M.toAscList
-
-type_name   :: Parser String
-type_var    :: Parser String
-symbol_name :: Parser String
-
-type_name   = not_reserved (upper <:> many (alphaNum <|> oneOf "_'")) <|> string "!"
-type_var    = not_reserved (lower <:> many (alphaNum <|> oneOf "_'"))
-symbol_name = not_reserved (lower <:> many (alphaNum <|> oneOf "_'") <|> imp_infix)
-    where imp_infix = string "(" *> many1 operator <* string ")"
+unsep_with :: forall a b. (Show a, Show b) => String -> (M.Map b a) -> String
+unsep_with z = concat . L.intersperse ", " . fmap (\(x, y) -> concat [show x, z, show y]) . M.toAscList
 
 (<:>) :: Parser a -> Parser [a] -> Parser [a]
 (<:>) x y = (:) <$> x <*> y
 
+operator_dict :: M.Map Char String
+operator_dict = M.fromList [ ('!', "_bang"), 
+                             ('@', "_at"),
+                             ('#', "_hash"),
+                             ('$', "$"), 
+                             ('%', "_perc"), 
+                             ('^', "_exp"),
+                             ('&', "_and"),
+                             ('|', "_or"),
+                             ('<', "_leff"),
+                             ('>', "_grea"), 
+                             ('?', "_ques"), 
+                             ('/', "_forw"),
+                             ('=', "_eq"), 
+                             ('\\', "_back"), 
+                             ('~', "_tild"),
+                             ('+', "_plus"),
+                             ('-', "_minu"),
+                             (',', "_comm"),
+                             ('.', "_comp") ]
+
 operator :: Parser Char
-operator = oneOf "!@#$%^&*<>?/|=\\~,.+-"
+operator = oneOf (fst . unzip . M.toList $ operator_dict)
 
 not_reserved :: Parser String -> Parser String
 not_reserved x = do y <- x

@@ -33,7 +33,7 @@ import Sonnet.Parser.AST
 
 definition_statement :: Parser [Definition]
 definition_statement = do whitespace
-                          name <- try symbol_name <|> many1 (char '_')
+                          name <- try symbol_name <|> (Symbol <$> many1 (char '_'))
                           sig <- first
                           eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom)) <|> return []
                           whitespace
@@ -146,7 +146,7 @@ apply_pattern       = NamedPattern
 record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 
     where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
-          key_eq_val = do key <- many (alphaNum <|> oneOf "_")
+          key_eq_val = do key <- symbol_name --many (alphaNum <|> oneOf "_")
                           spaces
                           string "=" <|> string ":"
                           spaces
@@ -224,7 +224,7 @@ do_expression  = do string "do"
                            f v AnyPattern <$> (try bind_expression <|> try return_expression)
 
           f ex pat zx=  ApplyExpression 
-                           (SymbolExpression ">>=")
+                           (SymbolExpression (Operator ">>="))
                            [ ex, (FunctionExpression 
                                       [ EqualityAxiom 
                                         (Match [pat] Nothing)
@@ -254,19 +254,19 @@ infix_expression = buildExpressionParser table term
                    , [px "not"]
                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
-          ix s   = Infix (op $ string s <* notFollowedBy operator) AssocLeft
-          px s   = Prefix $ try (whitespace >> string s >> return (ApplyExpression (SymbolExpression s) . (:[])))
+          ix s   = Infix (op $ (Operator <$> string s) <* notFollowedBy operator) AssocLeft
+          px s   = Prefix $ try (whitespace >> string s >> return (ApplyExpression (SymbolExpression (Operator s)) . (:[])))
           term   = try other_expression
 
           user_op_left = try $ do whitespace
                                   op' <- not_reserved (many1 operator)
                                   spaces
-                                  return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
+                                  return (\x y -> ApplyExpression (SymbolExpression (Operator op')) [x, y])
 
           user_op_right = try $ do whitespace
                                    op' <- not_reserved ((++) <$> (many1 operator) <*> string ":")
                                    spaces
-                                   return (\x y -> ApplyExpression (SymbolExpression op') [x, y])
+                                   return (\x y -> ApplyExpression (SymbolExpression (Operator op')) [x, y])
 
           op p   = try $ do whitespace
                             op' <- SymbolExpression <$> p
@@ -274,7 +274,7 @@ infix_expression = buildExpressionParser table term
                             return (\x y -> ApplyExpression op' [x, y])
 
 named_expression = NamedExpression 
-                   <$> (many1 alphaNum <* string ":") 
+                   <$> (symbol_name <* string ":") 
                    <*> option Nothing (Just <$> try (spaces *> indented *> other_expression))
 
 accessor_expression = do x <- indentPairs "(" expression ")" 
@@ -285,12 +285,12 @@ accessor_expression = do x <- indentPairs "(" expression ")"
                               <|> list_expression
 
                          string "."
-                         z <- type_var
+                         z <- symbol_name --type_var
                          return $ ApplyExpression 
                                     (FunctionExpression 
                                          [ EqualityAxiom 
                                            (Match [RecordPattern (M.fromList [(z, VarPattern "x")])] Nothing)
-                                           (SymbolExpression "x") ] )
+                                           (SymbolExpression (Symbol "x")) ] )
                                     [x]
 
 apply_expression = ApplyExpression <$> inner_expression <*> (many1 . try $ whitespace *> inner_expression)

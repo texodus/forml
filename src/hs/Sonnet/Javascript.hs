@@ -16,10 +16,11 @@ import Language.Javascript.JMacro
 import Data.Monoid
 import qualified Data.Map as M
 import Sonnet.Parser.AST
+import Sonnet.Parser.Utils
 import Prelude hiding (curry, (++))
 
 prelude :: JStat
-prelude = [jmacro| function !equals(x, y) { 
+prelude = [jmacro| function !equals(x, y) {
                        if (typeof x == "object" && typeof y == "object") {
                            var result = true;
                            for (key in x) {
@@ -64,9 +65,13 @@ empty_meta :: Target -> [Statement] -> Statement -> Meta
 empty_meta x = Meta x (Namespace []) . build_modules
 
     where build_modules (ModuleStatement n ns : xs) = Module n (build_modules ns) : build_modules xs
-          build_modules (DefinitionStatement (Definition n _): xs) = Var n : build_modules xs
+          build_modules (DefinitionStatement (Definition n _): xs) = Var (to_name n) : build_modules xs
           build_modules (_ : xs) = build_modules xs
           build_modules [] = []
+
+to_name :: Symbol -> String
+to_name (Symbol x) = x
+to_name (Operator op) = concat . map (\x -> M.findWithDefault "_" x operator_dict) $ op
 
 --------------------------------------------------------------------------------
 ----
@@ -129,6 +134,9 @@ scope x = [jmacroE| (function() { `(x)`; })() |]
 
 class Open a where open :: Namespace -> [a] -> JStat
 
+instance ToJExpr Symbol where
+    toJExpr = toJExpr . to_name
+
 instance Open Statement where
     open _ [] = mempty
     open ns (DefinitionStatement (Definition n _) : xs) =
@@ -136,7 +144,7 @@ instance Open Statement where
         let f = ref . show
             x = [jmacroE| `(f ns)`[`(n)`] |] in
 
-        [jmacro| `(declare n x)`;
+        [jmacro| `(declare (to_name n) x)`;
                  `(open ns xs)`; |]
 
     open nss (ModuleStatement ns @ (Namespace (n:_)) _:xs) =
@@ -224,7 +232,7 @@ instance (ToStat a) => ToStat [a] where
     toStat = foldl1 mappend . map toStat
 
 instance ToStat Definition where
-    toStat (Definition name as) = declare_this name $ toJExpr as
+    toStat (Definition name as) = declare_this (to_name name) $ toJExpr as
 
 instance ToJExpr Namespace where
     toJExpr (Namespace []) = ref "this"
@@ -250,22 +258,27 @@ instance ToJExpr [Pattern] where
 instance ToJExpr (Maybe Expression) where
     toJExpr = maybe (toJExpr True) toJExpr
 
+--reserved_ops = ["-", "+", "*", "/", "==", "/=", 
+
 instance ToJExpr Expression where
-    toJExpr (ApplyExpression (SymbolExpression "+") [x, y])  = [jmacroE| `(x)` + `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression "-") [x, y])  = [jmacroE| `(x)` - `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression "==") [x, y]) = [jmacroE| equals(`(x)`, `(y)`) |]
-    toJExpr (ApplyExpression (SymbolExpression "/=") [x, y]) = [jmacroE| !equals(`(x)`, `(y)`) |]
-    toJExpr (ApplyExpression (SymbolExpression f) [])        = ref f
-    toJExpr (ApplyExpression f (end -> x : xs))              = [jmacroE| `(ApplyExpression f xs)`(`(x)`) |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "==")) [x, y]) = [jmacroE| equals(`(x)`, `(y)`) |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "!=")) [x, y]) = [jmacroE| !equals(`(x)`, `(y)`) |]
+    toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y])    = toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])
+    toJExpr (ApplyExpression (SymbolExpression (Operator f)) x)        = error $ "Operator with " ++ show (length x) ++ " params"
+    toJExpr (ApplyExpression (SymbolExpression (Symbol f)) [])        = ref f
+    toJExpr (ApplyExpression f (end -> x : xs)) = [jmacroE| `(ApplyExpression f xs)`(`(x)`) |]
 
     toJExpr (LiteralExpression l)   = toJExpr l
-    toJExpr (SymbolExpression x)    = ref x
+    toJExpr (SymbolExpression (Symbol x))    = ref x
     toJExpr (NamedExpression x y)   = [jmacroE| (function(){ var g = {}; g[`(x)`] = `(y)`; return g})() |]
     toJExpr (IfExpression x y z)    = [jmacroE| (function(){ if (`(x)`) { return `(y)`; } else { return `(z)` }})() |] 
     toJExpr (FunctionExpression x)  = toJExpr x
-    toJExpr (RecordExpression m)    = toJExpr m
+    toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
     toJExpr (LetExpression bs ex)   = [jmacroE| new function() { `(bs)`; return `(ex)` } |]
-    toJExpr (JSExpression s) = s
+    toJExpr (JSExpression s)        = s
     toJExpr x                       = error $ "Unimplemented " ++ show x
 
 instance ToJExpr [PatternMatch] where
@@ -273,11 +286,11 @@ instance ToJExpr [PatternMatch] where
     toJExpr (x:xs) = [jmacroE| `(x)` && `(xs)` |]
 
 instance ToJExpr PatternMatch where
-    toJExpr (PM _ AnyPattern)         = toJExpr True
-    toJExpr (PM n (VarPattern x))     = [jmacroE| (function() { `(ref x)` = `(ref n)`; return true; })() |]
-    toJExpr (PM n (LiteralPattern x)) = [jmacroE| `(ref n)` === `(x)` |]
-    toJExpr (PM n (RecordPattern (M.toList -> xs))) = toJExpr (map (\(key, val) -> toJExpr (PM (n ++ "." ++ key) val)) xs)
-    toJExpr (PM n (RecordPattern (M.toList -> [])))     = [jmacroE| true |]
+    toJExpr (PM _ AnyPattern)                       = toJExpr True
+    toJExpr (PM n (VarPattern x))                   = [jmacroE| (function() { `(ref x)` = `(ref n)`; return true; })() |]
+    toJExpr (PM n (LiteralPattern x))               = [jmacroE| `(ref n)` === `(x)` |]
+    toJExpr (PM n (RecordPattern (M.toList -> xs))) = toJExpr (map (\(key, val) -> toJExpr (PM (n ++ "." ++ to_name key) val)) xs)
+    toJExpr (PM n (RecordPattern (M.toList -> []))) = [jmacroE| true |]
 
     toJExpr (PM _ x)                  = error $ "Unimplemented " ++ show x
 
