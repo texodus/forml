@@ -8,7 +8,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Sonnet.Parser (parseSonnet) where
+module Sonnet.Parser (parseSonnet, compress) where
 
 import Control.Applicative
 
@@ -28,6 +28,56 @@ import Sonnet.Parser.AST
 parseSonnet :: String -> Either ParseError Program
 parseSonnet src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of 
                     Right x -> parse sonnetParser "parsing syntax" (concat x)
+
+
+compress :: String -> String
+compress = run var . run null . run fun
+
+    where run x src' = case parse ((try x <|> ((:[]) <$> anyChar)) `manyTill` eof) "Compressing" src' of Right x -> concat x
+
+          var = do string "var"
+                   spaces
+                   name <- many1 (alphaNum <|> char '_')
+                   string ";"
+                   spaces
+                   string name
+                   return $ "var " ++ name
+
+          null = do string "var"
+                    spaces
+                    name <- many1 (alphaNum <|> char '_')
+                    string ";"
+                    spaces
+                    string name
+                    spaces
+                    string "="
+                    spaces
+                    string "null"
+                    return $ "var " ++ name  
+
+          pairs = do string "{"
+                     inner <- (try pairs <|> ((:[]) <$> anyChar)) `manyTill` string "}"
+                     return $ "{" ++ concat inner ++ "}"
+
+          fun = do string "(function()"
+                   spaces
+                   string "{"
+                   spaces
+                   string "return"
+                   spaces
+                   string "(function("
+                   name <- many1 (alphaNum <|> char '_')
+                   string ")"
+                   spaces
+                   content <- pairs
+                   spaces
+                   string ");"
+                   spaces
+                   string "})()"
+                   return $ "(function(" ++ name ++ ")" ++ content ++ ")"
+                   
+               
+
 
 
 sonnetParser :: Parser Program

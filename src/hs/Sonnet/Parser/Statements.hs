@@ -254,7 +254,7 @@ infix_expression = buildExpressionParser table term
                    , [ix "+", ix "-"]
                    , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
                    , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!="]
-                   , [px "not"]
+                   --, [px "not"]
                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
           ix s   = Infix (try . op $ (Operator <$> string s) <* notFollowedBy operator) AssocLeft

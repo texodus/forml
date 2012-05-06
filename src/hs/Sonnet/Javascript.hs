@@ -96,6 +96,14 @@ declare_this name expr =
     [jmacro| `(declare name expr)`;
              this[`(name)`] = `(ref name)`; |]
 
+declare_window name expr =
+
+    [jmacro| `(declare name expr)`;
+             window[`(name)`] = `(ref name)`; |]
+
+
+
+
 declare name expr =
 
     [jmacro| `(DeclStat (StrI name) Nothing)`;
@@ -213,6 +221,14 @@ instance ToStat Meta where
         in  toStat (meta { namespace = slice namespace })
 
     -- Modules in test mode must open the contents of the Library
+    toStat meta @ (Meta { target = Library, namespace = Namespace [], expr = ModuleStatement ns xs, .. }) =
+        
+        let ex = [jmacroE| new (function() { 
+                               `(fmap (\z -> meta { namespace =  ns, expr = z }) xs)`;
+                           }) |]
+
+        in declare_window (show ns) ex
+
     toStat meta @ (Meta { target = Library, expr = ModuleStatement ns xs, .. }) =
         
         let ex = [jmacroE| new (function() { 
@@ -273,15 +289,15 @@ instance ToJExpr (Maybe Expression) where
 instance ToJExpr Expression where
 
     -- These are inline cheats to improve performance
-    toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "==")) [x, y]) = [jmacroE| equals(`(x)`)(`(y)`) |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "!=")) [x, y]) = [jmacroE| !equals(`(x)`)(`(y)`) |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "<=")) [x, y]) = [jmacroE| `(x)` <= `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator ">=")) [x, y]) = [jmacroE| `(x)` >= `(y)` |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "==")) [x, y]) = [jmacroE| equals(`(x)`)(`(y)`) |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "!=")) [x, y]) = [jmacroE| !equals(`(x)`)(`(y)`) |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator "<=")) [x, y]) = [jmacroE| `(x)` <= `(y)` |]
+    -- toJExpr (ApplyExpression (SymbolExpression (Operator ">=")) [x, y]) = [jmacroE| `(x)` >= `(y)` |]
 
     toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y])    = toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])
     toJExpr (ApplyExpression (SymbolExpression (Operator f)) x)        = error $ "Operator with " ++ show (length x) ++ " params"

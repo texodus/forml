@@ -49,7 +49,7 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
              Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
              Right src' -> do putStrLn "\r[*] Parsing"
                               putStr "[ ] Generating Javascript"
-                              let js = render src'
+                              let js = compress $ render src'
                               writeFile (output ++ ".js") js
                               putStrLn "\r[*] Generating Javascript"
                               putStr "[ ] Generating Tests"

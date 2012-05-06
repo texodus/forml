@@ -1,15 +1,36 @@
 
-Prelude
-=======
+Formal Prelude
+==============
 
 * * *
 
+Formal is a functional programming language which targets Javascript.
+Designed for readability and compiler verification, Formal is
+powerful, flexible and easy to learn.
 
     module prelude
 
+Bootstrap
+---------
+Some simple reflection by lifting from Javascript.  The definitions of
+`object?` and `array?` must use Javascript's `===` operator directly
+here, as the "==" operator defined in [Numbers](#numbers) is defined
+in terms of them.
+
+        object? x = `typeof x === "object"`
+        array? = is_array
+        
+        not x = `!x`
+        
+        object? {}
+        array? []
+
+        not false
+        not (array? {})
+        not (object? 0)
+
 Numbers
 -------
-
 Some basic aliases to native javascript infix functions.
 
         (&&) x y = `x && y`
@@ -23,19 +44,17 @@ Some basic aliases to native javascript infix functions.
         (<)  x y = `x < y`
         (>)  x y = `x > y`
 
-        fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
-
 Equality is overloaded to match records and arrays
 
-        equals x y when `typeof x == "object" && typeof y == "object"` =
-                 `var result = true;
-                  for (key in x) {
+        equals x y when object? x && object? y =
+                 let result = `true`
+                 `for (key in x) {
                       result = result && equals(x[key])(y[key]);
                   };
                   return result;`
-             | x y when is_array x && is_array y =
-                 `var result = true;
-                  for (z in x) {
+             | x y when array? x && array? y =
+                 let result = `true`
+                 `for (z in x) {
                       result = result && equals(x[z])(y[z]);
                   };
                   return (result && x.length == y.length);`
@@ -51,6 +70,10 @@ test against regressions.
         (3 * 4) + 5 * 4 == 64 / 2
         4 - 1 != 5 - 10
         (10 >= 5 + 5) != (4 + 5 <= 10 - 2)
+
+Fibonacci function
+
+        fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
 
 
 
