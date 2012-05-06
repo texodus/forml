@@ -134,5 +134,5 @@ type_name   = Symbol <$> not_reserved (upper <:> many (alphaNum <|> oneOf "_'"))
 type_var    = not_reserved (lower <:> many (alphaNum <|> oneOf "_'"))
 symbol_name = (Symbol <$> not_reserved (lower <:> many (alphaNum <|> oneOf "_'"))) 
               <|> (Operator <$> not_reserved imp_infix)
-    where imp_infix = string "(" *> many1 operator <* string ")"
+    where imp_infix = string "(" *> many1 operator <* option "" (try (string ":")) <* string ")"
 

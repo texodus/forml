@@ -14,10 +14,13 @@ import Language.Javascript.JMacro
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.State hiding (lift)
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Text.Parsec.Indent  hiding (same)
 import Text.Parsec.Expr
+
+import System.IO.Unsafe
 
 import qualified Data.Map as M
 
@@ -70,7 +73,7 @@ definition_statement = do whitespace
 
 expression_statement :: Parser [Statement]
 expression_statement = do whitespace
-                          (:[]) . ExpressionStatement <$> expression
+                          (:[]) . ExpressionStatement <$> withPos expression
 
 -- Type definitions
 
@@ -182,12 +185,12 @@ if_expression       :: Parser Expression
 expression = try if_expression <|> try infix_expression <|> other_expression
 
 other_expression = try let_expression
-                   <|> try do_expression
-                   <|> try named_expression
-                   <|> try apply_expression
-                   <|> try function_expression
-                   <|> try accessor_expression
-                   <|> inner_expression
+                    <|> try do_expression
+                    <|> try named_expression
+                    <|> try apply_expression
+                    <|> function_expression
+                    <|> try accessor_expression
+                    <|> inner_expression
 
 inner_expression :: Parser Expression
 inner_expression = indentPairs "(" expression ")" 
@@ -198,12 +201,12 @@ inner_expression = indentPairs "(" expression ")"
                    <|> symbol_expression
                    <|> list_expression
 
-let_expression = withPos $ do string "let"
-                              whitespace1
-                              defs <- concat <$> withPos def
-                              spaces
-                              same
-                              LetExpression <$> return defs <*> expression
+let_expression = withPosTemp $ do string "let"
+                                  whitespace1
+                                  defs <- concat <$> withPos def
+                                  spaces
+                                  same
+                                  LetExpression <$> return defs <*> expression
 
     where def = try definition_statement `sepBy1` try (spaces *> same)
 
@@ -250,28 +253,32 @@ infix_expression = buildExpressionParser table term
                    , [ix "*", ix "/"]
                    , [ix "+", ix "-"]
                    , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
-                   , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "/="]
+                   , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!="]
                    , [px "not"]
                    , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
-          ix s   = Infix (op $ (Operator <$> string s) <* notFollowedBy operator) AssocLeft
+          ix s   = Infix (try . op $ (Operator <$> string s) <* notFollowedBy operator) AssocLeft
           px s   = Prefix $ try (whitespace >> string s >> return (ApplyExpression (SymbolExpression (Operator s)) . (:[])))
           term   = try other_expression
+          
+          end (reverse -> x : xs) = x : reverse xs
 
-          user_op_left = try $ do whitespace
-                                  op' <- not_reserved (many1 operator)
+          user_op_left = try $ do spaces
+                                  op' <- not_system $ not_reserved (many1 operator) 
                                   spaces
                                   return (\x y -> ApplyExpression (SymbolExpression (Operator op')) [x, y])
 
-          user_op_right = try $ do whitespace
-                                   op' <- not_reserved ((++) <$> (many1 operator) <*> string ":")
+          user_op_right = try $ do spaces
+                                   op' @ (end -> x : _) <- not_system $ not_reserved (many1 operator)
                                    spaces
-                                   return (\x y -> ApplyExpression (SymbolExpression (Operator op')) [x, y])
-
-          op p   = try $ do whitespace
-                            op' <- SymbolExpression <$> p
-                            spaces
-                            return (\x y -> ApplyExpression op' [x, y])
+                                   if x == ':'
+                                       then return (\x y -> ApplyExpression (SymbolExpression (Operator op')) [x, y])
+                                       else parserFail "Operator"
+          op p   = do spaces
+                      op' <- SymbolExpression <$> p
+                      spaces
+                            
+                      return (\x y -> ApplyExpression op' [x, y])
 
 named_expression = NamedExpression 
                    <$> (symbol_name <* string ":") 
@@ -295,11 +302,14 @@ accessor_expression = do x <- indentPairs "(" expression ")"
 
 apply_expression = ApplyExpression <$> inner_expression <*> (many1 . try $ whitespace *> inner_expression)
 
-function_expression = withPos $ do string "\\" <|> string "λ" <|> string "\955"
-                                   whitespace
-                                   t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
-                                   eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
-                                   return $ FunctionExpression (t ++ eqs)
+withPosTemp p = do x <- get
+                   try p <|> (put x >> parserFail "mjsakdfjsnkdn")
+
+function_expression = withPosTemp $ do string "\\" <|> string "λ" <|> string "\955"
+                                       whitespace
+                                       t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
+                                       eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
+                                       return $ FunctionExpression (t ++ eqs)
 
     where type_axiom = do string ":"
                           spaces
@@ -315,12 +325,17 @@ function_expression = withPos $ do string "\\" <|> string "λ" <|> string "\955"
 
 -- TODO allow ` escaping
 -- TODO it would be nice if we parsed javascript too ...
+end (reverse -> x : xs) = x : reverse xs
 
-js_expression = JSExpression <$> join (p . wrap <$> indentPairs "`" (many $ noneOf "`") "`")
-    where p (parseJM -> Left x)  = parserFail $ show x
-          p (parseJM -> Right x) = return [jmacroE| (function() { `(x)`; return x; })() |] 
 
-          wrap x = "var __ans__; __ans__ = " ++ x ++ ";"
+js_expression = JSExpression <$> join (p <$> indentPairs "`" (many $ noneOf "`") "`")
+    where p (parseJM . wrap -> Right (BlockStat [AssignStat _ x])) = return x
+          p y @ (parseJM . wrap -> Left x)  =
+              case parseJM y of
+                Left ex -> parserFail "Javascript"
+                Right x -> return [jmacroE| (function() { `(x)`; })() |] 
+          
+          wrap x = "__ans__ = " ++ x ++ ";"
 
 record_expression = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
     where pairs' = withPos $ (try key_eq_val <|> try function) `sepBy` try (try comma <|> not_comma)

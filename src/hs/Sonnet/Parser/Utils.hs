@@ -37,8 +37,8 @@ same :: Parser ()
 same = spaces >> do pos <- getPosition
                     s <- get
                     if (sourceColumn pos) /= (sourceColumn s) 
-                       then parserFail "not indented" 
-                       else do put $ setSourceLine s (sourceLine pos)
+                       then parserFail $ "not indented to exactly " ++ show (sourceColumn s)  
+                       else do --put $ setSourceLine s (sourceLine pos)
                                return ()
 
 spaces :: Parser ()
@@ -50,8 +50,8 @@ spaces = try emptyline `manyTill` try line_start >> return ()
           in_block = do pos <- getPosition
                         s <- get
                         if (sourceColumn pos) < (sourceColumn s) 
-                           then parserFail "not indented" 
-                           else do put $ setSourceLine s (sourceLine pos)
+                           then parserFail $ "not indented to at least " ++ show (sourceColumn s)
+                           else do -- put $ setSourceLine s (sourceLine pos)
                                    return ()
 
 
@@ -86,15 +86,17 @@ operator_dict = M.fromList [ ('!', "_bang"),
                              ('^', "_exp"),
                              ('&', "_and"),
                              ('|', "_or"),
-                             ('<', "_leff"),
+                             ('<', "_less"),
                              ('>', "_grea"), 
                              ('?', "_ques"), 
                              ('/', "_forw"),
-                             ('=', "_eq"), 
+                             ('=', "_eq"),
+                             (':', "_col"),
                              ('\\', "_back"), 
                              ('~', "_tild"),
                              ('+', "_plus"),
                              ('-', "_minu"),
+                             ('*', "_star"),
                              (',', "_comm"),
                              ('.', "_comp") ]
 
@@ -109,7 +111,16 @@ not_reserved x = do y <- x
 
     where reserved_words = [ "if", "then", "else", "type", "let", "when", "with", "and", "or", "do",
                              "module", "open", "import",
-                             "|", "\\", "=", ".", ":", ",", "==", "-", "->", "<=", ">=", "<", ">", "<-" ]
+                             "|", "\\", "=", ".", ":", ",", "->", "<-" ]
+
+not_system :: Parser String -> Parser String
+not_system x = do y <- x
+                  if y `elem` reserved_words
+                     then parserFail "non-reserved word"
+                     else return y
+
+    where reserved_words = [ "==", "<=", ">=", "!=", "<", ">"  ]
+
 
 type_sep    :: Parser Char
 indentPairs :: String -> Parser a -> String -> Parser a

@@ -23,6 +23,8 @@ $(function() {
     var reporter = $(".jasmine_reporter").detach();
 
     $("#main").append(reporter)
+    $(".jasmine_reporter").addClass("show-passed")
+    $("#__jasmine_TrivialReporter_showPassed__").attr("checked", "checked");
 });
 
 function time(f) {
@@ -31,8 +33,7 @@ function time(f) {
     f();
 
     var end = new Date().getTime();
-    var time = end - start;
-    console.log('Execution time: ' + time); 
+    return end - start;
 };
 
 function fibb(n) {

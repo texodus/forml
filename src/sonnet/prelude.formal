@@ -1,0 +1,176 @@
+
+Prelude
+=======
+
+* * *
+
+
+    module prelude
+
+Numbers
+-------
+
+Some basic aliases to native javascript infix functions.
+
+        (&&) x y = `x && y`
+        (||) x y = `x || y`
+        (*)  x y = `x * y`
+        (/)  x y = `x / y`
+        (+)  x y = `x + y`
+        (-)  x y = `x - y`
+        (<=) x y = `x <= y`
+        (>=) x y = `x >= y`
+        (<)  x y = `x < y`
+        (>)  x y = `x > y`
+
+        fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
+
+Equality is overloaded to match records and arrays
+
+        equals x y when `typeof x == "object" && typeof y == "object"` =
+                 `var result = true;
+                  for (key in x) {
+                      result = result && equals(x[key])(y[key]);
+                  };
+                  return result;`
+             | x y when is_array x && is_array y =
+                 `var result = true;
+                  for (z in x) {
+                      result = result && equals(x[z])(y[z]);
+                  };
+                  return (result && x.length == y.length);`
+             | x y = `x === y`
+                 
+        (==) x y = `equals(x)(y)`
+        (!=) x y = `!equals(x)(y)`
+
+And a few simple tests to verify the correctness of these
+implementations.  This is not meant to be exhaustive, only a smoke
+test against regressions.
+
+        (3 * 4) + 5 * 4 == 64 / 2
+        4 - 1 != 5 - 10
+        (10 >= 5 + 5) != (4 + 5 <= 10 - 2)
+
+
+
+Function Combinators
+--------------------
+Simple left & right pipes, ala F#.  
+
+        (<|) x y = x y
+        (|>) x y = y x
+        
+        3 |> (\y = y + 1) |> (\y = y + 1)    == 5
+        (\y x z = x + y + z + 1) 1 <| 3 <| 4 == 9
+        
+Alternatively, there is a right associative version of `<|`, ala
+haskell.  All operators which end with a `:` are right associative.
+
+        (<:) x y = x y
+        
+        (\x = x - 3) <: (\x = x - 3) <: 5 + 5 == 4
+
+Tests
+-----
+By invoking javascript, we can listen for exceptions.
+
+        err x = `try {
+                     x();
+                     return false;
+                 } catch (e) {
+                     return e;
+                 }`
+
+
+
+Lists
+-----
+A simple implementation of a library for manipulating linked lists.
+
+        module list
+        
+            type List a = cons: { head: a, tail: List a } 
+                          | nil:
+            
+This complex type can be hidden behind a constructor function which
+works more like a traditional cons.
+
+            (::) x y = cons: { head = x, tail = y }
+            
+            1 :: 2 :: nil: == 1 :: 2 :: nil:
+            nil: :: nil:   == cons: { head = nil:, tail = nil: }
+            3 :: 4 :: nil: ==
+
+                cons: { head: 3
+                        tail: cons: { head: 4
+                                      tail: nil: }}
+
+Simple implementations of list accessors, which illustrate
+incomplete definition.
+
+            head (cons: { head: x }) = x | nil: = error "Head called on empty list"
+            tail (cons: { tail: x }) = x | nil: = error "Tail called on empty list"
+            
+
+            head (1 :: 2 :: nil:) == 1
+            tail (1 :: 2 :: nil:) == 2 :: nil:
+
+            err (\_ = head (nil:)) == "Head called on empty list"
+            err (\_ = tail (nil:)) == "Tail called on empty list"
+
+Cardinality
+            
+            length nil: = 0
+                 | (cons: { tail: x }) = 1 + length x
+                 
+            length (1 :: 2 :: 3 :: 4 :: nil:) == 4
+
+Generator
+
+            init 0 _ = nil:
+               | n x = x :: init (n - 1) x
+               
+            length (init 30 0) == 30
+            tail (init 3 0)    == init 2 0
+
+List concatenation
+
+            (++) nil: y = y
+               | (cons: { head: y, tail: ys }) xs = y :: (ys ++ xs)
+            
+            nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
+            (1 :: 2 :: nil:) ++ (3 :: 4 :: nil:) == 
+                1 :: 2 :: 3 :: 4 :: nil:
+
+Filter
+
+            filter f nil: = nil:
+                 | f x when f (head x) = head x :: filter f (tail x)
+                 | f x = filter f <| tail x
+                            
+            filter (\x = x > 2) (1 :: 2 :: 3 :: 4 :: nil:) == 3 :: 4 :: nil:
+
+Map
+
+            map f nil: = nil:
+              | f x = f (head x) :: map f (tail x)
+              
+            map (\x = x + 1) (1 :: 2 :: 3 :: nil:) == 
+                2 :: 3 :: 4 :: nil:
+
+
+Maps
+----
+
+        module map
+            
+            -- TODO this causes the application to fail for some reason
+            -- type Map a b = map: [{ key: a, val: b }]
+            
+            (%) x y = { key = x, val = y }
+            
+            "test" % true: == { key = "test", val = true: }
+
+
+    open prelude
