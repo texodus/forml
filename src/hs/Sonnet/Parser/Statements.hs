@@ -282,7 +282,7 @@ infix_expression = buildExpressionParser table term
 
 named_expression = NamedExpression 
                    <$> (symbol_name <* string ":") 
-                   <*> option Nothing (Just <$> try (spaces *> indented *> other_expression))
+                   <*> option Nothing (Just <$> try (whitespace *> other_expression))
 
 accessor_expression = do x <- indentPairs "(" expression ")" 
                               <|> js_expression 
@@ -303,7 +303,7 @@ accessor_expression = do x <- indentPairs "(" expression ")"
 apply_expression = ApplyExpression <$> inner_expression <*> (many1 . try $ whitespace *> inner_expression)
 
 withPosTemp p = do x <- get
-                   try p <|> (put x >> parserFail "mjsakdfjsnkdn")
+                   try p <|> (put x >> parserFail ("Indented to exactly" ++ show x))
 
 function_expression = withPosTemp $ do string "\\" <|> string "λ" <|> string "\955"
                                        whitespace

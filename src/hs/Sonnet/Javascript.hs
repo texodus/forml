@@ -177,9 +177,9 @@ newtype Jasmine = Jasmine Expression
 
 instance ToStat Jasmine where
 
-    -- toStat (Jasmine (ApplyExpression (SymbolExpression (Operator "==")) [x, y])) =
+    toStat (Jasmine (ApplyExpression (SymbolExpression (Operator "==")) [x, y])) =
 
-    --     [jmacro| expect(`(x)`).toEqual(`(y)`); |]
+        [jmacro| expect(`(x)`).toEqual(`(y)`); |]
         
     toStat (Jasmine e) = 
 
