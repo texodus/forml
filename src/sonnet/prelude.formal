@@ -17,10 +17,10 @@ Some simple reflection by lifting from Javascript.  The definitions of
 here, as the "==" operator defined in [Numbers](#numbers) is defined
 in terms of them.
 
-        object? x = `typeof x === "object"`
+        object? x = run `typeof x === "object"`
         array? = is_array
         
-        not x = `!x`
+        not x = run `!x`
         
         object? {}
         array? []
@@ -29,36 +29,51 @@ in terms of them.
         not (array? {})
         not (object? 0)
 
+Side effects can only happen in Javascript, so we use a monadic container to
+compose these bits.
+
+        run x = x null
+
+        (>>=) x y = `y(run(x))()`
+        ret x = `x`
+
+        10 == run (do x <- `1 + 4`
+                      y <- `2 + 3`
+                      `console.log("x is " + x + " and y is " + y)`
+                      `x + y`)
+                  
+        run (ret 5) == 5
+
 Numbers
 -------
 Some basic aliases to native javascript infix functions.
 
-        (&&) x y = `x && y`
-        (||) x y = `x || y`
-        (*)  x y = `x * y`
-        (/)  x y = `x / y`
-        (+)  x y = `x + y`
-        (-)  x y = `x - y`
-        (<=) x y = `x <= y`
-        (>=) x y = `x >= y`
-        (<)  x y = `x < y`
-        (>)  x y = `x > y`
+        (&&) x y = run `x && y`
+        (||) x y = run `x || y`
+        (*)  x y = run `x * y`
+        (/)  x y = run `x / y`
+        (+)  x y = run `x + y`
+        (-)  x y = run `x - y`
+        (<=) x y = run `x <= y`
+        (>=) x y = run `x >= y`
+        (<)  x y = run `x < y`
+        (>)  x y = run `x > y`
 
 Equality is overloaded to match records and arrays
 
         (==) x y when object? x && object? y =
-               let result = `true`
-               `for (key in x) {
-                    result = result && _eq_eq(x[key])(y[key]);
-               };
-               return result;`
+               let result = true
+               run `for (key in x) {
+                        result = result && _eq_eq(x[key])(y[key]);
+                    };
+                    return result;`
            | x y when array? x && array? y =
-               let result = `true`
-               `for (z in x) {
-                    result = result && _eq_eq(x[z])(y[z]);
-                };
-                return (result && x.length == y.length);`
-           | x y = `x === y`
+               let result = true
+               run `for (z in x) {
+                        result = result && _eq_eq(x[z])(y[z]);
+                    };
+                    return (result && x.length == y.length);`
+           | x y = run `x === y`
                  
         (!=) x y = not (x == y)
         
@@ -69,8 +84,8 @@ test against regressions.
         (3 * 4) + 5 * 4 == 64 / 2
         4 - 1 != 5 - 10
         (10 >= 5 + 5) != (4 + 5 <= 10 - 2)
-        ({test: 1} == {test: 1}) == `true`
-        ({test: 1} != {test: 1}) == `false`
+        ({test: 1} == {test: 1}) == true
+        ({test: 1} != {test: 1}) == false
 
 Fibonacci function
 
@@ -111,12 +126,12 @@ Tests
 -----
 By invoking javascript, we can listen for exceptions.
 
-        err x = `try {
-                     x();
-                     return false;
-                 } catch (e) {
-                     return e;
-                 }`
+        err x = run `try {
+                         x();
+                         return false;
+                     } catch (e) {
+                         return e;
+                     }`
 
 
 
@@ -156,7 +171,7 @@ works more like a traditional cons.
 Simple implementations of list accessors, which illustrate
 incomplete definition.
 
-            empty? nil: = `true` | _ = `false`
+            empty? nil: = true | _ = false
 
             head (cons: { head: x }) = x | nil: = error "Head called on empty list"
             tail (cons: { tail: x }) = x | nil: = error "Tail called on empty list"
@@ -267,10 +282,10 @@ Folds
 
             foldl (\x y = x + y) 0 (1 :: 2 :: 3 :: 4 :: nil:) == 10
             foldr (\x y = x + y) 0 (1 :: 2 :: 3 :: 4 :: nil:) == 10
-            all? id (`true` :: `true` :: nil:)
-            not (all? id (`true` :: `false` :: nil:))
-            any? id (`true` :: `false` :: nil:)
-            not (any? id (`false` :: `false` :: nil:))
+            all? id (true :: true :: nil:)
+            not (all? id (true :: false :: nil:))
+            any? id (true :: false :: nil:)
+            not (any? id (false :: false :: nil:))
             sum (1 :: 2 :: 3 :: nil:) == 6
             product (1 :: 2 :: 4 :: nil:) == 8
 
@@ -298,7 +313,7 @@ Maps
             
             (%) x y = { key = x, val = y }
             
-            "test" % true: == { key = "test", val = true: }
+            "test" % true == { key = "test", val = true }
 
 
     open prelude

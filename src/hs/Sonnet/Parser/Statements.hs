@@ -329,11 +329,11 @@ end (reverse -> x : xs) = x : reverse xs
 
 
 js_expression = JSExpression <$> join (p <$> indentPairs "`" (many $ noneOf "`") "`")
-    where p (parseJM . wrap -> Right (BlockStat [AssignStat _ x])) = return x
+    where p (parseJM . wrap -> Right (BlockStat [AssignStat _ x])) = return [jmacroE| (function() { return `(x)`; }) |]
           p y @ (parseJM . wrap -> Left x)  =
               case parseJM y of
                 Left ex -> parserFail "Javascript"
-                Right x -> return [jmacroE| (function() { `(x)`; })() |] 
+                Right x -> return [jmacroE| (function() { `(x)`; }) |] 
           
           wrap x = "__ans__ = " ++ x ++ ";"
 
