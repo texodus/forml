@@ -15,6 +15,7 @@ import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 import Data.Monoid
 import qualified Data.Map as M
+import qualified Data.List as L
 import Sonnet.Parser.AST
 import Sonnet.Parser.Utils
 import Prelude hiding (curry, (++))
@@ -24,8 +25,11 @@ prelude = [jmacro| function !is_array(x) {
                        return `(InfixExpr "instanceof" x (ref "Array"))`;
                    }
 
+                   function !error(x) { throw x; }
 
-                   function !error(x) { throw x; } |]
+                   function !exhaust() { error("Pattern Match Exhausted"); }
+
+                   function !check(x) { typeof x != "undefined" } |]
 
 render :: Program -> String
 render (Program xs) = show . renderJs . (prelude ++) . toStat . map (empty_meta Library xs) $ xs
@@ -181,6 +185,10 @@ instance ToStat Jasmine where
     toStat (Jasmine (ApplyExpression (SymbolExpression (Operator "==")) [x, y])) =
 
         [jmacro| expect(`(x)`).toEqual(`(y)`); |]
+
+    toStat (Jasmine (ApplyExpression (SymbolExpression (Operator "!=")) [x, y])) =
+
+        [jmacro| expect(`(x)`).toNotEqual(`(y)`); |]
         
     toStat (Jasmine e) = 
 
@@ -240,10 +248,15 @@ instance ToStat Meta where
 
     toStat meta @ (Meta { target = Test, expr = ModuleStatement ns xs, .. }) =
 
+        let (imports, rest) = L.partition f xs
+            f (ImportStatement _) = True
+            f _ = False in
+
         [jmacro| describe(`(show ns)`, function() {
+                     `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) imports)`; 
                      `(open (namespace ++ ns) xs)`;
                      var x = new (function {
-                         `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) xs)`; 
+                         `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) rest)`; 
                      }());
                  }); |]
 
@@ -256,7 +269,8 @@ instance ToStat Meta where
     toStat x = error $ "Unimplemented " ++ show x
 
 instance (ToStat a) => ToStat [a] where
-    toStat = foldl1 mappend . map toStat
+    toStat [] = mempty
+    toStat x = foldl1 mappend . map toStat $ x
 
 instance ToStat Definition where
     toStat (Definition name as) = declare_this (to_name name) $ toJExpr as
@@ -271,7 +285,7 @@ instance ToJExpr [Axiom] where
     toJExpr xs @ (EqualityAxiom (Match ps _) _ : _) = scope . curry (length ps) . toStat . Curried $ xs
 
 instance ToStat Curried where
-    toStat (Curried []) = [jmacro| args = []; console.log "Pattern match exhausted" |]
+    toStat (Curried []) = [jmacro| args = []; exhaust(); |]
     toStat (Curried (EqualityAxiom (Match pss cond) ex : xss)) = 
 
         [jmacro| `(declare_bindings pss)`;
@@ -290,15 +304,15 @@ instance ToJExpr (Maybe Expression) where
 instance ToJExpr Expression where
 
     -- These are inline cheats to improve performance
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "==")) [x, y]) = [jmacroE| equals(`(x)`)(`(y)`) |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "!=")) [x, y]) = [jmacroE| !equals(`(x)`)(`(y)`) |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator "<=")) [x, y]) = [jmacroE| `(x)` <= `(y)` |]
-    -- toJExpr (ApplyExpression (SymbolExpression (Operator ">=")) [x, y]) = [jmacroE| `(x)` >= `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "==")) [x, y]) = [jmacroE| _eq_eq(`(x)`)(`(y)`) |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "!=")) [x, y]) = [jmacroE| !_eq_eq(`(x)`)(`(y)`) |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "<=")) [x, y]) = [jmacroE| `(x)` <= `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator ">=")) [x, y]) = [jmacroE| `(x)` >= `(y)` |]
 
     toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y])    = toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])
     toJExpr (ApplyExpression (SymbolExpression (Operator f)) x)        = error $ "Operator with " ++ show (length x) ++ " params"
@@ -328,7 +342,7 @@ instance ToJExpr PatternMatch where
     toJExpr (PM _ AnyPattern)                       = toJExpr True
     toJExpr (PM n (VarPattern x))                   = [jmacroE| (function() { `(ref x)` = `(ref n)`; return true; })() |]
     toJExpr (PM n (LiteralPattern x))               = [jmacroE| `(ref n)` === `(x)` |]
-    toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| typeof `(ref n)` != "undefined" && `(each $ map (\(key, val) -> toJExpr (PM (n ++ "[\"" ++ to_name key ++ "\"]") val)) xs)` |]
+    toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| check(`(ref n)`) && `(each $ map (\(key, val) -> toJExpr (PM (n ++ "[\"" ++ to_name key ++ "\"]") val)) xs)` |]
     toJExpr (PM n (RecordPattern (M.toList -> []))) = [jmacroE| true |]
     toJExpr (PM n (NamedPattern x Nothing))         = [jmacroE| !!`(ref n)`[`(x)`] |]
     toJExpr (PM n (NamedPattern x (Just y)))        = toJExpr (PM n (RecordPattern (M.fromList [(Symbol x, y)])))

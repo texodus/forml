@@ -34,15 +34,26 @@ compose these bits.
 
         run x = x null
 
-        (>>=) x y = `y(run(x))()`
+        (>>=) x y = `y(x())()`
         ret x = `x`
+        (>>) x y = `x(); return y();`
+        
+        log x = `console.log(x)`
 
         10 == run (do x <- `1 + 4`
                       y <- `2 + 3`
-                      `console.log("x is " + x + " and y is " + y)`
+                      log ("x is " + x + " and y is " + y)
                       `x + y`)
                   
         run (ret 5) == 5
+        run (log "test" >> `5 + 5`) == 10
+        
+        time js =
+
+            do start <- `new Date().getTime()`
+               js
+               stop <- `new Date().getTime()`
+               ret (stop - start)
 
 Numbers
 -------
@@ -91,7 +102,34 @@ Fibonacci function
 
         fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
 
+Due to the nested recursion, this is an excellent function for testing the
+runtime speed versus raw javascript.
 
+        module speedtest
+
+            fast_fib n = `var f = function(n) {
+                              if (n === 0) {
+                                  return 0;
+                              } else if (n === 1) {
+                                  return 1;
+                              } else {
+                                  return f(n - 1) + f(n - 2)
+                              };
+                          };
+                          return f(n);`
+                    
+            run (fast_fib 7) == fib 7
+            
+With this, we can set up a simple canary to elt us know if the prelude is
+suddenly dramatically slower than it reviously was; in this case, we fail a test
+if the formal version isn't at least 90% as fast as the native javascript
+version.
+          
+            run <: do fast_time <- time (fast_fib 35)
+                      slow_time <- time `fib(35)`
+                      let ratio = fast_time / slow_time
+                      log ("Runtime speed ratio is " + ratio)
+                      ret (ratio >= 0.90)
 
 Function Combinators
 --------------------
@@ -116,7 +154,7 @@ Function composition
         id x = x
         flip f a b = f b a
         
-        ((\x = x + 1) .: (\x = x + 2) .: (\x = x + 3)) 4 == 10
+        ((\x = x + 1) .: (\x = x * 2) .: (\x = x - 3)) 4 == 3
         id [1, 2, 3] == [1, 2, 3]
         flip (\x y = x - y) 3 5 == 2
 
@@ -186,14 +224,14 @@ incomplete definition.
             not (empty? (1 :: nil:))
             empty? (nil:)
    
-            head (1 :: 2 :: nil:) == 1
-            tail (1 :: 2 :: nil:) == 2 :: nil:
-            last (1 :: 2 :: 3 :: nil:) == 3
+            head (1 :: 2 :: nil:)  == 1
+            tail (1 :: 2 :: nil:)  == 2 :: nil:
+            last (1 :: 2 :: nil:)  == 2
             err (\_ = head (nil:)) == "Head called on empty list"
             err (\_ = tail (nil:)) == "Tail called on empty list"
             err (\_ = last (nil:)) == "Last called on empty list"
 
-            take 2 (1 :: 2 :: 3 :: 4 :: nil:) == 1 :: 2 :: nil:
+            take 2 (1 :: 2 :: 3 :: nil:) == 1 :: 2 :: nil:
             drop 2 (1 :: 2 :: 3 :: nil:) == 3 :: nil:
 
 
@@ -298,9 +336,59 @@ Folds
             minimum (1 :: 2 :: 3 :: nil:) == 1
             maximum (1 :: 2 :: 3 :: nil:) == 3
             
-                
-            
 
+
+Sequences
+---------
+Sequences are an abstract data type which resembles a list, except that elemnts
+of a sequence are constructed lazily as they are requested.
+
+        module sequence
+        
+            open list
+
+            type Seq a = Js ( { val: a, next: Seq a } | end: )
+
+Converting a `List` to a `Seq` is simple and O(1) as the list need not be walked
+
+            from_list nil: = lazy end:
+                    | x    = lazy { val: head x, next: from_list (tail x) }
+
+... but converting back is not.
+
+
+            to_list =
+                let f end: = nil:
+                    | { val: x, next: xs } = x :: to_list xs
+                f .: run
+
+            --to_list x = run x |> \ end: = nil:
+            --                     | { val: x, next: xs } = x :: to_list xs
+
+            to_list (from_list (1 :: 2 :: nil:)) == 1 :: 2 :: nil:
+
+Sequences may be infinite, as long as you never try to read every element.
+However, the current implementation is stack-consuming and thus limited by the
+underlying javascript runtime ...
+
+            iterate f x = lazy { val: x, next: iterate f (f x) } 
+
+            take 0 _ = lazy end:
+               | n x = do y <- x
+                          ret (y |> \ end: = end:
+                                    | ({ val: y, next: ys }) = 
+                                        { val: y, next: take (n - 1) ys })
+                                           
+            (1 :: 2 :: 3 :: nil:) == 
+                (1 :: 2 :: 3 :: 4 :: nil:) |> from_list 
+                                           |> take 3
+                                           |> to_list
+
+            500 == iterate (\x = x + 1) 0
+                   |> take 500
+                   |> to_list
+                   |> length
+                        
 
 
 

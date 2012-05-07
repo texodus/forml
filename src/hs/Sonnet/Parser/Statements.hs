@@ -170,6 +170,7 @@ expression          :: Parser Expression
 other_expression    :: Parser Expression
 let_expression      :: Parser Expression
 do_expression       :: Parser Expression
+lazy_expression     :: Parser Expression
 apply_expression    :: Parser Expression
 infix_expression    :: Parser Expression
 named_expression    :: Parser Expression
@@ -186,6 +187,7 @@ expression = try if_expression <|> try infix_expression <|> other_expression
 
 other_expression = try let_expression
                     <|> try do_expression
+                    <|> try lazy_expression
                     <|> try named_expression
                     <|> try apply_expression
                     <|> function_expression
@@ -232,6 +234,16 @@ do_expression  = do string "do"
                                       [ EqualityAxiom 
                                         (Match [pat] Nothing)
                                         zx ]) ]
+
+
+lazy_expression  = do string "lazy"
+                      whitespace1
+                      f <$> withPos (try expression)
+
+    where f ex = (FunctionExpression 
+                     [ EqualityAxiom 
+                       (Match [AnyPattern] Nothing)
+                       ex ])
 
 
 
