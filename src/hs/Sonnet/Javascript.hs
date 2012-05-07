@@ -74,6 +74,7 @@ to_name (Operator op) = concat . map (\x -> M.findWithDefault "_" x operator_dic
 
 declare          :: String -> JExpr -> JStat
 declare_this     :: String -> JExpr -> JStat
+declare_window   :: String -> JExpr -> JStat
 ref              :: String -> JExpr 
 func             :: String -> JStat -> JStat
 find             :: [Module] -> Namespace -> Maybe [String]

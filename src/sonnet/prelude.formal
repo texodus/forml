@@ -46,7 +46,7 @@ Some basic aliases to native javascript infix functions.
 
 Equality is overloaded to match records and arrays
 
-       (==) x y when object? x && object? y =
+        (==) x y when object? x && object? y =
                let result = `true`
                `for (key in x) {
                     result = result && _eq_eq(x[key])(y[key]);
@@ -168,19 +168,18 @@ incomplete definition.
             drop 0 x = x | n x = drop (n - 1) (tail x)
 
 
-            module accessortests
-                not (empty? (1 :: nil:))
+            not (empty? (1 :: nil:))
+            empty? (nil:)
    
-                head (1 :: 2 :: nil:) == 1
-                tail (1 :: 2 :: nil:) == 2 :: nil:
-                last (1 :: 2 :: 3 :: nil:) == 3
-            
-                err (\_ = head (nil:)) == "Head called on empty list"
-                err (\_ = tail (nil:)) == "Tail called on empty list"
-                err (\_ = last (nil:)) == "Last called on empty list"
+            head (1 :: 2 :: nil:) == 1
+            tail (1 :: 2 :: nil:) == 2 :: nil:
+            last (1 :: 2 :: 3 :: nil:) == 3
+            err (\_ = head (nil:)) == "Head called on empty list"
+            err (\_ = tail (nil:)) == "Tail called on empty list"
+            err (\_ = last (nil:)) == "Last called on empty list"
 
-                take 2 (1 :: 2 :: 3 :: 4 :: nil:) == 1 :: 2 :: nil:
-                drop 2 (1 :: 2 :: 3 :: nil:) == 3 :: nil:
+            take 2 (1 :: 2 :: 3 :: 4 :: nil:) == 1 :: 2 :: nil:
+            drop 2 (1 :: 2 :: 3 :: nil:) == 3 :: nil:
 
 
 Cardinality
@@ -201,7 +200,8 @@ Generators
 List concatenation
 
             (++) nil: y = y
-               | (cons: { head: y, tail: ys }) xs = y :: (ys ++ xs)
+               | (cons: { head: y, tail: ys }) xs = 
+                   y :: (ys ++ xs)
             
             nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
             (1 :: 2 :: nil:) ++ (3 :: 4 :: nil:) == 
@@ -234,6 +234,59 @@ Reverse
             
             reverse (1 :: 2 :: 3 :: 4 :: nil:) ==
                 4 :: 3 :: 2 :: 1 :: nil:
+
+Folds
+
+            foldl f x xs =
+                let g y nil: = y
+                    | y (cons: { head: z, tail: zs }) = g (f y z) zs
+                g x xs
+
+            foldl1 _ nil: = error "Foldl1 called on empty list"
+                 | f x = foldl f (head x) (tail x)
+                 
+            foldr f x =
+                let g nil: = x
+                    | (cons: { head: y, tail: ys }) = f y (g ys)
+                g
+
+            foldr1 _ nil: = error "Foldr1 called on empty list"
+                 | f x = foldr f (head x) (tail x)
+                 
+            all? f = foldl1 (\x y = f x && f y)
+            any? f = foldl1 (\x y = f x || f y)
+
+            sum     = foldl1 (\x y = x + y)
+            product = foldl1 (\x y = x * y)
+            
+            concat = foldl1 (\x y = x ++ y)
+            concat_map f xs = concat (map f xs)
+            
+            maximum = foldl1 (\x y = if x > y then x else y)
+            minimum = foldl1 (\x y = if x > y then y else x)
+
+            foldl (\x y = x + y) 0 (1 :: 2 :: 3 :: 4 :: nil:) == 10
+            foldr (\x y = x + y) 0 (1 :: 2 :: 3 :: 4 :: nil:) == 10
+            all? id (`true` :: `true` :: nil:)
+            not (all? id (`true` :: `false` :: nil:))
+            any? id (`true` :: `false` :: nil:)
+            not (any? id (`false` :: `false` :: nil:))
+            sum (1 :: 2 :: 3 :: nil:) == 6
+            product (1 :: 2 :: 4 :: nil:) == 8
+
+            concat ((1 :: 2 :: nil:) :: (3 :: 4 :: nil:) :: nil:) ==
+                1 :: 2 :: 3 :: 4 :: nil:
+
+            concat_map (\x = (x :: x + 1 :: nil:)) (1 :: 2 :: 3 :: 4 :: nil:) ==
+                 1 :: 2 :: 2 :: 3 :: 3 :: 4 :: 4 :: 5 :: nil:
+                 
+            minimum (1 :: 2 :: 3 :: nil:) == 1
+            maximum (1 :: 2 :: 3 :: nil:) == 3
+            
+                
+            
+
+
 
 
 Maps
