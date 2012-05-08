@@ -29,7 +29,10 @@ prelude = [jmacro| function !is_array(x) {
 
                    function !exhaust() { error("Pattern Match Exhausted"); }
 
-                   function !check(x) { typeof x != "undefined" } |]
+                   function !check(x) {
+                       result = (typeof x != "undefined");
+                       return result;
+                    } |]
 
 render :: Program -> String
 render (Program xs) = show . renderJs . (prelude ++) . toStat . map (empty_meta Library xs) $ xs
@@ -275,6 +278,10 @@ instance (ToStat a) => ToStat [a] where
 instance ToStat Definition where
     toStat (Definition name as) = declare_this (to_name name) $ toJExpr as
 
+instance ToStat Local where
+    toStat (Local (Definition name as)) = declare (to_name name) $ toJExpr as
+
+
 instance ToJExpr Namespace where
     toJExpr (Namespace []) = ref "this"
     toJExpr (Namespace (end -> x : xs)) = [jmacroE| `(Namespace xs)`[`(x)`] |]
@@ -299,7 +306,7 @@ instance ToJExpr [Pattern] where
 instance ToJExpr (Maybe Expression) where
     toJExpr = maybe (toJExpr True) toJExpr
 
---reserved_ops = ["-", "+", "*", "/", "==", "/=", 
+newtype Local = Local Definition
 
 instance ToJExpr Expression where
 
@@ -327,7 +334,7 @@ instance ToJExpr Expression where
     toJExpr (IfExpression x y z)    = [jmacroE| (function(){ if (`(x)`) { return `(y)`; } else { return `(z)` }})() |] 
     toJExpr (FunctionExpression x)  = toJExpr x
     toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
-    toJExpr (LetExpression bs ex)   = [jmacroE| (function() { `(bs)`; return `(ex)` })() |]
+    toJExpr (LetExpression bs ex)   = [jmacroE| (function() { `(map Local bs)`; return `(ex)` })() |]
     toJExpr (JSExpression s)        = s
     toJExpr x                       = error $ "Unimplemented " ++ show x
 
@@ -335,14 +342,11 @@ instance ToJExpr [PatternMatch] where
     toJExpr []     = toJExpr True
     toJExpr (x:xs) = [jmacroE| `(x)` && `(xs)` |]
 
-each [] = toJExpr True
-each (x:xs) = [jmacroE| `(x)` && `(each xs)` |] 
-
 instance ToJExpr PatternMatch where
     toJExpr (PM _ AnyPattern)                       = toJExpr True
-    toJExpr (PM n (VarPattern x))                   = [jmacroE| (function() { `(ref x)` = `(ref n)`; return true; })() |]
+    toJExpr (PM n (VarPattern x))                   = [jmacroE| (function() { if (typeof `(ref n)` != "undefined") { `(ref x)` = `(ref n)`; return true; } else return false })() |]
     toJExpr (PM n (LiteralPattern x))               = [jmacroE| `(ref n)` === `(x)` |]
-    toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| check(`(ref n)`) && `(each $ map (\(key, val) -> toJExpr (PM (n ++ "[\"" ++ to_name key ++ "\"]") val)) xs)` |]
+    toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| check(`(ref n)`) && `(map (\(key, val) -> (PM (n ++ "[\"" ++ to_name key ++ "\"]") val)) xs)` |]
     toJExpr (PM n (RecordPattern (M.toList -> []))) = [jmacroE| true |]
     toJExpr (PM n (NamedPattern x Nothing))         = [jmacroE| !!`(ref n)`[`(x)`] |]
     toJExpr (PM n (NamedPattern x (Just y)))        = toJExpr (PM n (RecordPattern (M.fromList [(Symbol x, y)])))

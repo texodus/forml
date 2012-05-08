@@ -129,7 +129,7 @@ version.
                       slow_time <- time `fib(35)`
                       let ratio = fast_time / slow_time
                       log ("Runtime speed ratio is " + ratio)
-                      ret (ratio >= 0.90)
+                      ret (ratio >= 0.50)
 
 Function Combinators
 --------------------
@@ -358,8 +358,8 @@ Converting a `List` to a `Seq` is simple and O(1) as the list need not be walked
 
 
             to_list =
-                let f end: = nil:
-                    | { val: x, next: xs } = x :: to_list xs
+                let f { val: x, next: xs } = x :: to_list xs
+                    | end: = nil:
                 f .: run
 
             --to_list x = run x |> \ end: = nil:
@@ -376,7 +376,7 @@ underlying javascript runtime ...
             take 0 _ = lazy end:
                | n x = do y <- x
                           ret (y |> \ end: = end:
-                                    | ({ val: y, next: ys }) = 
+                                    | { val: y, next: ys } = 
                                         { val: y, next: take (n - 1) ys })
                                            
             (1 :: 2 :: 3 :: nil:) == 

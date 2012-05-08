@@ -214,19 +214,31 @@ let_expression = withPosTemp $ do string "let"
 
 do_expression  = do string "do"
                     whitespace1
-                    withPos $ try bind_expression <|> try return_expression
+                    withPos line_expression
 
-    where bind_expression = do p <- pattern
+    where line_expression = try bind_expression <|> try let_bind_expression <|> try return_expression
+
+          bind_expression = do p <- pattern
                                whitespace <* (string "<-" <|> string "←") <* whitespace 
                                ex <- withPos expression 
                                spaces *> same
-                               f ex p <$> (try bind_expression <|> try return_expression)
+                               f ex p <$> line_expression
+
+          let_bind_expression = withPosTemp $ do string "let"
+                                                 whitespace1
+                                                 defs <- concat <$> withPos def
+                                                 spaces
+                                                 same
+                                                 LetExpression <$> return defs <*> line_expression
+
+              where def = try definition_statement `sepBy1` try (spaces *> same)
+
 
           return_expression = do v <- expression
                                  option v $ try $ unit_bind v
 
           unit_bind v = do spaces *> same
-                           f v AnyPattern <$> (try bind_expression <|> try return_expression)
+                           f v AnyPattern <$> line_expression
 
           f ex pat zx=  ApplyExpression 
                            (SymbolExpression (Operator ">>="))
