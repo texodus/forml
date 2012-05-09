@@ -8,7 +8,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Sonnet.Parser.AST where
+module Formal.Parser.AST where
 
 import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
@@ -20,7 +20,7 @@ import qualified Data.List as L
 import Data.Monoid
 import Data.String.Utils
 
-import Sonnet.Parser.Utils
+import Formal.Parser.Utils
 
 
 

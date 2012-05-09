@@ -8,7 +8,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Sonnet.Parser.Statements where
+module Formal.Parser.Statements where
 
 import Language.Javascript.JMacro
 
@@ -24,9 +24,9 @@ import System.IO.Unsafe
 
 import qualified Data.Map as M
 
-import Sonnet.Parser.Utils
-import Sonnet.Parser.Types
-import Sonnet.Parser.AST
+import Formal.Parser.Utils
+import Formal.Parser.Types
+import Formal.Parser.AST
 
 -- Statements
 -- -----------------------------------------------------------------------------

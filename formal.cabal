@@ -1,4 +1,4 @@
-Name:                sonnet
+Name:                formal
 Version:             0.1
 Synopsis:            A statically typed, functional & event driven language targetting the browser 
 License:             AllRightsReserved
@@ -9,9 +9,9 @@ Category:            Compiler
 Build-type:          Simple
 Cabal-version:       >=1.2
 
-Executable sonnet
+Executable formal
   hs-source-dirs: src/hs
-  main-is: Sonnet.hs
+  main-is: Formal.hs
 
   Build-depends:
     base >= 4,

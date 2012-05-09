@@ -9,15 +9,15 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Sonnet.Javascript (render, render_spec) where
+module Formal.Javascript (render, render_spec) where
 
 import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 import Data.Monoid
 import qualified Data.Map as M
 import qualified Data.List as L
-import Sonnet.Parser.AST
-import Sonnet.Parser.Utils
+import Formal.Parser.AST
+import Formal.Parser.Utils
 import Prelude hiding (curry, (++))
 
 prelude :: JStat
@@ -32,15 +32,13 @@ prelude = [jmacro| function !is_array(x) {
                    function !check(x) {
                        result = (typeof x != "undefined");
                        return result;
-                   }
-
-                   var global = window || global; |]
+                   } |]
 
 render :: Program -> String
 render (Program xs) = show . renderJs . (prelude ++) . toStat . map (empty_meta Library xs) $ xs
 
 render_spec :: Program -> String
-render_spec (Program xs) = show . renderJs . toStat . map (empty_meta Test xs) $ xs
+render_spec (Program xs) = show . renderJs . (prelude ++) . toStat . map (empty_meta Test xs) $ xs
 
 --------------------------------------------------------------------------------
 ----
@@ -109,7 +107,7 @@ declare_this name expr =
 declare_window name expr =
 
     [jmacro| `(declare name expr)`;
-             global[`(name)`] = `(ref name)`; |]
+             (typeof global == "undefined" ? window : global)[`(name)`] = `(ref name)`; |]
 
 
 

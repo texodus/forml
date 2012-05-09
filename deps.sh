@@ -6,3 +6,5 @@ cd lib
 unzip compiler.zip
 git clone https://github.com/mhevery/jasmine-node.git
 cd ..
+
+cabal install

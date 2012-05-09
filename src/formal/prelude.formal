@@ -104,20 +104,24 @@ Fibonacci function
         fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
 
 Due to the nested recursion, this is an excellent function for testing the
-runtime speed versus raw javascript.
+runtime speed versus raw javascript.  `fast_fib` is a trivial javascript
+implementation of the same function, recursed itself to remove any potential
+overhead from formal's dispatch mechanism.
 
         module speedtest
 
             fast_fib = run `var f = function(n) {
-                              if (n === 0) {
-                                  return 0;
-                              } else if (n === 1) {
-                                  return 1;
-                              } else {
-                                  return f(n - 1) + f(n - 2)
-                              };
-                          };
-                          return f;`
+//                                n === 0 ? 0 : n === 1 ? 1 : f(n - 1) + f(n - 2)  
+            
+                                if (n === 0) {
+                                    return 0;
+                                } else if (n === 1) {
+                                    return 1;
+                                } else {
+                                    return f(n - 1) + f(n - 2)
+                                };
+                            };
+                            return f;`
                     
             fast_fib 7 == fib 7
             

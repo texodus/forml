@@ -8,7 +8,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Sonnet.Parser.Utils where
+module Formal.Parser.Utils where
 
 import Control.Applicative
 import Control.Monad.Identity

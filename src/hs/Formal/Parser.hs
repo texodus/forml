@@ -8,16 +8,16 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Sonnet.Parser (parseSonnet, compress) where
+module Formal.Parser (parseFormal, compress) where
 
 import Control.Applicative
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Text.Parsec.Indent  hiding (same)
 
-import Sonnet.Parser.Utils
-import Sonnet.Parser.Statements
-import Sonnet.Parser.AST
+import Formal.Parser.Utils
+import Formal.Parser.Statements
+import Formal.Parser.AST
 
 
 
@@ -25,9 +25,9 @@ import Sonnet.Parser.AST
 -- -----------------------------------------------------------------------------
 -- A Sonnet program is represented by a set of statements
 
-parseSonnet :: String -> Either ParseError Program
-parseSonnet src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of 
-                    Right x -> parse sonnetParser "parsing syntax" (concat x)
+parseFormal :: String -> Either ParseError Program
+parseFormal src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of 
+                    Right x -> parse formalParser "parsing syntax" (concat x)
 
 
 compress :: String -> String
@@ -80,8 +80,8 @@ compress = run var . run null . run fun
 
 
 
-sonnetParser :: Parser Program
-sonnetParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
+formalParser :: Parser Program
+formalParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
 
     where statement       = whitespace >> withPos statement_types <* many newline
           statement_types = (try type_statement       <?> "Type Definition")

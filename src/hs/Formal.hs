@@ -24,8 +24,8 @@ import Text.Pandoc
 import Data.Char (ord, isAscii)
 import Data.String.Utils
 
-import Sonnet.Parser
-import Sonnet.Javascript
+import Formal.Parser
+import Formal.Javascript
 
 
 -- Main
@@ -45,7 +45,7 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
            writeFile (output ++ ".html") $ toHTML (wrap_html output src)
            putStr "[ ] Parsing"
-           case parseSonnet src of
+           case parseFormal src of
              Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
              Right src' -> do putStrLn "\r[*] Parsing"
                               putStr "[ ] Generating Javascript"

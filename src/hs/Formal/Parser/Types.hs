@@ -8,7 +8,7 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Sonnet.Parser.Types where
+module Formal.Parser.Types where
 
 import Control.Applicative
 
@@ -18,8 +18,8 @@ import Text.Parsec.Indent  hiding (same)
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-import Sonnet.Parser.Utils
-import Sonnet.Parser.AST
+import Formal.Parser.Utils
+import Formal.Parser.AST
 
 
 
