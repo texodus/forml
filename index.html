@@ -36,6 +36,7 @@
       </header>
       <section>
 <p>Formal is a functional programming language which targets Javascript. Designed for readability and compiler verification, Formal is powerful, flexible and easy to learn.</p>
+<p>This document is a literate program defining the Formal standard library, namespaced <code>prelude</code>. To compile it, simply clone the repo and run <code>sh deps.sh &amp;&amp; sh build.sh</code> - this will generate the HTML documentation, compiled Javascript source, <a href="http://pivotallabs.github.com/jasmine">Jasmine</a> test suite and Node.js test suite, then run the test suite from Node. You can also see the results of the Jasmine specifications at the bottom of this document.</p>
 <pre><code>module prelude</code></pre>
 <h2 id="bootstrap">Bootstrap</h2>
 <p>Some simple reflection by lifting from Javascript. The definitions of <code>object?</code> and <code>array?</code> must use Javascript's <code>===</code> operator directly here, as the &quot;==&quot; operator defined in <a href="#numbers">Numbers</a> is defined in terms of them.</p>
@@ -113,9 +114,8 @@
 <p>Due to the nested recursion, this is an excellent function for testing the runtime speed versus raw javascript. <code>fast_fib</code> is a trivial javascript implementation of the same function, recursed itself to remove any potential overhead from formal's dispatch mechanism.</p>
 <pre><code>    module speedtest
 
-        fast_fib = run `var f = function(n) {</code></pre>
-<p>// n === 0 ? 0 : n === 1 ? 1 : f(n - 1) + f(n - 2)</p>
-<pre><code>                            if (n === 0) {
+        fast_fib = run `var f = function(n) {
+                            if (n === 0) {
                                 return 0;
                             } else if (n === 1) {
                                 return 1;
@@ -187,8 +187,10 @@
 <p>Simple implementations of list accessors, which illustrate incomplete definition.</p>
 <pre><code>        empty? nil: = true | _ = false
 
-        head (cons: { head: x }) = x | nil: = error &quot;Head called on empty list&quot;
-        tail (cons: { tail: x }) = x | nil: = error &quot;Tail called on empty list&quot;
+        head (cons: { head: x }) = x
+           | nil: = error &quot;Head called on empty list&quot;
+        tail (cons: { tail: x }) = x 
+           | nil: = error &quot;Tail called on empty list&quot;
         last (cons: { head: x, tail: nil: }) = x
            | (cons: { tail: x }) = last x
            | nil: = error &quot;Last called on empty list&quot;
@@ -233,7 +235,8 @@
              | f x when f (head x) = head x :: filter f (tail x)
              | f x = filter f &lt;| tail x
 
-        filter (\x = x &gt; 2) (1 :: 2 :: 3 :: 4 :: nil:) == 3 :: 4 :: nil:</code></pre>
+        filter (\x = x &gt; 2) (1 :: 2 :: 3 :: 4 :: nil:) == 
+            3 :: 4 :: nil:</code></pre>
 <p>Map</p>
 <pre><code>        map f nil: = nil:
           | f x = f (head x) :: map f (tail x)
@@ -291,13 +294,13 @@
         concat ((1 :: 2 :: nil:) :: (3 :: 4 :: nil:) :: nil:) ==
             1 :: 2 :: 3 :: 4 :: nil:
 
-        concat_map (\x = (x :: x + 1 :: nil:)) (1 :: 2 :: 3 :: 4 :: nil:) ==
-             1 :: 2 :: 2 :: 3 :: 3 :: 4 :: 4 :: 5 :: nil:
+        concat_map (\x = (x :: x + 1 :: nil:)) (1 :: 2 ::  nil:) ==
+             1 :: 2 :: 2 :: 3 :: nil:
 
         minimum (1 :: 2 :: 3 :: nil:) == 1
         maximum (1 :: 2 :: 3 :: nil:) == 3</code></pre>
 <h2 id="sequences">Sequences</h2>
-<p>Sequences are an abstract data type which resembles a list, except that elemnts of a sequence are constructed lazily as they are requested.</p>
+<p>Sequences are an abstract data type which resembles a list, except that elements of a sequence are constructed lazily as they are requested.</p>
 <pre><code>    module sequence
 
         open list
@@ -305,7 +308,8 @@
         type Seq a = Js ( { val: a, next: Seq a } | end: )</code></pre>
 <p>Converting a <code>List</code> to a <code>Seq</code> is simple and O(1) as the list need not be walked</p>
 <pre><code>        from_list nil: = lazy end:
-                | x    = lazy { val: head x, next: from_list (tail x) }</code></pre>
+                | x    = lazy { val: head x
+                                next: from_list (tail x) }</code></pre>
 <p>... but converting back is not.</p>
 <pre><code>        to_list =
             let f { val: x, next: xs } = x :: to_list xs
@@ -343,7 +347,6 @@
 
 
 open prelude</code></pre>
-
         
       </section>
       <footer>

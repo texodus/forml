@@ -1802,7 +1802,7 @@ describe("prelude",
                                                                                                                           return jmId_68;
                                                                                                                         })())))));
                                                              }));
-                                                         it("concat_map (λx = x :: x + 1 :: nil:) 1 :: 2 :: 3 :: 4 :: nil: == 1 :: 2 :: 2 :: 3 :: 3 :: 4 :: 4 :: 5 :: nil:",
+                                                         it("concat_map (λx = x :: x + 1 :: nil:) 1 :: 2 :: nil: == 1 :: 2 :: 2 :: 3 :: nil:",
                                                             (function()
                                                              {
                                                                expect(concat_map((function()
@@ -1846,20 +1846,20 @@ describe("prelude",
                                                                                                 exhaust();
                                                                                               };
                                                                                             });
-                                                                                  })())(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                                         {
-                                                                                                                                           var jmId_70;
-                                                                                                                                           jmId_70 = {};
-                                                                                                                                           jmId_70["nil"] = true;
-                                                                                                                                           return jmId_70;
-                                                                                                                                         })())))))).
-                                                               toEqual(_col_col(1)(_col_col(2)(_col_col(2)(_col_col(3)(_col_col(3)(_col_col(4)(_col_col(4)(_col_col(5)((function()
-                                                                                                                                                                        {
-                                                                                                                                                                          var jmId_71;
-                                                                                                                                                                          jmId_71 = {};
-                                                                                                                                                                          jmId_71["nil"] = true;
-                                                                                                                                                                          return jmId_71;
-                                                                                                                                                                        })())))))))));
+                                                                                  })())(_col_col(1)(_col_col(2)((function()
+                                                                                                                 {
+                                                                                                                   var jmId_70;
+                                                                                                                   jmId_70 = {};
+                                                                                                                   jmId_70["nil"] = true;
+                                                                                                                   return jmId_70;
+                                                                                                                 })())))).
+                                                               toEqual(_col_col(1)(_col_col(2)(_col_col(2)(_col_col(3)((function()
+                                                                                                                        {
+                                                                                                                          var jmId_71;
+                                                                                                                          jmId_71 = {};
+                                                                                                                          jmId_71["nil"] = true;
+                                                                                                                          return jmId_71;
+                                                                                                                        })())))));
                                                              }));
                                                          it("minimum 1 :: 2 :: 3 :: nil: == 1",
                                                             (function()
