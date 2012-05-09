@@ -1,40 +1,51 @@
-<!doctype html>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Formal</title>
-    <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
-    <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
-    <script type='text/javascript' src='lib/js/zepto.js'></script>
-    <script type='text/javascript' src='prelude.js'></script>
-    <script type='text/javascript' src='prelude.spec.js'></script>
-    <script type='text/javascript' src='lib/js/prettify.js'></script>
-    <script type='text/javascript' src='lib/js/lang-hs.js'></script>
+ <head>
+ <title>
+prelude
+</title>
+ 
+<link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
+<script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
+ <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
+ <script type='text/javascript' src='lib/js/zepto.js'></script>
+ <script type='text/javascript' src='src/js/table_of_contents.js'></script>
+ <script type='text/javascript' src='prelude.js'></script>
+ <script type='text/javascript' src='prelude.spec.js'></script>
+ 
+<link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link> <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
+<script type='text/javascript' src='lib/js/prettify.js'></script>
+ <script type='text/javascript' src='lib/js/lang-hs.js'></script>
+ <script type='text/javascript' src='lib/js/jquery.js'></script>
+ <style>
+     ul{
+         padding-left:40px;
+     };
+     .jasmine_reporter{
+         position: absolute;
+         bottom: 0px;
+     }
+     a, a:visited, a:active, a:link {
+         text-decoration: none;
+         color: #cccccc;
+     }
+     .jasmine_reporter a, .jasmine_reporter a:visited, .jasmine_reporter a:active, .jasmine_reporter a:link {
+         text-decoration: none;
+         color: #000000;
+     }
 
-    <link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
-    <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <h1>Formal</h1>
-        <p></p>
-        <p class="view"><a href="https://github.com/texodus/formal">View the Project on GitHub <small>texodus/formal</small></a></p>
-        <ul>
-          <li><a href="https://github.com/texodus/formal/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/texodus/formal/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/texodus/formal">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
+ </style>
+ </head>
+ <body>
+ <div style='position:fixed;top:0px;bottom:0px;width:100%;background:none;padding:105px 0px 0px 20px;line-height:1.5'>
+ <div style='position:absolute;left:0px;width:15%'>
+ <div id="contents" style='float:right'>
+ </div></div></div>
+ <div style='position:absolute;top:0px;left:0px;margin-left:15%; width:85%'>
+ <div id='main' style='margin: 0 0 50px 10%'>
+<h1 id="formal-prelude">Formal Prelude</h1>
+<hr />
 <p>Formal is a functional programming language which targets Javascript. Designed for readability and compiler verification, Formal is powerful, flexible and easy to learn.</p>
 <pre><code>module prelude</code></pre>
 <h2 id="bootstrap">Bootstrap</h2>
@@ -343,35 +354,9 @@
 
 
 open prelude</code></pre>
-
-        
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/texodus">texodus</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
-    </div>
-    <script src="javascripts/scale.fix.js"></script>
-    <script>
-$(function() {
-    var headers = $("h2,h3,h4,h5,h6")
-
-    var text = ""
+</div>
+ </div>
+ </body>
+ </html>
 
 
-    $('code').css('font-family', 'Menlo, Consolas, Monospace');
-    $('code').addClass('prettyprint lang-hs');
-
-    prettyPrint();
-
-    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
-    jasmine.getEnv().execute();
-
-    var reporter = $(".jasmine_reporter").remove();
-
-    $("section").append(reporter)
-    $(".jasmine_reporter").css("margin", "0");
-});
-</script>
-  </body>
-</html>
