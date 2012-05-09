@@ -1,5 +1,5 @@
 
-Formal Prelude
+Prelude
 ==============
 
 * * *
@@ -7,6 +7,13 @@ Formal Prelude
 Formal is a functional programming language which targets Javascript.
 Designed for readability and compiler verification, Formal is
 powerful, flexible and easy to learn.
+
+This document is a literate program defining the Formal standard library,
+namespaced `prelude`.  To compile it, simply clone the repo and run `sh deps.sh
+&& sh build.sh` - this will generate the HTML documentation, compiled Javascript
+source, [Jasmine](http://pivotallabs.github.com/jasmine) test suite and Node.js
+test suite, then run the test suite from Node.  You can also see the results of
+the Jasmine specifications at the bottom of this document.
 
     module prelude
 
@@ -111,8 +118,6 @@ overhead from formal's dispatch mechanism.
         module speedtest
 
             fast_fib = run `var f = function(n) {
-//                                n === 0 ? 0 : n === 1 ? 1 : f(n - 1) + f(n - 2)  
-            
                                 if (n === 0) {
                                     return 0;
                                 } else if (n === 1) {
@@ -218,8 +223,10 @@ incomplete definition.
 
             empty? nil: = true | _ = false
 
-            head (cons: { head: x }) = x | nil: = error "Head called on empty list"
-            tail (cons: { tail: x }) = x | nil: = error "Tail called on empty list"
+            head (cons: { head: x }) = x
+               | nil: = error "Head called on empty list"
+            tail (cons: { tail: x }) = x 
+               | nil: = error "Tail called on empty list"
             last (cons: { head: x, tail: nil: }) = x
                | (cons: { tail: x }) = last x
                | nil: = error "Last called on empty list"
@@ -273,7 +280,8 @@ Filter
                  | f x when f (head x) = head x :: filter f (tail x)
                  | f x = filter f <| tail x
                             
-            filter (\x = x > 2) (1 :: 2 :: 3 :: 4 :: nil:) == 3 :: 4 :: nil:
+            filter (\x = x > 2) (1 :: 2 :: 3 :: 4 :: nil:) == 
+                3 :: 4 :: nil:
 
 Map
 
@@ -337,8 +345,8 @@ Folds
             concat ((1 :: 2 :: nil:) :: (3 :: 4 :: nil:) :: nil:) ==
                 1 :: 2 :: 3 :: 4 :: nil:
 
-            concat_map (\x = (x :: x + 1 :: nil:)) (1 :: 2 :: 3 :: 4 :: nil:) ==
-                 1 :: 2 :: 2 :: 3 :: 3 :: 4 :: 4 :: 5 :: nil:
+            concat_map (\x = (x :: x + 1 :: nil:)) (1 :: 2 ::  nil:) ==
+                 1 :: 2 :: 2 :: 3 :: nil:
                  
             minimum (1 :: 2 :: 3 :: nil:) == 1
             maximum (1 :: 2 :: 3 :: nil:) == 3
@@ -347,7 +355,7 @@ Folds
 
 Sequences
 ---------
-Sequences are an abstract data type which resembles a list, except that elemnts
+Sequences are an abstract data type which resembles a list, except that elements
 of a sequence are constructed lazily as they are requested.
 
         module sequence
@@ -359,10 +367,10 @@ of a sequence are constructed lazily as they are requested.
 Converting a `List` to a `Seq` is simple and O(1) as the list need not be walked
 
             from_list nil: = lazy end:
-                    | x    = lazy { val: head x, next: from_list (tail x) }
+                    | x    = lazy { val: head x
+                                    next: from_list (tail x) }
 
 ... but converting back is not.
-
 
             to_list =
                 let f { val: x, next: xs } = x :: to_list xs
