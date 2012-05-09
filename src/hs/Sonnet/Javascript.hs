@@ -32,7 +32,9 @@ prelude = [jmacro| function !is_array(x) {
                    function !check(x) {
                        result = (typeof x != "undefined");
                        return result;
-                    } |]
+                   }
+
+                   var global = window || global; |]
 
 render :: Program -> String
 render (Program xs) = show . renderJs . (prelude ++) . toStat . map (empty_meta Library xs) $ xs
@@ -107,7 +109,7 @@ declare_this name expr =
 declare_window name expr =
 
     [jmacro| `(declare name expr)`;
-             window[`(name)`] = `(ref name)`; |]
+             global[`(name)`] = `(ref name)`; |]
 
 
 

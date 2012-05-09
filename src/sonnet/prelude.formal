@@ -34,16 +34,17 @@ compose these bits.
 
         run x = x null
 
-        (>>=) x y = `y(x())()`
-        ret x = `x`
-        (>>) x y = `x(); return y();`
+        (>>=) x y = lazy run (y (run x))
+        ret x     = lazy x
+        (>>) x y  = `x(); return y();`
         
         log x = `console.log(x)`
 
-        10 == run (do x <- `1 + 4`
-                      y <- `2 + 3`
-                      log ("x is " + x + " and y is " + y)
-                      `x + y`)
+        run (do x <- `1 + 4`
+                y <- `2 + 3`
+                log ("x is " + x + " and y is " + y)
+                ans <- `x + y`
+                ret (10 == ans))
                   
         run (ret 5) == 5
         run (log "test" >> `5 + 5`) == 10
@@ -107,7 +108,7 @@ runtime speed versus raw javascript.
 
         module speedtest
 
-            fast_fib n = `var f = function(n) {
+            fast_fib = run `var f = function(n) {
                               if (n === 0) {
                                   return 0;
                               } else if (n === 1) {
@@ -116,20 +117,22 @@ runtime speed versus raw javascript.
                                   return f(n - 1) + f(n - 2)
                               };
                           };
-                          return f(n);`
+                          return f;`
                     
-            run (fast_fib 7) == fib 7
+            fast_fib 7 == fib 7
             
 With this, we can set up a simple canary to elt us know if the prelude is
 suddenly dramatically slower than it reviously was; in this case, we fail a test
 if the formal version isn't at least 90% as fast as the native javascript
 version.
-          
-            run <: do fast_time <- time (fast_fib 35)
-                      slow_time <- time `fib(35)`
-                      let ratio = fast_time / slow_time
-                      log ("Runtime speed ratio is " + ratio)
-                      ret (ratio >= 0.50)
+
+            floor = run `Math.floor`
+         
+            run <: do fast_time <- time (lazy fast_fib 35)
+                      slow_time <- time (lazy fib 35)
+                      let ratio = floor <| fast_time / slow_time * 100
+                      log ("Runtime speed ~" + ratio + "%")
+                      ret (ratio >= 50)
 
 Function Combinators
 --------------------
@@ -227,9 +230,9 @@ incomplete definition.
             head (1 :: 2 :: nil:)  == 1
             tail (1 :: 2 :: nil:)  == 2 :: nil:
             last (1 :: 2 :: nil:)  == 2
-            err (\_ = head (nil:)) == "Head called on empty list"
-            err (\_ = tail (nil:)) == "Tail called on empty list"
-            err (\_ = last (nil:)) == "Last called on empty list"
+            err (lazy head (nil:)) == "Head called on empty list"
+            err (lazy tail (nil:)) == "Tail called on empty list"
+            err (lazy last (nil:)) == "Last called on empty list"
 
             take 2 (1 :: 2 :: 3 :: nil:) == 1 :: 2 :: nil:
             drop 2 (1 :: 2 :: 3 :: nil:) == 3 :: nil:
@@ -362,9 +365,6 @@ Converting a `List` to a `Seq` is simple and O(1) as the list need not be walked
                     | end: = nil:
                 f .: run
 
-            --to_list x = run x |> \ end: = nil:
-            --                     | { val: x, next: xs } = x :: to_list xs
-
             to_list (from_list (1 :: 2 :: nil:)) == 1 :: 2 :: nil:
 
 Sequences may be infinite, as long as you never try to read every element.
@@ -377,9 +377,10 @@ underlying javascript runtime ...
                | n x = do y <- x
                           ret (y |> \ end: = end:
                                     | { val: y, next: ys } = 
-                                        { val: y, next: take (n - 1) ys })
+                                        { val: y
+                                          next: take (n - 1) ys })
                                            
-            (1 :: 2 :: 3 :: nil:) == 
+            1 :: 2 :: 3 :: nil: == 
                 (1 :: 2 :: 3 :: 4 :: nil:) |> from_list 
                                            |> take 3
                                            |> to_list

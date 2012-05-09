@@ -111,7 +111,7 @@ instance Show Definition where
 
 instance Show Axiom where
     show (TypeAxiom x) = ": " ++ show x
-    show (EqualityAxiom ps ex) = [qq| | $ps = $ex|]
+    show (EqualityAxiom ps ex) = [qq|$ps = $ex|]
 
 instance Show TypeDefinition where
     show (TypeDefinition name vars) = concat . L.intersperse " " $ name : vars
@@ -148,11 +148,11 @@ instance Show Expression where
     show (LiteralExpression x)        = show x
     show (SymbolExpression x)         = show x
     show (ListExpression x)           = [qq|[ {sep_with ", " x} ]|]
-    show (FunctionExpression as)      = replace "\n |" "\n     |" $ [qq|λ{sep_with "" as}|]
+    show (FunctionExpression as)      = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
     show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
     show (NamedExpression n Nothing)  = show n ++ ":"
     show (JSExpression x)             = "`" ++ show (renderJs x) ++ "`"
-    show (LetExpression ax e)         = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n" ax} in ($e)|]
+    show (LetExpression ax e)         = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
     show (RecordExpression m)         = [qq|\{ {unsep_with " = " m} \}|] 
     show (InheritExpression x m)      = [qq|\{ $x with {unsep_with " = " m} \}|] 
 
