@@ -4,7 +4,7 @@ sh build.sh
 
 for (( ; ; ))
 do
-    if [ src/sonnet/prelude.formal -nt prelude.js ]
+    if [ src/formal/prelude.formal -nt prelude.js ]
     then 
         sh build.sh
         sleep 3

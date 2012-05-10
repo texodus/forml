@@ -136,11 +136,11 @@ version.
 
             floor = run `Math.floor`
          
-            run <: do fast_time <- time (lazy fast_fib 35)
-                      slow_time <- time (lazy fib 35)
-                      let ratio = floor <| fast_time / slow_time * 100
-                      log ("Runtime speed ~" + ratio + "%")
-                      ret (ratio >= 50)
+            run do fast_time <- time (lazy fast_fib 35)
+                   slow_time <- time (lazy fib 35)
+                   let ratio = floor <| fast_time / slow_time * 100
+                   log ("Runtime speed ~" + ratio + "%")
+                   ret (ratio >= 50)
 
 Function Combinators
 --------------------
@@ -201,20 +201,20 @@ A simple implementation of a library for manipulating linked lists.
 
         module list
         
-            type List a = cons: { head: a, tail: List a } 
-                          | nil:
+            type List a = { head: a, tail: List a } 
+                        | nil:
             
 This complex type can be hidden behind a constructor function which
 works more like a traditional cons.
 
-            (::) x y = cons: { head = x, tail = y }
+            (::) x y = { head = x, tail = y }
             
             1 :: 2 :: nil: == 1 :: 2 :: nil:
-            nil: :: nil:   == cons: { head = nil:, tail = nil: }
+            nil: :: nil:   == { head = nil:, tail = nil: }
             3 :: 4 :: nil: ==
 
-                cons: { head: 3
-                        tail: cons: { head: 4
+                { head: 3
+                        tail: { head: 4
                                       tail: nil: }}
 
 Simple implementations of list accessors, which illustrate
@@ -222,12 +222,12 @@ incomplete definition.
 
             empty? nil: = true | _ = false
 
-            head (cons: { head: x }) = x
+            head { head: x } = x
                | nil: = error "Head called on empty list"
-            tail (cons: { tail: x }) = x 
+            tail { tail: x } = x 
                | nil: = error "Tail called on empty list"
-            last (cons: { head: x, tail: nil: }) = x
-               | (cons: { tail: x }) = last x
+            last { head: x, tail: nil: } = x
+               | { tail: x } = last x
                | nil: = error "Last called on empty list"
 
             take 0 _ = nil: | n x = head x :: take (n - 1) (tail x)
@@ -242,28 +242,28 @@ incomplete definition.
                      | _ x = x
 
             not (empty? (1 :: nil:))
-            empty? (nil:)
+            empty? nil:
    
             head (1 :: 2 :: nil:)  == 1
             tail (1 :: 2 :: nil:)  == 2 :: nil:
             last (1 :: 2 :: nil:)  == 2
-            err (lazy head (nil:)) == "Head called on empty list"
-            err (lazy tail (nil:)) == "Tail called on empty list"
-            err (lazy last (nil:)) == "Last called on empty list"
+            err (lazy head nil:) == "Head called on empty list"
+            err (lazy tail nil:) == "Tail called on empty list"
+            err (lazy last nil:) == "Last called on empty list"
 
             take 2 (1 :: 2 :: 3 :: nil:) == 1 :: 2 :: nil:
             drop 2 (1 :: 2 :: 3 :: nil:) == 3 :: nil:
 
-            take_while (\x = x < 0) (nil:) == (nil:)
-            take_while (\x = x > 0) (2 :: 1 :: 0 :: nil:) == (2 :: 1 :: nil:) 
+            take_while (\x = x < 0) nil: == nil:
+            take_while (\x = x > 0) (2 :: 1 :: 0 :: nil:) == 2 :: 1 :: nil:
 
-            drop_while (\x = x < 0) (nil:) == (nil:)
-            drop_while (\x = x > 0) (2 :: 1 :: 0 :: nil:) == (0 :: nil:)
+            drop_while (\x = x < 0) nil: == nil:
+            drop_while (\x = x > 0) (2 :: 1 :: 0 :: nil:) == 0 :: nil:
 
 Cardinality
             
             length nil: = 0
-                 | (cons: { tail: x }) = 1 + length x
+                 | { tail: x } = 1 + length x
                  
             length (1 :: 2 :: 3 :: 4 :: nil:) == 4
 
@@ -278,7 +278,7 @@ Generators
 List concatenation
 
             (++) nil: y = y
-               | (cons: { head: y, tail: ys }) xs = 
+               | { head: y, tail: ys } xs = 
                    y :: (ys ++ xs)
             
             nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
@@ -306,10 +306,10 @@ Reverse
 
             reverse = 
                 let r rest nil: = rest
-                    | rest (cons: { head: x, tail: xs }) = 
+                    | rest { head: x, tail: xs } = 
                         r (x :: rest) xs
 
-                r (nil:)
+                r nil:
             
             reverse (1 :: 2 :: 3 :: 4 :: nil:) ==
                 4 :: 3 :: 2 :: 1 :: nil:
@@ -318,7 +318,7 @@ Folds
 
             foldl f x xs =
                 let g y nil: = y
-                    | y (cons: { head: z, tail: zs }) = g (f y z) zs
+                    | y { head: z, tail: zs } = g (f y z) zs
                 g x xs
 
             foldl1 _ nil: = error "Foldl1 called on empty list"
@@ -326,7 +326,7 @@ Folds
                  
             foldr f x =
                 let g nil: = x
-                    | (cons: { head: y, tail: ys }) = f y (g ys)
+                    | { head: y, tail: ys } = f y (g ys)
                 g
 
             foldr1 _ nil: = error "Foldr1 called on empty list"
@@ -353,8 +353,9 @@ Folds
             sum (1 :: 2 :: 3 :: nil:) == 6
             product (1 :: 2 :: 4 :: nil:) == 8
 
-            concat ((1 :: 2 :: nil:) :: (3 :: 4 :: nil:) :: nil:) ==
-                1 :: 2 :: 3 :: 4 :: nil:
+            let x = 1 :: 2 :: nil:
+                y = 3 :: 4 :: nil:
+            concat (x :: y :: nil:) == 1 :: 2 :: 3 :: 4 :: nil:
 
             concat_map (\x = (x :: x + 1 :: nil:)) (1 :: 2 ::  nil:) ==
                  1 :: 2 :: 2 :: 3 :: nil:
@@ -396,12 +397,14 @@ underlying javascript runtime ...
 
             iterate f x = lazy { val: x, next: iterate f (f x) } 
 
+            match x f = f x
+
             take 0 _ = lazy end:
                | n x = do y <- x
-                          ret (y |> \ end: = end:
-                                    | { val: y, next: ys } = 
-                                        { val: y
-                                          next: take (n - 1) ys })
+                          ret (match y \ end: = end:
+                                       | { val: y, next: ys } = 
+                                           { val: y
+                                             next: take (n - 1) ys })
                                            
             1 :: 2 :: 3 :: nil: == 
                 (1 :: 2 :: 3 :: 4 :: nil:) |> from_list 

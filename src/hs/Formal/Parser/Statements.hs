@@ -84,11 +84,15 @@ type_statement  = do whitespace
                      string "type"
                      whitespace1
                      def <- type_definition
-                     whitespace 
-                     string "="
-                     spaces
-                     sig <- withPos $ do option "" (string "|" <* spaces)
-                                         type_definition_signature
+                     whitespace
+                     sig <- try (string "=" >> spaces >> withPos (string "|" >> type_definition_signature))
+                            <|> withPos (string "=" >> whitespace >> type_definition_signature)
+
+                     -- sig <- do withPosTemp $ do string "="
+                     --                         spaces
+                     --                         withPos $ do x <- get
+                     --                                      option "" (string "|" <* spaces)
+                     --                                      type_definition_signature
                      whitespace
                      return $ [TypeStatement def sig]
 
@@ -304,9 +308,16 @@ infix_expression = buildExpressionParser table term
                             
                       return (\x y -> ApplyExpression op' [x, y])
 
-named_expression = NamedExpression 
-                   <$> (symbol_name <* string ":") 
-                   <*> option Nothing (Just <$> try (whitespace *> other_expression))
+named_key_expression = NamedExpression 
+                       <$> (symbol_name <* string ":") 
+                       <*> return Nothing
+
+
+named_expression = do x @ (NamedExpression a b) <- named_key_expression
+                      option x (NamedExpression a . Just <$> try (whitespace *> other_expression))
+
+                   -- <$> (symbol_name <* string ":") 
+                   -- <*> option Nothing (Just <$> try (whitespace *> other_expression))
 
 accessor_expression = do x <- indentPairs "(" expression ")" 
                               <|> js_expression 
@@ -324,7 +335,17 @@ accessor_expression = do x <- indentPairs "(" expression ")"
                                            (SymbolExpression (Symbol "x")) ] )
                                     [x]
 
-apply_expression = ApplyExpression <$> inner_expression <*> (many1 . try $ whitespace *> inner_expression)
+apply_expression = ApplyExpression <$> inner_expression <*>  (try cont_expression <|> halt_expression)
+
+    where cont_expression = do x <- whitespace *> (try named_key_expression <|> inner_expression)
+                               option [x] ((x:) <$> try (whitespace *> (try cont_expression <|> halt_expression)))
+
+          halt_expression = (:[]) <$> (whitespace *> (try let_expression
+                            <|> try do_expression
+                            <|> try lazy_expression
+                            <|> function_expression))
+                    
+
 
 withPosTemp p = do x <- get
                    try p <|> (put x >> parserFail ("Indented to exactly" ++ show x))
