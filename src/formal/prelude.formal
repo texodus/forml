@@ -10,7 +10,7 @@ powerful, flexible and easy to learn.
 This document is a literate program defining the Formal standard library,
 namespaced `prelude`.  To compile it, simply clone the repo and run `sh deps.sh
 && sh build.sh` - this will generate the HTML documentation, compiled Javascript
-source, [Jasmine](http://pivotallabs.github.com/jasmine) test suite and Node.js
+source, [Jasmine](http://pivotal.github.com/jasmine) test suite and Node.js
 test suite, then run the test suite from Node.  You can also see the results of
 the Jasmine specifications at the bottom of this document.
 
