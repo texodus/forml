@@ -44,6 +44,7 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            hFile  <- openFile file ReadMode
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
            writeFile (output ++ ".html") $ toHTML (wrap_html output src)
+           writeFile (output ++ ".raw.html") $ toHTML src
            putStr "[ ] Parsing"
            case parseFormal src of
              Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
