@@ -20,7 +20,6 @@ import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Text.Parsec.Indent  hiding (same)
 import Text.Parsec.Expr
 
-import System.IO.Unsafe
 
 import qualified Data.Map as M
 
@@ -88,11 +87,6 @@ type_statement  = do whitespace
                      sig <- try (string "=" >> spaces >> withPos (string "|" >> type_definition_signature))
                             <|> withPos (string "=" >> whitespace >> type_definition_signature)
 
-                     -- sig <- do withPosTemp $ do string "="
-                     --                         spaces
-                     --                         withPos $ do x <- get
-                     --                                      option "" (string "|" <* spaces)
-                     --                                      type_definition_signature
                      whitespace
                      return $ [TypeStatement def sig]
 
@@ -137,6 +131,7 @@ pattern = try literal_pattern
           <|> try var_pattern
           <|> any_pattern
           <|> record_pattern
+          <|> array_pattern
           <|> list_pattern
           <|> indentPairs "(" (try view_pattern <|> try apply_pattern <|> pattern) ")"
 
@@ -160,7 +155,11 @@ record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
                           value <- pattern
                           return (key, value)
 
-list_pattern = ListPattern <$> indentPairs "[" (pattern `sepBy` try comma) "]"
+list_pattern = ListPattern <$> indentPairs "[" (pattern `sepBy` try (try comma <|> not_comma)) "]"
+
+array_pattern = f <$> indentAsymmetricPairs "[:" (whitespace >> withPos (pattern `sepBy` try (try comma <|> not_comma))) (try (string ":]") <|> string "]")
+    where f [] = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)])
+          f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
 
 
 
@@ -205,6 +204,7 @@ inner_expression = indentPairs "(" expression ")"
                    <|> literal_expression
                    <|> try accessor_expression
                    <|> symbol_expression
+                   <|> try array_expression
                    <|> list_expression
 
 let_expression = withPosTemp $ do string "let"
@@ -350,7 +350,7 @@ apply_expression = ApplyExpression <$> inner_expression <*>  (try cont_expressio
 withPosTemp p = do x <- get
                    try p <|> (put x >> parserFail ("Indented to exactly" ++ show x))
 
-function_expression = withPosTemp $ do string "\\" <|> string "λ" <|> string "\955"
+function_expression = withPosTemp $ do try (char '\\') <|> char '§' <|> char 'λ'
                                        whitespace
                                        t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
                                        eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
@@ -413,7 +413,10 @@ record_expression = indentPairs "{" (try inherit <|> (RecordExpression . M.fromL
 
 literal_expression = LiteralExpression <$> literal
 symbol_expression  = SymbolExpression <$> symbol_name
-list_expression    = ListExpression <$> indentPairs "[" (expression `sepBy` comma) "]"
+list_expression    = ListExpression <$> indentPairs "[" (whitespace >> withPos (expression `sepBy` try (try comma <|> not_comma))) "]"
+array_expression   = f <$> indentAsymmetricPairs "[:" (whitespace >> withPos (expression `sepBy` try (try comma <|> not_comma))) (try (string ":]") <|> string "]")
+    where f [] = RecordExpression (M.fromList [(Symbol "nil", SymbolExpression (Symbol "true"))])
+          f (x:xs) = RecordExpression (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
 
 
 

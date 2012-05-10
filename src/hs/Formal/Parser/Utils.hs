@@ -7,6 +7,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Formal.Parser.Utils where
 
@@ -22,10 +24,22 @@ import qualified Data.List as L
 
 import Data.String.Utils
 
-type Parser a = ParsecT String () (StateT SourcePos Identity) a
+
+-- {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+-- {-# OPTIONS_GHC -fno-warn-orphans #-}
+
+
+import Text.Parsec.Prim hiding ((<|>), State, many, parse, label)
+
+import qualified Data.Text as T
+
+instance (Monad m) => Stream T.Text m Char where
+    uncons = return . T.uncons
+
+type Parser a = ParsecT T.Text () (StateT SourcePos Identity) a
 
 parse :: Parser a -> SourceName -> String -> Either ParseError a
-parse parser sname input = runIndent sname $ runParserT parser () sname input
+parse parser sname input = runIndent sname $ runParserT parser () sname (T.pack input)
 
 whitespace :: Parser String
 whitespace = many $ oneOf "\t "
@@ -128,6 +142,9 @@ not_comma   :: Parser ()
 comma       :: Parser ()
 
 type_sep          = try (spaces *> char '|' <* whitespace)
-indentPairs a p b = string a *> spaces *> withPos p <* spaces <* string b
 not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}")
 comma             = spaces *> string "," *> spaces
+
+indentPairs a p b = string a *> spaces *> withPos p <* spaces <* string b
+indentAsymmetricPairs a p b = string a *> spaces *> withPos p <* spaces <* b
+
