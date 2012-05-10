@@ -1,0 +1,31 @@
+
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/texodus">texodus</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    <script>
+$(function() {
+    var headers = $("h2,h3,h4,h5,h6")
+
+    var text = ""
+
+
+    $('code').css('font-family', 'Menlo, Consolas, Monospace');
+    $('code').addClass('prettyprint lang-hs');
+
+    prettyPrint();
+
+    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+    jasmine.getEnv().execute();
+
+    var reporter = $(".jasmine_reporter").remove();
+
+    $("section").append(reporter)
+    $(".jasmine_reporter").css("margin", "0");
+});
+</script>
+  </body>
+</html>

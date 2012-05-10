@@ -38,8 +38,6 @@ describe("prelude",
             _grea_grea = prelude["_grea_grea"];
             var log;
             log = prelude["log"];
-            var time;
-            time = prelude["time"];
             var _and_and;
             _and_and = prelude["_and_and"];
             var _or_or;
@@ -345,6 +343,88 @@ describe("prelude",
                                                                       })))).
                                   toEqual(10);
                                 }));
+                            it("let x  = 0\n| y  = `(function()\n {\n   x = 1;\n })` >>= (λz = ret z) in (x == 0)",
+                               (function()
+                                {
+                                  expect((function()
+                                          {
+                                            try
+                                            {
+                                              return (function()
+                                                      {
+                                                        var x;
+                                                        x = (function()
+                                                             {
+                                                               if((true && true))
+                                                               {
+                                                                 return 0;
+                                                               }
+                                                               else
+                                                               {
+                                                                 args = [];
+                                                                 exhaust();
+                                                               };
+                                                             })();
+                                                        var y;
+                                                        y = (function()
+                                                             {
+                                                               if((true && true))
+                                                               {
+                                                                 return _grea_grea_eq((function()
+                                                                                       {
+                                                                                         x = 1;
+                                                                                       }))((function()
+                                                                                            {
+                                                                                              return (function(__a__)
+                                                                                                      {
+                                                                                                        var z;
+                                                                                                        z = null;
+                                                                                                        if((((function()
+                                                                                                              {
+                                                                                                                if((typeof(__a__)
+                                                                                                                    !=
+                                                                                                                    "undefined"))
+                                                                                                                {
+                                                                                                                  z = __a__;
+                                                                                                                  return true;
+                                                                                                                }
+                                                                                                                else
+                                                                                                                {
+                                                                                                                  return false;
+                                                                                                                };
+                                                                                                              })()
+                                                                                                             &&
+                                                                                                             true)
+                                                                                                            &&
+                                                                                                            true))
+                                                                                                        {
+                                                                                                          return ret(z);
+                                                                                                        }
+                                                                                                        else
+                                                                                                        {
+                                                                                                          args = [];
+                                                                                                          exhaust();
+                                                                                                        };
+                                                                                                      });
+                                                                                            })());
+                                                               }
+                                                               else
+                                                               {
+                                                                 args = [];
+                                                                 exhaust();
+                                                               };
+                                                             })();
+                                                        return _eq_eq(x)(0);
+                                                      })();
+                                            }
+                                            catch(jmId_10)
+                                            {
+                                              return { 'error': jmId_10
+                                                     };
+                                            };
+                                          })()).
+                                  toEqual(true);
+                                }));
                             it("3 * 4 + 5 * 4 == 64 \/ 2",
                                (function()
                                 {
@@ -379,176 +459,196 @@ describe("prelude",
                             describe("speedtest",
                                      (function()
                                       {
+                                        var time;
+                                        time = prelude.speedtest["time"];
                                         var fast_fib;
                                         fast_fib = prelude.speedtest["fast_fib"];
                                         var floor;
                                         floor = prelude.speedtest["floor"];
-                                        var jmId_10;
-                                        jmId_10 = new (function()
+                                        var jmId_11;
+                                        jmId_11 = new (function()
                                                        {
                                                          it("fast_fib 7 == fib 7",
                                                             (function()
                                                              {
                                                                expect(fast_fib(7)).toEqual(fib(7));
                                                              }));
-                                                         it("run <: time (λ_ = fast_fib 35) >>= (λfast_time = time (λ_ = fib 35) >>= (λslow_time = let ratio  = floor <| fast_time \/ slow_time * 100 in (log \"Runtime speed ~\" + ratio + \"%\" >>= (λ_ = ret ratio >= 50))))",
+                                                         it("run ret <| fast_fib 35 >>= (λ_ = time (λ_ = fast_fib 35) >>= (λfast_time = time (λ_ = fib 35) >>= (λslow_time = let ratio  = floor <| fast_time \/ slow_time * 100 in (log \"Runtime speed ~\" + ratio + \"%\" >>= (λ_ = ret ratio >= 80)))))",
                                                             (function()
                                                              {
                                                                expect((function()
                                                                        {
                                                                          try
                                                                          {
-                                                                           return _less_col(run)(_grea_grea_eq(time((function()
-                                                                                                                     {
-                                                                                                                       return (function(__a__)
-                                                                                                                               {
-                                                                                                                                 if(((true
-                                                                                                                                      &&
-                                                                                                                                      true)
-                                                                                                                                     &&
-                                                                                                                                     true))
-                                                                                                                                 {
-                                                                                                                                   return fast_fib(35);
-                                                                                                                                 }
-                                                                                                                                 else
-                                                                                                                                 {
-                                                                                                                                   args = [];
-                                                                                                                                   exhaust();
-                                                                                                                                 };
-                                                                                                                               });
-                                                                                                                     })()))((function()
-                                                                                                                             {
-                                                                                                                               return (function(__a__)
-                                                                                                                                       {
-                                                                                                                                         var fast_time;
-                                                                                                                                         fast_time = null;
-                                                                                                                                         if((((function()
-                                                                                                                                               {
-                                                                                                                                                 if((typeof(__a__)
-                                                                                                                                                     !=
-                                                                                                                                                     "undefined"))
-                                                                                                                                                 {
-                                                                                                                                                   fast_time = __a__;
-                                                                                                                                                   return true;
-                                                                                                                                                 }
-                                                                                                                                                 else
-                                                                                                                                                 {
-                                                                                                                                                   return false;
-                                                                                                                                                 };
-                                                                                                                                               })()
-                                                                                                                                              &&
-                                                                                                                                              true)
-                                                                                                                                             &&
-                                                                                                                                             true))
-                                                                                                                                         {
-                                                                                                                                           return _grea_grea_eq(time((function()
-                                                                                                                                                                      {
-                                                                                                                                                                        return (function(__a__)
-                                                                                                                                                                                {
-                                                                                                                                                                                  if(((true
-                                                                                                                                                                                       &&
-                                                                                                                                                                                       true)
-                                                                                                                                                                                      &&
-                                                                                                                                                                                      true))
-                                                                                                                                                                                  {
-                                                                                                                                                                                    return fib(35);
-                                                                                                                                                                                  }
-                                                                                                                                                                                  else
-                                                                                                                                                                                  {
-                                                                                                                                                                                    args = [];
-                                                                                                                                                                                    exhaust();
-                                                                                                                                                                                  };
-                                                                                                                                                                                });
-                                                                                                                                                                      })()))((function()
-                                                                                                                                                                              {
-                                                                                                                                                                                return (function(__a__)
-                                                                                                                                                                                        {
-                                                                                                                                                                                          var slow_time;
-                                                                                                                                                                                          slow_time = null;
-                                                                                                                                                                                          if((((function()
-                                                                                                                                                                                                {
-                                                                                                                                                                                                  if((typeof(__a__)
-                                                                                                                                                                                                      !=
-                                                                                                                                                                                                      "undefined"))
-                                                                                                                                                                                                  {
-                                                                                                                                                                                                    slow_time = __a__;
-                                                                                                                                                                                                    return true;
-                                                                                                                                                                                                  }
-                                                                                                                                                                                                  else
-                                                                                                                                                                                                  {
-                                                                                                                                                                                                    return false;
-                                                                                                                                                                                                  };
-                                                                                                                                                                                                })()
-                                                                                                                                                                                               &&
-                                                                                                                                                                                               true)
-                                                                                                                                                                                              &&
-                                                                                                                                                                                              true))
-                                                                                                                                                                                          {
-                                                                                                                                                                                            return (function()
-                                                                                                                                                                                                    {
-                                                                                                                                                                                                      var ratio;
-                                                                                                                                                                                                      ratio = (function()
-                                                                                                                                                                                                               {
-                                                                                                                                                                                                                 if((true
-                                                                                                                                                                                                                     &&
-                                                                                                                                                                                                                     true))
-                                                                                                                                                                                                                 {
-                                                                                                                                                                                                                   return _less_or(floor)((_forw(fast_time)(slow_time)
-                                                                                                                                                                                                                                           *
-                                                                                                                                                                                                                                           100));
-                                                                                                                                                                                                                 }
-                                                                                                                                                                                                                 else
-                                                                                                                                                                                                                 {
-                                                                                                                                                                                                                   args = [];
-                                                                                                                                                                                                                   exhaust();
-                                                                                                                                                                                                                 };
-                                                                                                                                                                                                               })();
-                                                                                                                                                                                                      return _grea_grea_eq(log((("Runtime speed ~"
-                                                                                                                                                                                                                                 +
-                                                                                                                                                                                                                                 ratio)
-                                                                                                                                                                                                                                +
-                                                                                                                                                                                                                                "%")))((function()
+                                                                           return run(_grea_grea_eq(_less_or(ret)(fast_fib(35)))((function()
+                                                                                                                                  {
+                                                                                                                                    return (function(__a__)
+                                                                                                                                            {
+                                                                                                                                              if(((true
+                                                                                                                                                   &&
+                                                                                                                                                   true)
+                                                                                                                                                  &&
+                                                                                                                                                  true))
+                                                                                                                                              {
+                                                                                                                                                return _grea_grea_eq(time((function()
+                                                                                                                                                                           {
+                                                                                                                                                                             return (function(__a__)
+                                                                                                                                                                                     {
+                                                                                                                                                                                       if(((true
+                                                                                                                                                                                            &&
+                                                                                                                                                                                            true)
+                                                                                                                                                                                           &&
+                                                                                                                                                                                           true))
+                                                                                                                                                                                       {
+                                                                                                                                                                                         return fast_fib(35);
+                                                                                                                                                                                       }
+                                                                                                                                                                                       else
+                                                                                                                                                                                       {
+                                                                                                                                                                                         args = [];
+                                                                                                                                                                                         exhaust();
+                                                                                                                                                                                       };
+                                                                                                                                                                                     });
+                                                                                                                                                                           })()))((function()
+                                                                                                                                                                                   {
+                                                                                                                                                                                     return (function(__a__)
+                                                                                                                                                                                             {
+                                                                                                                                                                                               var fast_time;
+                                                                                                                                                                                               fast_time = null;
+                                                                                                                                                                                               if((((function()
+                                                                                                                                                                                                     {
+                                                                                                                                                                                                       if((typeof(__a__)
+                                                                                                                                                                                                           !=
+                                                                                                                                                                                                           "undefined"))
+                                                                                                                                                                                                       {
+                                                                                                                                                                                                         fast_time = __a__;
+                                                                                                                                                                                                         return true;
+                                                                                                                                                                                                       }
+                                                                                                                                                                                                       else
+                                                                                                                                                                                                       {
+                                                                                                                                                                                                         return false;
+                                                                                                                                                                                                       };
+                                                                                                                                                                                                     })()
+                                                                                                                                                                                                    &&
+                                                                                                                                                                                                    true)
+                                                                                                                                                                                                   &&
+                                                                                                                                                                                                   true))
+                                                                                                                                                                                               {
+                                                                                                                                                                                                 return _grea_grea_eq(time((function()
+                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                              return (function(__a__)
+                                                                                                                                                                                                                                      {
+                                                                                                                                                                                                                                        if(((true
+                                                                                                                                                                                                                                             &&
+                                                                                                                                                                                                                                             true)
+                                                                                                                                                                                                                                            &&
+                                                                                                                                                                                                                                            true))
                                                                                                                                                                                                                                         {
-                                                                                                                                                                                                                                          return (function(__a__)
-                                                                                                                                                                                                                                                  {
-                                                                                                                                                                                                                                                    if(((true
-                                                                                                                                                                                                                                                         &&
-                                                                                                                                                                                                                                                         true)
-                                                                                                                                                                                                                                                        &&
-                                                                                                                                                                                                                                                        true))
-                                                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                                                      return ret((ratio
-                                                                                                                                                                                                                                                                  >=
-                                                                                                                                                                                                                                                                  50));
-                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                    else
-                                                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                                                      args = [];
-                                                                                                                                                                                                                                                      exhaust();
-                                                                                                                                                                                                                                                    };
-                                                                                                                                                                                                                                                  });
-                                                                                                                                                                                                                                        })());
-                                                                                                                                                                                                    })();
-                                                                                                                                                                                          }
-                                                                                                                                                                                          else
-                                                                                                                                                                                          {
-                                                                                                                                                                                            args = [];
-                                                                                                                                                                                            exhaust();
-                                                                                                                                                                                          };
-                                                                                                                                                                                        });
-                                                                                                                                                                              })());
-                                                                                                                                         }
-                                                                                                                                         else
-                                                                                                                                         {
-                                                                                                                                           args = [];
-                                                                                                                                           exhaust();
-                                                                                                                                         };
-                                                                                                                                       });
-                                                                                                                             })()));
+                                                                                                                                                                                                                                          return fib(35);
+                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                        else
+                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                          args = [];
+                                                                                                                                                                                                                                          exhaust();
+                                                                                                                                                                                                                                        };
+                                                                                                                                                                                                                                      });
+                                                                                                                                                                                                                            })()))((function()
+                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                      return (function(__a__)
+                                                                                                                                                                                                                                              {
+                                                                                                                                                                                                                                                var slow_time;
+                                                                                                                                                                                                                                                slow_time = null;
+                                                                                                                                                                                                                                                if((((function()
+                                                                                                                                                                                                                                                      {
+                                                                                                                                                                                                                                                        if((typeof(__a__)
+                                                                                                                                                                                                                                                            !=
+                                                                                                                                                                                                                                                            "undefined"))
+                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                          slow_time = __a__;
+                                                                                                                                                                                                                                                          return true;
+                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                        else
+                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                          return false;
+                                                                                                                                                                                                                                                        };
+                                                                                                                                                                                                                                                      })()
+                                                                                                                                                                                                                                                     &&
+                                                                                                                                                                                                                                                     true)
+                                                                                                                                                                                                                                                    &&
+                                                                                                                                                                                                                                                    true))
+                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                  return (function()
+                                                                                                                                                                                                                                                          {
+                                                                                                                                                                                                                                                            var ratio;
+                                                                                                                                                                                                                                                            ratio = (function()
+                                                                                                                                                                                                                                                                     {
+                                                                                                                                                                                                                                                                       if((true
+                                                                                                                                                                                                                                                                           &&
+                                                                                                                                                                                                                                                                           true))
+                                                                                                                                                                                                                                                                       {
+                                                                                                                                                                                                                                                                         return _less_or(floor)((_forw(fast_time)(slow_time)
+                                                                                                                                                                                                                                                                                                 *
+                                                                                                                                                                                                                                                                                                 100));
+                                                                                                                                                                                                                                                                       }
+                                                                                                                                                                                                                                                                       else
+                                                                                                                                                                                                                                                                       {
+                                                                                                                                                                                                                                                                         args = [];
+                                                                                                                                                                                                                                                                         exhaust();
+                                                                                                                                                                                                                                                                       };
+                                                                                                                                                                                                                                                                     })();
+                                                                                                                                                                                                                                                            return _grea_grea_eq(log((("Runtime speed ~"
+                                                                                                                                                                                                                                                                                       +
+                                                                                                                                                                                                                                                                                       ratio)
+                                                                                                                                                                                                                                                                                      +
+                                                                                                                                                                                                                                                                                      "%")))((function()
+                                                                                                                                                                                                                                                                                              {
+                                                                                                                                                                                                                                                                                                return (function(__a__)
+                                                                                                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                                                                          if(((true
+                                                                                                                                                                                                                                                                                                               &&
+                                                                                                                                                                                                                                                                                                               true)
+                                                                                                                                                                                                                                                                                                              &&
+                                                                                                                                                                                                                                                                                                              true))
+                                                                                                                                                                                                                                                                                                          {
+                                                                                                                                                                                                                                                                                                            return ret((ratio
+                                                                                                                                                                                                                                                                                                                        >=
+                                                                                                                                                                                                                                                                                                                        80));
+                                                                                                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                                                                                                          else
+                                                                                                                                                                                                                                                                                                          {
+                                                                                                                                                                                                                                                                                                            args = [];
+                                                                                                                                                                                                                                                                                                            exhaust();
+                                                                                                                                                                                                                                                                                                          };
+                                                                                                                                                                                                                                                                                                        });
+                                                                                                                                                                                                                                                                                              })());
+                                                                                                                                                                                                                                                          })();
+                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                else
+                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                  args = [];
+                                                                                                                                                                                                                                                  exhaust();
+                                                                                                                                                                                                                                                };
+                                                                                                                                                                                                                                              });
+                                                                                                                                                                                                                                    })());
+                                                                                                                                                                                               }
+                                                                                                                                                                                               else
+                                                                                                                                                                                               {
+                                                                                                                                                                                                 args = [];
+                                                                                                                                                                                                 exhaust();
+                                                                                                                                                                                               };
+                                                                                                                                                                                             });
+                                                                                                                                                                                   })());
+                                                                                                                                              }
+                                                                                                                                              else
+                                                                                                                                              {
+                                                                                                                                                args = [];
+                                                                                                                                                exhaust();
+                                                                                                                                              };
+                                                                                                                                            });
+                                                                                                                                  })()));
                                                                          }
-                                                                         catch(jmId_11)
+                                                                         catch(jmId_12)
                                                                          {
-                                                                           return { 'error': jmId_11
+                                                                           return { 'error': jmId_12
                                                                                   };
                                                                          };
                                                                        })()).
@@ -961,10 +1061,10 @@ describe("prelude",
                                 {
                                   expect(option(3)((function()
                                                     {
-                                                      var jmId_12;
-                                                      jmId_12 = {};
-                                                      jmId_12["some"] = 2;
-                                                      return jmId_12;
+                                                      var jmId_13;
+                                                      jmId_13 = {};
+                                                      jmId_13["some"] = 2;
+                                                      return jmId_13;
                                                     })())).
                                   toEqual(2);
                                 }));
@@ -985,6 +1085,10 @@ describe("prelude",
                                         take = prelude.list["take"];
                                         var drop;
                                         drop = prelude.list["drop"];
+                                        var take_while;
+                                        take_while = prelude.list["take_while"];
+                                        var drop_while;
+                                        drop_while = prelude.list["drop_while"];
                                         var length;
                                         length = prelude.list["length"];
                                         var init;
@@ -1021,98 +1125,99 @@ describe("prelude",
                                         maximum = prelude.list["maximum"];
                                         var minimum;
                                         minimum = prelude.list["minimum"];
-                                        var jmId_13;
-                                        jmId_13 = new (function()
+                                        var jmId_14;
+                                        jmId_14 = new (function()
                                                        {
+                                                         it("{ head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 1 :: 2 :: 3 :: nil:",
+                                                            (function()
+                                                             {
+                                                               expect({ 'head': 1,
+                                                                        'tail': { 'head': 2,
+                                                                                  'tail': { 'head': 3,
+                                                                                            'tail': { 'nil': true
+                                                                                                    }
+                                                                                          }
+                                                                                }
+                                                                      }).
+                                                               toEqual(_col_col(1)(_col_col(2)(_col_col(3)((function()
+                                                                                                            {
+                                                                                                              var jmId_15;
+                                                                                                              jmId_15 = {};
+                                                                                                              jmId_15["nil"] = true;
+                                                                                                              return jmId_15;
+                                                                                                            })()))));
+                                                             }));
                                                          it("1 :: 2 :: nil: == 1 :: 2 :: nil:",
                                                             (function()
                                                              {
                                                                expect(_col_col(1)(_col_col(2)((function()
                                                                                                {
-                                                                                                 var jmId_14;
-                                                                                                 jmId_14 = {};
-                                                                                                 jmId_14["nil"] = true;
-                                                                                                 return jmId_14;
+                                                                                                 var jmId_16;
+                                                                                                 jmId_16 = {};
+                                                                                                 jmId_16["nil"] = true;
+                                                                                                 return jmId_16;
                                                                                                })()))).
                                                                toEqual(_col_col(1)(_col_col(2)((function()
                                                                                                 {
-                                                                                                  var jmId_15;
-                                                                                                  jmId_15 = {};
-                                                                                                  jmId_15["nil"] = true;
-                                                                                                  return jmId_15;
+                                                                                                  var jmId_17;
+                                                                                                  jmId_17 = {};
+                                                                                                  jmId_17["nil"] = true;
+                                                                                                  return jmId_17;
                                                                                                 })())));
                                                              }));
-                                                         it("nil: :: nil: == cons: ({ head = nil:, tail = nil: })",
+                                                         it("nil: :: nil: == { head = nil:, tail = nil: }",
                                                             (function()
                                                              {
                                                                expect(_col_col((function()
                                                                                 {
-                                                                                  var jmId_16;
-                                                                                  jmId_16 = {};
-                                                                                  jmId_16["nil"] = true;
-                                                                                  return jmId_16;
+                                                                                  var jmId_18;
+                                                                                  jmId_18 = {};
+                                                                                  jmId_18["nil"] = true;
+                                                                                  return jmId_18;
                                                                                 })())((function()
                                                                                        {
-                                                                                         var jmId_17;
-                                                                                         jmId_17 = {};
-                                                                                         jmId_17["nil"] = true;
-                                                                                         return jmId_17;
+                                                                                         var jmId_19;
+                                                                                         jmId_19 = {};
+                                                                                         jmId_19["nil"] = true;
+                                                                                         return jmId_19;
                                                                                        })())).
-                                                               toEqual((function()
-                                                                        {
-                                                                          var jmId_18;
-                                                                          jmId_18 = {};
-                                                                          jmId_18["cons"] = { 'head': (function()
-                                                                                                       {
-                                                                                                         var jmId_19;
-                                                                                                         jmId_19 = {};
-                                                                                                         jmId_19["nil"] = true;
-                                                                                                         return jmId_19;
-                                                                                                       })(),
-                                                                                              'tail': (function()
-                                                                                                       {
-                                                                                                         var jmId_20;
-                                                                                                         jmId_20 = {};
-                                                                                                         jmId_20["nil"] = true;
-                                                                                                         return jmId_20;
-                                                                                                       })()
-                                                                                            };
-                                                                          return jmId_18;
-                                                                        })());
+                                                               toEqual({ 'head': (function()
+                                                                                  {
+                                                                                    var jmId_20;
+                                                                                    jmId_20 = {};
+                                                                                    jmId_20["nil"] = true;
+                                                                                    return jmId_20;
+                                                                                  })(),
+                                                                         'tail': (function()
+                                                                                  {
+                                                                                    var jmId_21;
+                                                                                    jmId_21 = {};
+                                                                                    jmId_21["nil"] = true;
+                                                                                    return jmId_21;
+                                                                                  })()
+                                                                       });
                                                              }));
-                                                         it("3 :: 4 :: nil: == cons: ({ head = 3, tail = cons: ({ head = 4, tail = nil: }) })",
+                                                         it("3 :: 4 :: nil: == { head = 3, tail = { head = 4, tail = nil: } }",
                                                             (function()
                                                              {
                                                                expect(_col_col(3)(_col_col(4)((function()
                                                                                                {
-                                                                                                 var jmId_21;
-                                                                                                 jmId_21 = {};
-                                                                                                 jmId_21["nil"] = true;
-                                                                                                 return jmId_21;
+                                                                                                 var jmId_22;
+                                                                                                 jmId_22 = {};
+                                                                                                 jmId_22["nil"] = true;
+                                                                                                 return jmId_22;
                                                                                                })()))).
-                                                               toEqual((function()
-                                                                        {
-                                                                          var jmId_22;
-                                                                          jmId_22 = {};
-                                                                          jmId_22["cons"] = { 'head': 3,
-                                                                                              'tail': (function()
-                                                                                                       {
-                                                                                                         var jmId_23;
-                                                                                                         jmId_23 = {};
-                                                                                                         jmId_23["cons"] = { 'head': 4,
-                                                                                                                             'tail': (function()
-                                                                                                                                      {
-                                                                                                                                        var jmId_24;
-                                                                                                                                        jmId_24 = {};
-                                                                                                                                        jmId_24["nil"] = true;
-                                                                                                                                        return jmId_24;
-                                                                                                                                      })()
-                                                                                                                           };
-                                                                                                         return jmId_23;
-                                                                                                       })()
-                                                                                            };
-                                                                          return jmId_22;
-                                                                        })());
+                                                               toEqual({ 'head': 3,
+                                                                         'tail': { 'head': 4,
+                                                                                   'tail': (function()
+                                                                                            {
+                                                                                              var jmId_23;
+                                                                                              jmId_23 = {};
+                                                                                              jmId_23["nil"] = true;
+                                                                                              return jmId_23;
+                                                                                            })()
+                                                                                 }
+                                                                       });
                                                              }));
                                                          it("not empty_ 1 :: nil:",
                                                             (function()
@@ -1123,15 +1228,15 @@ describe("prelude",
                                                                          {
                                                                            return not(empty_(_col_col(1)((function()
                                                                                                           {
-                                                                                                            var jmId_26;
-                                                                                                            jmId_26 = {};
-                                                                                                            jmId_26["nil"] = true;
-                                                                                                            return jmId_26;
+                                                                                                            var jmId_25;
+                                                                                                            jmId_25 = {};
+                                                                                                            jmId_25["nil"] = true;
+                                                                                                            return jmId_25;
                                                                                                           })())));
                                                                          }
-                                                                         catch(jmId_25)
+                                                                         catch(jmId_24)
                                                                          {
-                                                                           return { 'error': jmId_25
+                                                                           return { 'error': jmId_24
                                                                                   };
                                                                          };
                                                                        })()).
@@ -1146,60 +1251,57 @@ describe("prelude",
                                                                          {
                                                                            return empty_((function()
                                                                                           {
-                                                                                            var jmId_28;
-                                                                                            jmId_28 = {};
-                                                                                            jmId_28["nil"] = true;
-                                                                                            return jmId_28;
+                                                                                            var jmId_27;
+                                                                                            jmId_27 = {};
+                                                                                            jmId_27["nil"] = true;
+                                                                                            return jmId_27;
                                                                                           })());
                                                                          }
-                                                                         catch(jmId_27)
+                                                                         catch(jmId_26)
                                                                          {
-                                                                           return { 'error': jmId_27
+                                                                           return { 'error': jmId_26
                                                                                   };
                                                                          };
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("head 1 :: 2 :: nil: == 1",
+                                                         it("head { head = 1, tail = { head = 2, tail = { nil = true } } } == 1",
                                                             (function()
                                                              {
-                                                               expect(head(_col_col(1)(_col_col(2)((function()
-                                                                                                    {
-                                                                                                      var jmId_29;
-                                                                                                      jmId_29 = {};
-                                                                                                      jmId_29["nil"] = true;
-                                                                                                      return jmId_29;
-                                                                                                    })())))).
+                                                               expect(head({ 'head': 1,
+                                                                             'tail': { 'head': 2,
+                                                                                       'tail': { 'nil': true
+                                                                                               }
+                                                                                     }
+                                                                           })).
                                                                toEqual(1);
                                                              }));
-                                                         it("tail 1 :: 2 :: nil: == 2 :: nil:",
+                                                         it("tail { head = 1, tail = { head = 2, tail = { nil = true } } } == 2 :: nil:",
                                                             (function()
                                                              {
-                                                               expect(tail(_col_col(1)(_col_col(2)((function()
-                                                                                                    {
-                                                                                                      var jmId_30;
-                                                                                                      jmId_30 = {};
-                                                                                                      jmId_30["nil"] = true;
-                                                                                                      return jmId_30;
-                                                                                                    })())))).
+                                                               expect(tail({ 'head': 1,
+                                                                             'tail': { 'head': 2,
+                                                                                       'tail': { 'nil': true
+                                                                                               }
+                                                                                     }
+                                                                           })).
                                                                toEqual(_col_col(2)((function()
                                                                                     {
-                                                                                      var jmId_31;
-                                                                                      jmId_31 = {};
-                                                                                      jmId_31["nil"] = true;
-                                                                                      return jmId_31;
+                                                                                      var jmId_28;
+                                                                                      jmId_28 = {};
+                                                                                      jmId_28["nil"] = true;
+                                                                                      return jmId_28;
                                                                                     })()));
                                                              }));
-                                                         it("last 1 :: 2 :: nil: == 2",
+                                                         it("last { head = 1, tail = { head = 2, tail = { nil = true } } } == 2",
                                                             (function()
                                                              {
-                                                               expect(last(_col_col(1)(_col_col(2)((function()
-                                                                                                    {
-                                                                                                      var jmId_32;
-                                                                                                      jmId_32 = {};
-                                                                                                      jmId_32["nil"] = true;
-                                                                                                      return jmId_32;
-                                                                                                    })())))).
+                                                               expect(last({ 'head': 1,
+                                                                             'tail': { 'head': 2,
+                                                                                       'tail': { 'nil': true
+                                                                                               }
+                                                                                     }
+                                                                           })).
                                                                toEqual(2);
                                                              }));
                                                          it("err (λ_ = head nil:) == \"Head called on empty list\"",
@@ -1217,10 +1319,10 @@ describe("prelude",
                                                                                        {
                                                                                          return head((function()
                                                                                                       {
-                                                                                                        var jmId_33;
-                                                                                                        jmId_33 = {};
-                                                                                                        jmId_33["nil"] = true;
-                                                                                                        return jmId_33;
+                                                                                                        var jmId_29;
+                                                                                                        jmId_29 = {};
+                                                                                                        jmId_29["nil"] = true;
+                                                                                                        return jmId_29;
                                                                                                       })());
                                                                                        }
                                                                                        else
@@ -1247,10 +1349,10 @@ describe("prelude",
                                                                                        {
                                                                                          return tail((function()
                                                                                                       {
-                                                                                                        var jmId_34;
-                                                                                                        jmId_34 = {};
-                                                                                                        jmId_34["nil"] = true;
-                                                                                                        return jmId_34;
+                                                                                                        var jmId_30;
+                                                                                                        jmId_30 = {};
+                                                                                                        jmId_30["nil"] = true;
+                                                                                                        return jmId_30;
                                                                                                       })());
                                                                                        }
                                                                                        else
@@ -1277,10 +1379,10 @@ describe("prelude",
                                                                                        {
                                                                                          return last((function()
                                                                                                       {
-                                                                                                        var jmId_35;
-                                                                                                        jmId_35 = {};
-                                                                                                        jmId_35["nil"] = true;
-                                                                                                        return jmId_35;
+                                                                                                        var jmId_31;
+                                                                                                        jmId_31 = {};
+                                                                                                        jmId_31["nil"] = true;
+                                                                                                        return jmId_31;
                                                                                                       })());
                                                                                        }
                                                                                        else
@@ -1292,52 +1394,245 @@ describe("prelude",
                                                                            })())).
                                                                toEqual("Last called on empty list");
                                                              }));
-                                                         it("take 2 1 :: 2 :: 3 :: nil: == 1 :: 2 :: nil:",
+                                                         it("take 2 { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
                                                             (function()
                                                              {
-                                                               expect(take(2)(_col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                                   {
-                                                                                                                     var jmId_36;
-                                                                                                                     jmId_36 = {};
-                                                                                                                     jmId_36["nil"] = true;
-                                                                                                                     return jmId_36;
-                                                                                                                   })()))))).
-                                                               toEqual(_col_col(1)(_col_col(2)((function()
-                                                                                                {
-                                                                                                  var jmId_37;
-                                                                                                  jmId_37 = {};
-                                                                                                  jmId_37["nil"] = true;
-                                                                                                  return jmId_37;
-                                                                                                })())));
+                                                               expect(take(2)({ 'head': 1,
+                                                                                'tail': { 'head': 2,
+                                                                                          'tail': { 'head': 3,
+                                                                                                    'tail': { 'nil': true
+                                                                                                            }
+                                                                                                  }
+                                                                                        }
+                                                                              })).
+                                                               toEqual({ 'head': 1,
+                                                                         'tail': { 'head': 2,
+                                                                                   'tail': { 'nil': true
+                                                                                           }
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("drop 2 1 :: 2 :: 3 :: nil: == 3 :: nil:",
+                                                         it("drop 2 { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 3, tail = { nil = true } }",
                                                             (function()
                                                              {
-                                                               expect(drop(2)(_col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                                   {
-                                                                                                                     var jmId_38;
-                                                                                                                     jmId_38 = {};
-                                                                                                                     jmId_38["nil"] = true;
-                                                                                                                     return jmId_38;
-                                                                                                                   })()))))).
-                                                               toEqual(_col_col(3)((function()
-                                                                                    {
-                                                                                      var jmId_39;
-                                                                                      jmId_39 = {};
-                                                                                      jmId_39["nil"] = true;
-                                                                                      return jmId_39;
-                                                                                    })()));
+                                                               expect(drop(2)({ 'head': 1,
+                                                                                'tail': { 'head': 2,
+                                                                                          'tail': { 'head': 3,
+                                                                                                    'tail': { 'nil': true
+                                                                                                            }
+                                                                                                  }
+                                                                                        }
+                                                                              })).
+                                                               toEqual({ 'head': 3,
+                                                                         'tail': { 'nil': true
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("length 1 :: 2 :: 3 :: 4 :: nil: == 4",
+                                                         it("take_while (λx = x < 0) { nil = true } == { nil = true }",
                                                             (function()
                                                              {
-                                                               expect(length(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                              {
-                                                                                                                                var jmId_40;
-                                                                                                                                jmId_40 = {};
-                                                                                                                                jmId_40["nil"] = true;
-                                                                                                                                return jmId_40;
-                                                                                                                              })())))))).
+                                                               expect(take_while((function()
+                                                                                  {
+                                                                                    return (function(__a__)
+                                                                                            {
+                                                                                              var x;
+                                                                                              x = null;
+                                                                                              if((((function()
+                                                                                                    {
+                                                                                                      if((typeof(__a__)
+                                                                                                          !=
+                                                                                                          "undefined"))
+                                                                                                      {
+                                                                                                        x = __a__;
+                                                                                                        return true;
+                                                                                                      }
+                                                                                                      else
+                                                                                                      {
+                                                                                                        return false;
+                                                                                                      };
+                                                                                                    })()
+                                                                                                   &&
+                                                                                                   true)
+                                                                                                  &&
+                                                                                                  true))
+                                                                                              {
+                                                                                                return _less(x)(0);
+                                                                                              }
+                                                                                              else
+                                                                                              {
+                                                                                                args = [];
+                                                                                                exhaust();
+                                                                                              };
+                                                                                            });
+                                                                                  })())({ 'nil': true
+                                                                                        })).
+                                                               toEqual({ 'nil': true
+                                                                       });
+                                                             }));
+                                                         it("take_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 2, tail = { head = 1, tail = { nil = true } } }",
+                                                            (function()
+                                                             {
+                                                               expect(take_while((function()
+                                                                                  {
+                                                                                    return (function(__a__)
+                                                                                            {
+                                                                                              var x;
+                                                                                              x = null;
+                                                                                              if((((function()
+                                                                                                    {
+                                                                                                      if((typeof(__a__)
+                                                                                                          !=
+                                                                                                          "undefined"))
+                                                                                                      {
+                                                                                                        x = __a__;
+                                                                                                        return true;
+                                                                                                      }
+                                                                                                      else
+                                                                                                      {
+                                                                                                        return false;
+                                                                                                      };
+                                                                                                    })()
+                                                                                                   &&
+                                                                                                   true)
+                                                                                                  &&
+                                                                                                  true))
+                                                                                              {
+                                                                                                return _grea(x)(0);
+                                                                                              }
+                                                                                              else
+                                                                                              {
+                                                                                                args = [];
+                                                                                                exhaust();
+                                                                                              };
+                                                                                            });
+                                                                                  })())({ 'head': 2,
+                                                                                          'tail': { 'head': 1,
+                                                                                                    'tail': { 'head': 0,
+                                                                                                              'tail': { 'nil': true
+                                                                                                                      }
+                                                                                                            }
+                                                                                                  }
+                                                                                        })).
+                                                               toEqual({ 'head': 2,
+                                                                         'tail': { 'head': 1,
+                                                                                   'tail': { 'nil': true
+                                                                                           }
+                                                                                 }
+                                                                       });
+                                                             }));
+                                                         it("drop_while (λx = x < 0) nil: == nil:",
+                                                            (function()
+                                                             {
+                                                               expect(drop_while((function()
+                                                                                  {
+                                                                                    return (function(__a__)
+                                                                                            {
+                                                                                              var x;
+                                                                                              x = null;
+                                                                                              if((((function()
+                                                                                                    {
+                                                                                                      if((typeof(__a__)
+                                                                                                          !=
+                                                                                                          "undefined"))
+                                                                                                      {
+                                                                                                        x = __a__;
+                                                                                                        return true;
+                                                                                                      }
+                                                                                                      else
+                                                                                                      {
+                                                                                                        return false;
+                                                                                                      };
+                                                                                                    })()
+                                                                                                   &&
+                                                                                                   true)
+                                                                                                  &&
+                                                                                                  true))
+                                                                                              {
+                                                                                                return _less(x)(0);
+                                                                                              }
+                                                                                              else
+                                                                                              {
+                                                                                                args = [];
+                                                                                                exhaust();
+                                                                                              };
+                                                                                            });
+                                                                                  })())((function()
+                                                                                         {
+                                                                                           var jmId_32;
+                                                                                           jmId_32 = {};
+                                                                                           jmId_32["nil"] = true;
+                                                                                           return jmId_32;
+                                                                                         })())).
+                                                               toEqual((function()
+                                                                        {
+                                                                          var jmId_33;
+                                                                          jmId_33 = {};
+                                                                          jmId_33["nil"] = true;
+                                                                          return jmId_33;
+                                                                        })());
+                                                             }));
+                                                         it("drop_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 0, tail = { nil = true } }",
+                                                            (function()
+                                                             {
+                                                               expect(drop_while((function()
+                                                                                  {
+                                                                                    return (function(__a__)
+                                                                                            {
+                                                                                              var x;
+                                                                                              x = null;
+                                                                                              if((((function()
+                                                                                                    {
+                                                                                                      if((typeof(__a__)
+                                                                                                          !=
+                                                                                                          "undefined"))
+                                                                                                      {
+                                                                                                        x = __a__;
+                                                                                                        return true;
+                                                                                                      }
+                                                                                                      else
+                                                                                                      {
+                                                                                                        return false;
+                                                                                                      };
+                                                                                                    })()
+                                                                                                   &&
+                                                                                                   true)
+                                                                                                  &&
+                                                                                                  true))
+                                                                                              {
+                                                                                                return _grea(x)(0);
+                                                                                              }
+                                                                                              else
+                                                                                              {
+                                                                                                args = [];
+                                                                                                exhaust();
+                                                                                              };
+                                                                                            });
+                                                                                  })())({ 'head': 2,
+                                                                                          'tail': { 'head': 1,
+                                                                                                    'tail': { 'head': 0,
+                                                                                                              'tail': { 'nil': true
+                                                                                                                      }
+                                                                                                            }
+                                                                                                  }
+                                                                                        })).
+                                                               toEqual({ 'head': 0,
+                                                                         'tail': { 'nil': true
+                                                                                 }
+                                                                       });
+                                                             }));
+                                                         it("length { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 4",
+                                                            (function()
+                                                             {
+                                                               expect(length({ 'head': 1,
+                                                                               'tail': { 'head': 2,
+                                                                                         'tail': { 'head': 3,
+                                                                                                   'tail': { 'head': 4,
+                                                                                                             'tail': { 'nil': true
+                                                                                                                     }
+                                                                                                           }
+                                                                                                 }
+                                                                                       }
+                                                                             })).
                                                                toEqual(4);
                                                              }));
                                                          it("length init 30 0 == 30",
@@ -1357,50 +1652,51 @@ describe("prelude",
                                                              {
                                                                expect(_plus_plus((function()
                                                                                   {
-                                                                                    var jmId_41;
-                                                                                    jmId_41 = {};
-                                                                                    jmId_41["nil"] = true;
-                                                                                    return jmId_41;
+                                                                                    var jmId_34;
+                                                                                    jmId_34 = {};
+                                                                                    jmId_34["nil"] = true;
+                                                                                    return jmId_34;
                                                                                   })())(_col_col(1)(_col_col(2)((function()
                                                                                                                  {
-                                                                                                                   var jmId_42;
-                                                                                                                   jmId_42 = {};
-                                                                                                                   jmId_42["nil"] = true;
-                                                                                                                   return jmId_42;
+                                                                                                                   var jmId_35;
+                                                                                                                   jmId_35 = {};
+                                                                                                                   jmId_35["nil"] = true;
+                                                                                                                   return jmId_35;
                                                                                                                  })())))).
                                                                toEqual(_col_col(1)(_col_col(2)((function()
                                                                                                 {
-                                                                                                  var jmId_43;
-                                                                                                  jmId_43 = {};
-                                                                                                  jmId_43["nil"] = true;
-                                                                                                  return jmId_43;
+                                                                                                  var jmId_36;
+                                                                                                  jmId_36 = {};
+                                                                                                  jmId_36["nil"] = true;
+                                                                                                  return jmId_36;
                                                                                                 })())));
                                                              }));
-                                                         it("1 :: 2 :: nil: ++ 3 :: 4 :: nil: == 1 :: 2 :: 3 :: 4 :: nil:",
+                                                         it("{ head = 1, tail = { head = 2, tail = { nil = true } } } ++ { head = 3, tail = { head = 4, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } }",
                                                             (function()
                                                              {
-                                                               expect(_plus_plus(_col_col(1)(_col_col(2)((function()
-                                                                                                          {
-                                                                                                            var jmId_44;
-                                                                                                            jmId_44 = {};
-                                                                                                            jmId_44["nil"] = true;
-                                                                                                            return jmId_44;
-                                                                                                          })())))(_col_col(3)(_col_col(4)((function()
-                                                                                                                                           {
-                                                                                                                                             var jmId_45;
-                                                                                                                                             jmId_45 = {};
-                                                                                                                                             jmId_45["nil"] = true;
-                                                                                                                                             return jmId_45;
-                                                                                                                                           })())))).
-                                                               toEqual(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                        {
-                                                                                                                          var jmId_46;
-                                                                                                                          jmId_46 = {};
-                                                                                                                          jmId_46["nil"] = true;
-                                                                                                                          return jmId_46;
-                                                                                                                        })())))));
+                                                               expect(_plus_plus({ 'head': 1,
+                                                                                   'tail': { 'head': 2,
+                                                                                             'tail': { 'nil': true
+                                                                                                     }
+                                                                                           }
+                                                                                 })({ 'head': 3,
+                                                                                      'tail': { 'head': 4,
+                                                                                                'tail': { 'nil': true
+                                                                                                        }
+                                                                                              }
+                                                                                    })).
+                                                               toEqual({ 'head': 1,
+                                                                         'tail': { 'head': 2,
+                                                                                   'tail': { 'head': 3,
+                                                                                             'tail': { 'head': 4,
+                                                                                                       'tail': { 'nil': true
+                                                                                                               }
+                                                                                                     }
+                                                                                           }
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("filter (λx = x > 2) 1 :: 2 :: 3 :: 4 :: nil: == 3 :: 4 :: nil:",
+                                                         it("filter (λx = x > 2) { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == { head = 3, tail = { head = 4, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect(filter((function()
@@ -1436,22 +1732,24 @@ describe("prelude",
                                                                                             exhaust();
                                                                                           };
                                                                                         });
-                                                                              })())(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                                     {
-                                                                                                                                       var jmId_47;
-                                                                                                                                       jmId_47 = {};
-                                                                                                                                       jmId_47["nil"] = true;
-                                                                                                                                       return jmId_47;
-                                                                                                                                     })())))))).
-                                                               toEqual(_col_col(3)(_col_col(4)((function()
-                                                                                                {
-                                                                                                  var jmId_48;
-                                                                                                  jmId_48 = {};
-                                                                                                  jmId_48["nil"] = true;
-                                                                                                  return jmId_48;
-                                                                                                })())));
+                                                                              })())({ 'head': 1,
+                                                                                      'tail': { 'head': 2,
+                                                                                                'tail': { 'head': 3,
+                                                                                                          'tail': { 'head': 4,
+                                                                                                                    'tail': { 'nil': true
+                                                                                                                            }
+                                                                                                                  }
+                                                                                                        }
+                                                                                              }
+                                                                                    })).
+                                                               toEqual({ 'head': 3,
+                                                                         'tail': { 'head': 4,
+                                                                                   'tail': { 'nil': true
+                                                                                           }
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("map (λx = x + 1) 1 :: 2 :: 3 :: nil: == 2 :: 3 :: 4 :: nil:",
+                                                         it("map (λx = x + 1) { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } }",
                                                             (function()
                                                              {
                                                                expect(map((function()
@@ -1489,40 +1787,48 @@ describe("prelude",
                                                                                          exhaust();
                                                                                        };
                                                                                      });
-                                                                           })())(_col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                                      {
-                                                                                                                        var jmId_49;
-                                                                                                                        jmId_49 = {};
-                                                                                                                        jmId_49["nil"] = true;
-                                                                                                                        return jmId_49;
-                                                                                                                      })()))))).
-                                                               toEqual(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                            {
-                                                                                                              var jmId_50;
-                                                                                                              jmId_50 = {};
-                                                                                                              jmId_50["nil"] = true;
-                                                                                                              return jmId_50;
-                                                                                                            })()))));
+                                                                           })())({ 'head': 1,
+                                                                                   'tail': { 'head': 2,
+                                                                                             'tail': { 'head': 3,
+                                                                                                       'tail': { 'nil': true
+                                                                                                               }
+                                                                                                     }
+                                                                                           }
+                                                                                 })).
+                                                               toEqual({ 'head': 2,
+                                                                         'tail': { 'head': 3,
+                                                                                   'tail': { 'head': 4,
+                                                                                             'tail': { 'nil': true
+                                                                                                     }
+                                                                                           }
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("reverse 1 :: 2 :: 3 :: 4 :: nil: == 4 :: 3 :: 2 :: 1 :: nil:",
+                                                         it("reverse { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == { head = 4, tail = { head = 3, tail = { head = 2, tail = { head = 1, tail = { nil = true } } } } }",
                                                             (function()
                                                              {
-                                                               expect(reverse(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                               {
-                                                                                                                                 var jmId_51;
-                                                                                                                                 jmId_51 = {};
-                                                                                                                                 jmId_51["nil"] = true;
-                                                                                                                                 return jmId_51;
-                                                                                                                               })())))))).
-                                                               toEqual(_col_col(4)(_col_col(3)(_col_col(2)(_col_col(1)((function()
-                                                                                                                        {
-                                                                                                                          var jmId_52;
-                                                                                                                          jmId_52 = {};
-                                                                                                                          jmId_52["nil"] = true;
-                                                                                                                          return jmId_52;
-                                                                                                                        })())))));
+                                                               expect(reverse({ 'head': 1,
+                                                                                'tail': { 'head': 2,
+                                                                                          'tail': { 'head': 3,
+                                                                                                    'tail': { 'head': 4,
+                                                                                                              'tail': { 'nil': true
+                                                                                                                      }
+                                                                                                            }
+                                                                                                  }
+                                                                                        }
+                                                                              })).
+                                                               toEqual({ 'head': 4,
+                                                                         'tail': { 'head': 3,
+                                                                                   'tail': { 'head': 2,
+                                                                                             'tail': { 'head': 1,
+                                                                                                       'tail': { 'nil': true
+                                                                                                               }
+                                                                                                     }
+                                                                                           }
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("foldl (λx y = x + y) 0 1 :: 2 :: 3 :: 4 :: nil: == 10",
+                                                         it("foldl (λx y = x + y) 0 { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 10",
                                                             (function()
                                                              {
                                                                expect(foldl((function()
@@ -1580,16 +1886,19 @@ describe("prelude",
                                                                                                    };
                                                                                                  });
                                                                                        });
-                                                                             })())(0)(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                                       {
-                                                                                                                                         var jmId_53;
-                                                                                                                                         jmId_53 = {};
-                                                                                                                                         jmId_53["nil"] = true;
-                                                                                                                                         return jmId_53;
-                                                                                                                                       })())))))).
+                                                                             })())(0)({ 'head': 1,
+                                                                                        'tail': { 'head': 2,
+                                                                                                  'tail': { 'head': 3,
+                                                                                                            'tail': { 'head': 4,
+                                                                                                                      'tail': { 'nil': true
+                                                                                                                              }
+                                                                                                                    }
+                                                                                                          }
+                                                                                                }
+                                                                                      })).
                                                                toEqual(10);
                                                              }));
-                                                         it("foldr (λx y = x + y) 0 1 :: 2 :: 3 :: 4 :: nil: == 10",
+                                                         it("foldr (λx y = x + y) 0 { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 10",
                                                             (function()
                                                              {
                                                                expect(foldr((function()
@@ -1647,56 +1956,57 @@ describe("prelude",
                                                                                                    };
                                                                                                  });
                                                                                        });
-                                                                             })())(0)(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                                       {
-                                                                                                                                         var jmId_54;
-                                                                                                                                         jmId_54 = {};
-                                                                                                                                         jmId_54["nil"] = true;
-                                                                                                                                         return jmId_54;
-                                                                                                                                       })())))))).
+                                                                             })())(0)({ 'head': 1,
+                                                                                        'tail': { 'head': 2,
+                                                                                                  'tail': { 'head': 3,
+                                                                                                            'tail': { 'head': 4,
+                                                                                                                      'tail': { 'nil': true
+                                                                                                                              }
+                                                                                                                    }
+                                                                                                          }
+                                                                                                }
+                                                                                      })).
                                                                toEqual(10);
                                                              }));
-                                                         it("all_ id true :: true :: nil:",
+                                                         it("all_ id { head = true, tail = { head = true, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
                                                                        {
                                                                          try
                                                                          {
-                                                                           return all_(id)(_col_col(true)(_col_col(true)((function()
-                                                                                                                          {
-                                                                                                                            var jmId_56;
-                                                                                                                            jmId_56 = {};
-                                                                                                                            jmId_56["nil"] = true;
-                                                                                                                            return jmId_56;
-                                                                                                                          })())));
+                                                                           return all_(id)({ 'head': true,
+                                                                                             'tail': { 'head': true,
+                                                                                                       'tail': { 'nil': true
+                                                                                                               }
+                                                                                                     }
+                                                                                           });
                                                                          }
-                                                                         catch(jmId_55)
+                                                                         catch(jmId_37)
                                                                          {
-                                                                           return { 'error': jmId_55
+                                                                           return { 'error': jmId_37
                                                                                   };
                                                                          };
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("not all_ id true :: false :: nil:",
+                                                         it("not all_ id { head = true, tail = { head = false, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
                                                                        {
                                                                          try
                                                                          {
-                                                                           return not(all_(id)(_col_col(true)(_col_col(false)((function()
-                                                                                                                               {
-                                                                                                                                 var jmId_58;
-                                                                                                                                 jmId_58 = {};
-                                                                                                                                 jmId_58["nil"] = true;
-                                                                                                                                 return jmId_58;
-                                                                                                                               })()))));
+                                                                           return not(all_(id)({ 'head': true,
+                                                                                                 'tail': { 'head': false,
+                                                                                                           'tail': { 'nil': true
+                                                                                                                   }
+                                                                                                         }
+                                                                                               }));
                                                                          }
-                                                                         catch(jmId_57)
+                                                                         catch(jmId_38)
                                                                          {
-                                                                           return { 'error': jmId_57
+                                                                           return { 'error': jmId_38
                                                                                   };
                                                                          };
                                                                        })()).
@@ -1711,15 +2021,15 @@ describe("prelude",
                                                                          {
                                                                            return any_(id)(_col_col(true)(_col_col(false)((function()
                                                                                                                            {
-                                                                                                                             var jmId_60;
-                                                                                                                             jmId_60 = {};
-                                                                                                                             jmId_60["nil"] = true;
-                                                                                                                             return jmId_60;
+                                                                                                                             var jmId_40;
+                                                                                                                             jmId_40 = {};
+                                                                                                                             jmId_40["nil"] = true;
+                                                                                                                             return jmId_40;
                                                                                                                            })())));
                                                                          }
-                                                                         catch(jmId_59)
+                                                                         catch(jmId_39)
                                                                          {
-                                                                           return { 'error': jmId_59
+                                                                           return { 'error': jmId_39
                                                                                   };
                                                                          };
                                                                        })()).
@@ -1734,15 +2044,15 @@ describe("prelude",
                                                                          {
                                                                            return not(any_(id)(_col_col(false)(_col_col(false)((function()
                                                                                                                                 {
-                                                                                                                                  var jmId_62;
-                                                                                                                                  jmId_62 = {};
-                                                                                                                                  jmId_62["nil"] = true;
-                                                                                                                                  return jmId_62;
+                                                                                                                                  var jmId_42;
+                                                                                                                                  jmId_42 = {};
+                                                                                                                                  jmId_42["nil"] = true;
+                                                                                                                                  return jmId_42;
                                                                                                                                 })()))));
                                                                          }
-                                                                         catch(jmId_61)
+                                                                         catch(jmId_41)
                                                                          {
-                                                                           return { 'error': jmId_61
+                                                                           return { 'error': jmId_41
                                                                                   };
                                                                          };
                                                                        })()).
@@ -1753,10 +2063,10 @@ describe("prelude",
                                                              {
                                                                expect(sum(_col_col(1)(_col_col(2)(_col_col(3)((function()
                                                                                                                {
-                                                                                                                 var jmId_63;
-                                                                                                                 jmId_63 = {};
-                                                                                                                 jmId_63["nil"] = true;
-                                                                                                                 return jmId_63;
+                                                                                                                 var jmId_43;
+                                                                                                                 jmId_43 = {};
+                                                                                                                 jmId_43["nil"] = true;
+                                                                                                                 return jmId_43;
                                                                                                                })()))))).
                                                                toEqual(6);
                                                              }));
@@ -1765,44 +2075,90 @@ describe("prelude",
                                                              {
                                                                expect(product(_col_col(1)(_col_col(2)(_col_col(4)((function()
                                                                                                                    {
-                                                                                                                     var jmId_64;
-                                                                                                                     jmId_64 = {};
-                                                                                                                     jmId_64["nil"] = true;
-                                                                                                                     return jmId_64;
+                                                                                                                     var jmId_44;
+                                                                                                                     jmId_44 = {};
+                                                                                                                     jmId_44["nil"] = true;
+                                                                                                                     return jmId_44;
                                                                                                                    })()))))).
                                                                toEqual(8);
                                                              }));
-                                                         it("concat 1 :: 2 :: nil: :: 3 :: 4 :: nil: :: nil: == 1 :: 2 :: 3 :: 4 :: nil:",
+                                                         it("let x  = 1 :: 2 :: nil:\n| y  = 3 :: 4 :: nil: in (concat { head = x, tail = { head = y, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
                                                             (function()
                                                              {
-                                                               expect(concat(_col_col(_col_col(1)(_col_col(2)((function()
-                                                                                                               {
-                                                                                                                 var jmId_65;
-                                                                                                                 jmId_65 = {};
-                                                                                                                 jmId_65["nil"] = true;
-                                                                                                                 return jmId_65;
-                                                                                                               })())))(_col_col(_col_col(3)(_col_col(4)((function()
-                                                                                                                                                         {
-                                                                                                                                                           var jmId_66;
-                                                                                                                                                           jmId_66 = {};
-                                                                                                                                                           jmId_66["nil"] = true;
-                                                                                                                                                           return jmId_66;
-                                                                                                                                                         })())))((function()
-                                                                                                                                                                  {
-                                                                                                                                                                    var jmId_67;
-                                                                                                                                                                    jmId_67 = {};
-                                                                                                                                                                    jmId_67["nil"] = true;
-                                                                                                                                                                    return jmId_67;
-                                                                                                                                                                  })())))).
-                                                               toEqual(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                        {
-                                                                                                                          var jmId_68;
-                                                                                                                          jmId_68 = {};
-                                                                                                                          jmId_68["nil"] = true;
-                                                                                                                          return jmId_68;
-                                                                                                                        })())))));
+                                                               expect((function()
+                                                                       {
+                                                                         try
+                                                                         {
+                                                                           return (function()
+                                                                                   {
+                                                                                     var x;
+                                                                                     x = (function()
+                                                                                          {
+                                                                                            if((true
+                                                                                                &&
+                                                                                                true))
+                                                                                            {
+                                                                                              return _col_col(1)(_col_col(2)((function()
+                                                                                                                              {
+                                                                                                                                var jmId_46;
+                                                                                                                                jmId_46 = {};
+                                                                                                                                jmId_46["nil"] = true;
+                                                                                                                                return jmId_46;
+                                                                                                                              })()));
+                                                                                            }
+                                                                                            else
+                                                                                            {
+                                                                                              args = [];
+                                                                                              exhaust();
+                                                                                            };
+                                                                                          })();
+                                                                                     var y;
+                                                                                     y = (function()
+                                                                                          {
+                                                                                            if((true
+                                                                                                &&
+                                                                                                true))
+                                                                                            {
+                                                                                              return _col_col(3)(_col_col(4)((function()
+                                                                                                                              {
+                                                                                                                                var jmId_47;
+                                                                                                                                jmId_47 = {};
+                                                                                                                                jmId_47["nil"] = true;
+                                                                                                                                return jmId_47;
+                                                                                                                              })()));
+                                                                                            }
+                                                                                            else
+                                                                                            {
+                                                                                              args = [];
+                                                                                              exhaust();
+                                                                                            };
+                                                                                          })();
+                                                                                     return _eq_eq(concat({ 'head': x,
+                                                                                                            'tail': { 'head': y,
+                                                                                                                      'tail': { 'nil': true
+                                                                                                                              }
+                                                                                                                    }
+                                                                                                          }))({ 'head': 1,
+                                                                                                                'tail': { 'head': 2,
+                                                                                                                          'tail': { 'head': 3,
+                                                                                                                                    'tail': { 'head': 4,
+                                                                                                                                              'tail': { 'nil': true
+                                                                                                                                                      }
+                                                                                                                                            }
+                                                                                                                                  }
+                                                                                                                        }
+                                                                                                              });
+                                                                                   })();
+                                                                         }
+                                                                         catch(jmId_45)
+                                                                         {
+                                                                           return { 'error': jmId_45
+                                                                                  };
+                                                                         };
+                                                                       })()).
+                                                               toEqual(true);
                                                              }));
-                                                         it("concat_map (λx = x :: x + 1 :: nil:) 1 :: 2 :: nil: == 1 :: 2 :: 2 :: 3 :: nil:",
+                                                         it("concat_map (λx = { head = x, tail = { head = x + 1, tail = { nil = true } } }) { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } }",
                                                             (function()
                                                              {
                                                                expect(concat_map((function()
@@ -1830,15 +2186,14 @@ describe("prelude",
                                                                                                   &&
                                                                                                   true))
                                                                                               {
-                                                                                                return _col_col(x)(_col_col((x
-                                                                                                                             +
-                                                                                                                             1))((function()
-                                                                                                                                  {
-                                                                                                                                    var jmId_69;
-                                                                                                                                    jmId_69 = {};
-                                                                                                                                    jmId_69["nil"] = true;
-                                                                                                                                    return jmId_69;
-                                                                                                                                  })()));
+                                                                                                return { 'head': x,
+                                                                                                         'tail': { 'head': (x
+                                                                                                                            +
+                                                                                                                            1),
+                                                                                                                   'tail': { 'nil': true
+                                                                                                                           }
+                                                                                                                 }
+                                                                                                       };
                                                                                               }
                                                                                               else
                                                                                               {
@@ -1846,43 +2201,47 @@ describe("prelude",
                                                                                                 exhaust();
                                                                                               };
                                                                                             });
-                                                                                  })())(_col_col(1)(_col_col(2)((function()
-                                                                                                                 {
-                                                                                                                   var jmId_70;
-                                                                                                                   jmId_70 = {};
-                                                                                                                   jmId_70["nil"] = true;
-                                                                                                                   return jmId_70;
-                                                                                                                 })())))).
-                                                               toEqual(_col_col(1)(_col_col(2)(_col_col(2)(_col_col(3)((function()
-                                                                                                                        {
-                                                                                                                          var jmId_71;
-                                                                                                                          jmId_71 = {};
-                                                                                                                          jmId_71["nil"] = true;
-                                                                                                                          return jmId_71;
-                                                                                                                        })())))));
+                                                                                  })())({ 'head': 1,
+                                                                                          'tail': { 'head': 2,
+                                                                                                    'tail': { 'nil': true
+                                                                                                            }
+                                                                                                  }
+                                                                                        })).
+                                                               toEqual({ 'head': 1,
+                                                                         'tail': { 'head': 2,
+                                                                                   'tail': { 'head': 2,
+                                                                                             'tail': { 'head': 3,
+                                                                                                       'tail': { 'nil': true
+                                                                                                               }
+                                                                                                     }
+                                                                                           }
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("minimum 1 :: 2 :: 3 :: nil: == 1",
+                                                         it("minimum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 1",
                                                             (function()
                                                              {
-                                                               expect(minimum(_col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                                   {
-                                                                                                                     var jmId_72;
-                                                                                                                     jmId_72 = {};
-                                                                                                                     jmId_72["nil"] = true;
-                                                                                                                     return jmId_72;
-                                                                                                                   })()))))).
+                                                               expect(minimum({ 'head': 1,
+                                                                                'tail': { 'head': 2,
+                                                                                          'tail': { 'head': 3,
+                                                                                                    'tail': { 'nil': true
+                                                                                                            }
+                                                                                                  }
+                                                                                        }
+                                                                              })).
                                                                toEqual(1);
                                                              }));
-                                                         it("maximum 1 :: 2 :: 3 :: nil: == 3",
+                                                         it("maximum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 3",
                                                             (function()
                                                              {
-                                                               expect(maximum(_col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                                   {
-                                                                                                                     var jmId_73;
-                                                                                                                     jmId_73 = {};
-                                                                                                                     jmId_73["nil"] = true;
-                                                                                                                     return jmId_73;
-                                                                                                                   })()))))).
+                                                               expect(maximum({ 'head': 1,
+                                                                                'tail': { 'head': 2,
+                                                                                          'tail': { 'head': 3,
+                                                                                                    'tail': { 'nil': true
+                                                                                                            }
+                                                                                                  }
+                                                                                        }
+                                                                              })).
                                                                toEqual(3);
                                                              }));
                                                        })();
@@ -1904,6 +2263,10 @@ describe("prelude",
                                         take = list["take"];
                                         var drop;
                                         drop = list["drop"];
+                                        var take_while;
+                                        take_while = list["take_while"];
+                                        var drop_while;
+                                        drop_while = list["drop_while"];
                                         var length;
                                         length = list["length"];
                                         var init;
@@ -1946,46 +2309,79 @@ describe("prelude",
                                         to_list = prelude.sequence["to_list"];
                                         var iterate;
                                         iterate = prelude.sequence["iterate"];
+                                        var match;
+                                        match = prelude.sequence["match"];
                                         var take;
                                         take = prelude.sequence["take"];
-                                        var jmId_74;
-                                        jmId_74 = new (function()
+                                        var jmId_48;
+                                        jmId_48 = new (function()
                                                        {
-                                                         it("to_list from_list 1 :: 2 :: nil: == 1 :: 2 :: nil:",
+                                                         it("to_list from_list { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
                                                             (function()
                                                              {
-                                                               expect(to_list(from_list(_col_col(1)(_col_col(2)((function()
-                                                                                                                 {
-                                                                                                                   var jmId_75;
-                                                                                                                   jmId_75 = {};
-                                                                                                                   jmId_75["nil"] = true;
-                                                                                                                   return jmId_75;
-                                                                                                                 })()))))).
-                                                               toEqual(_col_col(1)(_col_col(2)((function()
-                                                                                                {
-                                                                                                  var jmId_76;
-                                                                                                  jmId_76 = {};
-                                                                                                  jmId_76["nil"] = true;
-                                                                                                  return jmId_76;
-                                                                                                })())));
+                                                               expect(to_list(from_list({ 'head': 1,
+                                                                                          'tail': { 'head': 2,
+                                                                                                    'tail': { 'nil': true
+                                                                                                            }
+                                                                                                  }
+                                                                                        }))).
+                                                               toEqual({ 'head': 1,
+                                                                         'tail': { 'head': 2,
+                                                                                   'tail': { 'nil': true
+                                                                                           }
+                                                                                 }
+                                                                       });
                                                              }));
-                                                         it("1 :: 2 :: 3 :: nil: == 1 :: 2 :: 3 :: 4 :: nil: |> from_list |> take 3 |> to_list",
+                                                         it("let f  = to_list .: take 3 .: from_list in ({ head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == f { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
                                                             (function()
                                                              {
-                                                               expect(_col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                           {
-                                                                                                             var jmId_77;
-                                                                                                             jmId_77 = {};
-                                                                                                             jmId_77["nil"] = true;
-                                                                                                             return jmId_77;
-                                                                                                           })())))).
-                                                               toEqual(_or_grea(_or_grea(_or_grea(_col_col(1)(_col_col(2)(_col_col(3)(_col_col(4)((function()
-                                                                                                                                                   {
-                                                                                                                                                     var jmId_78;
-                                                                                                                                                     jmId_78 = {};
-                                                                                                                                                     jmId_78["nil"] = true;
-                                                                                                                                                     return jmId_78;
-                                                                                                                                                   })())))))(from_list))(take(3)))(to_list));
+                                                               expect((function()
+                                                                       {
+                                                                         try
+                                                                         {
+                                                                           return (function()
+                                                                                   {
+                                                                                     var f;
+                                                                                     f = (function()
+                                                                                          {
+                                                                                            if((true
+                                                                                                &&
+                                                                                                true))
+                                                                                            {
+                                                                                              return _comp_col(to_list)(_comp_col(take(3))(from_list));
+                                                                                            }
+                                                                                            else
+                                                                                            {
+                                                                                              args = [];
+                                                                                              exhaust();
+                                                                                            };
+                                                                                          })();
+                                                                                     return _eq_eq({ 'head': 1,
+                                                                                                     'tail': { 'head': 2,
+                                                                                                               'tail': { 'head': 3,
+                                                                                                                         'tail': { 'nil': true
+                                                                                                                                 }
+                                                                                                                       }
+                                                                                                             }
+                                                                                                   })(f({ 'head': 1,
+                                                                                                          'tail': { 'head': 2,
+                                                                                                                    'tail': { 'head': 3,
+                                                                                                                              'tail': { 'head': 4,
+                                                                                                                                        'tail': { 'nil': true
+                                                                                                                                                }
+                                                                                                                                      }
+                                                                                                                            }
+                                                                                                                  }
+                                                                                                        }));
+                                                                                   })();
+                                                                         }
+                                                                         catch(jmId_49)
+                                                                         {
+                                                                           return { 'error': jmId_49
+                                                                                  };
+                                                                         };
+                                                                       })()).
+                                                               toEqual(true);
                                                              }));
                                                          it("500 == iterate (λx = x + 1) 0 |> take 500 |> to_list |> length",
                                                             (function()
@@ -2035,8 +2431,8 @@ describe("prelude",
                                       {
                                         var _perc;
                                         _perc = prelude.map["_perc"];
-                                        var jmId_79;
-                                        jmId_79 = new (function()
+                                        var jmId_50;
+                                        jmId_50 = new (function()
                                                        {
                                                          it("\"test\" % true == { key = \"test\", val = true }",
                                                             (function()
@@ -2065,8 +2461,6 @@ var _grea_grea;
 _grea_grea = prelude["_grea_grea"];
 var log;
 log = prelude["log"];
-var time;
-time = prelude["time"];
 var _and_and;
 _and_and = prelude["_and_and"];
 var _or_or;
@@ -2093,6 +2487,8 @@ var _bang_eq;
 _bang_eq = prelude["_bang_eq"];
 var fib;
 fib = prelude["fib"];
+var time;
+time = prelude["time"];
 var fast_fib;
 fast_fib = prelude["fast_fib"];
 var floor;
@@ -2127,6 +2523,10 @@ var take;
 take = prelude["take"];
 var drop;
 drop = prelude["drop"];
+var take_while;
+take_while = prelude["take_while"];
+var drop_while;
+drop_while = prelude["drop_while"];
 var length;
 length = prelude["length"];
 var init;
@@ -2169,6 +2569,8 @@ var to_list;
 to_list = prelude["to_list"];
 var iterate;
 iterate = prelude["iterate"];
+var match;
+match = prelude["match"];
 var take;
 take = prelude["take"];
 var _perc;

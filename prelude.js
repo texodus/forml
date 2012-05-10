@@ -1,19 +1,19 @@
-var d = !0, g = !1;
-function j(s) {
-  return s instanceof Array
+var d = !0, f = !1;
+function j(q) {
+  return q instanceof Array
 }
-function l() {
+function n() {
   throw"Pattern Match Exhausted";
 }
-function v(s) {
-  return result = "undefined" != typeof s
+function y(q) {
+  return result = "undefined" != typeof q
 }
-var L = new function() {
-  function s(b) {
+var K = new function() {
+  function q(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return function() {
           return function(a) {
@@ -22,45 +22,33 @@ var L = new function() {
               b = a;
               a = d
             }else {
-              a = g
+              a = f
             }
             if(a) {
-              return h(f(b))
+              return h(g(b))
             }
             args = [];
-            l()
+            n()
           }
         }()
       }
       args = [];
-      l()
+      n()
     }
   }
-  function D(b) {
+  function C(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
-        return f(h)
+        return h(g)
       }
       args = [];
-      l()
+      n()
     }
   }
-  function E(b) {
-    return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
-      if(a) {
-        return h(f)
-      }
-      args = [];
-      l()
-    }
-  }
-  function w(b) {
+  function s(b) {
     if(0 === b) {
       return 0
     }
@@ -68,70 +56,70 @@ var L = new function() {
       return 1
     }
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
-      return w(c - 1) + w(c - 2)
+      return s(c - 1) + s(c - 2)
     }
     args = [];
-    l()
+    n()
   }
-  function p(b) {
+  function t(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
-      if(a && A(h) && A(f)) {
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
+      if(a && z(h) && z(g)) {
         return function() {
           var a = d;
           return k(function() {
             for(var b in h) {
-              a = a && p(h[b])(f[b])
+              a = a && t(h[b])(g[b])
             }
             return a
           })
         }()
       }
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
-      if(a && j(h) && j(f)) {
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
+      if(a && j(h) && j(g)) {
         return function() {
           var a = d;
           return k(function() {
             for(var b in h) {
-              a = a && p(h[b])(f[b])
+              a = a && t(h[b])(g[b])
             }
-            return a && h.length == f.length
+            return a && h.length == g.length
           })
         }()
       }
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h === f
+          return h === g
         })
       }
       args = [];
-      l()
+      n()
+    }
+  }
+  function A(b) {
+    return function(c) {
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
+      if(a) {
+        return k(function() {
+          return h > g
+        })
+      }
+      args = [];
+      n()
     }
   }
   function B(b) {
-    return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
-      if(a) {
-        return k(function() {
-          return h > f
-        })
-      }
-      args = [];
-      l()
-    }
-  }
-  function C(b) {
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
       return function() {
         return function() {
@@ -140,276 +128,276 @@ var L = new function() {
       }()
     }
     args = [];
-    l()
+    n()
   }
-  function t(b) {
+  function u(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return function() {
           return function() {
-            return k(f(k(h)))
+            return k(g(k(h)))
           }
         }()
       }
       args = [];
-      l()
+      n()
     }
   }
   function k(b) {
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
       return c(null)
     }
     args = [];
-    l()
+    n()
   }
-  function F(b) {
+  function D(b) {
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
       return k(function() {
         return!c
       })
     }
     args = [];
-    l()
+    n()
   }
-  function A(b) {
+  function z(b) {
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
       return k(function() {
         return typeof c === "object"
       })
     }
     args = [];
-    l()
+    n()
   }
-  this.object_ = A;
+  this.object_ = z;
   this.array_ = j;
-  this.not = F;
+  this.not = D;
   this.run = k;
-  this._grea_grea_eq = t;
-  this.ret = C;
+  this._grea_grea_eq = u;
+  this.ret = B;
   this._grea_grea = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return function() {
           h();
-          return f()
+          return g()
         }
       }
       args = [];
-      l()
+      n()
     }
   };
   this.log = function(b) {
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
       return function() {
         return console.log(c)
       }
     }
     args = [];
-    l()
-  };
-  this.time = function(b) {
-    var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
-    if(b) {
-      return t(function() {
-        return(new Date).getTime()
-      })(function() {
-        return function(b) {
-          var f;
-          if(typeof b != "undefined") {
-            f = b;
-            b = d
-          }else {
-            b = g
-          }
-          if(b) {
-            return t(c)(function() {
-              return function() {
-                return t(function() {
-                  return(new Date).getTime()
-                })(function() {
-                  return function(a) {
-                    var b;
-                    if(typeof a != "undefined") {
-                      b = a;
-                      a = d
-                    }else {
-                      a = g
-                    }
-                    if(a) {
-                      return C(b - f)
-                    }
-                    args = [];
-                    l()
-                  }
-                }())
-              }
-            }())
-          }
-          args = [];
-          l()
-        }
-      }())
-    }
-    args = [];
-    l()
+    n()
   };
   this._and_and = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h && f
+          return h && g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._or_or = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h || f
+          return h || g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._star = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h * f
+          return h * g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._forw = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h / f
+          return h / g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._plus = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h + f
+          return h + g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._minu = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h - f
+          return h - g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._less_eq = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h <= f
+          return h <= g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._grea_eq = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h >= f
+          return h >= g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
   this._less = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
         return k(function() {
-          return h < f
+          return h < g
         })
       }
       args = [];
-      l()
+      n()
     }
   };
-  this._grea = B;
-  this._eq_eq = p;
+  this._grea = A;
+  this._eq_eq = t;
   this._bang_eq = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
-        return F(p(h)(f))
+        return D(t(h)(g))
       }
       args = [];
-      l()
+      n()
     }
   };
-  this.fib = w;
+  this.fib = s;
   this.speedtest = new function() {
+    this.time = function(b) {
+      var c;
+      "undefined" != typeof b ? (c = b, b = d) : b = f;
+      if(b) {
+        return u(function() {
+          return(new Date).getTime()
+        })(function() {
+          return function(b) {
+            var g;
+            if(typeof b != "undefined") {
+              g = b;
+              b = d
+            }else {
+              b = f
+            }
+            if(b) {
+              return u(c)(function() {
+                return function() {
+                  return u(function() {
+                    return(new Date).getTime()
+                  })(function() {
+                    return function(a) {
+                      var b;
+                      if(typeof a != "undefined") {
+                        b = a;
+                        a = d
+                      }else {
+                        a = f
+                      }
+                      if(a) {
+                        return B(b - g)
+                      }
+                      args = [];
+                      n()
+                    }
+                  }())
+                }
+              }())
+            }
+            args = [];
+            n()
+          }
+        }())
+      }
+      args = [];
+      n()
+    };
     this.fast_fib = function() {
       return k(function() {
         function b(c) {
@@ -424,85 +412,96 @@ var L = new function() {
       })
     }()
   };
-  this._less_or = E;
-  this._or_grea = D;
-  this._less_col = function(b) {
+  this._less_or = C;
+  this._or_grea = function(b) {
     return function(c) {
-      var h, f, a;
-      "undefined" != typeof b ? (h = b, a = d) : a = g;
-      a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
       if(a) {
-        return h(f)
+        return g(h)
       }
       args = [];
-      l()
+      n()
     }
   };
-  this._comp_col = s;
+  this._less_col = function(b) {
+    return function(c) {
+      var h, g, a;
+      "undefined" != typeof b ? (h = b, a = d) : a = f;
+      a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
+      if(a) {
+        return h(g)
+      }
+      args = [];
+      n()
+    }
+  };
+  this._comp_col = q;
   this.id = function(b) {
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
       return c
     }
     args = [];
-    l()
+    n()
   };
   this.flip = function(b) {
     return function(c) {
       return function(h) {
-        var f, a, k, m;
-        "undefined" != typeof b ? (f = b, m = d) : m = g;
-        if(m && ("undefined" != typeof c ? (a = c, m = d) : m = g, m)) {
-          "undefined" != typeof h ? (k = h, m = d) : m = g
+        var g, a, k, m;
+        "undefined" != typeof b ? (g = b, m = d) : m = f;
+        if(m && ("undefined" != typeof c ? (a = c, m = d) : m = f, m)) {
+          "undefined" != typeof h ? (k = h, m = d) : m = f
         }
         if(m) {
-          return f(k)(a)
+          return g(k)(a)
         }
         args = [];
-        l()
+        n()
       }
     }
   };
   this.err = function(b) {
     var c;
-    "undefined" != typeof b ? (c = b, b = d) : b = g;
+    "undefined" != typeof b ? (c = b, b = d) : b = f;
     if(b) {
       return k(function() {
         try {
           c();
-          return g
+          return f
         }catch(b) {
           return b
         }
       })
     }
     args = [];
-    l()
+    n()
   };
   this.option = function(b) {
     return function(c) {
-      var h, f;
-      "undefined" != typeof b ? (h = b, f = d) : f = g;
-      if(f && c.nil) {
+      var h, g;
+      "undefined" != typeof b ? (h = b, g = d) : g = f;
+      if(g && c.nil) {
         return h
       }
-      if(h = v(c)) {
-        "undefined" != typeof c.some ? (x = c.some, h = d) : h = g
+      if(h = y(c)) {
+        "undefined" != typeof c.some ? (x = c.some, h = d) : h = f
       }
       if(h) {
         return x
       }
       args = [];
-      l()
+      n()
     }
   };
-  var u = new function() {
+  var w = new function() {
     function b(a) {
       return function(b) {
-        var c, i, e;
-        "undefined" != typeof a ? (c = a, e = d) : e = g;
-        e && ("undefined" != typeof b ? (i = b, e = d) : e = g);
+        var l, i, e;
+        "undefined" != typeof a ? (l = a, e = d) : e = f;
+        e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
         if(e) {
           return function() {
             var a = function() {
@@ -510,37 +509,35 @@ var L = new function() {
                 if(b.nil) {
                   return i
                 }
-                var e;
-                if(e = v(b)) {
-                  if(e = v(b.cons)) {
-                    if(typeof b.cons.head != "undefined") {
-                      y = b.cons.head;
-                      e = d
+                var e, v, c;
+                if(c = y(b)) {
+                  if(typeof b.head != "undefined") {
+                    e = b.head;
+                    c = d
+                  }else {
+                    c = f
+                  }
+                  if(c) {
+                    if(typeof b.tail != "undefined") {
+                      v = b.tail;
+                      c = d
                     }else {
-                      e = g
-                    }
-                    if(e) {
-                      if(typeof b.cons.tail != "undefined") {
-                        ys = b.cons.tail;
-                        e = d
-                      }else {
-                        e = g
-                      }
+                      c = f
                     }
                   }
                 }
-                if(e) {
-                  return c(y)(a(ys))
+                if(c) {
+                  return l(e)(a(v))
                 }
                 args = [];
-                l()
+                n()
               }
             }();
             return a
           }()
         }
         args = [];
-        l()
+        n()
       }
     }
     function c(a) {
@@ -549,67 +546,66 @@ var L = new function() {
           throw"Foldl1 called on empty list";
         }
         var c, i, e;
-        "undefined" != typeof a ? (c = a, e = d) : e = g;
-        e && ("undefined" != typeof b ? (i = b, e = d) : e = g);
+        "undefined" != typeof a ? (c = a, e = d) : e = f;
+        e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
         if(e) {
-          return h(c)(q(i))(o(i))
+          return h(c)(o(i))(p(i))
         }
         args = [];
-        l()
+        n()
       }
     }
     function h(a) {
       return function(b) {
         return function(c) {
-          var i, e, h, f;
-          "undefined" != typeof a ? (i = a, f = d) : f = g;
-          if(f && ("undefined" != typeof b ? (e = b, f = d) : f = g, f)) {
-            "undefined" != typeof c ? (h = c, f = d) : f = g
+          var i, e, h, g;
+          "undefined" != typeof a ? (i = a, g = d) : g = f;
+          if(g && ("undefined" != typeof b ? (e = b, g = d) : g = f, g)) {
+            "undefined" != typeof c ? (h = c, g = d) : g = f
           }
-          if(f) {
+          if(g) {
             return function() {
               var a = function() {
                 return function(b) {
                   return function(e) {
-                    var c, n;
+                    var c, l;
                     if(typeof b != "undefined") {
                       c = b;
-                      n = d
+                      l = d
                     }else {
-                      n = g
+                      l = f
                     }
-                    if(n && e.nil) {
+                    if(l && e.nil) {
                       return c
                     }
+                    var v, E;
                     if(typeof b != "undefined") {
                       c = b;
-                      n = d
+                      l = d
                     }else {
-                      n = g
+                      l = f
                     }
-                    if(n && (n = v(e))) {
-                      if(n = v(e.cons)) {
-                        if(typeof e.cons.head != "undefined") {
-                          z = e.cons.head;
-                          n = d
+                    if(l && (l = y(e))) {
+                      if(typeof e.head != "undefined") {
+                        v = e.head;
+                        l = d
+                      }else {
+                        l = f
+                      }
+                      if(l) {
+                        if(typeof e.tail != "undefined") {
+                          E = e.tail;
+                          l = d
                         }else {
-                          n = g
-                        }
-                        if(n) {
-                          if(typeof e.cons.tail != "undefined") {
-                            zs = e.cons.tail;
-                            n = d
-                          }else {
-                            n = g
-                          }
+                          l = f
                         }
                       }
                     }
-                    if(n) {
-                      return a(i(c)(z))(zs)
+                    if(l) {
+                      return a(i(c)(v))(E)
                     }
                     args = [];
-                    l()
+                    n()
                   }
                 }
               }();
@@ -617,72 +613,70 @@ var L = new function() {
             }()
           }
           args = [];
-          l()
+          n()
         }
       }
     }
-    function f(a) {
+    function g(a) {
       return function(b) {
         var c, i;
-        "undefined" != typeof a ? (c = a, i = d) : i = g;
+        "undefined" != typeof a ? (c = a, i = d) : i = f;
         if(i && b.nil) {
           return{nil:d}
         }
         var e;
-        "undefined" != typeof a ? (c = a, i = d) : i = g;
-        i && ("undefined" != typeof b ? (e = b, i = d) : i = g);
+        "undefined" != typeof a ? (c = a, i = d) : i = f;
+        i && ("undefined" != typeof b ? (e = b, i = d) : i = f);
         if(i) {
-          return r(c(q(e)))(f(c)(o(e)))
+          return r(c(o(e)))(g(c)(p(e)))
         }
         args = [];
-        l()
+        n()
       }
     }
     function a(b) {
       return function(c) {
-        var f, i;
-        "undefined" != typeof b ? (f = b, i = d) : i = g;
+        var l, i;
+        "undefined" != typeof b ? (l = b, i = d) : i = f;
         if(i && c.nil) {
           return{nil:d}
         }
         var e;
-        "undefined" != typeof b ? (f = b, i = d) : i = g;
-        i && ("undefined" != typeof c ? (e = c, i = d) : i = g);
-        if(i && f(q(e))) {
-          return r(q(e))(a(f)(o(e)))
+        "undefined" != typeof b ? (l = b, i = d) : i = f;
+        i && ("undefined" != typeof c ? (e = c, i = d) : i = f);
+        if(i && l(o(e))) {
+          return r(o(e))(a(l)(p(e)))
         }
-        "undefined" != typeof b ? (f = b, i = d) : i = g;
-        i && ("undefined" != typeof c ? (e = c, i = d) : i = g);
+        "undefined" != typeof b ? (l = b, i = d) : i = f;
+        i && ("undefined" != typeof c ? (e = c, i = d) : i = f);
         if(i) {
-          return E(a(f))(o(e))
+          return C(a(l))(p(e))
         }
         args = [];
-        l()
+        n()
       }
     }
     function k(a) {
       return function(b) {
         var c, i;
         if(i = a.nil) {
-          "undefined" != typeof b ? (c = b, i = d) : i = g
+          "undefined" != typeof b ? (c = b, i = d) : i = f
         }
         if(i) {
           return c
         }
-        var e;
-        if(i = v(a)) {
-          if(i = v(a.cons)) {
-            if("undefined" != typeof a.cons.head ? (c = a.cons.head, i = d) : i = g, i) {
-              "undefined" != typeof a.cons.tail ? (ys = a.cons.tail, i = d) : i = g
-            }
+        var e, g;
+        if(i = y(a)) {
+          if("undefined" != typeof a.head ? (c = a.head, i = d) : i = f, i) {
+            "undefined" != typeof a.tail ? (e = a.tail, i = d) : i = f
           }
         }
-        i && ("undefined" != typeof b ? (e = b, i = d) : i = g);
+        i && ("undefined" != typeof b ? (g = b, i = d) : i = f);
         if(i) {
-          return r(c)(k(ys)(e))
+          return r(c)(k(e)(g))
         }
         args = [];
-        l()
+        n()
       }
     }
     function m(a) {
@@ -691,169 +685,193 @@ var L = new function() {
           return{nil:d}
         }
         var c, i, e;
-        "undefined" != typeof a ? (c = a, e = d) : e = g;
-        e && ("undefined" != typeof b ? (i = b, e = d) : e = g);
+        "undefined" != typeof a ? (c = a, e = d) : e = f;
+        e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
         if(e) {
           return r(i)(m(c - 1)(i))
         }
         args = [];
-        l()
+        n()
       }
     }
-    function G(a) {
+    function q(a) {
       if(a.nil) {
         return 0
       }
-      var b;
-      if(b = v(a)) {
-        if(b = v(a.cons)) {
-          "undefined" != typeof a.cons.tail ? (x = a.cons.tail, b = d) : b = g
-        }
+      var b, c;
+      if(c = y(a)) {
+        "undefined" != typeof a.tail ? (b = a.tail, c = d) : c = f
       }
-      if(b) {
-        return 1 + G(x)
+      if(c) {
+        return 1 + q(b)
       }
       args = [];
-      l()
+      n()
     }
-    function H(a) {
+    function F(a) {
+      return function(b) {
+        var c, i;
+        "undefined" != typeof a ? (c = a, i = d) : i = f;
+        if(i && b.nil) {
+          return{nil:d}
+        }
+        var e;
+        "undefined" != typeof a ? (c = a, i = d) : i = f;
+        i && ("undefined" != typeof b ? (e = b, i = d) : i = f);
+        if(i && c(o(e))) {
+          return F(c)(p(e))
+        }
+        "undefined" != typeof b ? (e = b, b = d) : b = f;
+        if(b) {
+          return e
+        }
+        args = [];
+        n()
+      }
+    }
+    function G(a) {
       return function(b) {
         var c, i;
         if(i = 0 === a) {
-          "undefined" != typeof b ? (c = b, i = d) : i = g
+          "undefined" != typeof b ? (c = b, i = d) : i = f
         }
         if(i) {
           return c
         }
         var e;
-        "undefined" != typeof a ? (e = a, i = d) : i = g;
-        i && ("undefined" != typeof b ? (c = b, i = d) : i = g);
+        "undefined" != typeof a ? (e = a, i = d) : i = f;
+        i && ("undefined" != typeof b ? (c = b, i = d) : i = f);
         if(i) {
-          return H(e - 1)(o(c))
+          return G(e - 1)(p(c))
         }
         args = [];
-        l()
+        n()
       }
     }
-    function I(a) {
+    function H(a) {
       return function(b) {
         if(0 === a) {
           return{nil:d}
         }
         var c, i, e;
-        "undefined" != typeof a ? (c = a, e = d) : e = g;
-        e && ("undefined" != typeof b ? (i = b, e = d) : e = g);
+        "undefined" != typeof a ? (c = a, e = d) : e = f;
+        e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
         if(e) {
-          return r(q(i))(I(c - 1)(o(i)))
+          return r(o(i))(H(c - 1)(p(i)))
         }
         args = [];
-        l()
+        n()
       }
     }
-    function J(a) {
-      var b;
-      if(b = v(a)) {
-        if(b = v(a.cons)) {
-          "undefined" != typeof a.cons.head ? (x = a.cons.head, b = d) : b = g, b = b && a.cons.tail.nil
-        }
+    function I(a) {
+      var b, c;
+      if(c = y(a)) {
+        "undefined" != typeof a.head ? (b = a.head, c = d) : c = f, c = c && a.tail.nil
       }
-      if(b) {
-        return x
+      if(c) {
+        return b
       }
-      if(b = v(a)) {
-        if(b = v(a.cons)) {
-          "undefined" != typeof a.cons.tail ? (x = a.cons.tail, b = d) : b = g
-        }
+      if(c = y(a)) {
+        "undefined" != typeof a.tail ? (b = a.tail, c = d) : c = f
       }
-      if(b) {
-        return J(x)
+      if(c) {
+        return I(b)
       }
       if(a.nil) {
         throw"Last called on empty list";
       }
       args = [];
-      l()
+      n()
     }
-    function o(a) {
-      var b;
-      if(b = v(a)) {
-        if(b = v(a.cons)) {
-          "undefined" != typeof a.cons.tail ? (x = a.cons.tail, b = d) : b = g
-        }
+    function p(a) {
+      var b, c;
+      if(c = y(a)) {
+        "undefined" != typeof a.tail ? (b = a.tail, c = d) : c = f
       }
-      if(b) {
-        return x
+      if(c) {
+        return b
       }
       if(a.nil) {
         throw"Tail called on empty list";
       }
       args = [];
-      l()
+      n()
     }
-    function q(a) {
-      var b;
-      if(b = v(a)) {
-        if(b = v(a.cons)) {
-          "undefined" != typeof a.cons.head ? (x = a.cons.head, b = d) : b = g
-        }
+    function o(a) {
+      var b, c;
+      if(c = y(a)) {
+        "undefined" != typeof a.head ? (b = a.head, c = d) : c = f
       }
-      if(b) {
-        return x
+      if(c) {
+        return b
       }
       if(a.nil) {
         throw"Head called on empty list";
       }
       args = [];
-      l()
+      n()
     }
     function r(a) {
       return function(b) {
         var c, i, e;
-        "undefined" != typeof a ? (c = a, e = d) : e = g;
-        e && ("undefined" != typeof b ? (i = b, e = d) : e = g);
+        "undefined" != typeof a ? (c = a, e = d) : e = f;
+        e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
         if(e) {
-          return b = {}, b.cons = {head:c, tail:i}, b
+          return{head:c, tail:i}
         }
         args = [];
-        l()
+        n()
       }
     }
     this._col_col = r;
     this.empty_ = function(a) {
-      return a.nil ? d : g
+      return a.nil ? d : f
     };
-    this.head = q;
-    this.tail = o;
-    this.last = J;
-    this.take = I;
-    this.drop = H;
-    this.length = G;
+    this.head = o;
+    this.tail = p;
+    this.last = I;
+    this.take = H;
+    this.drop = G;
+    this.take_while = function(b) {
+      return function(c) {
+        var g, i;
+        "undefined" != typeof b ? (g = b, i = d) : i = f;
+        if(i && c.nil) {
+          return{nil:d}
+        }
+        var e;
+        "undefined" != typeof b ? (g = b, i = d) : i = f;
+        i && ("undefined" != typeof c ? (e = c, i = d) : i = f);
+        return i && g(o(e)) ? r(o(e))(a(g)(p(e))) : {nil:d}
+      }
+    };
+    this.drop_while = F;
+    this.length = q;
     this.init = m;
     this._plus_plus = k;
     this.filter = a;
-    this.map = f;
+    this.map = g;
     this.reverse = function() {
       return function() {
         function a(b) {
           return function(c) {
             var i, e;
-            "undefined" != typeof b ? (i = b, e = d) : e = g;
+            "undefined" != typeof b ? (i = b, e = d) : e = f;
             if(e && c.nil) {
               return i
             }
-            "undefined" != typeof b ? (i = b, e = d) : e = g;
-            if(e && (e = v(c))) {
-              if(e = v(c.cons)) {
-                if("undefined" != typeof c.cons.head ? (x = c.cons.head, e = d) : e = g, e) {
-                  "undefined" != typeof c.cons.tail ? (xs = c.cons.tail, e = d) : e = g
-                }
+            var g, h;
+            "undefined" != typeof b ? (i = b, e = d) : e = f;
+            if(e && (e = y(c))) {
+              if("undefined" != typeof c.head ? (g = c.head, e = d) : e = f, e) {
+                "undefined" != typeof c.tail ? (h = c.tail, e = d) : e = f
               }
             }
             if(e) {
-              return a(r(x)(i))(xs)
+              return a(r(g)(i))(h)
             }
             args = [];
-            l()
+            n()
           }
         }
         return a({nil:d})
@@ -867,187 +885,199 @@ var L = new function() {
         if(c.nil) {
           throw"Foldr1 called on empty list";
         }
-        var f, i, e;
-        "undefined" != typeof a ? (f = a, e = d) : e = g;
-        e && ("undefined" != typeof c ? (i = c, e = d) : e = g);
+        var g, i, e;
+        "undefined" != typeof a ? (g = a, e = d) : e = f;
+        e && ("undefined" != typeof c ? (i = c, e = d) : e = f);
         if(e) {
-          return b(f)(q(i))(o(i))
+          return b(g)(o(i))(p(i))
         }
         args = [];
-        l()
+        n()
       }
     };
     this.all_ = function(a) {
       var b;
-      "undefined" != typeof a ? (b = a, a = d) : a = g;
+      "undefined" != typeof a ? (b = a, a = d) : a = f;
       if(a) {
         return c(function() {
           return function(a) {
             return function(c) {
-              var e, f, h;
+              var e, g, h;
               if(typeof a != "undefined") {
                 e = a;
                 h = d
               }else {
-                h = g
+                h = f
               }
               if(h) {
                 if(typeof c != "undefined") {
-                  f = c;
+                  g = c;
                   h = d
                 }else {
-                  h = g
+                  h = f
                 }
               }
               if(h) {
-                return b(e) && b(f)
+                return b(e) && b(g)
               }
               args = [];
-              l()
+              n()
             }
           }
         }())
       }
       args = [];
-      l()
+      n()
     };
     this.any_ = function(a) {
       var b;
-      "undefined" != typeof a ? (b = a, a = d) : a = g;
+      "undefined" != typeof a ? (b = a, a = d) : a = f;
       if(a) {
         return c(function() {
           return function(a) {
             return function(c) {
-              var e, f, h;
+              var e, g, h;
               if(typeof a != "undefined") {
                 e = a;
                 h = d
               }else {
-                h = g
+                h = f
               }
               if(h) {
                 if(typeof c != "undefined") {
-                  f = c;
+                  g = c;
                   h = d
                 }else {
-                  h = g
+                  h = f
                 }
               }
               if(h) {
-                return b(e) || b(f)
+                return b(e) || b(g)
               }
               args = [];
-              l()
+              n()
             }
           }
         }())
       }
       args = [];
-      l()
+      n()
     };
     this.sum = function() {
       return c(function(a) {
         return function(b) {
-          var c, f, e;
-          "undefined" != typeof a ? (c = a, e = d) : e = g;
-          e && ("undefined" != typeof b ? (f = b, e = d) : e = g);
+          var c, i, e;
+          "undefined" != typeof a ? (c = a, e = d) : e = f;
+          e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
           if(e) {
-            return c + f
+            return c + i
           }
           args = [];
-          l()
+          n()
         }
       })
     }();
     this.product = function() {
       return c(function(a) {
         return function(b) {
-          var c, f, e;
-          "undefined" != typeof a ? (c = a, e = d) : e = g;
-          e && ("undefined" != typeof b ? (f = b, e = d) : e = g);
+          var c, i, e;
+          "undefined" != typeof a ? (c = a, e = d) : e = f;
+          e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
           if(e) {
-            return c * f
+            return c * i
           }
           args = [];
-          l()
+          n()
         }
       })
     }();
-    var K = function() {
+    var J = function() {
       return c(function(a) {
         return function(b) {
-          var c, f, e;
-          "undefined" != typeof a ? (c = a, e = d) : e = g;
-          e && ("undefined" != typeof b ? (f = b, e = d) : e = g);
+          var c, i, e;
+          "undefined" != typeof a ? (c = a, e = d) : e = f;
+          e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
           if(e) {
-            return k(c)(f)
+            return k(c)(i)
           }
           args = [];
-          l()
+          n()
         }
       })
     }();
-    this.concat = K;
+    this.concat = J;
     this.concat_map = function(a) {
       return function(b) {
-        var c, h, e;
-        "undefined" != typeof a ? (c = a, e = d) : e = g;
-        e && ("undefined" != typeof b ? (h = b, e = d) : e = g);
+        var c, i, e;
+        "undefined" != typeof a ? (c = a, e = d) : e = f;
+        e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
         if(e) {
-          return K(f(c)(h))
+          return J(g(c)(i))
         }
         args = [];
-        l()
+        n()
       }
     };
     this.maximum = function() {
       return c(function(a) {
         return function(b) {
-          var c, f, e;
-          "undefined" != typeof a ? (c = a, e = d) : e = g;
-          e && ("undefined" != typeof b ? (f = b, e = d) : e = g);
+          var c, i, e;
+          "undefined" != typeof a ? (c = a, e = d) : e = f;
+          e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
           if(e) {
-            return B(c)(f) ? c : f
+            return A(c)(i) ? c : i
           }
           args = [];
-          l()
+          n()
         }
       })
     }();
     this.minimum = function() {
       return c(function(a) {
         return function(b) {
-          var c, f, e;
-          "undefined" != typeof a ? (c = a, e = d) : e = g;
-          e && ("undefined" != typeof b ? (f = b, e = d) : e = g);
+          var c, i, e;
+          "undefined" != typeof a ? (c = a, e = d) : e = f;
+          e && ("undefined" != typeof b ? (i = b, e = d) : e = f);
           if(e) {
-            return B(c)(f) ? f : c
+            return A(c)(i) ? i : c
           }
           args = [];
-          l()
+          n()
         }
       })
     }()
   };
-  this.list = u;
+  this.list = w;
   this.sequence = new function() {
     function b(a) {
-      return function(c) {
-        var f, h, k;
-        "undefined" != typeof a ? (f = a, k = d) : k = g;
-        k && ("undefined" != typeof c ? (h = c, k = d) : k = g);
+      return function(b) {
+        var c, g, h;
+        "undefined" != typeof a ? (c = a, h = d) : h = f;
+        h && ("undefined" != typeof b ? (g = b, h = d) : h = f);
+        if(h) {
+          return g(c)
+        }
+        args = [];
+        n()
+      }
+    }
+    function c(a) {
+      return function(b) {
+        var g, h, k;
+        "undefined" != typeof a ? (g = a, k = d) : k = f;
+        k && ("undefined" != typeof b ? (h = b, k = d) : k = f);
         if(k) {
           return function() {
             return function() {
-              return{next:b(f)(f(h)), val:h}
+              return{next:c(g)(g(h)), val:h}
             }
           }()
         }
         args = [];
-        l()
+        n()
       }
     }
-    function c(b) {
+    function h(b) {
       if(b.nil) {
         return function() {
           return function() {
@@ -1055,44 +1085,45 @@ var L = new function() {
           }
         }()
       }
-      var h;
-      "undefined" != typeof b ? (h = b, b = d) : b = g;
+      var c;
+      "undefined" != typeof b ? (c = b, b = d) : b = f;
       if(b) {
         return function() {
           return function() {
-            return{next:c(a(h)), val:f(h)}
+            return{next:h(t(c)), val:a(c)}
           }
         }()
       }
       args = [];
-      l()
+      n()
     }
-    var h = u._col_col, f = u.head, a = u.tail, p = u.take;
-    this.from_list = c;
-    var m = function() {
+    var g = w._col_col, a = w.head, t = w.tail, m = w.take;
+    this.from_list = h;
+    var s = function() {
       return function() {
-        return s(function(a) {
-          var b, c, f;
-          if(f = v(a)) {
-            if("undefined" != typeof a.next ? (b = a.next, f = d) : f = g, f) {
-              "undefined" != typeof a.val ? (c = a.val, f = d) : f = g
+        return q(function(a) {
+          var b, c, h;
+          if(h = y(a)) {
+            if("undefined" != typeof a.next ? (b = a.next, h = d) : h = f, h) {
+              "undefined" != typeof a.val ? (c = a.val, h = d) : h = f
             }
           }
-          if(f) {
-            return h(c)(m(b))
+          if(h) {
+            return g(c)(s(b))
           }
           if(a.end) {
             return{nil:d}
           }
           args = [];
-          l()
+          n()
         })(k)
       }()
     }();
-    this.to_list = m;
-    this.iterate = b;
-    this.take = p = function(a) {
-      return function(b) {
+    this.to_list = s;
+    this.iterate = c;
+    this.match = b;
+    this.take = m = function(a) {
+      return function(c) {
         if(0 === a) {
           return function() {
             return function() {
@@ -1100,74 +1131,74 @@ var L = new function() {
             }
           }()
         }
-        var c, f, h;
-        "undefined" != typeof a ? (c = a, h = d) : h = g;
-        h && ("undefined" != typeof b ? (f = b, h = d) : h = g);
-        if(h) {
-          return t(f)(function() {
+        var h, g, k;
+        "undefined" != typeof a ? (h = a, k = d) : k = f;
+        k && ("undefined" != typeof c ? (g = c, k = d) : k = f);
+        if(k) {
+          return u(g)(function() {
             return function(a) {
-              var b;
+              var c;
               if(typeof a != "undefined") {
-                b = a;
+                c = a;
                 a = d
               }else {
-                a = g
+                a = f
               }
               if(a) {
-                return C(D(b)(function() {
+                return B(b(c)(function() {
                   return function(a) {
                     if(a.end) {
                       return{end:d}
                     }
-                    var b, f, h;
-                    if(h = v(a)) {
+                    var b, c, g;
+                    if(g = y(a)) {
                       if(typeof a.next != "undefined") {
                         b = a.next;
-                        h = d
+                        g = d
                       }else {
-                        h = g
+                        g = f
                       }
-                      if(h) {
+                      if(g) {
                         if(typeof a.val != "undefined") {
-                          f = a.val;
-                          h = d
+                          c = a.val;
+                          g = d
                         }else {
-                          h = g
+                          g = f
                         }
                       }
                     }
-                    if(h) {
-                      return{next:p(c - 1)(b), val:f}
+                    if(g) {
+                      return{next:m(h - 1)(b), val:c}
                     }
                     args = [];
-                    l()
+                    n()
                   }
                 }()))
               }
               args = [];
-              l()
+              n()
             }
           }())
         }
         args = [];
-        l()
+        n()
       }
     }
   };
   this.map = new function() {
     this._perc = function(b) {
       return function(c) {
-        var h, f, a;
-        "undefined" != typeof b ? (h = b, a = d) : a = g;
-        a && ("undefined" != typeof c ? (f = c, a = d) : a = g);
+        var h, g, a;
+        "undefined" != typeof b ? (h = b, a = d) : a = f;
+        a && ("undefined" != typeof c ? (g = c, a = d) : a = f);
         if(a) {
-          return{key:h, val:f}
+          return{key:h, val:g}
         }
         args = [];
-        l()
+        n()
       }
     }
   }
 };
-("undefined" == typeof global ? window : global).prelude = L;
+("undefined" == typeof global ? window : global).prelude = K;
 

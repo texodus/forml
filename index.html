@@ -35,6 +35,8 @@
         </ul>
       </header>
       <section>
+<h1 id="prelude">Prelude</h1>
+<hr />
 <p>Formal is a functional programming language which targets Javascript. Designed for readability and compiler verification, Formal is powerful, flexible and easy to learn.</p>
 <p>This document is a literate program defining the Formal standard library, namespaced <code>prelude</code>. To compile it, simply clone the repo and run <code>sh deps.sh &amp;&amp; sh build.sh</code> - this will generate the HTML documentation, compiled Javascript source, <a href="http://pivotallabs.github.com/jasmine">Jasmine</a> test suite and Node.js test suite, then run the test suite from Node. You can also see the results of the Jasmine specifications at the bottom of this document.</p>
 <pre><code>module prelude</code></pre>
@@ -67,14 +69,12 @@
             ret (10 == ans))
 
     run (ret 5) == 5
-    run (log &quot;test&quot; &gt;&gt; `5 + 5`) == 10
-
-    time js =
-
-        do start &lt;- `new Date().getTime()`
-           js
-           stop &lt;- `new Date().getTime()`
-           ret (stop - start)</code></pre>
+    run (log &quot;test&quot; &gt;&gt; `5 + 5`) == 10</code></pre>
+<p>Testing to verify that escaping Javascript &amp; utilizing escaped Javascript with <code>do</code> sugar and composition in general works as expected.</p>
+<pre><code>    let x = 0
+        y = do z &lt;- `x = 1`
+               ret z
+    x == 0</code></pre>
 <h2 id="numbers">Numbers</h2>
 <p>Some basic aliases to native javascript infix functions.</p>
 <pre><code>    (&amp;&amp;) x y = run `x &amp;&amp; y`
@@ -114,6 +114,13 @@
 <p>Due to the nested recursion, this is an excellent function for testing the runtime speed versus raw javascript. <code>fast_fib</code> is a trivial javascript implementation of the same function, recursed itself to remove any potential overhead from formal's dispatch mechanism.</p>
 <pre><code>    module speedtest
 
+        time js =
+
+            do start &lt;- `new Date().getTime()`
+               js
+               stop &lt;- `new Date().getTime()`
+               ret (stop - start)
+
         fast_fib = run `var f = function(n) {
                             if (n === 0) {
                                 return 0;
@@ -126,33 +133,36 @@
                         return f;`
 
         fast_fib 7 == fib 7</code></pre>
-<p>With this, we can set up a simple canary to elt us know if the prelude is suddenly dramatically slower than it reviously was; in this case, we fail a test if the formal version isn't at least 90% as fast as the native javascript version.</p>
+<p>With this, we can set up a simple canary to let us know if the prelude is suddenly dramatically slower than it previously was; in this case, we fail a test if the formal version isn't at least 80% as fast as the native javascript version. This test &quot;primes&quot; the JIT by running the fast calc first, otherwise in practice the first eval tends to be favored in V8.</p>
 <pre><code>        floor = run `Math.floor`
 
-        run &lt;: do fast_time &lt;- time (lazy fast_fib 35)
-                  slow_time &lt;- time (lazy fib 35)
-                  let ratio = floor &lt;| fast_time / slow_time * 100
-                  log (&quot;Runtime speed ~&quot; + ratio + &quot;%&quot;)
-                  ret (ratio &gt;= 50)</code></pre>
+        run do ret &lt;| fast_fib 35
+
+               fast_time &lt;- time (lazy fast_fib 35)
+               slow_time &lt;- time (lazy fib 35)
+
+               let ratio = floor &lt;| fast_time / slow_time * 100
+               log (&quot;Runtime speed ~&quot; + ratio + &quot;%&quot;)
+               ret (ratio &gt;= 80)</code></pre>
 <h2 id="function-combinators">Function Combinators</h2>
 <p>Simple left &amp; right pipes, ala F#.</p>
 <pre><code>    (&lt;|) x y = x y
     (|&gt;) x y = y x
 
-    3 |&gt; (\y = y + 1) |&gt; (\y = y + 1)    == 5
-    (\y x z = x + y + z + 1) 1 &lt;| 3 &lt;| 4 == 9</code></pre>
+    3 |&gt; (&#955;y = y + 1) |&gt; (&#955;y = y + 1)    == 5
+    (&#955;y x z = x + y + z + 1) 1 &lt;| 3 &lt;| 4 == 9</code></pre>
 <p>Alternatively, there is a right associative version of <code>&lt;|</code>, ala haskell. All operators which end with a <code>:</code> are right associative.</p>
 <pre><code>    (&lt;:) x y = x y
 
-    (\x = x - 3) &lt;: (\x = x - 3) &lt;: 5 + 5 == 4</code></pre>
+    (&#955;x = x - 3) &lt;: (&#955;x = x - 3) &lt;: 5 + 5 == 4</code></pre>
 <p>Function composition</p>
-<pre><code>    (.:) x y = \z = x (y z)
+<pre><code>    (.:) x y = &#955;z = x (y z)
     id x = x
     flip f a b = f b a
 
-    ((\x = x + 1) .: (\x = x * 2) .: (\x = x - 3)) 4 == 3
+    ((&#955;x = x + 1) .: (&#955;x = x * 2) .: (&#955;x = x - 3)) 4 == 3
     id [1, 2, 3] == [1, 2, 3]
-    flip (\x y = x - y) 3 5 == 2</code></pre>
+    flip (&#955;x y = x - y) 3 5 == 2</code></pre>
 <h2 id="tests">Tests</h2>
 <p>By invoking javascript, we can listen for exceptions.</p>
 <pre><code>    err x = run `try {
@@ -172,50 +182,63 @@
 <p>A simple implementation of a library for manipulating linked lists.</p>
 <pre><code>    module list
 
-        type List a = cons: { head: a, tail: List a } 
-                      | nil:</code></pre>
-<p>This complex type can be hidden behind a constructor function which works more like a traditional cons.</p>
-<pre><code>        (::) x y = cons: { head = x, tail = y }
+        type List a = { head: a, tail: List a } 
+                    | nil:</code></pre>
+<p>This complex type can be hidden behind a constructor function which works more like a traditional cons. The compiler itself also supports the list sugar <code>[: 1, 2, 3 :]</code>.</p>
+<pre><code>        (::) x y = { head = x, tail = y }
 
+        [: 1, 2, 3 :]  == 1 :: 2 :: 3 :: nil: 
         1 :: 2 :: nil: == 1 :: 2 :: nil:
-        nil: :: nil:   == cons: { head = nil:, tail = nil: }
-        3 :: 4 :: nil: ==
-
-            cons: { head: 3
-                    tail: cons: { head: 4
-                                  tail: nil: }}</code></pre>
+        nil: :: nil:   == { head = nil:, tail = nil: }
+        3 :: 4 :: nil: == { head: 3
+                            tail: { head: 4
+                                    tail: nil: }}</code></pre>
 <p>Simple implementations of list accessors, which illustrate incomplete definition.</p>
 <pre><code>        empty? nil: = true | _ = false
 
-        head (cons: { head: x }) = x
+        head { head: x } = x
            | nil: = error &quot;Head called on empty list&quot;
-        tail (cons: { tail: x }) = x 
+        tail { tail: x } = x 
            | nil: = error &quot;Tail called on empty list&quot;
-        last (cons: { head: x, tail: nil: }) = x
-           | (cons: { tail: x }) = last x
+        last { head: x, tail: nil: } = x
+           | { tail: x } = last x
            | nil: = error &quot;Last called on empty list&quot;
 
         take 0 _ = nil: | n x = head x :: take (n - 1) (tail x)
         drop 0 x = x | n x = drop (n - 1) (tail x)
 
+        take_while f nil: = nil:
+                 | f x when f (head x) = head x :: filter f (tail x)
+                 | _ _ = nil:
+
+        drop_while f nil: = nil:
+                 | f x when f (head x) = drop_while f (tail x)
+                 | _ x = x
 
         not (empty? (1 :: nil:))
-        empty? (nil:)
+        empty? nil:
 
-        head (1 :: 2 :: nil:)  == 1
-        tail (1 :: 2 :: nil:)  == 2 :: nil:
-        last (1 :: 2 :: nil:)  == 2
-        err (lazy head (nil:)) == &quot;Head called on empty list&quot;
-        err (lazy tail (nil:)) == &quot;Tail called on empty list&quot;
-        err (lazy last (nil:)) == &quot;Last called on empty list&quot;
+        head [: 1, 2 :]  == 1
+        tail [: 1, 2 :]  == 2 :: nil:
+        last [: 1, 2 :]  == 2
 
-        take 2 (1 :: 2 :: 3 :: nil:) == 1 :: 2 :: nil:
-        drop 2 (1 :: 2 :: 3 :: nil:) == 3 :: nil:</code></pre>
+        err (lazy head nil:) == &quot;Head called on empty list&quot;
+        err (lazy tail nil:) == &quot;Tail called on empty list&quot;
+        err (lazy last nil:) == &quot;Last called on empty list&quot;
+
+        take 2 [: 1, 2, 3 :] == [: 1, 2 :]
+        drop 2 [: 1, 2, 3 :] == [: 3 :]
+
+        take_while (&#955;x = x &lt; 0) [::] == [::]
+        take_while (&#955;x = x &gt; 0) [: 2, 1, 0 :] == [: 2, 1 :]
+
+        drop_while (&#955;x = x &lt; 0) nil: == nil:
+        drop_while (&#955;x = x &gt; 0) [: 2, 1, 0 :] == [: 0 :]</code></pre>
 <p>Cardinality</p>
 <pre><code>        length nil: = 0
-             | (cons: { tail: x }) = 1 + length x
+             | { tail: x } = 1 + length x
 
-        length (1 :: 2 :: 3 :: 4 :: nil:) == 4</code></pre>
+        length [: 1, 2, 3, 4 :] == 4</code></pre>
 <p>Generators</p>
 <pre><code>        init 0 _ = nil:
            | n x = x :: init (n - 1) x
@@ -224,39 +247,35 @@
         tail (init 3 0)    == init 2 0</code></pre>
 <p>List concatenation</p>
 <pre><code>        (++) nil: y = y
-           | (cons: { head: y, tail: ys }) xs = 
+           | { head: y, tail: ys } xs = 
                y :: (ys ++ xs)
 
         nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
-        (1 :: 2 :: nil:) ++ (3 :: 4 :: nil:) == 
-            1 :: 2 :: 3 :: 4 :: nil:</code></pre>
+        [: 1, 2 :] ++ [: 3, 4 :] == [: 1, 2, 3, 4 :]</code></pre>
 <p>Filter</p>
 <pre><code>        filter f nil: = nil:
              | f x when f (head x) = head x :: filter f (tail x)
              | f x = filter f &lt;| tail x
 
-        filter (\x = x &gt; 2) (1 :: 2 :: 3 :: 4 :: nil:) == 
-            3 :: 4 :: nil:</code></pre>
+        filter (&#955;x = x &gt; 2) [: 1, 2, 3, 4 :] == [: 3, 4 :]</code></pre>
 <p>Map</p>
 <pre><code>        map f nil: = nil:
           | f x = f (head x) :: map f (tail x)
 
-        map (\x = x + 1) (1 :: 2 :: 3 :: nil:) == 
-            2 :: 3 :: 4 :: nil:</code></pre>
+        map (&#955;x = x + 1) [: 1, 2, 3 :] == [: 2, 3, 4 :]</code></pre>
 <p>Reverse</p>
 <pre><code>        reverse = 
             let r rest nil: = rest
-                | rest (cons: { head: x, tail: xs }) = 
+                | rest { head: x, tail: xs } = 
                     r (x :: rest) xs
 
-            r (nil:)
+            r nil:
 
-        reverse (1 :: 2 :: 3 :: 4 :: nil:) ==
-            4 :: 3 :: 2 :: 1 :: nil:</code></pre>
+        reverse [: 1, 2, 3, 4 :] == [: 4, 3, 2, 1 :]</code></pre>
 <p>Folds</p>
 <pre><code>        foldl f x xs =
             let g y nil: = y
-                | y (cons: { head: z, tail: zs }) = g (f y z) zs
+                | y { head: z, tail: zs } = g (f y z) zs
             g x xs
 
         foldl1 _ nil: = error &quot;Foldl1 called on empty list&quot;
@@ -264,41 +283,41 @@
 
         foldr f x =
             let g nil: = x
-                | (cons: { head: y, tail: ys }) = f y (g ys)
+                | { head: y, tail: ys } = f y (g ys)
             g
 
         foldr1 _ nil: = error &quot;Foldr1 called on empty list&quot;
              | f x = foldr f (head x) (tail x)
 
-        all? f = foldl1 (\x y = f x &amp;&amp; f y)
-        any? f = foldl1 (\x y = f x || f y)
+        all? f = foldl1 (&#955;x y = f x &amp;&amp; f y)
+        any? f = foldl1 (&#955;x y = f x || f y)
 
-        sum     = foldl1 (\x y = x + y)
-        product = foldl1 (\x y = x * y)
+        sum     = foldl1 (&#955;x y = x + y)
+        product = foldl1 (&#955;x y = x * y)
 
-        concat = foldl1 (\x y = x ++ y)
+        concat = foldl1 (&#955;x y = x ++ y)
         concat_map f xs = concat (map f xs)
 
-        maximum = foldl1 (\x y = if x &gt; y then x else y)
-        minimum = foldl1 (\x y = if x &gt; y then y else x)
+        maximum = foldl1 (&#955;x y = if x &gt; y then x else y)
+        minimum = foldl1 (&#955;x y = if x &gt; y then y else x)
 
-        foldl (\x y = x + y) 0 (1 :: 2 :: 3 :: 4 :: nil:) == 10
-        foldr (\x y = x + y) 0 (1 :: 2 :: 3 :: 4 :: nil:) == 10
-        all? id (true :: true :: nil:)
-        not (all? id (true :: false :: nil:))
+        foldl (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10
+        foldr (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10
+        all? id [: true, true :]
+        not (all? id [: true, false :])
         any? id (true :: false :: nil:)
         not (any? id (false :: false :: nil:))
         sum (1 :: 2 :: 3 :: nil:) == 6
         product (1 :: 2 :: 4 :: nil:) == 8
 
-        concat ((1 :: 2 :: nil:) :: (3 :: 4 :: nil:) :: nil:) ==
-            1 :: 2 :: 3 :: 4 :: nil:
+        let x = 1 :: 2 :: nil:
+            y = 3 :: 4 :: nil:
+        concat [: x, y :]== [: 1, 2, 3, 4 :]
 
-        concat_map (\x = (x :: x + 1 :: nil:)) (1 :: 2 ::  nil:) ==
-             1 :: 2 :: 2 :: 3 :: nil:
+        concat_map (&#955;x=[:x,x+1]) [:1,2] == [:1,2,2,3]
 
-        minimum (1 :: 2 :: 3 :: nil:) == 1
-        maximum (1 :: 2 :: 3 :: nil:) == 3</code></pre>
+        minimum [: 1, 2, 3 :] == 1
+        maximum [: 1, 2, 3 :] == 3</code></pre>
 <h2 id="sequences">Sequences</h2>
 <p>Sequences are an abstract data type which resembles a list, except that elements of a sequence are constructed lazily as they are requested.</p>
 <pre><code>    module sequence
@@ -308,7 +327,7 @@
         type Seq a = Js ( { val: a, next: Seq a } | end: )</code></pre>
 <p>Converting a <code>List</code> to a <code>Seq</code> is simple and O(1) as the list need not be walked</p>
 <pre><code>        from_list nil: = lazy end:
-                | x    = lazy { val: head x
+                | x    = lazy { val:  head x
                                 next: from_list (tail x) }</code></pre>
 <p>... but converting back is not.</p>
 <pre><code>        to_list =
@@ -316,23 +335,23 @@
                 | end: = nil:
             f .: run
 
-        to_list (from_list (1 :: 2 :: nil:)) == 1 :: 2 :: nil:</code></pre>
+        to_list (from_list [: 1, 2 :]) == [: 1, 2:]</code></pre>
 <p>Sequences may be infinite, as long as you never try to read every element. However, the current implementation is stack-consuming and thus limited by the underlying javascript runtime ...</p>
 <pre><code>        iterate f x = lazy { val: x, next: iterate f (f x) } 
 
+        match x f = f x
+
         take 0 _ = lazy end:
            | n x = do y &lt;- x
-                      ret (y |&gt; \ end: = end:
-                                | { val: y, next: ys } = 
-                                    { val: y
-                                      next: take (n - 1) ys })
+                      ret (match y &#955; end: = end:
+                                   | { val: y, next: ys } = 
+                                       { val: y
+                                         next: take (n - 1) ys })
 
-        1 :: 2 :: 3 :: nil: == 
-            (1 :: 2 :: 3 :: 4 :: nil:) |&gt; from_list 
-                                       |&gt; take 3
-                                       |&gt; to_list
+        let f = to_list .: take 3 .: from_list
+        [: 1, 2, 3 :] == f [: 1, 2, 3, 4 :]
 
-        500 == iterate (\x = x + 1) 0
+        500 == iterate (&#955;x = x + 1) 0
                |&gt; take 500
                |&gt; to_list
                |&gt; length</code></pre>
@@ -347,7 +366,6 @@
 
 
 open prelude</code></pre>
-        
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/texodus">texodus</a></p>
