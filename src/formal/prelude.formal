@@ -1,4 +1,3 @@
-
 Prelude
 ==============
 
@@ -130,8 +129,8 @@ overhead from formal's dispatch mechanism.
                     
             fast_fib 7 == fib 7
             
-With this, we can set up a simple canary to elt us know if the prelude is
-suddenly dramatically slower than it reviously was; in this case, we fail a test
+With this, we can set up a simple canary to let us know if the prelude is
+suddenly dramatically slower than it previously was; in this case, we fail a test
 if the formal version isn't at least 90% as fast as the native javascript
 version.
 
