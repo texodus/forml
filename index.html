@@ -38,7 +38,7 @@
 <h1 id="prelude">Prelude</h1>
 <hr />
 <p>Formal is a functional programming language which targets Javascript. Designed for readability and compiler verification, Formal is powerful, flexible and easy to learn.</p>
-<p>This document is a literate program defining the Formal standard library, namespaced <code>prelude</code>. To compile it, simply clone the repo and run <code>sh deps.sh &amp;&amp; sh build.sh</code> - this will generate the HTML documentation, compiled Javascript source, <a href="http://pivotallabs.github.com/jasmine">Jasmine</a> test suite and Node.js test suite, then run the test suite from Node. You can also see the results of the Jasmine specifications at the bottom of this document.</p>
+<p>This document is a literate program defining the Formal standard library, namespaced <code>prelude</code>. To compile it, simply clone the repo and run <code>sh deps.sh &amp;&amp; sh build.sh</code> - this will generate the HTML documentation, compiled Javascript source, <a href="https://github.com/pivotal/jasmine">Jasmine</a> test suite and Node.js test suite, then run the test suite from Node. You can also see the results of the Jasmine specifications at the bottom of this document.</p>
 <pre><code>module prelude</code></pre>
 <h2 id="bootstrap">Bootstrap</h2>
 <p>Some simple reflection by lifting from Javascript. The definitions of <code>object?</code> and <code>array?</code> must use Javascript's <code>===</code> operator directly here, as the &quot;==&quot; operator defined in <a href="#numbers">Numbers</a> is defined in terms of them.</p>
