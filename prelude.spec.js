@@ -58,10 +58,10 @@ describe("prelude",
             _less = prelude["_less"];
             var _grea;
             _grea = prelude["_grea"];
-            var _eq_eq;
-            _eq_eq = prelude["_eq_eq"];
             var _bang_eq;
             _bang_eq = prelude["_bang_eq"];
+            var _eq_eq;
+            _eq_eq = prelude["_eq_eq"];
             var fib;
             fib = prelude["fib"];
             var speedtest;
@@ -1128,96 +1128,121 @@ describe("prelude",
                                         var jmId_14;
                                         jmId_14 = new (function()
                                                        {
-                                                         it("{ head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 1 :: 2 :: 3 :: nil:",
+                                                         it("let xs  = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = 1 :: 2 :: 3 :: nil:, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = nil: } } }, tail = { nil = true } } } } } in (all_ (λy = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == y) xs)",
                                                             (function()
                                                              {
-                                                               expect({ 'head': 1,
-                                                                        'tail': { 'head': 2,
-                                                                                  'tail': { 'head': 3,
-                                                                                            'tail': { 'nil': true
-                                                                                                    }
-                                                                                          }
-                                                                                }
-                                                                      }).
-                                                               toEqual(_col_col(1)(_col_col(2)(_col_col(3)((function()
+                                                               expect((function()
+                                                                       {
+                                                                         try
+                                                                         {
+                                                                           return (function()
+                                                                                   {
+                                                                                     var xs;
+                                                                                     xs = (function()
+                                                                                           {
+                                                                                             if((true
+                                                                                                 &&
+                                                                                                 true))
+                                                                                             {
+                                                                                               return { 'head': { 'head': 1,
+                                                                                                                  'tail': { 'head': 2,
+                                                                                                                            'tail': { 'head': 3,
+                                                                                                                                      'tail': { 'nil': true
+                                                                                                                                              }
+                                                                                                                                    }
+                                                                                                                          }
+                                                                                                                },
+                                                                                                        'tail': { 'head': { 'head': 1,
+                                                                                                                            'tail': { 'head': 2,
+                                                                                                                                      'tail': { 'head': 3,
+                                                                                                                                                'tail': { 'nil': true
+                                                                                                                                                        }
+                                                                                                                                              }
+                                                                                                                                    }
+                                                                                                                          },
+                                                                                                                  'tail': { 'head': _col_col(1)(_col_col(2)(_col_col(3)((function()
+                                                                                                                                                                         {
+                                                                                                                                                                           var jmId_16;
+                                                                                                                                                                           jmId_16 = {};
+                                                                                                                                                                           jmId_16["nil"] = true;
+                                                                                                                                                                           return jmId_16;
+                                                                                                                                                                         })()))),
+                                                                                                                            'tail': { 'head': { 'head': 1,
+                                                                                                                                                'tail': { 'head': 2,
+                                                                                                                                                          'tail': { 'head': 3,
+                                                                                                                                                                    'tail': (function()
+                                                                                                                                                                             {
+                                                                                                                                                                               var jmId_17;
+                                                                                                                                                                               jmId_17 = {};
+                                                                                                                                                                               jmId_17["nil"] = true;
+                                                                                                                                                                               return jmId_17;
+                                                                                                                                                                             })()
+                                                                                                                                                                  }
+                                                                                                                                                        }
+                                                                                                                                              },
+                                                                                                                                      'tail': { 'nil': true
+                                                                                                                                              }
+                                                                                                                                    }
+                                                                                                                          }
+                                                                                                                }
+                                                                                                      };
+                                                                                             }
+                                                                                             else
+                                                                                             {
+                                                                                               args = [];
+                                                                                               exhaust();
+                                                                                             };
+                                                                                           })();
+                                                                                     return all_((function()
+                                                                                                  {
+                                                                                                    return (function(__a__)
                                                                                                             {
-                                                                                                              var jmId_15;
-                                                                                                              jmId_15 = {};
-                                                                                                              jmId_15["nil"] = true;
-                                                                                                              return jmId_15;
-                                                                                                            })()))));
-                                                             }));
-                                                         it("1 :: 2 :: nil: == 1 :: 2 :: nil:",
-                                                            (function()
-                                                             {
-                                                               expect(_col_col(1)(_col_col(2)((function()
-                                                                                               {
-                                                                                                 var jmId_16;
-                                                                                                 jmId_16 = {};
-                                                                                                 jmId_16["nil"] = true;
-                                                                                                 return jmId_16;
-                                                                                               })()))).
-                                                               toEqual(_col_col(1)(_col_col(2)((function()
-                                                                                                {
-                                                                                                  var jmId_17;
-                                                                                                  jmId_17 = {};
-                                                                                                  jmId_17["nil"] = true;
-                                                                                                  return jmId_17;
-                                                                                                })())));
-                                                             }));
-                                                         it("nil: :: nil: == { head = nil:, tail = nil: }",
-                                                            (function()
-                                                             {
-                                                               expect(_col_col((function()
-                                                                                {
-                                                                                  var jmId_18;
-                                                                                  jmId_18 = {};
-                                                                                  jmId_18["nil"] = true;
-                                                                                  return jmId_18;
-                                                                                })())((function()
-                                                                                       {
-                                                                                         var jmId_19;
-                                                                                         jmId_19 = {};
-                                                                                         jmId_19["nil"] = true;
-                                                                                         return jmId_19;
-                                                                                       })())).
-                                                               toEqual({ 'head': (function()
-                                                                                  {
-                                                                                    var jmId_20;
-                                                                                    jmId_20 = {};
-                                                                                    jmId_20["nil"] = true;
-                                                                                    return jmId_20;
-                                                                                  })(),
-                                                                         'tail': (function()
-                                                                                  {
-                                                                                    var jmId_21;
-                                                                                    jmId_21 = {};
-                                                                                    jmId_21["nil"] = true;
-                                                                                    return jmId_21;
-                                                                                  })()
-                                                                       });
-                                                             }));
-                                                         it("3 :: 4 :: nil: == { head = 3, tail = { head = 4, tail = nil: } }",
-                                                            (function()
-                                                             {
-                                                               expect(_col_col(3)(_col_col(4)((function()
-                                                                                               {
-                                                                                                 var jmId_22;
-                                                                                                 jmId_22 = {};
-                                                                                                 jmId_22["nil"] = true;
-                                                                                                 return jmId_22;
-                                                                                               })()))).
-                                                               toEqual({ 'head': 3,
-                                                                         'tail': { 'head': 4,
-                                                                                   'tail': (function()
-                                                                                            {
-                                                                                              var jmId_23;
-                                                                                              jmId_23 = {};
-                                                                                              jmId_23["nil"] = true;
-                                                                                              return jmId_23;
-                                                                                            })()
-                                                                                 }
-                                                                       });
+                                                                                                              var y;
+                                                                                                              y = null;
+                                                                                                              if((((function()
+                                                                                                                    {
+                                                                                                                      if((typeof(__a__)
+                                                                                                                          !=
+                                                                                                                          "undefined"))
+                                                                                                                      {
+                                                                                                                        y = __a__;
+                                                                                                                        return true;
+                                                                                                                      }
+                                                                                                                      else
+                                                                                                                      {
+                                                                                                                        return false;
+                                                                                                                      };
+                                                                                                                    })()
+                                                                                                                   &&
+                                                                                                                   true)
+                                                                                                                  &&
+                                                                                                                  true))
+                                                                                                              {
+                                                                                                                return _eq_eq({ 'head': 1,
+                                                                                                                                'tail': { 'head': 2,
+                                                                                                                                          'tail': { 'head': 3,
+                                                                                                                                                    'tail': { 'nil': true
+                                                                                                                                                            }
+                                                                                                                                                  }
+                                                                                                                                        }
+                                                                                                                              })(y);
+                                                                                                              }
+                                                                                                              else
+                                                                                                              {
+                                                                                                                args = [];
+                                                                                                                exhaust();
+                                                                                                              };
+                                                                                                            });
+                                                                                                  })())(xs);
+                                                                                   })();
+                                                                         }
+                                                                         catch(jmId_15)
+                                                                         {
+                                                                           return { 'error': jmId_15
+                                                                                  };
+                                                                         };
+                                                                       })()).
+                                                               toEqual(true);
                                                              }));
                                                          it("not empty_ 1 :: nil:",
                                                             (function()
@@ -1228,38 +1253,33 @@ describe("prelude",
                                                                          {
                                                                            return not(empty_(_col_col(1)((function()
                                                                                                           {
-                                                                                                            var jmId_25;
-                                                                                                            jmId_25 = {};
-                                                                                                            jmId_25["nil"] = true;
-                                                                                                            return jmId_25;
+                                                                                                            var jmId_19;
+                                                                                                            jmId_19 = {};
+                                                                                                            jmId_19["nil"] = true;
+                                                                                                            return jmId_19;
                                                                                                           })())));
                                                                          }
-                                                                         catch(jmId_24)
+                                                                         catch(jmId_18)
                                                                          {
-                                                                           return { 'error': jmId_24
+                                                                           return { 'error': jmId_18
                                                                                   };
                                                                          };
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("empty_ nil:",
+                                                         it("empty_ { nil = true }",
                                                             (function()
                                                              {
                                                                expect((function()
                                                                        {
                                                                          try
                                                                          {
-                                                                           return empty_((function()
-                                                                                          {
-                                                                                            var jmId_27;
-                                                                                            jmId_27 = {};
-                                                                                            jmId_27["nil"] = true;
-                                                                                            return jmId_27;
-                                                                                          })());
+                                                                           return empty_({ 'nil': true
+                                                                                         });
                                                                          }
-                                                                         catch(jmId_26)
+                                                                         catch(jmId_20)
                                                                          {
-                                                                           return { 'error': jmId_26
+                                                                           return { 'error': jmId_20
                                                                                   };
                                                                          };
                                                                        })()).
@@ -1276,7 +1296,7 @@ describe("prelude",
                                                                            })).
                                                                toEqual(1);
                                                              }));
-                                                         it("tail { head = 1, tail = { head = 2, tail = { nil = true } } } == 2 :: nil:",
+                                                         it("tail { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 2, tail = { nil = true } }",
                                                             (function()
                                                              {
                                                                expect(tail({ 'head': 1,
@@ -1285,13 +1305,10 @@ describe("prelude",
                                                                                                }
                                                                                      }
                                                                            })).
-                                                               toEqual(_col_col(2)((function()
-                                                                                    {
-                                                                                      var jmId_28;
-                                                                                      jmId_28 = {};
-                                                                                      jmId_28["nil"] = true;
-                                                                                      return jmId_28;
-                                                                                    })()));
+                                                               toEqual({ 'head': 2,
+                                                                         'tail': { 'nil': true
+                                                                                 }
+                                                                       });
                                                              }));
                                                          it("last { head = 1, tail = { head = 2, tail = { nil = true } } } == 2",
                                                             (function()
@@ -1319,10 +1336,10 @@ describe("prelude",
                                                                                        {
                                                                                          return head((function()
                                                                                                       {
-                                                                                                        var jmId_29;
-                                                                                                        jmId_29 = {};
-                                                                                                        jmId_29["nil"] = true;
-                                                                                                        return jmId_29;
+                                                                                                        var jmId_21;
+                                                                                                        jmId_21 = {};
+                                                                                                        jmId_21["nil"] = true;
+                                                                                                        return jmId_21;
                                                                                                       })());
                                                                                        }
                                                                                        else
@@ -1349,10 +1366,10 @@ describe("prelude",
                                                                                        {
                                                                                          return tail((function()
                                                                                                       {
-                                                                                                        var jmId_30;
-                                                                                                        jmId_30 = {};
-                                                                                                        jmId_30["nil"] = true;
-                                                                                                        return jmId_30;
+                                                                                                        var jmId_22;
+                                                                                                        jmId_22 = {};
+                                                                                                        jmId_22["nil"] = true;
+                                                                                                        return jmId_22;
                                                                                                       })());
                                                                                        }
                                                                                        else
@@ -1379,10 +1396,10 @@ describe("prelude",
                                                                                        {
                                                                                          return last((function()
                                                                                                       {
-                                                                                                        var jmId_31;
-                                                                                                        jmId_31 = {};
-                                                                                                        jmId_31["nil"] = true;
-                                                                                                        return jmId_31;
+                                                                                                        var jmId_23;
+                                                                                                        jmId_23 = {};
+                                                                                                        jmId_23["nil"] = true;
+                                                                                                        return jmId_23;
                                                                                                       })());
                                                                                        }
                                                                                        else
@@ -1558,17 +1575,17 @@ describe("prelude",
                                                                                             });
                                                                                   })())((function()
                                                                                          {
-                                                                                           var jmId_32;
-                                                                                           jmId_32 = {};
-                                                                                           jmId_32["nil"] = true;
-                                                                                           return jmId_32;
+                                                                                           var jmId_24;
+                                                                                           jmId_24 = {};
+                                                                                           jmId_24["nil"] = true;
+                                                                                           return jmId_24;
                                                                                          })())).
                                                                toEqual((function()
                                                                         {
-                                                                          var jmId_33;
-                                                                          jmId_33 = {};
-                                                                          jmId_33["nil"] = true;
-                                                                          return jmId_33;
+                                                                          var jmId_25;
+                                                                          jmId_25 = {};
+                                                                          jmId_25["nil"] = true;
+                                                                          return jmId_25;
                                                                         })());
                                                              }));
                                                          it("drop_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 0, tail = { nil = true } }",
@@ -1652,23 +1669,23 @@ describe("prelude",
                                                              {
                                                                expect(_plus_plus((function()
                                                                                   {
-                                                                                    var jmId_34;
-                                                                                    jmId_34 = {};
-                                                                                    jmId_34["nil"] = true;
-                                                                                    return jmId_34;
+                                                                                    var jmId_26;
+                                                                                    jmId_26 = {};
+                                                                                    jmId_26["nil"] = true;
+                                                                                    return jmId_26;
                                                                                   })())(_col_col(1)(_col_col(2)((function()
                                                                                                                  {
-                                                                                                                   var jmId_35;
-                                                                                                                   jmId_35 = {};
-                                                                                                                   jmId_35["nil"] = true;
-                                                                                                                   return jmId_35;
+                                                                                                                   var jmId_27;
+                                                                                                                   jmId_27 = {};
+                                                                                                                   jmId_27["nil"] = true;
+                                                                                                                   return jmId_27;
                                                                                                                  })())))).
                                                                toEqual(_col_col(1)(_col_col(2)((function()
                                                                                                 {
-                                                                                                  var jmId_36;
-                                                                                                  jmId_36 = {};
-                                                                                                  jmId_36["nil"] = true;
-                                                                                                  return jmId_36;
+                                                                                                  var jmId_28;
+                                                                                                  jmId_28 = {};
+                                                                                                  jmId_28["nil"] = true;
+                                                                                                  return jmId_28;
                                                                                                 })())));
                                                              }));
                                                          it("{ head = 1, tail = { head = 2, tail = { nil = true } } } ++ { head = 3, tail = { head = 4, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } }",
@@ -1982,9 +1999,9 @@ describe("prelude",
                                                                                                      }
                                                                                            });
                                                                          }
-                                                                         catch(jmId_37)
+                                                                         catch(jmId_29)
                                                                          {
-                                                                           return { 'error': jmId_37
+                                                                           return { 'error': jmId_29
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2004,85 +2021,85 @@ describe("prelude",
                                                                                                          }
                                                                                                }));
                                                                          }
-                                                                         catch(jmId_38)
+                                                                         catch(jmId_30)
                                                                          {
-                                                                           return { 'error': jmId_38
+                                                                           return { 'error': jmId_30
                                                                                   };
                                                                          };
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("any_ id true :: false :: nil:",
+                                                         it("any_ id { head = true, tail = { head = false, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
                                                                        {
                                                                          try
                                                                          {
-                                                                           return any_(id)(_col_col(true)(_col_col(false)((function()
-                                                                                                                           {
-                                                                                                                             var jmId_40;
-                                                                                                                             jmId_40 = {};
-                                                                                                                             jmId_40["nil"] = true;
-                                                                                                                             return jmId_40;
-                                                                                                                           })())));
+                                                                           return any_(id)({ 'head': true,
+                                                                                             'tail': { 'head': false,
+                                                                                                       'tail': { 'nil': true
+                                                                                                               }
+                                                                                                     }
+                                                                                           });
                                                                          }
-                                                                         catch(jmId_39)
+                                                                         catch(jmId_31)
                                                                          {
-                                                                           return { 'error': jmId_39
+                                                                           return { 'error': jmId_31
                                                                                   };
                                                                          };
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("not any_ id false :: false :: nil:",
+                                                         it("not any_ id { head = false, tail = { head = false, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
                                                                        {
                                                                          try
                                                                          {
-                                                                           return not(any_(id)(_col_col(false)(_col_col(false)((function()
-                                                                                                                                {
-                                                                                                                                  var jmId_42;
-                                                                                                                                  jmId_42 = {};
-                                                                                                                                  jmId_42["nil"] = true;
-                                                                                                                                  return jmId_42;
-                                                                                                                                })()))));
+                                                                           return not(any_(id)({ 'head': false,
+                                                                                                 'tail': { 'head': false,
+                                                                                                           'tail': { 'nil': true
+                                                                                                                   }
+                                                                                                         }
+                                                                                               }));
                                                                          }
-                                                                         catch(jmId_41)
+                                                                         catch(jmId_32)
                                                                          {
-                                                                           return { 'error': jmId_41
+                                                                           return { 'error': jmId_32
                                                                                   };
                                                                          };
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("sum 1 :: 2 :: 3 :: nil: == 6",
+                                                         it("sum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 6",
                                                             (function()
                                                              {
-                                                               expect(sum(_col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                               {
-                                                                                                                 var jmId_43;
-                                                                                                                 jmId_43 = {};
-                                                                                                                 jmId_43["nil"] = true;
-                                                                                                                 return jmId_43;
-                                                                                                               })()))))).
+                                                               expect(sum({ 'head': 1,
+                                                                            'tail': { 'head': 2,
+                                                                                      'tail': { 'head': 3,
+                                                                                                'tail': { 'nil': true
+                                                                                                        }
+                                                                                              }
+                                                                                    }
+                                                                          })).
                                                                toEqual(6);
                                                              }));
-                                                         it("product 1 :: 2 :: 4 :: nil: == 8",
+                                                         it("product { head = 1, tail = { head = 2, tail = { head = 4, tail = { nil = true } } } } == 8",
                                                             (function()
                                                              {
-                                                               expect(product(_col_col(1)(_col_col(2)(_col_col(4)((function()
-                                                                                                                   {
-                                                                                                                     var jmId_44;
-                                                                                                                     jmId_44 = {};
-                                                                                                                     jmId_44["nil"] = true;
-                                                                                                                     return jmId_44;
-                                                                                                                   })()))))).
+                                                               expect(product({ 'head': 1,
+                                                                                'tail': { 'head': 2,
+                                                                                          'tail': { 'head': 4,
+                                                                                                    'tail': { 'nil': true
+                                                                                                            }
+                                                                                                  }
+                                                                                        }
+                                                                              })).
                                                                toEqual(8);
                                                              }));
-                                                         it("let x  = 1 :: 2 :: nil:\n| y  = 3 :: 4 :: nil: in (concat { head = x, tail = { head = y, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
+                                                         it("let x  = { head = 1, tail = { head = 2, tail = { nil = true } } }\n| y  = { head = 3, tail = { head = 4, tail = { nil = true } } } in (concat { head = x, tail = { head = y, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -2098,13 +2115,12 @@ describe("prelude",
                                                                                                 &&
                                                                                                 true))
                                                                                             {
-                                                                                              return _col_col(1)(_col_col(2)((function()
-                                                                                                                              {
-                                                                                                                                var jmId_46;
-                                                                                                                                jmId_46 = {};
-                                                                                                                                jmId_46["nil"] = true;
-                                                                                                                                return jmId_46;
-                                                                                                                              })()));
+                                                                                              return { 'head': 1,
+                                                                                                       'tail': { 'head': 2,
+                                                                                                                 'tail': { 'nil': true
+                                                                                                                         }
+                                                                                                               }
+                                                                                                     };
                                                                                             }
                                                                                             else
                                                                                             {
@@ -2119,13 +2135,12 @@ describe("prelude",
                                                                                                 &&
                                                                                                 true))
                                                                                             {
-                                                                                              return _col_col(3)(_col_col(4)((function()
-                                                                                                                              {
-                                                                                                                                var jmId_47;
-                                                                                                                                jmId_47 = {};
-                                                                                                                                jmId_47["nil"] = true;
-                                                                                                                                return jmId_47;
-                                                                                                                              })()));
+                                                                                              return { 'head': 3,
+                                                                                                       'tail': { 'head': 4,
+                                                                                                                 'tail': { 'nil': true
+                                                                                                                         }
+                                                                                                               }
+                                                                                                     };
                                                                                             }
                                                                                             else
                                                                                             {
@@ -2150,9 +2165,9 @@ describe("prelude",
                                                                                                               });
                                                                                    })();
                                                                          }
-                                                                         catch(jmId_45)
+                                                                         catch(jmId_33)
                                                                          {
-                                                                           return { 'error': jmId_45
+                                                                           return { 'error': jmId_33
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2313,8 +2328,8 @@ describe("prelude",
                                         match = prelude.sequence["match"];
                                         var take;
                                         take = prelude.sequence["take"];
-                                        var jmId_48;
-                                        jmId_48 = new (function()
+                                        var jmId_34;
+                                        jmId_34 = new (function()
                                                        {
                                                          it("to_list from_list { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
                                                             (function()
@@ -2375,9 +2390,9 @@ describe("prelude",
                                                                                                         }));
                                                                                    })();
                                                                          }
-                                                                         catch(jmId_49)
+                                                                         catch(jmId_35)
                                                                          {
-                                                                           return { 'error': jmId_49
+                                                                           return { 'error': jmId_35
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2431,8 +2446,8 @@ describe("prelude",
                                       {
                                         var _perc;
                                         _perc = prelude.map["_perc"];
-                                        var jmId_50;
-                                        jmId_50 = new (function()
+                                        var jmId_36;
+                                        jmId_36 = new (function()
                                                        {
                                                          it("\"test\" % true == { key = \"test\", val = true }",
                                                             (function()
@@ -2445,133 +2460,3 @@ describe("prelude",
                                       }));
                           })();
           }));
-var object_;
-object_ = prelude["object_"];
-var array_;
-array_ = prelude["array_"];
-var not;
-not = prelude["not"];
-var run;
-run = prelude["run"];
-var _grea_grea_eq;
-_grea_grea_eq = prelude["_grea_grea_eq"];
-var ret;
-ret = prelude["ret"];
-var _grea_grea;
-_grea_grea = prelude["_grea_grea"];
-var log;
-log = prelude["log"];
-var _and_and;
-_and_and = prelude["_and_and"];
-var _or_or;
-_or_or = prelude["_or_or"];
-var _star;
-_star = prelude["_star"];
-var _forw;
-_forw = prelude["_forw"];
-var _plus;
-_plus = prelude["_plus"];
-var _minu;
-_minu = prelude["_minu"];
-var _less_eq;
-_less_eq = prelude["_less_eq"];
-var _grea_eq;
-_grea_eq = prelude["_grea_eq"];
-var _less;
-_less = prelude["_less"];
-var _grea;
-_grea = prelude["_grea"];
-var _eq_eq;
-_eq_eq = prelude["_eq_eq"];
-var _bang_eq;
-_bang_eq = prelude["_bang_eq"];
-var fib;
-fib = prelude["fib"];
-var time;
-time = prelude["time"];
-var fast_fib;
-fast_fib = prelude["fast_fib"];
-var floor;
-floor = prelude["floor"];
-var _less_or;
-_less_or = prelude["_less_or"];
-var _or_grea;
-_or_grea = prelude["_or_grea"];
-var _less_col;
-_less_col = prelude["_less_col"];
-var _comp_col;
-_comp_col = prelude["_comp_col"];
-var id;
-id = prelude["id"];
-var flip;
-flip = prelude["flip"];
-var err;
-err = prelude["err"];
-var option;
-option = prelude["option"];
-var _col_col;
-_col_col = prelude["_col_col"];
-var empty_;
-empty_ = prelude["empty_"];
-var head;
-head = prelude["head"];
-var tail;
-tail = prelude["tail"];
-var last;
-last = prelude["last"];
-var take;
-take = prelude["take"];
-var drop;
-drop = prelude["drop"];
-var take_while;
-take_while = prelude["take_while"];
-var drop_while;
-drop_while = prelude["drop_while"];
-var length;
-length = prelude["length"];
-var init;
-init = prelude["init"];
-var _plus_plus;
-_plus_plus = prelude["_plus_plus"];
-var filter;
-filter = prelude["filter"];
-var map;
-map = prelude["map"];
-var reverse;
-reverse = prelude["reverse"];
-var foldl;
-foldl = prelude["foldl"];
-var foldl1;
-foldl1 = prelude["foldl1"];
-var foldr;
-foldr = prelude["foldr"];
-var foldr1;
-foldr1 = prelude["foldr1"];
-var all_;
-all_ = prelude["all_"];
-var any_;
-any_ = prelude["any_"];
-var sum;
-sum = prelude["sum"];
-var product;
-product = prelude["product"];
-var concat;
-concat = prelude["concat"];
-var concat_map;
-concat_map = prelude["concat_map"];
-var maximum;
-maximum = prelude["maximum"];
-var minimum;
-minimum = prelude["minimum"];
-var from_list;
-from_list = prelude["from_list"];
-var to_list;
-to_list = prelude["to_list"];
-var iterate;
-iterate = prelude["iterate"];
-var match;
-match = prelude["match"];
-var take;
-take = prelude["take"];
-var _perc;
-_perc = prelude["_perc"];
