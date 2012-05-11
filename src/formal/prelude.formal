@@ -1,8 +1,3 @@
-Prelude
-==============
-
-* * *
-
 Formal is a functional programming language which targets Javascript.
 Designed for readability and compiler verification, Formal is
 powerful, flexible and easy to learn.
@@ -14,7 +9,15 @@ source, [Jasmine](http://pivotal.github.com/jasmine) test suite and Node.js
 test suite, then run the test suite from Node.  You can also see the results of
 the Jasmine specifications at the bottom of this document.
 
+Formal is a literate language embedded in
+[Markdown](http://daringfireball.net/projects/markdown/syntax), so any
+line not indented at least 4 spaces is considered a comment.  The
+primary unit of code organization is the `module`, a named collection
+of functions and values.
+
     module prelude
+    
+
 
 Bootstrap
 ---------
@@ -23,165 +26,172 @@ Some simple reflection by lifting from Javascript.  The definitions of
 here, as the "==" operator defined in [Numbers](#numbers) is defined
 in terms of them.
 
-        object? x = run `typeof x === "object"`
-        array? = is_array
-        
-        not x = run `!x`
-        
-        object? {}
-        array? []
+    object? x = run `typeof x === "object"`
+    array? = is_array
+    
+    not x = run `!x`
 
-        not false
-        not (array? {})
-        not (object? 0)
+    object? {}
+    array? []
+
+    not false
+    not (array? {})
+    not (object? 0)
 
 Side effects can only happen in Javascript, so we use a monadic container to
 compose these bits.
 
-        run x = x null
+    run x = x null
 
-        (>>=) x y = lazy run (y (run x))
-        ret x     = lazy x
-        (>>) x y  = `x(); return y();`
-        
-        log x = `console.log(x)`
+    (>>=) x y = lazy run (y (run x))
+    ret x     = lazy x
+    (>>) x y  = `x(); return y();`
+    
+    log x = `console.log(x)`
 
-        run (do x <- `1 + 4`
-                y <- `2 + 3`
-                log ("x is " + x + " and y is " + y)
-                ans <- `x + y`
-                ret (10 == ans))
-                  
-        run (ret 5) == 5
-        run (log "test" >> `5 + 5`) == 10
+    run (do x <- `1 + 4`
+            y <- `2 + 3`
+            log ("x is " + x + " and y is " + y)
+            ans <- `x + y`
+            ret (10 == ans))
+              
+    run (ret 5) == 5
+    run (log "test" >> `5 + 5`) == 10
 
 Testing to verify that escaping Javascript & utilizing escaped
 Javascript with `do` sugar and composition in general works as
 expected.
 
-        let x = 0
-            y = do z <- `x = 1`
-                   ret z
-        x == 0
+    let x = 0
+        y = do z <- `x = 1`
+               ret z
+    x == 0
 
 
 Numbers
 -------
 Some basic aliases to native javascript infix functions.
 
-        (&&) x y = run `x && y`
-        (||) x y = run `x || y`
-        (*)  x y = run `x * y`
-        (/)  x y = run `x / y`
-        (+)  x y = run `x + y`
-        (-)  x y = run `x - y`
-        (<=) x y = run `x <= y`
-        (>=) x y = run `x >= y`
-        (<)  x y = run `x < y`
-        (>)  x y = run `x > y`
+    (&&) x y = run `x && y`
+    (||) x y = run `x || y`
+    (*)  x y = run `x * y`
+    (/)  x y = run `x / y`
+    (+)  x y = run `x + y`
+    (-)  x y = run `x - y`
+    (<=) x y = run `x <= y`
+    (>=) x y = run `x >= y`
+    (<)  x y = run `x < y`
+    (>)  x y = run `x > y`
 
 Equality is overloaded to match records and arrays
 
-        (==) x y when object? x && object? y =
-               let result = true
-               run `for (key in x) {
-                        result = result && _eq_eq(x[key])(y[key]);
-                    };
-                    return result;`
-           | x y when array? x && array? y =
-               let result = true
-               run `for (z in x) {
-                        result = result && _eq_eq(x[z])(y[z]);
-                    };
-                    return (result && x.length == y.length);`
-           | x y = run `x === y`
-                 
-        (!=) x y = not (x == y)
-        
+    (!=) x y = not (x == y)
+
+    (==) x y when object? x && object? y =
+           let result = true
+           run `for (key in x) {
+                    result = result && _eq_eq(x[key])(y[key]);
+                };
+
+                var z = Object.keys(x).length 
+                            === Object.keys(y).length;
+
+                return result && z;`
+                
+       | x y when array? x && array? y =
+           let result = true
+           run `for (z in x) {
+                    result = result && _eq_eq(x[z])(y[z]);
+                };
+
+                return (result && x.length == y.length);`
+
+       | x y = run `x === y`
+    
 And a few simple tests to verify the correctness of these
 implementations.  This is not meant to be exhaustive, only a smoke
 test against regressions.
 
-        (3 * 4) + 5 * 4 == 64 / 2
-        4 - 1 != 5 - 10
-        (10 >= 5 + 5) != (4 + 5 <= 10 - 2)
-        ({test: 1} == {test: 1}) == true
-        ({test: 1} != {test: 1}) == false
+    (3 * 4) + 5 * 4 == 64 / 2
+    4 - 1 != 5 - 10
+    (10 >= 5 + 5) != (4 + 5 <= 10 - 2)
+    ({test: 1} == {test: 1}) == true
+    ({test: 1} != {test: 1}) == false
 
 Fibonacci function
 
-        fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
+    fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
 
 Due to the nested recursion, this is an excellent function for testing the
 runtime speed versus raw javascript.  `fast_fib` is a trivial javascript
 implementation of the same function, recursed itself to remove any potential
 overhead from formal's dispatch mechanism.
 
-        module speedtest
+    module speedtest
 
-            time js =
+        time js =
 
-                do start <- `new Date().getTime()`
-                   js
-                   stop <- `new Date().getTime()`
-                   ret (stop - start)
+            do start <- `new Date().getTime()`
+               js
+               stop <- `new Date().getTime()`
+               ret (stop - start)
 
-            fast_fib = run `var f = function(n) {
-                                if (n === 0) {
-                                    return 0;
-                                } else if (n === 1) {
-                                    return 1;
-                                } else {
-                                    return f(n - 1) + f(n - 2)
-                                };
+        fast_fib = run `var f = function(n) {
+                            if (n === 0) {
+                                return 0;
+                            } else if (n === 1) {
+                                return 1;
+                            } else {
+                                return f(n - 1) + f(n - 2)
                             };
-                            return f;`
-                    
-            fast_fib 7 == fib 7
-            
+                        };
+                        return f;`
+                
+        fast_fib 7 == fib 7
+        
 With this, we can set up a simple canary to let us know if the prelude is
 suddenly dramatically slower than it previously was; in this case, we fail a test
 if the formal version isn't at least 80% as fast as the native javascript
 version.  This test "primes" the JIT by running the fast calc first,
 otherwise in practice the first eval tends to be favored in V8.
 
-            floor = run `Math.floor`
-         
-            run do ret <| fast_fib 35
-                   
-                   fast_time <- time (lazy fast_fib 35)
-                   slow_time <- time (lazy fib 35)
+        floor = run `Math.floor`
+     
+        run do ret <| fast_fib 35
+               
+               fast_time <- time (lazy fast_fib 35)
+               slow_time <- time (lazy fib 35)
 
-                   let ratio = floor <| fast_time / slow_time * 100
-                   log ("Runtime speed ~" + ratio + "%")
-                   ret (ratio >= 80)
+               let ratio = floor <| fast_time / slow_time * 100
+               log ("Runtime speed ~" + ratio + "%")
+               ret (ratio >= 80)
 
 Function Combinators
 --------------------
 Simple left & right pipes, ala F#.  
 
-        (<|) x y = x y
-        (|>) x y = y x
-        
-        3 |> (λy = y + 1) |> (λy = y + 1)    == 5
-        (λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9
-        
+    (<|) x y = x y
+    (|>) x y = y x
+    
+    3 |> (λy = y + 1) |> (λy = y + 1)    == 5
+    (λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9
+    
 Alternatively, there is a right associative version of `<|`, ala
 haskell.  All operators which end with a `:` are right associative.
 
-        (<:) x y = x y
-        
-        (λx = x - 3) <: (λx = x - 3) <: 5 + 5 == 4
-        
+    (<:) x y = x y
+    
+    (λx = x - 3) <: (λx = x - 3) <: 5 + 5 == 4
+    
 Function composition
 
-        (.:) x y = λz = x (y z)
-        id x = x
-        flip f a b = f b a
-         
-        ((λx = x + 1) .: (λx = x * 2) .: (λx = x - 3)) 4 == 3
-        id [1, 2, 3] == [1, 2, 3]
-        flip (λx y = x - y) 3 5 == 2
+    (.:) x y = λz = x (y z)
+    id x = x
+    flip f a b = f b a
+     
+    ((λx = x + 1) .: (λx = x * 2) .: (λx = x - 3)) 4 == 3
+    id [1, 2, 3] == [1, 2, 3]
+    flip (λx y = x - y) 3 5 == 2
 
 
 
@@ -189,191 +199,198 @@ Tests
 -----
 By invoking javascript, we can listen for exceptions.
 
-        err x = run `try {
-                         x();
-                         return false;
-                     } catch (e) {
-                         return e;
-                     }`
+    err x = run `try {
+                     x();
+                     return false;
+                 } catch (e) {
+                     return e;
+                 }`
 
 
 
 Option
 ------
-        
-        type Option a = some: a | none:
-        
-        option b nil: = b
-             | _ (some: x) = x
-             
-        option 3 (some: 2) == 2
+    
+    type Option a = some: a | none:
+    
+    option b nil: = b
+         | _ (some: x) = x
+         
+    option 3 (some: 2) == 2
 
 
 Lists
 -----
 A simple implementation of a library for manipulating linked lists.
 
-        module list
+    module list
+    
+        type List a = { head: a, tail: List a } 
+                    | nil:
         
-            type List a = { head: a, tail: List a } 
-                        | nil:
-            
 This complex type can be hidden behind a constructor function which
-works more like a traditional cons.  The compiler itself also supports
-the list sugar `[: 1, 2, 3 :]`.
+works more like a traditional cons.
 
-            (::) x y = { head = x, tail = y }
-            
-            [: 1, 2, 3 :]  == 1 :: 2 :: 3 :: nil: 
-            1 :: 2 :: nil: == 1 :: 2 :: nil:
-            nil: :: nil:   == { head = nil:, tail = nil: }
-            3 :: 4 :: nil: == { head: 3
-                                tail: { head: 4
-                                        tail: nil: }}
-                               
+        (::) x y = { head = x, tail = y }
+
+The compiler itself also supports the list sugar `[: 1, 2, 3 :]` (or
+`[: 1, 2, 3 ]`, as formal prefers to allow innocuous, unambiguous
+syntax variations to be equivalent).  All of these lists are
+synonyms.
+
+        let xs = [: [: 1, 2, 3 ]
+                    [: 1, 2, 3 :]
+                    ( 1 :: 2 :: 3 :: nil: )
+                    { head: 1
+                      tail: { head: 2
+                              tail: { head: 3
+                                      tail: nil: }}} ]
+
+        all? (\y = [:1,2,3] == y) xs 
+                           
 
 Simple implementations of list accessors, which illustrate
 incomplete definition.
 
-            empty? nil: = true | _ = false
+        empty? nil: = true | _ = false
 
-            head { head: x } = x
-               | nil: = error "Head called on empty list"
-            tail { tail: x } = x 
-               | nil: = error "Tail called on empty list"
-            last { head: x, tail: nil: } = x
-               | { tail: x } = last x
-               | nil: = error "Last called on empty list"
+        head { head: x } = x
+           | nil: = error "Head called on empty list"
+        tail { tail: x } = x 
+           | nil: = error "Tail called on empty list"
+        last { head: x, tail: nil: } = x
+           | { tail: x } = last x
+           | nil: = error "Last called on empty list"
 
-            take 0 _ = nil: | n x = head x :: take (n - 1) (tail x)
-            drop 0 x = x | n x = drop (n - 1) (tail x)
+        take 0 _ = nil: | n x = head x :: take (n - 1) (tail x)
+        drop 0 x = x | n x = drop (n - 1) (tail x)
 
-            take_while f nil: = nil:
-                     | f x when f (head x) = head x :: filter f (tail x)
-                     | _ _ = nil:
+        take_while f nil: = nil:
+                 | f x when f (head x) = head x :: filter f (tail x)
+                 | _ _ = nil:
 
-            drop_while f nil: = nil:
-                     | f x when f (head x) = drop_while f (tail x)
-                     | _ x = x
+        drop_while f nil: = nil:
+                 | f x when f (head x) = drop_while f (tail x)
+                 | _ x = x
 
-            not (empty? (1 :: nil:))
-            empty? nil:
+        not (empty? (1 :: nil:))
+        empty? [:]
    
-            head [: 1, 2 :]  == 1
-            tail [: 1, 2 :]  == 2 :: nil:
-            last [: 1, 2 :]  == 2
+        head [: 1, 2 :] == 1
+        tail [: 1, 2 :] == [:2]
+        last [: 1, 2 :] == 2
 
-            err (lazy head nil:) == "Head called on empty list"
-            err (lazy tail nil:) == "Tail called on empty list"
-            err (lazy last nil:) == "Last called on empty list"
+        err (lazy head nil:) == "Head called on empty list"
+        err (lazy tail nil:) == "Tail called on empty list"
+        err (lazy last nil:) == "Last called on empty list"
 
-            take 2 [: 1, 2, 3 :] == [: 1, 2 :]
-            drop 2 [: 1, 2, 3 :] == [: 3 :]
+        take 2 [: 1, 2, 3 :] == [: 1, 2 :]
+        drop 2 [: 1, 2, 3 :] == [: 3 :]
 
-            take_while (λx = x < 0) [::] == [::]
-            take_while (λx = x > 0) [: 2, 1, 0 :] == [: 2, 1 :]
+        take_while (λx = x < 0) [::] == [::]
+        take_while (λx = x > 0) [: 2, 1, 0 :] == [: 2, 1 :]
 
-            drop_while (λx = x < 0) nil: == nil:
-            drop_while (λx = x > 0) [: 2, 1, 0 :] == [: 0 :]
+        drop_while (λx = x < 0) nil: == nil:
+        drop_while (λx = x > 0) [: 2, 1, 0 :] == [: 0 :]
 
 Cardinality
-            
-            length nil: = 0
-                 | { tail: x } = 1 + length x
-                 
-            length [: 1, 2, 3, 4 :] == 4
+        
+        length nil: = 0
+             | { tail: x } = 1 + length x
+             
+        length [: 1, 2, 3, 4 :] == 4
 
 Generators
 
-            init 0 _ = nil:
-               | n x = x :: init (n - 1) x
-               
-            length (init 30 0) == 30
-            tail (init 3 0)    == init 2 0
+        init 0 _ = nil:
+           | n x = x :: init (n - 1) x
+           
+        length (init 30 0) == 30
+        tail (init 3 0)    == init 2 0
 
 List concatenation
 
-            (++) nil: y = y
-               | { head: y, tail: ys } xs = 
-                   y :: (ys ++ xs)
-            
-            nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
-            [: 1, 2 :] ++ [: 3, 4 :] == [: 1, 2, 3, 4 :]
+        (++) nil: y = y
+           | { head: y, tail: ys } xs = 
+               y :: (ys ++ xs)
+        
+        nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
+        [: 1, 2 :] ++ [: 3, 4 :] == [: 1, 2, 3, 4 :]
 
 Filter
 
-            filter f nil: = nil:
-                 | f x when f (head x) = head x :: filter f (tail x)
-                 | f x = filter f <| tail x
-                            
-            filter (λx = x > 2) [: 1, 2, 3, 4 :] == [: 3, 4 :]
+        filter f nil: = nil:
+             | f x when f (head x) = head x :: filter f (tail x)
+             | f x = filter f <| tail x
+                        
+        filter (λx = x > 2) [: 1, 2, 3, 4 :] == [: 3, 4 :]
 
 Map
 
-            map f nil: = nil:
-              | f x = f (head x) :: map f (tail x)
-              
-            map (λx = x + 1) [: 1, 2, 3 :] == [: 2, 3, 4 :]
-                
+        map f nil: = nil:
+          | f x = f (head x) :: map f (tail x)
+          
+        map (λx = x + 1) [: 1, 2, 3 :] == [: 2, 3, 4 :]
+            
 Reverse
 
-            reverse = 
-                let r rest nil: = rest
-                    | rest { head: x, tail: xs } = 
-                        r (x :: rest) xs
+        reverse = 
+            let r rest [::] = rest
+                | rest { head: x, tail: xs } = 
+                    r (x :: rest) xs
 
-                r nil:
-            
-            reverse [: 1, 2, 3, 4 :] == [: 4, 3, 2, 1 :]
+            r nil:
+        
+        reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
 
 Folds
 
-            foldl f x xs =
-                let g y nil: = y
-                    | y { head: z, tail: zs } = g (f y z) zs
-                g x xs
+        foldl f x xs =
+            let g y nil: = y
+                | y { head: z, tail: zs } = g (f y z) zs
+            g x xs
 
-            foldl1 _ nil: = error "Foldl1 called on empty list"
-                 | f x = foldl f (head x) (tail x)
-                 
-            foldr f x =
-                let g nil: = x
-                    | { head: y, tail: ys } = f y (g ys)
-                g
+        foldl1 _ nil: = error "Foldl1 called on empty list"
+             | f x = foldl f (head x) (tail x)
+             
+        foldr f x =
+            let g nil: = x
+                | { head: y, tail: ys } = f y (g ys)
+            g
 
-            foldr1 _ nil: = error "Foldr1 called on empty list"
-                 | f x = foldr f (head x) (tail x)
-                 
-            all? f = foldl1 (λx y = f x && f y)
-            any? f = foldl1 (λx y = f x || f y)
+        foldr1 _ nil: = error "Foldr1 called on empty list"
+             | f x = foldr f (head x) (tail x)
+             
+        all? f = foldl1 (λx y = x && y) .: map f
+        any? f = foldl1 (λx y = x || y) .: map f
 
-            sum     = foldl1 (λx y = x + y)
-            product = foldl1 (λx y = x * y)
-            
-            concat = foldl1 (λx y = x ++ y)
-            concat_map f xs = concat (map f xs)
-            
-            maximum = foldl1 (λx y = if x > y then x else y)
-            minimum = foldl1 (λx y = if x > y then y else x)
+        sum     = foldl1 (λx y = x + y)
+        product = foldl1 (λx y = x * y)
+        
+        concat = foldl1 (λx y = x ++ y)
+        concat_map f xs = concat (map f xs)
+        
+        maximum = foldl1 (λx y = if x > y then x else y)
+        minimum = foldl1 (λx y = if x > y then y else x)
 
-            foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
-            foldr (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
-            all? id [: true, true :]
-            not (all? id [: true, false :])
-            any? id (true :: false :: nil:)
-            not (any? id (false :: false :: nil:))
-            sum (1 :: 2 :: 3 :: nil:) == 6
-            product (1 :: 2 :: 4 :: nil:) == 8
+        foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
+        foldr (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
+        all? id [:true,true]
+        not (all? id [:true,false])
+        any? id [:true,false]
+        not (any? id [:false,false])
+        sum [:1,2,3] == 6
+        product [:1,2,4] == 8
 
-            let x = 1 :: 2 :: nil:
-                y = 3 :: 4 :: nil:
-            concat [: x, y :]== [: 1, 2, 3, 4 :]
+        let x = [:1,2]
+            y = [:3,4]
+        concat [:x,y] == [:1,2,3,4]
 
-            concat_map (λx=[:x,x+1]) [:1,2] == [:1,2,2,3]
-                 
-            minimum [: 1, 2, 3 :] == 1
-            maximum [: 1, 2, 3 :] == 3
-            
+        concat_map (λx = [:x,x+1]) [:1,2] == [:1,2,2,3]
+             
+        minimum [: 1, 2, 3 :] == 1
+        maximum [: 1, 2, 3 :] == 3
+        
 
 
 Sequences
@@ -381,63 +398,63 @@ Sequences
 Sequences are an abstract data type which resembles a list, except that elements
 of a sequence are constructed lazily as they are requested.
 
-        module sequence
-        
-            open list
+    module sequence
+    
+        open list
 
-            type Seq a = Js ( { val: a, next: Seq a } | end: )
+        type Seq a = Js ( { val: a, next: Seq a } | end: )
 
 Converting a `List` to a `Seq` is simple and O(1) as the list need not be walked
 
-            from_list nil: = lazy end:
-                    | x    = lazy { val:  head x
-                                    next: from_list (tail x) }
+        from_list nil: = lazy end:
+                | x    = lazy { val:  head x
+                                next: from_list (tail x) }
 
 ... but converting back is not.
 
-            to_list =
-                let f { val: x, next: xs } = x :: to_list xs
-                    | end: = nil:
-                f .: run
+        to_list =
+            let f { val: x, next: xs } = x :: to_list xs
+                | end: = nil:
+            f .: run
 
-            to_list (from_list [: 1, 2 :]) == [: 1, 2:]
+        to_list (from_list [: 1, 2 :]) == [: 1, 2:]
 
 Sequences may be infinite, as long as you never try to read every element.
 However, the current implementation is stack-consuming and thus limited by the
 underlying javascript runtime ...
 
-            iterate f x = lazy { val: x, next: iterate f (f x) } 
+        iterate f x = lazy { val: x, next: iterate f (f x) } 
 
-            match x f = f x
+        match x f = f x
 
-            take 0 _ = lazy end:
-               | n x = do y <- x
-                          ret (match y λ end: = end:
-                                       | { val: y, next: ys } = 
-                                           { val: y
-                                             next: take (n - 1) ys })
-                                           
-            let f = to_list .: take 3 .: from_list
-            [: 1, 2, 3 :] == f [: 1, 2, 3, 4 :]
+        take 0 _ = lazy end:
+           | n x = do y <- x
+                      ret (match y λ end: = end:
+                                   | { val: y, next: ys } = 
+                                       { val: y
+                                         next: take (n - 1) ys })
+                                       
+        let f = to_list .: take 3 .: from_list
+        [: 1, 2, 3 :] == f [: 1, 2, 3, 4 :]
 
-            500 == iterate (λx = x + 1) 0
-                   |> take 500
-                   |> to_list
-                   |> length
-                        
+        500 == iterate (λx = x + 1) 0
+               |> take 500
+               |> to_list
+               |> length
+                    
 
 
 
 Maps
 ----
 
-        module map
-            
-            type Map a b = map: Array { key: a, val: b }
-            
-            (%) x y = { key = x, val = y }
-            
-            "test" % true == { key = "test", val = true }
+    module map
+        
+        type Map a b = map: Array { key: a, val: b }
+        
+        (%) x y = { key = x, val = y }
+        
+        "test" % true == { key = "test", val = true }
 
 
-    open prelude
+    

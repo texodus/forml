@@ -158,7 +158,7 @@ record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 list_pattern = ListPattern <$> indentPairs "[" (pattern `sepBy` try (try comma <|> not_comma)) "]"
 
 array_pattern = f <$> indentAsymmetricPairs "[:" (whitespace >> withPos (pattern `sepBy` try (try comma <|> not_comma))) (try (string ":]") <|> string "]")
-    where f [] = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)])
+    where f [] = NamedPattern "nil" Nothing -- (M.fromList [(Symbol "nil", AnyPattern)])
           f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
 
 

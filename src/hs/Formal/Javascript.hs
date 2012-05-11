@@ -35,7 +35,10 @@ prelude = [jmacro| function !is_array(x) {
                    } |]
 
 render :: Program -> String
-render (Program xs) = show . renderJs . (prelude ++) . toStat . map (empty_meta Library xs) $ xs
+render (Program xs) = show . renderJs $ ((prelude ++) . toStat . map (empty_meta Library xs) $ xs)
+
+    -- where fix x @ (runTypecheckFull -> (Left _, _)) = show . renderJs $ x
+    --       fix x = show . renderJs $ x
 
 render_spec :: Program -> String
 render_spec (Program xs) = show . renderJs . (prelude ++) . toStat . map (empty_meta Test xs) $ xs
@@ -343,7 +346,7 @@ instance ToJExpr [PatternMatch] where
     toJExpr (x:xs) = [jmacroE| `(x)` && `(xs)` |]
 
 instance ToJExpr PatternMatch where
-    toJExpr (PM _ AnyPattern)                       = toJExpr True
+    toJExpr (PM _ AnyPattern) = toJExpr True
     toJExpr (PM n (VarPattern x))                   = [jmacroE| (function() { if (typeof `(ref n)` != "undefined") { `(ref x)` = `(ref n)`; return true; } else return false })() |]
     toJExpr (PM n (LiteralPattern x))               = [jmacroE| `(ref n)` === `(x)` |]
     toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| check(`(ref n)`) && `(map (\(key, val) -> (PM (n ++ "[\"" ++ to_name key ++ "\"]") val)) xs)` |]

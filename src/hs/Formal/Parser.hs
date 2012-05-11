@@ -100,7 +100,7 @@ formalParser  = Program . concat <$> many (many (string "\n") >> statement) <* e
                                 whitespace1
                                 name <- Namespace <$> namespace
                                 whitespace *> newline
-                                spaces *> indented
+                                spaces *> (indented <|> same)
                                 (:[]) . ModuleStatement name . concat 
                                     <$> withPos (many1 ((spaces >> same >> statement)))
 
