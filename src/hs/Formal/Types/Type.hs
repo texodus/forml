@@ -49,7 +49,9 @@ instance Show ComplexType where
     show (InheritType n m)      = [qq|\{ $n with {unsep_with ": " m} \}|]
     show (RecordType m)         = [qq|\{ {unsep_with ": " m} \}|] 
 
-    show (FunctionType g@(UnionType (S.toList -> ((FunctionType _ _):[]))) h) = [qq|($g -> $h)|]
+    show (FunctionType g @ (UnionType (S.toList -> ((FunctionType _ _):[]))) h) =
+        [qq|($g -> $h)|]
+
     show (FunctionType g h)     = [qq|$g -> $h|]
 
 instance Show SimpleType where

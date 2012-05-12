@@ -90,7 +90,7 @@ Equality is overloaded to match records and arrays
     (==) x y when object? x && object? y =
            let result = true
            run `for (key in x) {
-                    result = result && _eq_eq(x[key])(y[key]);
+                    result = result && y.hasOwnProperty(key) && _eq_eq(x[key])(y[key]);
                 };
 
                 var z = Object.keys(x).length 

@@ -152,34 +152,40 @@ instance Syntax Match where
                                indented
                                return $ Match x (Just ex)
 
+newtype Condition = Condition JExpr
+
+instance ToJExpr [Condition] where
+    toJExpr [] = toJExpr True
+    toJExpr (Condition x : []) = [jmacroE| `(x)` |]
+    toJExpr (Condition x : xs) = [jmacroE| `(x)` && `(xs)` |]
+
 data PatternMatch = PM String Pattern
 
 instance ToJExpr [PatternMatch] where
     toJExpr []     = toJExpr True
+    toJExpr (x:[]) = [jmacroE| `(x)` |]
     toJExpr (x:xs) = [jmacroE| `(x)` && `(xs)` |]
 
 instance ToJExpr PatternMatch where
     toJExpr (PM _ AnyPattern) = toJExpr True
-    toJExpr (PM n (VarPattern x))                   = 
+    toJExpr (PM n (VarPattern x)) = 
         [jmacroE| (function() {
-                      if (typeof `(ref n)` != "undefined") {
-                           `(ref x)` = `(ref n)`; 
-                           return true; 
-                      } else return false 
+                     `(ref x)` = `(ref n)`; 
+                     return true; 
                    })() |]
 
     toJExpr (PM n (LiteralPattern x))               = [jmacroE| `(ref n)` === `(x)` |]
-    toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| check(`(ref n)`) && `(map f xs)` |]
-            where f (key, val) = PM (n ++ "[\"" ++ to_name key ++ "\"]") val
-
     toJExpr (PM _ (RecordPattern (M.toList -> []))) = [jmacroE| true |]
-    toJExpr (PM n (NamedPattern x Nothing))         = [jmacroE| !!`(ref n)`[`(x)`] |]
-    toJExpr (PM n (NamedPattern x (Just y)))        = toJExpr (PM n (RecordPattern (M.fromList [(Symbol x, y)])))
+    toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| `(map g xs)` && `(map f xs)` |]
+            where f (key, val) = PM (n ++ "[\"" ++ to_name key ++ "\"]") val
+                  g (key, _) = Condition [jmacroE| `(ref n)`.hasOwnProperty(`(to_name key)`) |]
+
     toJExpr (PM n (ListPattern []))                 = [jmacroE| equals(`(n)`)([]) |]
-    toJExpr (PM n (ListPattern xs))                 = 
+    toJExpr (PM n (ListPattern xs)) = 
         let x = toJExpr (map (\(index, val) -> toJExpr (PM (n ++ "[" ++ show index ++ "]") val)) (zip [0..] xs))
         in   [jmacroE| `(x)` && `(ref n)`.length == `(length xs)` |]
-    toJExpr (PM _ x)                  = error $ "Unimplemented " ++ show x
+    toJExpr (PM _ x) = error $ "Unimplemented " ++ show x
+
 
 data Pattern = VarPattern String
              | AnyPattern
@@ -187,7 +193,6 @@ data Pattern = VarPattern String
              | RecordPattern (M.Map Symbol Pattern)
              | ListPattern [Pattern]
              | ViewPattern Expression Pattern
-             | NamedPattern String (Maybe Pattern)
 
 instance Show Pattern where
     show (VarPattern x)     = x
@@ -195,8 +200,6 @@ instance Show Pattern where
     show (LiteralPattern x) = show x
     show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
     show (ViewPattern x y)  = [qq|($x -> $y)|]
-    show (NamedPattern n (Just x)) = [qq|$n: ($x)|]
-    show (NamedPattern n Nothing)  = n ++ ":"
     show (RecordPattern m)  = [qq|\{ {unsep_with " = " m} \}|] 
 
 instance ToJExpr [Pattern] where
@@ -217,11 +220,17 @@ instance Syntax Pattern where
               var_pattern         = VarPattern <$> type_var
               literal_pattern     = LiteralPattern <$> syntax          
               any_pattern         = many1 (string "_") *> return AnyPattern
-              naked_apply_pattern = NamedPattern <$> many1 letter <* string ":" <*> return Nothing
-              apply_pattern       = NamedPattern 
-                                    <$> many1 letter 
-                                    <* string ":" 
-                                    <*> (Just <$> (whitespace *> syntax))
+              naked_apply_pattern = 
+
+                  do x <- many1 letter
+                     string ":"
+                     return $ RecordPattern (M.fromList [(Symbol x, AnyPattern )])
+
+              apply_pattern = do x <- many1 letter 
+                                 string ":" 
+                                 whitespace
+                                 y <- syntax
+                                 return $ RecordPattern (M.fromList [(Symbol x, y)])
 
               record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 
@@ -240,7 +249,7 @@ instance Syntax Pattern where
                   where v = do whitespace
                                withPos (syntax `sepBy` try (try comma <|> not_comma))
 
-                        f [] = NamedPattern "nil" Nothing -- (M.fromList [(Symbol "nil", AnyPattern)])
+                        f [] = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)])
                         f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
 
 instance ToJExpr (Maybe Expression) where
@@ -253,7 +262,6 @@ instance ToJExpr (Maybe Expression) where
 -- --------------------------------------------------------------------------------
 
 data Expression = ApplyExpression Expression [Expression]
-                | NamedExpression Symbol (Maybe Expression)
                 | IfExpression Expression Expression Expression
                 | LiteralExpression Literal
                 | SymbolExpression Symbol
@@ -264,23 +272,22 @@ data Expression = ApplyExpression Expression [Expression]
                 | LetExpression [Definition] Expression
                 | ListExpression [Expression]
 
-
 instance Show Expression where
+
     show (ApplyExpression x @ (SymbolExpression (show -> f : _)) y) 
         | f `elem` "abcdefghijklmnopqrstuvwxyz" = [qq|$x {sep_with " " y}|]
         | length y == 2                         = [qq|{y !! 0} $x {y !! 1}|]
-    show (ApplyExpression x y)        = [qq|$x {sep_with " " y}|]
-    show (IfExpression a b c)         = [qq|if $a then $b else $c|]
-    show (LiteralExpression x)        = show x
-    show (SymbolExpression x)         = show x
-    show (ListExpression x)           = [qq|[ {sep_with ", " x} ]|]
-    show (FunctionExpression as)      = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
-    show (NamedExpression n (Just x)) = [qq|$n: ($x)|]
-    show (NamedExpression n Nothing)  = show n ++ ":"
-    show (JSExpression x)             = "`" ++ show (renderJs x) ++ "`"
-    show (LetExpression ax e)         = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
-    show (RecordExpression m)         = [qq|\{ {unsep_with " = " m} \}|] 
-    show (InheritExpression x m)      = [qq|\{ $x with {unsep_with " = " m} \}|] 
+
+    show (ApplyExpression x y)   = [qq|$x {sep_with " " y}|]
+    show (IfExpression a b c)    = [qq|if $a then $b else $c|]
+    show (LiteralExpression x)   = show x
+    show (SymbolExpression x)    = show x
+    show (ListExpression x)      = [qq|[ {sep_with ", " x} ]|]
+    show (FunctionExpression as) = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
+    show (JSExpression x)        = "`" ++ show (renderJs x) ++ "`"
+    show (LetExpression ax e)    = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
+    show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|] 
+    show (InheritExpression x m) = [qq|\{ $x with {unsep_with " = " m} \}|] 
 
 
 instance Syntax Expression where
@@ -318,9 +325,7 @@ instance Syntax Expression where
                         whitespace1
                         withPos line
 
-                  where line = try bind 
-                               <|> try let_bind 
-                               <|> try return'
+                  where line = try bind <|> try let_bind <|> try return'
 
                         bind = do p <- syntax
                                   whitespace <* (string "<-" <|> string "←") <* whitespace 
@@ -405,12 +410,14 @@ instance Syntax Expression where
                                           
                                     return (\x y -> ApplyExpression op' [x, y])
 
-              named_key = NamedExpression 
-                                     <$> (syntax <* string ":") 
-                                     <*> return Nothing
+              named_key = do x <- syntax
+                             char ':'
+                             return $ RecordExpression (M.fromList [(x, SymbolExpression (Symbol "true"))]) 
 
-              named = do x @ (NamedExpression a _) <- named_key
-                         option x (NamedExpression a . Just <$> try (whitespace *> other))
+              named = do x @ (RecordExpression (M.toList -> (k, _): _)) <- named_key
+                         option x $ try $ do whitespace
+                                             z <- other
+                                             return $ RecordExpression (M.fromList [(k, z)])
 
               accessor = do x <- indentPairs "(" syntax ")" 
                                  <|> js 
@@ -549,7 +556,6 @@ instance ToJExpr Expression where
     toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
     toJExpr (JSExpression s)        = s
     toJExpr (LetExpression bs ex)   = [jmacroE| (function() { `(map Local bs)`; return `(ex)` })() |]
-    toJExpr (NamedExpression x y)   = [jmacroE| (function(){ var g = {}; g[`(x)`] = `(y)`; return g})() |]
 
     toJExpr (IfExpression x y z)    = [jmacroE| (function(){ 
                                                     if (`(x)`) { 
@@ -559,5 +565,5 @@ instance ToJExpr Expression where
                                                     }
                                                  })() |] 
 
-    toJExpr x                       = error $ "Unimplemented " ++ show x
+    toJExpr x = error $ "Unimplemented " ++ show x
 
