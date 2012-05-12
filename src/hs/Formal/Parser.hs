@@ -8,18 +8,14 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Formal.Parser (parseFormal, compress) where
+module Formal.Parser where
 
 import Control.Applicative
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import Text.Parsec.Indent  hiding (same)
-
 import Formal.Parser.Utils
-import Formal.Parser.Statements
-import Formal.Parser.AST
 
-
+import Formal.Types.Statement
 
 -- Parsing 
 -- -----------------------------------------------------------------------------
@@ -27,13 +23,14 @@ import Formal.Parser.AST
 
 parseFormal :: String -> Either ParseError Program
 parseFormal src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of 
-                    Right x -> parse formalParser "parsing syntax" (concat x)
+                    Right x -> parse syntax "parsing syntax" (concat x)
 
 
 compress :: String -> String
-compress = run var . run null . run fun
+compress = run var . run nul . run fun
 
-    where run x src' = case parse ((try x <|> ((:[]) <$> anyChar)) `manyTill` eof) "Compressing" src' of Right x -> concat x
+    where run x src' = case parse ((try x <|> ((:[]) <$> anyChar)) `manyTill` eof) "Compressing" src' of
+                         Right z -> concat z
 
           var = do string "var"
                    spaces
@@ -43,17 +40,17 @@ compress = run var . run null . run fun
                    string name
                    return $ "var " ++ name
 
-          null = do string "var"
-                    spaces
-                    name <- many1 (alphaNum <|> char '_')
-                    string ";"
-                    spaces
-                    string name
-                    spaces
-                    string "="
-                    spaces
-                    string "null"
-                    return $ "var " ++ name  
+          nul = do string "var"
+                   spaces
+                   name <- many1 (alphaNum <|> char '_')
+                   string ";"
+                   spaces
+                   string name
+                   spaces
+                   string "="
+                   spaces
+                   string "null"
+                   return $ "var " ++ name  
 
           pairs = do string "{"
                      inner <- (try pairs <|> ((:[]) <$> anyChar)) `manyTill` string "}"
@@ -75,34 +72,11 @@ compress = run var . run null . run fun
                    spaces
                    string "})()"
                    return $ "(function(" ++ name ++ ")" ++ content ++ ")"
-                   
-               
 
+newtype Program = Program [Statement]
 
+instance Show Program where
+     show (Program ss) = sep_with "\n\n" ss
 
-formalParser :: Parser Program
-formalParser  = Program . concat <$> many (many (string "\n") >> statement) <* eof
-
-    where statement       = whitespace >> withPos statement_types <* many newline
-          statement_types = (try type_statement       <?> "Type Definition")
-                            <|> (try import_statement <?> "Import Statement")
-                            <|> (try module_statement <?> "Module Declaration")
-                            <|> (try def_statement    <?> "Symbol Definition")
-                            <|> (expression_statement <?> "Assertion")
-
-          def_statement = map DefinitionStatement <$> definition_statement
-
-          import_statement = do string "open"
-                                whitespace
-                                (:[]) . ImportStatement . Namespace <$> namespace
-
-          module_statement = do string "module"
-                                whitespace1
-                                name <- Namespace <$> namespace
-                                whitespace *> newline
-                                spaces *> (indented <|> same)
-                                (:[]) . ModuleStatement name . concat 
-                                    <$> withPos (many1 ((spaces >> same >> statement)))
-
-          namespace = many1 lower `sepBy1` char '.'
-
+instance Syntax Program where
+    syntax = Program <$> many (many (string "\n") >> syntax) <* eof

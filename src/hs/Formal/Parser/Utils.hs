@@ -9,6 +9,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+
 
 module Formal.Parser.Utils where
 
@@ -37,6 +39,23 @@ instance (Monad m) => Stream T.Text m Char where
     uncons = return . T.uncons
 
 type Parser a = ParsecT T.Text () (StateT SourcePos Identity) a
+
+class Syntax a where
+    syntax :: Parser a
+
+instance Syntax Double where
+    syntax = read <$> do x <- many1 digit 
+                         string "."
+                         y <- many1 digit
+                         return $ x ++ "." ++ y
+
+instance Syntax Int where
+    syntax = read <$> many1 digit
+
+instance Syntax String where
+    syntax = do char '"'
+                anyChar `manyTill` char '"'
+
 
 parse :: Parser a -> SourceName -> String -> Either ParseError a
 parse parser sname input = runIndent sname $ runParserT parser () sname (T.pack input)

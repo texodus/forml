@@ -8,8 +8,9 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Formal.Parser.Types where
+module Formal.Types.Type where
 
+import Text.InterpolatedString.Perl6
 import Control.Applicative
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
@@ -19,7 +20,42 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Formal.Parser.Utils
-import Formal.Parser.AST
+
+import Formal.Types.Symbol
+
+
+data UnionType = UnionType (S.Set ComplexType)
+               deriving (Ord, Eq)
+
+data ComplexType = RecordType (M.Map Symbol UnionType)
+                 | InheritType SimpleType (M.Map Symbol UnionType)
+                 | FunctionType UnionType UnionType
+                 | SimpleType SimpleType
+                 | NamedType String (Maybe UnionType)
+                 deriving (Eq, Ord)
+
+data SimpleType = PolymorphicType SimpleType [UnionType]
+                | SymbolType Symbol 
+                | VariableType String
+                deriving (Ord, Eq)
+
+instance Show UnionType where 
+    show (UnionType xs)         = [qq|{sep_with " | " $ S.toList xs}|]
+   
+instance Show ComplexType where
+    show (SimpleType y)         = [qq|$y|]
+    show (NamedType n (Just x)) = [qq|$n: ($x)|]
+    show (NamedType n Nothing)  = n ++ ":"
+    show (InheritType n m)      = [qq|\{ $n with {unsep_with ": " m} \}|]
+    show (RecordType m)         = [qq|\{ {unsep_with ": " m} \}|] 
+
+    show (FunctionType g@(UnionType (S.toList -> ((FunctionType _ _):[]))) h) = [qq|($g -> $h)|]
+    show (FunctionType g h)     = [qq|$g -> $h|]
+
+instance Show SimpleType where
+    show (PolymorphicType x y)  = [qq|($x {sep_with " " y})|]
+    show (SymbolType x)   = show x
+    show (VariableType x) = x
 
 
 
@@ -103,7 +139,7 @@ poly_type     = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try 
 
      where rvs = record_type <|> var_type <|> symbol_type
 
-record_type   = let key_value = (,) <$> symbol_name <* div' <*> type_definition_signature
+record_type   = let key_value = (,) <$> syntax <* div' <*> type_definition_signature
                     div'      = spaces <* string ":" <* spaces
                     pairs     = key_value `sepEndBy` try (comma <|> not_comma)
                     inner     = RecordType . M.fromList <$> pairs 
@@ -128,11 +164,8 @@ lift              = fmap $ UnionType . S.fromList . (:[])
 
 type_name   :: Parser Symbol
 type_var    :: Parser String
-symbol_name :: Parser Symbol
 
 type_name   = Symbol <$> not_reserved (upper <:> many (alphaNum <|> oneOf "_'"))
 type_var    = not_reserved (oneOf "abscdefghijklmnopqrstuvwxyz" <:> many (alphaNum <|> oneOf "_'"))
-symbol_name = (Symbol <$> not_reserved (oneOf "abscdefghijklmnopqrstuvwxyz" <:> many (alphaNum <|> oneOf "_'$" <|> (string "?" >> return '_'))))
-              <|> (Operator <$> not_reserved imp_infix)
-    where imp_infix = string "(" *> many1 operator <* option "" (try (string ":")) <* string ")"
+
 
