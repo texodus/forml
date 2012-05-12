@@ -192,22 +192,11 @@ describe("prelude",
                                                                                        {
                                                                                          var x;
                                                                                          x = null;
-                                                                                         if((((function()
-                                                                                               {
-                                                                                                 if((typeof(__a__)
-                                                                                                     !=
-                                                                                                     "undefined"))
-                                                                                                 {
-                                                                                                   x = __a__;
-                                                                                                   return true;
-                                                                                                 }
-                                                                                                 else
-                                                                                                 {
-                                                                                                   return false;
-                                                                                                 };
-                                                                                               })()
-                                                                                              &&
-                                                                                              true)
+                                                                                         if(((function()
+                                                                                              {
+                                                                                                x = __a__;
+                                                                                                return true;
+                                                                                              })()
                                                                                              &&
                                                                                              true))
                                                                                          {
@@ -222,22 +211,11 @@ describe("prelude",
                                                                                                                                 {
                                                                                                                                   var y;
                                                                                                                                   y = null;
-                                                                                                                                  if((((function()
-                                                                                                                                        {
-                                                                                                                                          if((typeof(__a__)
-                                                                                                                                              !=
-                                                                                                                                              "undefined"))
-                                                                                                                                          {
-                                                                                                                                            y = __a__;
-                                                                                                                                            return true;
-                                                                                                                                          }
-                                                                                                                                          else
-                                                                                                                                          {
-                                                                                                                                            return false;
-                                                                                                                                          };
-                                                                                                                                        })()
-                                                                                                                                       &&
-                                                                                                                                       true)
+                                                                                                                                  if(((function()
+                                                                                                                                       {
+                                                                                                                                         y = __a__;
+                                                                                                                                         return true;
+                                                                                                                                       })()
                                                                                                                                       &&
                                                                                                                                       true))
                                                                                                                                   {
@@ -251,9 +229,7 @@ describe("prelude",
                                                                                                                                                                     {
                                                                                                                                                                       return (function(__a__)
                                                                                                                                                                               {
-                                                                                                                                                                                if(((true
-                                                                                                                                                                                     &&
-                                                                                                                                                                                     true)
+                                                                                                                                                                                if((true
                                                                                                                                                                                     &&
                                                                                                                                                                                     true))
                                                                                                                                                                                 {
@@ -268,22 +244,11 @@ describe("prelude",
                                                                                                                                                                                                                        {
                                                                                                                                                                                                                          var ans;
                                                                                                                                                                                                                          ans = null;
-                                                                                                                                                                                                                         if((((function()
-                                                                                                                                                                                                                               {
-                                                                                                                                                                                                                                 if((typeof(__a__)
-                                                                                                                                                                                                                                     !=
-                                                                                                                                                                                                                                     "undefined"))
-                                                                                                                                                                                                                                 {
-                                                                                                                                                                                                                                   ans = __a__;
-                                                                                                                                                                                                                                   return true;
-                                                                                                                                                                                                                                 }
-                                                                                                                                                                                                                                 else
-                                                                                                                                                                                                                                 {
-                                                                                                                                                                                                                                   return false;
-                                                                                                                                                                                                                                 };
-                                                                                                                                                                                                                               })()
-                                                                                                                                                                                                                              &&
-                                                                                                                                                                                                                              true)
+                                                                                                                                                                                                                         if(((function()
+                                                                                                                                                                                                                              {
+                                                                                                                                                                                                                                ans = __a__;
+                                                                                                                                                                                                                                return true;
+                                                                                                                                                                                                                              })()
                                                                                                                                                                                                                              &&
                                                                                                                                                                                                                              true))
                                                                                                                                                                                                                          {
@@ -379,22 +344,11 @@ describe("prelude",
                                                                                                       {
                                                                                                         var z;
                                                                                                         z = null;
-                                                                                                        if((((function()
-                                                                                                              {
-                                                                                                                if((typeof(__a__)
-                                                                                                                    !=
-                                                                                                                    "undefined"))
-                                                                                                                {
-                                                                                                                  z = __a__;
-                                                                                                                  return true;
-                                                                                                                }
-                                                                                                                else
-                                                                                                                {
-                                                                                                                  return false;
-                                                                                                                };
-                                                                                                              })()
-                                                                                                             &&
-                                                                                                             true)
+                                                                                                        if(((function()
+                                                                                                             {
+                                                                                                               z = __a__;
+                                                                                                               return true;
+                                                                                                             })()
                                                                                                             &&
                                                                                                             true))
                                                                                                         {
@@ -484,9 +438,7 @@ describe("prelude",
                                                                                                                                   {
                                                                                                                                     return (function(__a__)
                                                                                                                                             {
-                                                                                                                                              if(((true
-                                                                                                                                                   &&
-                                                                                                                                                   true)
+                                                                                                                                              if((true
                                                                                                                                                   &&
                                                                                                                                                   true))
                                                                                                                                               {
@@ -494,9 +446,7 @@ describe("prelude",
                                                                                                                                                                            {
                                                                                                                                                                              return (function(__a__)
                                                                                                                                                                                      {
-                                                                                                                                                                                       if(((true
-                                                                                                                                                                                            &&
-                                                                                                                                                                                            true)
+                                                                                                                                                                                       if((true
                                                                                                                                                                                            &&
                                                                                                                                                                                            true))
                                                                                                                                                                                        {
@@ -514,22 +464,11 @@ describe("prelude",
                                                                                                                                                                                              {
                                                                                                                                                                                                var fast_time;
                                                                                                                                                                                                fast_time = null;
-                                                                                                                                                                                               if((((function()
-                                                                                                                                                                                                     {
-                                                                                                                                                                                                       if((typeof(__a__)
-                                                                                                                                                                                                           !=
-                                                                                                                                                                                                           "undefined"))
-                                                                                                                                                                                                       {
-                                                                                                                                                                                                         fast_time = __a__;
-                                                                                                                                                                                                         return true;
-                                                                                                                                                                                                       }
-                                                                                                                                                                                                       else
-                                                                                                                                                                                                       {
-                                                                                                                                                                                                         return false;
-                                                                                                                                                                                                       };
-                                                                                                                                                                                                     })()
-                                                                                                                                                                                                    &&
-                                                                                                                                                                                                    true)
+                                                                                                                                                                                               if(((function()
+                                                                                                                                                                                                    {
+                                                                                                                                                                                                      fast_time = __a__;
+                                                                                                                                                                                                      return true;
+                                                                                                                                                                                                    })()
                                                                                                                                                                                                    &&
                                                                                                                                                                                                    true))
                                                                                                                                                                                                {
@@ -537,9 +476,7 @@ describe("prelude",
                                                                                                                                                                                                                             {
                                                                                                                                                                                                                               return (function(__a__)
                                                                                                                                                                                                                                       {
-                                                                                                                                                                                                                                        if(((true
-                                                                                                                                                                                                                                             &&
-                                                                                                                                                                                                                                             true)
+                                                                                                                                                                                                                                        if((true
                                                                                                                                                                                                                                             &&
                                                                                                                                                                                                                                             true))
                                                                                                                                                                                                                                         {
@@ -557,22 +494,11 @@ describe("prelude",
                                                                                                                                                                                                                                               {
                                                                                                                                                                                                                                                 var slow_time;
                                                                                                                                                                                                                                                 slow_time = null;
-                                                                                                                                                                                                                                                if((((function()
-                                                                                                                                                                                                                                                      {
-                                                                                                                                                                                                                                                        if((typeof(__a__)
-                                                                                                                                                                                                                                                            !=
-                                                                                                                                                                                                                                                            "undefined"))
-                                                                                                                                                                                                                                                        {
-                                                                                                                                                                                                                                                          slow_time = __a__;
-                                                                                                                                                                                                                                                          return true;
-                                                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                                                        else
-                                                                                                                                                                                                                                                        {
-                                                                                                                                                                                                                                                          return false;
-                                                                                                                                                                                                                                                        };
-                                                                                                                                                                                                                                                      })()
-                                                                                                                                                                                                                                                     &&
-                                                                                                                                                                                                                                                     true)
+                                                                                                                                                                                                                                                if(((function()
+                                                                                                                                                                                                                                                     {
+                                                                                                                                                                                                                                                       slow_time = __a__;
+                                                                                                                                                                                                                                                       return true;
+                                                                                                                                                                                                                                                     })()
                                                                                                                                                                                                                                                     &&
                                                                                                                                                                                                                                                     true))
                                                                                                                                                                                                                                                 {
@@ -603,9 +529,7 @@ describe("prelude",
                                                                                                                                                                                                                                                                                               {
                                                                                                                                                                                                                                                                                                 return (function(__a__)
                                                                                                                                                                                                                                                                                                         {
-                                                                                                                                                                                                                                                                                                          if(((true
-                                                                                                                                                                                                                                                                                                               &&
-                                                                                                                                                                                                                                                                                                               true)
+                                                                                                                                                                                                                                                                                                          if((true
                                                                                                                                                                                                                                                                                                               &&
                                                                                                                                                                                                                                                                                                               true))
                                                                                                                                                                                                                                                                                                           {
@@ -665,22 +589,11 @@ describe("prelude",
                                                                          {
                                                                            var y;
                                                                            y = null;
-                                                                           if((((function()
-                                                                                 {
-                                                                                   if((typeof(__a__)
-                                                                                       !=
-                                                                                       "undefined"))
-                                                                                   {
-                                                                                     y = __a__;
-                                                                                     return true;
-                                                                                   }
-                                                                                   else
-                                                                                   {
-                                                                                     return false;
-                                                                                   };
-                                                                                 })()
-                                                                                &&
-                                                                                true)
+                                                                           if(((function()
+                                                                                {
+                                                                                  y = __a__;
+                                                                                  return true;
+                                                                                })()
                                                                                &&
                                                                                true))
                                                                            {
@@ -698,22 +611,11 @@ describe("prelude",
                                                                                  {
                                                                                    var y;
                                                                                    y = null;
-                                                                                   if((((function()
-                                                                                         {
-                                                                                           if((typeof(__a__)
-                                                                                               !=
-                                                                                               "undefined"))
-                                                                                           {
-                                                                                             y = __a__;
-                                                                                             return true;
-                                                                                           }
-                                                                                           else
-                                                                                           {
-                                                                                             return false;
-                                                                                           };
-                                                                                         })()
-                                                                                        &&
-                                                                                        true)
+                                                                                   if(((function()
+                                                                                        {
+                                                                                          y = __a__;
+                                                                                          return true;
+                                                                                        })()
                                                                                        &&
                                                                                        true))
                                                                                    {
@@ -747,50 +649,21 @@ describe("prelude",
                                                                                             z = null;
                                                                                             if((((function()
                                                                                                   {
-                                                                                                    if((typeof(__c__)
-                                                                                                        !=
-                                                                                                        "undefined"))
-                                                                                                    {
-                                                                                                      y = __c__;
-                                                                                                      return true;
-                                                                                                    }
-                                                                                                    else
-                                                                                                    {
-                                                                                                      return false;
-                                                                                                    };
+                                                                                                    y = __c__;
+                                                                                                    return true;
                                                                                                   })()
                                                                                                  &&
                                                                                                  ((function()
                                                                                                    {
-                                                                                                     if((typeof(__b__)
-                                                                                                         !=
-                                                                                                         "undefined"))
-                                                                                                     {
-                                                                                                       x = __b__;
-                                                                                                       return true;
-                                                                                                     }
-                                                                                                     else
-                                                                                                     {
-                                                                                                       return false;
-                                                                                                     };
+                                                                                                     x = __b__;
+                                                                                                     return true;
                                                                                                    })()
                                                                                                   &&
-                                                                                                  ((function()
-                                                                                                    {
-                                                                                                      if((typeof(__a__)
-                                                                                                          !=
-                                                                                                          "undefined"))
-                                                                                                      {
-                                                                                                        z = __a__;
-                                                                                                        return true;
-                                                                                                      }
-                                                                                                      else
-                                                                                                      {
-                                                                                                        return false;
-                                                                                                      };
-                                                                                                    })()
-                                                                                                   &&
-                                                                                                   true)))
+                                                                                                  (function()
+                                                                                                   {
+                                                                                                     z = __a__;
+                                                                                                     return true;
+                                                                                                   })()))
                                                                                                 &&
                                                                                                 true))
                                                                                             {
@@ -822,22 +695,11 @@ describe("prelude",
                                                               {
                                                                 var x;
                                                                 x = null;
-                                                                if((((function()
-                                                                      {
-                                                                        if((typeof(__a__)
-                                                                            !=
-                                                                            "undefined"))
-                                                                        {
-                                                                          x = __a__;
-                                                                          return true;
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                          return false;
-                                                                        };
-                                                                      })()
-                                                                     &&
-                                                                     true)
+                                                                if(((function()
+                                                                     {
+                                                                       x = __a__;
+                                                                       return true;
+                                                                     })()
                                                                     &&
                                                                     true))
                                                                 {
@@ -855,22 +717,11 @@ describe("prelude",
                                                                                {
                                                                                  var x;
                                                                                  x = null;
-                                                                                 if((((function()
-                                                                                       {
-                                                                                         if((typeof(__a__)
-                                                                                             !=
-                                                                                             "undefined"))
-                                                                                         {
-                                                                                           x = __a__;
-                                                                                           return true;
-                                                                                         }
-                                                                                         else
-                                                                                         {
-                                                                                           return false;
-                                                                                         };
-                                                                                       })()
-                                                                                      &&
-                                                                                      true)
+                                                                                 if(((function()
+                                                                                      {
+                                                                                        x = __a__;
+                                                                                        return true;
+                                                                                      })()
                                                                                      &&
                                                                                      true))
                                                                                  {
@@ -894,22 +745,11 @@ describe("prelude",
                                                               {
                                                                 var x;
                                                                 x = null;
-                                                                if((((function()
-                                                                      {
-                                                                        if((typeof(__a__)
-                                                                            !=
-                                                                            "undefined"))
-                                                                        {
-                                                                          x = __a__;
-                                                                          return true;
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                          return false;
-                                                                        };
-                                                                      })()
-                                                                     &&
-                                                                     true)
+                                                                if(((function()
+                                                                     {
+                                                                       x = __a__;
+                                                                       return true;
+                                                                     })()
                                                                     &&
                                                                     true))
                                                                 {
@@ -927,22 +767,11 @@ describe("prelude",
                                                                                {
                                                                                  var x;
                                                                                  x = null;
-                                                                                 if((((function()
-                                                                                       {
-                                                                                         if((typeof(__a__)
-                                                                                             !=
-                                                                                             "undefined"))
-                                                                                         {
-                                                                                           x = __a__;
-                                                                                           return true;
-                                                                                         }
-                                                                                         else
-                                                                                         {
-                                                                                           return false;
-                                                                                         };
-                                                                                       })()
-                                                                                      &&
-                                                                                      true)
+                                                                                 if(((function()
+                                                                                      {
+                                                                                        x = __a__;
+                                                                                        return true;
+                                                                                      })()
                                                                                      &&
                                                                                      true))
                                                                                  {
@@ -960,22 +789,11 @@ describe("prelude",
                                                                                       {
                                                                                         var x;
                                                                                         x = null;
-                                                                                        if((((function()
-                                                                                              {
-                                                                                                if((typeof(__a__)
-                                                                                                    !=
-                                                                                                    "undefined"))
-                                                                                                {
-                                                                                                  x = __a__;
-                                                                                                  return true;
-                                                                                                }
-                                                                                                else
-                                                                                                {
-                                                                                                  return false;
-                                                                                                };
-                                                                                              })()
-                                                                                             &&
-                                                                                             true)
+                                                                                        if(((function()
+                                                                                             {
+                                                                                               x = __a__;
+                                                                                               return true;
+                                                                                             })()
                                                                                             &&
                                                                                             true))
                                                                                         {
@@ -1012,35 +830,15 @@ describe("prelude",
                                                                      y = null;
                                                                      if((((function()
                                                                            {
-                                                                             if((typeof(__b__)
-                                                                                 !=
-                                                                                 "undefined"))
-                                                                             {
-                                                                               x = __b__;
-                                                                               return true;
-                                                                             }
-                                                                             else
-                                                                             {
-                                                                               return false;
-                                                                             };
+                                                                             x = __b__;
+                                                                             return true;
                                                                            })()
                                                                           &&
-                                                                          ((function()
-                                                                            {
-                                                                              if((typeof(__a__)
-                                                                                  !=
-                                                                                  "undefined"))
-                                                                              {
-                                                                                y = __a__;
-                                                                                return true;
-                                                                              }
-                                                                              else
-                                                                              {
-                                                                                return false;
-                                                                              };
-                                                                            })()
-                                                                           &&
-                                                                           true))
+                                                                          (function()
+                                                                           {
+                                                                             y = __a__;
+                                                                             return true;
+                                                                           })())
                                                                          &&
                                                                          true))
                                                                      {
@@ -1056,16 +854,11 @@ describe("prelude",
                                                })())(3)(5)).
                                   toEqual(2);
                                 }));
-                            it("option 3 some: (2) == 2",
+                            it("option 3 { some = 2 } == 2",
                                (function()
                                 {
-                                  expect(option(3)((function()
-                                                    {
-                                                      var jmId_13;
-                                                      jmId_13 = {};
-                                                      jmId_13["some"] = 2;
-                                                      return jmId_13;
-                                                    })())).
+                                  expect(option(3)({ 'some': 2
+                                                   })).
                                   toEqual(2);
                                 }));
                             describe("list",
@@ -1125,10 +918,10 @@ describe("prelude",
                                         maximum = prelude.list["maximum"];
                                         var minimum;
                                         minimum = prelude.list["minimum"];
-                                        var jmId_14;
-                                        jmId_14 = new (function()
+                                        var jmId_13;
+                                        jmId_13 = new (function()
                                                        {
-                                                         it("let xs  = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = 1 :: 2 :: 3 :: nil:, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = nil: } } }, tail = { nil = true } } } } } in (all_ (λy = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == y) xs)",
+                                                         it("let xs  = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = 1 :: 2 :: 3 :: { nil = true }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { nil = true } } } } } in (all_ (λy = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == y) xs)",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1160,23 +953,13 @@ describe("prelude",
                                                                                                                                               }
                                                                                                                                     }
                                                                                                                           },
-                                                                                                                  'tail': { 'head': _col_col(1)(_col_col(2)(_col_col(3)((function()
-                                                                                                                                                                         {
-                                                                                                                                                                           var jmId_16;
-                                                                                                                                                                           jmId_16 = {};
-                                                                                                                                                                           jmId_16["nil"] = true;
-                                                                                                                                                                           return jmId_16;
-                                                                                                                                                                         })()))),
+                                                                                                                  'tail': { 'head': _col_col(1)(_col_col(2)(_col_col(3)({ 'nil': true
+                                                                                                                                                                        }))),
                                                                                                                             'tail': { 'head': { 'head': 1,
                                                                                                                                                 'tail': { 'head': 2,
                                                                                                                                                           'tail': { 'head': 3,
-                                                                                                                                                                    'tail': (function()
-                                                                                                                                                                             {
-                                                                                                                                                                               var jmId_17;
-                                                                                                                                                                               jmId_17 = {};
-                                                                                                                                                                               jmId_17["nil"] = true;
-                                                                                                                                                                               return jmId_17;
-                                                                                                                                                                             })()
+                                                                                                                                                                    'tail': { 'nil': true
+                                                                                                                                                                            }
                                                                                                                                                                   }
                                                                                                                                                         }
                                                                                                                                               },
@@ -1199,22 +982,11 @@ describe("prelude",
                                                                                                             {
                                                                                                               var y;
                                                                                                               y = null;
-                                                                                                              if((((function()
-                                                                                                                    {
-                                                                                                                      if((typeof(__a__)
-                                                                                                                          !=
-                                                                                                                          "undefined"))
-                                                                                                                      {
-                                                                                                                        y = __a__;
-                                                                                                                        return true;
-                                                                                                                      }
-                                                                                                                      else
-                                                                                                                      {
-                                                                                                                        return false;
-                                                                                                                      };
-                                                                                                                    })()
-                                                                                                                   &&
-                                                                                                                   true)
+                                                                                                              if(((function()
+                                                                                                                   {
+                                                                                                                     y = __a__;
+                                                                                                                     return true;
+                                                                                                                   })()
                                                                                                                   &&
                                                                                                                   true))
                                                                                                               {
@@ -1236,32 +1008,27 @@ describe("prelude",
                                                                                                   })())(xs);
                                                                                    })();
                                                                          }
-                                                                         catch(jmId_15)
+                                                                         catch(jmId_14)
                                                                          {
-                                                                           return { 'error': jmId_15
+                                                                           return { 'error': jmId_14
                                                                                   };
                                                                          };
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("not empty_ 1 :: nil:",
+                                                         it("not empty_ 1 :: { nil = true }",
                                                             (function()
                                                              {
                                                                expect((function()
                                                                        {
                                                                          try
                                                                          {
-                                                                           return not(empty_(_col_col(1)((function()
-                                                                                                          {
-                                                                                                            var jmId_19;
-                                                                                                            jmId_19 = {};
-                                                                                                            jmId_19["nil"] = true;
-                                                                                                            return jmId_19;
-                                                                                                          })())));
+                                                                           return not(empty_(_col_col(1)({ 'nil': true
+                                                                                                         })));
                                                                          }
-                                                                         catch(jmId_18)
+                                                                         catch(jmId_15)
                                                                          {
-                                                                           return { 'error': jmId_18
+                                                                           return { 'error': jmId_15
                                                                                   };
                                                                          };
                                                                        })()).
@@ -1277,9 +1044,9 @@ describe("prelude",
                                                                            return empty_({ 'nil': true
                                                                                          });
                                                                          }
-                                                                         catch(jmId_20)
+                                                                         catch(jmId_16)
                                                                          {
-                                                                           return { 'error': jmId_20
+                                                                           return { 'error': jmId_16
                                                                                   };
                                                                          };
                                                                        })()).
@@ -1321,26 +1088,19 @@ describe("prelude",
                                                                            })).
                                                                toEqual(2);
                                                              }));
-                                                         it("err (λ_ = head nil:) == \"Head called on empty list\"",
+                                                         it("err (λ_ = head { nil = true }) == \"Head called on empty list\"",
                                                             (function()
                                                              {
                                                                expect(err((function()
                                                                            {
                                                                              return (function(__a__)
                                                                                      {
-                                                                                       if(((true
-                                                                                            &&
-                                                                                            true)
+                                                                                       if((true
                                                                                            &&
                                                                                            true))
                                                                                        {
-                                                                                         return head((function()
-                                                                                                      {
-                                                                                                        var jmId_21;
-                                                                                                        jmId_21 = {};
-                                                                                                        jmId_21["nil"] = true;
-                                                                                                        return jmId_21;
-                                                                                                      })());
+                                                                                         return head({ 'nil': true
+                                                                                                     });
                                                                                        }
                                                                                        else
                                                                                        {
@@ -1351,26 +1111,19 @@ describe("prelude",
                                                                            })())).
                                                                toEqual("Head called on empty list");
                                                              }));
-                                                         it("err (λ_ = tail nil:) == \"Tail called on empty list\"",
+                                                         it("err (λ_ = tail { nil = true }) == \"Tail called on empty list\"",
                                                             (function()
                                                              {
                                                                expect(err((function()
                                                                            {
                                                                              return (function(__a__)
                                                                                      {
-                                                                                       if(((true
-                                                                                            &&
-                                                                                            true)
+                                                                                       if((true
                                                                                            &&
                                                                                            true))
                                                                                        {
-                                                                                         return tail((function()
-                                                                                                      {
-                                                                                                        var jmId_22;
-                                                                                                        jmId_22 = {};
-                                                                                                        jmId_22["nil"] = true;
-                                                                                                        return jmId_22;
-                                                                                                      })());
+                                                                                         return tail({ 'nil': true
+                                                                                                     });
                                                                                        }
                                                                                        else
                                                                                        {
@@ -1381,26 +1134,19 @@ describe("prelude",
                                                                            })())).
                                                                toEqual("Tail called on empty list");
                                                              }));
-                                                         it("err (λ_ = last nil:) == \"Last called on empty list\"",
+                                                         it("err (λ_ = last { nil = true }) == \"Last called on empty list\"",
                                                             (function()
                                                              {
                                                                expect(err((function()
                                                                            {
                                                                              return (function(__a__)
                                                                                      {
-                                                                                       if(((true
-                                                                                            &&
-                                                                                            true)
+                                                                                       if((true
                                                                                            &&
                                                                                            true))
                                                                                        {
-                                                                                         return last((function()
-                                                                                                      {
-                                                                                                        var jmId_23;
-                                                                                                        jmId_23 = {};
-                                                                                                        jmId_23["nil"] = true;
-                                                                                                        return jmId_23;
-                                                                                                      })());
+                                                                                         return last({ 'nil': true
+                                                                                                     });
                                                                                        }
                                                                                        else
                                                                                        {
@@ -1454,22 +1200,11 @@ describe("prelude",
                                                                                             {
                                                                                               var x;
                                                                                               x = null;
-                                                                                              if((((function()
-                                                                                                    {
-                                                                                                      if((typeof(__a__)
-                                                                                                          !=
-                                                                                                          "undefined"))
-                                                                                                      {
-                                                                                                        x = __a__;
-                                                                                                        return true;
-                                                                                                      }
-                                                                                                      else
-                                                                                                      {
-                                                                                                        return false;
-                                                                                                      };
-                                                                                                    })()
-                                                                                                   &&
-                                                                                                   true)
+                                                                                              if(((function()
+                                                                                                   {
+                                                                                                     x = __a__;
+                                                                                                     return true;
+                                                                                                   })()
                                                                                                   &&
                                                                                                   true))
                                                                                               {
@@ -1495,22 +1230,11 @@ describe("prelude",
                                                                                             {
                                                                                               var x;
                                                                                               x = null;
-                                                                                              if((((function()
-                                                                                                    {
-                                                                                                      if((typeof(__a__)
-                                                                                                          !=
-                                                                                                          "undefined"))
-                                                                                                      {
-                                                                                                        x = __a__;
-                                                                                                        return true;
-                                                                                                      }
-                                                                                                      else
-                                                                                                      {
-                                                                                                        return false;
-                                                                                                      };
-                                                                                                    })()
-                                                                                                   &&
-                                                                                                   true)
+                                                                                              if(((function()
+                                                                                                   {
+                                                                                                     x = __a__;
+                                                                                                     return true;
+                                                                                                   })()
                                                                                                   &&
                                                                                                   true))
                                                                                               {
@@ -1537,7 +1261,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("drop_while (λx = x < 0) nil: == nil:",
+                                                         it("drop_while (λx = x < 0) { nil = true } == { nil = true }",
                                                             (function()
                                                              {
                                                                expect(drop_while((function()
@@ -1546,22 +1270,11 @@ describe("prelude",
                                                                                             {
                                                                                               var x;
                                                                                               x = null;
-                                                                                              if((((function()
-                                                                                                    {
-                                                                                                      if((typeof(__a__)
-                                                                                                          !=
-                                                                                                          "undefined"))
-                                                                                                      {
-                                                                                                        x = __a__;
-                                                                                                        return true;
-                                                                                                      }
-                                                                                                      else
-                                                                                                      {
-                                                                                                        return false;
-                                                                                                      };
-                                                                                                    })()
-                                                                                                   &&
-                                                                                                   true)
+                                                                                              if(((function()
+                                                                                                   {
+                                                                                                     x = __a__;
+                                                                                                     return true;
+                                                                                                   })()
                                                                                                   &&
                                                                                                   true))
                                                                                               {
@@ -1573,20 +1286,10 @@ describe("prelude",
                                                                                                 exhaust();
                                                                                               };
                                                                                             });
-                                                                                  })())((function()
-                                                                                         {
-                                                                                           var jmId_24;
-                                                                                           jmId_24 = {};
-                                                                                           jmId_24["nil"] = true;
-                                                                                           return jmId_24;
-                                                                                         })())).
-                                                               toEqual((function()
-                                                                        {
-                                                                          var jmId_25;
-                                                                          jmId_25 = {};
-                                                                          jmId_25["nil"] = true;
-                                                                          return jmId_25;
-                                                                        })());
+                                                                                  })())({ 'nil': true
+                                                                                        })).
+                                                               toEqual({ 'nil': true
+                                                                       });
                                                              }));
                                                          it("drop_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 0, tail = { nil = true } }",
                                                             (function()
@@ -1597,22 +1300,11 @@ describe("prelude",
                                                                                             {
                                                                                               var x;
                                                                                               x = null;
-                                                                                              if((((function()
-                                                                                                    {
-                                                                                                      if((typeof(__a__)
-                                                                                                          !=
-                                                                                                          "undefined"))
-                                                                                                      {
-                                                                                                        x = __a__;
-                                                                                                        return true;
-                                                                                                      }
-                                                                                                      else
-                                                                                                      {
-                                                                                                        return false;
-                                                                                                      };
-                                                                                                    })()
-                                                                                                   &&
-                                                                                                   true)
+                                                                                              if(((function()
+                                                                                                   {
+                                                                                                     x = __a__;
+                                                                                                     return true;
+                                                                                                   })()
                                                                                                   &&
                                                                                                   true))
                                                                                               {
@@ -1664,29 +1356,14 @@ describe("prelude",
                                                                expect(tail(init(3)(0))).
                                                                toEqual(init(2)(0));
                                                              }));
-                                                         it("nil: ++ 1 :: 2 :: nil: == 1 :: 2 :: nil:",
+                                                         it("{ nil = true } ++ 1 :: 2 :: { nil = true } == 1 :: 2 :: { nil = true }",
                                                             (function()
                                                              {
-                                                               expect(_plus_plus((function()
-                                                                                  {
-                                                                                    var jmId_26;
-                                                                                    jmId_26 = {};
-                                                                                    jmId_26["nil"] = true;
-                                                                                    return jmId_26;
-                                                                                  })())(_col_col(1)(_col_col(2)((function()
-                                                                                                                 {
-                                                                                                                   var jmId_27;
-                                                                                                                   jmId_27 = {};
-                                                                                                                   jmId_27["nil"] = true;
-                                                                                                                   return jmId_27;
-                                                                                                                 })())))).
-                                                               toEqual(_col_col(1)(_col_col(2)((function()
-                                                                                                {
-                                                                                                  var jmId_28;
-                                                                                                  jmId_28 = {};
-                                                                                                  jmId_28["nil"] = true;
-                                                                                                  return jmId_28;
-                                                                                                })())));
+                                                               expect(_plus_plus({ 'nil': true
+                                                                                 })(_col_col(1)(_col_col(2)({ 'nil': true
+                                                                                                            })))).
+                                                               toEqual(_col_col(1)(_col_col(2)({ 'nil': true
+                                                                                               })));
                                                              }));
                                                          it("{ head = 1, tail = { head = 2, tail = { nil = true } } } ++ { head = 3, tail = { head = 4, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } }",
                                                             (function()
@@ -1722,22 +1399,11 @@ describe("prelude",
                                                                                         {
                                                                                           var x;
                                                                                           x = null;
-                                                                                          if((((function()
-                                                                                                {
-                                                                                                  if((typeof(__a__)
-                                                                                                      !=
-                                                                                                      "undefined"))
-                                                                                                  {
-                                                                                                    x = __a__;
-                                                                                                    return true;
-                                                                                                  }
-                                                                                                  else
-                                                                                                  {
-                                                                                                    return false;
-                                                                                                  };
-                                                                                                })()
-                                                                                               &&
-                                                                                               true)
+                                                                                          if(((function()
+                                                                                               {
+                                                                                                 x = __a__;
+                                                                                                 return true;
+                                                                                               })()
                                                                                               &&
                                                                                               true))
                                                                                           {
@@ -1775,22 +1441,11 @@ describe("prelude",
                                                                                      {
                                                                                        var x;
                                                                                        x = null;
-                                                                                       if((((function()
-                                                                                             {
-                                                                                               if((typeof(__a__)
-                                                                                                   !=
-                                                                                                   "undefined"))
-                                                                                               {
-                                                                                                 x = __a__;
-                                                                                                 return true;
-                                                                                               }
-                                                                                               else
-                                                                                               {
-                                                                                                 return false;
-                                                                                               };
-                                                                                             })()
-                                                                                            &&
-                                                                                            true)
+                                                                                       if(((function()
+                                                                                            {
+                                                                                              x = __a__;
+                                                                                              return true;
+                                                                                            })()
                                                                                            &&
                                                                                            true))
                                                                                        {
@@ -1860,35 +1515,15 @@ describe("prelude",
                                                                                                    y = null;
                                                                                                    if((((function()
                                                                                                          {
-                                                                                                           if((typeof(__b__)
-                                                                                                               !=
-                                                                                                               "undefined"))
-                                                                                                           {
-                                                                                                             x = __b__;
-                                                                                                             return true;
-                                                                                                           }
-                                                                                                           else
-                                                                                                           {
-                                                                                                             return false;
-                                                                                                           };
+                                                                                                           x = __b__;
+                                                                                                           return true;
                                                                                                          })()
                                                                                                         &&
-                                                                                                        ((function()
-                                                                                                          {
-                                                                                                            if((typeof(__a__)
-                                                                                                                !=
-                                                                                                                "undefined"))
-                                                                                                            {
-                                                                                                              y = __a__;
-                                                                                                              return true;
-                                                                                                            }
-                                                                                                            else
-                                                                                                            {
-                                                                                                              return false;
-                                                                                                            };
-                                                                                                          })()
-                                                                                                         &&
-                                                                                                         true))
+                                                                                                        (function()
+                                                                                                         {
+                                                                                                           y = __a__;
+                                                                                                           return true;
+                                                                                                         })())
                                                                                                        &&
                                                                                                        true))
                                                                                                    {
@@ -1930,35 +1565,15 @@ describe("prelude",
                                                                                                    y = null;
                                                                                                    if((((function()
                                                                                                          {
-                                                                                                           if((typeof(__b__)
-                                                                                                               !=
-                                                                                                               "undefined"))
-                                                                                                           {
-                                                                                                             x = __b__;
-                                                                                                             return true;
-                                                                                                           }
-                                                                                                           else
-                                                                                                           {
-                                                                                                             return false;
-                                                                                                           };
+                                                                                                           x = __b__;
+                                                                                                           return true;
                                                                                                          })()
                                                                                                         &&
-                                                                                                        ((function()
-                                                                                                          {
-                                                                                                            if((typeof(__a__)
-                                                                                                                !=
-                                                                                                                "undefined"))
-                                                                                                            {
-                                                                                                              y = __a__;
-                                                                                                              return true;
-                                                                                                            }
-                                                                                                            else
-                                                                                                            {
-                                                                                                              return false;
-                                                                                                            };
-                                                                                                          })()
-                                                                                                         &&
-                                                                                                         true))
+                                                                                                        (function()
+                                                                                                         {
+                                                                                                           y = __a__;
+                                                                                                           return true;
+                                                                                                         })())
                                                                                                        &&
                                                                                                        true))
                                                                                                    {
@@ -1999,9 +1614,9 @@ describe("prelude",
                                                                                                      }
                                                                                            });
                                                                          }
-                                                                         catch(jmId_29)
+                                                                         catch(jmId_17)
                                                                          {
-                                                                           return { 'error': jmId_29
+                                                                           return { 'error': jmId_17
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2021,9 +1636,9 @@ describe("prelude",
                                                                                                          }
                                                                                                }));
                                                                          }
-                                                                         catch(jmId_30)
+                                                                         catch(jmId_18)
                                                                          {
-                                                                           return { 'error': jmId_30
+                                                                           return { 'error': jmId_18
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2043,9 +1658,9 @@ describe("prelude",
                                                                                                      }
                                                                                            });
                                                                          }
-                                                                         catch(jmId_31)
+                                                                         catch(jmId_19)
                                                                          {
-                                                                           return { 'error': jmId_31
+                                                                           return { 'error': jmId_19
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2065,9 +1680,9 @@ describe("prelude",
                                                                                                          }
                                                                                                }));
                                                                          }
-                                                                         catch(jmId_32)
+                                                                         catch(jmId_20)
                                                                          {
-                                                                           return { 'error': jmId_32
+                                                                           return { 'error': jmId_20
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2165,9 +1780,9 @@ describe("prelude",
                                                                                                               });
                                                                                    })();
                                                                          }
-                                                                         catch(jmId_33)
+                                                                         catch(jmId_21)
                                                                          {
-                                                                           return { 'error': jmId_33
+                                                                           return { 'error': jmId_21
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2182,22 +1797,11 @@ describe("prelude",
                                                                                             {
                                                                                               var x;
                                                                                               x = null;
-                                                                                              if((((function()
-                                                                                                    {
-                                                                                                      if((typeof(__a__)
-                                                                                                          !=
-                                                                                                          "undefined"))
-                                                                                                      {
-                                                                                                        x = __a__;
-                                                                                                        return true;
-                                                                                                      }
-                                                                                                      else
-                                                                                                      {
-                                                                                                        return false;
-                                                                                                      };
-                                                                                                    })()
-                                                                                                   &&
-                                                                                                   true)
+                                                                                              if(((function()
+                                                                                                   {
+                                                                                                     x = __a__;
+                                                                                                     return true;
+                                                                                                   })()
                                                                                                   &&
                                                                                                   true))
                                                                                               {
@@ -2328,8 +1932,8 @@ describe("prelude",
                                         match = prelude.sequence["match"];
                                         var take;
                                         take = prelude.sequence["take"];
-                                        var jmId_34;
-                                        jmId_34 = new (function()
+                                        var jmId_22;
+                                        jmId_22 = new (function()
                                                        {
                                                          it("to_list from_list { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
                                                             (function()
@@ -2390,9 +1994,9 @@ describe("prelude",
                                                                                                         }));
                                                                                    })();
                                                                          }
-                                                                         catch(jmId_35)
+                                                                         catch(jmId_23)
                                                                          {
-                                                                           return { 'error': jmId_35
+                                                                           return { 'error': jmId_23
                                                                                   };
                                                                          };
                                                                        })()).
@@ -2408,22 +2012,11 @@ describe("prelude",
                                                                                                                      {
                                                                                                                        var x;
                                                                                                                        x = null;
-                                                                                                                       if((((function()
-                                                                                                                             {
-                                                                                                                               if((typeof(__a__)
-                                                                                                                                   !=
-                                                                                                                                   "undefined"))
-                                                                                                                               {
-                                                                                                                                 x = __a__;
-                                                                                                                                 return true;
-                                                                                                                               }
-                                                                                                                               else
-                                                                                                                               {
-                                                                                                                                 return false;
-                                                                                                                               };
-                                                                                                                             })()
-                                                                                                                            &&
-                                                                                                                            true)
+                                                                                                                       if(((function()
+                                                                                                                            {
+                                                                                                                              x = __a__;
+                                                                                                                              return true;
+                                                                                                                            })()
                                                                                                                            &&
                                                                                                                            true))
                                                                                                                        {
@@ -2446,8 +2039,8 @@ describe("prelude",
                                       {
                                         var _perc;
                                         _perc = prelude.map["_perc"];
-                                        var jmId_36;
-                                        jmId_36 = new (function()
+                                        var jmId_24;
+                                        jmId_24 = new (function()
                                                        {
                                                          it("\"test\" % true == { key = \"test\", val = true }",
                                                             (function()

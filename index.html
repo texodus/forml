@@ -92,7 +92,7 @@ x == 0</code></pre>
 (==) x y when object? x &amp;&amp; object? y =
        let result = true
        run `for (key in x) {
-                result = result &amp;&amp; _eq_eq(x[key])(y[key]);
+                result = result &amp;&amp; y.hasOwnProperty(key) &amp;&amp; _eq_eq(x[key])(y[key]);
             };
 
             var z = Object.keys(x).length 
