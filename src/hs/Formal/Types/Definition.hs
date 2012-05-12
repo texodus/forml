@@ -182,7 +182,8 @@ instance ToJExpr PatternMatch where
 
     toJExpr (PM n (ListPattern []))                 = [jmacroE| equals(`(n)`)([]) |]
     toJExpr (PM n (ListPattern xs)) = 
-        let x = toJExpr (map (\(index, val) -> toJExpr (PM (n ++ "[" ++ show index ++ "]") val)) (zip [0..] xs))
+        let x = toJExpr (map f (zip [0..] xs))
+            f (index, val) = toJExpr (PM (n ++ "[" ++ show index ++ "]") val)
         in   [jmacroE| `(x)` && `(ref n)`.length == `(length xs)` |]
     toJExpr (PM _ x) = error $ "Unimplemented " ++ show x
 
