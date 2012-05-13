@@ -43,12 +43,14 @@ main :: IO ()
 main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            hFile  <- openFile file ReadMode
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
-           writeFile (output ++ ".html") $ toHTML (wrap_html output src)
-           writeFile (output ++ ".raw.html") $ toHTML src
            putStr "[ ] Parsing"
            case parseFormal src of
              Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
              Right src' -> do putStrLn "\r[*] Parsing"
+                              let tests = case src' of (Program xs) -> get_tests xs
+                              let html = highlight tests $ toHTML (wrap_html output (annotate_tests src src'))
+                              writeFile (output ++ ".html") html
+                              writeFile (output ++ ".raw.html") $ highlight tests $ toHTML (annotate_tests src src')
                               putStr "[ ] Generating Javascript"
                               let js = compress $ render src'
                               writeFile (output ++ ".js") js
@@ -57,7 +59,6 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
                               let spec = render_spec src'
                               writeFile (output ++ ".spec.js") spec
                               putStrLn "\r[*] Generating Tests"
-                              
 
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode
@@ -95,6 +96,7 @@ wrap_html name body = [qq|
  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
  <script type='text/javascript' src='lib/js/zepto.js'></script>
+ <script type='text/javascript' src='src/js/FormalReporter.js'></script>
  <script type='text/javascript' src='src/js/table_of_contents.js'></script>
  <script type='text/javascript' src='$name.js'></script>
  <script type='text/javascript' src='$name.spec.js'></script>

@@ -71,7 +71,7 @@ same = spaces >> do pos <- getPosition
                     s <- get
                     if (sourceColumn pos) /= (sourceColumn s) 
                        then parserFail $ "not indented to exactly " ++ show (sourceColumn s)  
-                       else do --put $ setSourceLine s (sourceLine pos)
+                       else do put $ setSourceLine s (sourceLine pos)
                                return ()
 
 spaces :: Parser ()
@@ -84,7 +84,7 @@ spaces = try emptyline `manyTill` try line_start >> return ()
                         s <- get
                         if (sourceColumn pos) < (sourceColumn s) 
                            then parserFail $ "not indented to at least " ++ show (sourceColumn s)
-                           else do -- put $ setSourceLine s (sourceLine pos)
+                           else do put $ setSourceLine s (sourceLine pos)
                                    return ()
 
 

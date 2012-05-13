@@ -11,7 +11,7 @@
 module Formal.Parser where
 
 import Control.Applicative
-
+import Data.String.Utils
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Formal.Parser.Utils
 
@@ -72,6 +72,46 @@ compress = run var . run nul . run fun
                    spaces
                    string "})()"
                    return $ "(function(" ++ name ++ ")" ++ content ++ ")"
+
+get_tests :: [Statement] -> [(SourcePos, SourcePos)]
+get_tests [] = []
+get_tests (ExpressionStatement x _: xs) = x : get_tests xs
+get_tests (ModuleStatement _  x: xs) = get_tests x ++ get_tests xs
+get_tests (_: xs) = get_tests xs
+
+annotate_tests :: String -> Program -> String
+annotate_tests zz (Program xs) = annotate_tests' zz (get_tests xs)
+    where annotate_tests' x [] = x
+          annotate_tests' x ((a, b):ys) = 
+              annotate_tests' marked ys
+                  where marked = mark (mark x (serial ++ "--") row' col') ("--" ++ serial) row col
+
+                        mark str tk x y =
+                            let str' = lines str
+                            in  unlines $ take x str' 
+                                    ++ [take y (str' !! x) ++ tk ++ drop y (str' !! x)]
+                                    ++ drop (x + 1) str'
+
+                        row = sourceLine a - 1
+                        col = sourceColumn a - 1
+                    
+                        row' = sourceLine b - 1
+                        col' = sourceColumn b +1
+
+                        serial = show row ++ "_" ++ show row'
+
+          
+highlight :: [(SourcePos, SourcePos)] -> String -> String                              
+highlight [] x = x
+highlight ((a, b):xs) y = highlight xs (replace ("--" ++ serial) ("<span class='test' id='test_" ++ serial ++ "'>") (replace (serial ++ "--") "</span>" y))
+
+    where serial = show row ++ "_" ++ show row'
+          row = sourceLine a - 1
+          col = sourceColumn a - 1
+                    
+          row' = sourceLine b - 1
+          col' = sourceColumn b +1
+
 
 newtype Program = Program [Statement]
 

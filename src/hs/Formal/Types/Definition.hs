@@ -208,32 +208,32 @@ instance ToJExpr [Pattern] where
 
 instance Syntax Pattern where
     
-    syntax = try literal_pattern
-             <|> try naked_apply_pattern
-             <|> try var_pattern
-             <|> any_pattern
-             <|> record_pattern
-             <|> array_pattern
-             <|> list_pattern
-             <|> indentPairs "(" (try view_pattern <|> try apply_pattern <|> syntax) ")"
+    syntax = try literal
+             <|> try naked_apply
+             <|> try var
+             <|> any'
+             <|> record
+             <|> array
+             <|> list
+             <|> indentPairs "(" (try view <|> try apply <|> syntax) ")"
 
-        where view_pattern        = ViewPattern <$> syntax <* spaces <* string "->" <* whitespace <*> syntax 
-              var_pattern         = VarPattern <$> type_var
-              literal_pattern     = LiteralPattern <$> syntax          
-              any_pattern         = many1 (string "_") *> return AnyPattern
-              naked_apply_pattern = 
+        where view        = ViewPattern <$> syntax <* spaces <* string "->" <* whitespace <*> syntax 
+              var         = VarPattern <$> type_var
+              literal     = LiteralPattern <$> syntax          
+              any'        = many1 (string "_") *> return AnyPattern
+              naked_apply = 
 
                   do x <- many1 letter
                      string ":"
                      return $ RecordPattern (M.fromList [(Symbol x, AnyPattern )])
 
-              apply_pattern = do x <- many1 letter 
-                                 string ":" 
-                                 whitespace
-                                 y <- syntax
-                                 return $ RecordPattern (M.fromList [(Symbol x, y)])
+              apply = do x <- many1 letter 
+                         string ":" 
+                         whitespace
+                         y <- syntax
+                         return $ RecordPattern (M.fromList [(Symbol x, y)])
 
-              record_pattern  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
+              record  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
 
                   where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
                         key_eq_val = do key <- syntax
@@ -243,14 +243,14 @@ instance Syntax Pattern where
                                         value <- syntax
                                         return (key, value)
 
-              list_pattern = ListPattern <$> indentPairs "[" (syntax `sepBy` try (try comma <|> not_comma)) "]"
+              list = ListPattern <$> indentPairs "[" (syntax `sepBy` try (try comma <|> not_comma)) "]"
 
-              array_pattern = f <$> indentAsymmetricPairs "[:" v (try (string ":]") <|> string "]")
+              array = f <$> indentAsymmetricPairs "[:" v (try (string ":]") <|> string "]")
 
                   where v = do whitespace
                                withPos (syntax `sepBy` try (try comma <|> not_comma))
 
-                        f [] = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)])
+                        f []     = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)])
                         f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
 
 instance ToJExpr (Maybe Expression) where

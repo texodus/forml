@@ -1,3 +1,5 @@
+
+
 $(function() {
     var headers = $("h2,h3,h4,h5,h6")
 
@@ -17,14 +19,13 @@ $(function() {
 
     prettyPrint();
 
+    jasmine.getEnv().addReporter(new jasmine.FormalReporter());
     jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
     jasmine.getEnv().execute();
 
     var reporter = $(".jasmine_reporter").detach();
 
     $("#main").append(reporter)
-    $(".jasmine_reporter").addClass("show-passed")
-    $("#__jasmine_TrivialReporter_showPassed__").attr("checked", "checked");
 });
 
 function time(f) {

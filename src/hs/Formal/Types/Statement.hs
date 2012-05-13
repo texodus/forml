@@ -45,14 +45,14 @@ import Prelude hiding (curry, (++))
 
 data Statement = TypeStatement TypeDefinition UnionType
                | DefinitionStatement Definition
-               | ExpressionStatement Expression
+               | ExpressionStatement (SourcePos, SourcePos) Expression
                | ImportStatement Namespace
                | ModuleStatement Namespace [Statement]
 
 instance Show Statement where
     show (TypeStatement t c)     = [qq|type $t = $c|]
     show (DefinitionStatement d) = show d
-    show (ExpressionStatement x) = show x
+    show (ExpressionStatement _ x) = show x
     show (ImportStatement x) = [qq|import $x|]
     show (ModuleStatement x xs) = replace "\n |" "\n     |" 
                                   $ replace "\n\n" "\n\n    " 
@@ -92,7 +92,11 @@ instance Syntax Statement where
                                    return $ TypeStatement def sig
 
               expression_statement = do whitespace
-                                        ExpressionStatement <$> withPos syntax
+                                        x <- getPosition 
+                                        y <- withPos syntax
+                                        z <- getPosition
+                                        return $ ExpressionStatement (x, z) y
+                                                                   
 
 
 
@@ -111,12 +115,14 @@ data Target = Test | Library
 instance ToStat Meta where
 
     -- Expressions are ignored for Libraries, and rendered as tests for Test
-    toStat (Meta { target = Library, expr = ExpressionStatement _ }) = mempty
-    toStat (Meta { target = Test,    expr = ExpressionStatement e }) = 
+    toStat (Meta { target = Library, expr = ExpressionStatement _ _ }) = mempty
+    toStat (Meta { target = Test,    expr = ExpressionStatement (a, b) e }) = 
 
-        [jmacro| it(`(show e)`, function() {
+        [jmacro| it(`(serial ++ "::" ++ show e)`, function() {
                      `(Jasmine e)`;
                  }); |]
+
+            where serial = show (sourceLine a - 1) ++ "_" ++ show (sourceLine b - 1)
 
     -- Imports work identically for both targets
     toStat (Meta { modules, 
