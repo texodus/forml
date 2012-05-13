@@ -31,6 +31,7 @@ import Formal.Types.Type
 import Formal.Types.TypeDefinition
 import Formal.Types.Symbol
 import Formal.Types.Definition
+import Formal.Types.Expression
 import Formal.Types.Namespace
 
 import Formal.Javascript.Utils
@@ -45,7 +46,7 @@ import Prelude hiding (curry, (++))
 
 data Statement = TypeStatement TypeDefinition UnionType
                | DefinitionStatement Definition
-               | ExpressionStatement (SourcePos, SourcePos) Expression
+               | ExpressionStatement (SourcePos, SourcePos) (Expression Definition)
                | ImportStatement Namespace
                | ModuleStatement Namespace [Statement]
 
@@ -243,7 +244,7 @@ instance Open String where
 ----
 ---- Jasmine
 
-newtype Jasmine = Jasmine Expression
+newtype Jasmine = Jasmine (Expression Definition)
 
 instance ToStat Jasmine where
 
