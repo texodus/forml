@@ -36,11 +36,20 @@ jasmine.FormalReporter = function(doc) {
    var status = results.passed() ? 'passed' : 'failed';
  
      var k = "#test_" + spec.description.split("::")[0]
+     var el = $(k)
+
      if (status == "passed") {
-         //$(k).css("background-color", "rgba(0,100,0,0.3)");
-         $(k).before("<span style='background-color:rgba(0,150,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>PASSED</span> </span> ")
+         if (k.indexOf("multi") >= 0) {
+             $(k).before("<span style='background-color:rgba(0,150,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>PASSED</span> </span> ")
+         } else {
+             $(k).before("<span style='background-color:rgba(0,150,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>PASSED</span> </span> ")
+         }
      } else {
-         $(k).before("<span style='background-color:rgba(200,0,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>FAILED</span> </span> ")
+         if (k.indexOf("multi") >= 0) {
+             $(k).before("<span style='background-color:rgba(200,0,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>FAILED</span> </span> ")
+         } else {
+             $(k).before("<span style='background-color:rgba(200,0,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>FAILED</span> </span> ")
+         }
      }
  };
  

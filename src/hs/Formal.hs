@@ -26,7 +26,7 @@ import Data.String.Utils
 
 import Formal.Parser
 import Formal.Javascript
-
+import Formal.TypeCheck
 
 -- Main
 -- ----

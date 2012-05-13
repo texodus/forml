@@ -16,25 +16,11 @@ module Formal.Types.Axiom where
 import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 
-import Control.Applicative
-import Control.Monad
-import Control.Monad.State hiding (lift)
-
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import Text.Parsec.Indent  hiding (same)
-import Text.Parsec.Expr
-
 import qualified Data.Map as M
-
-import Formal.Parser.Utils
 import Formal.Javascript.Utils
-
-import Formal.Types.Literal
 import Formal.Types.Type
-import Formal.Types.Symbol
 import Formal.Types.Pattern
 
-import Data.String.Utils hiding (join)
 import Data.Monoid
 
 import Prelude hiding (curry, (++))

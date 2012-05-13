@@ -113,17 +113,17 @@ data Meta = Meta { target    :: Target,
 data Target = Test | Library
             deriving (Show)
 
+serial a b = show (sourceLine a - 1) ++ "_" ++ show (sourceLine b - 1) ++ (if sourceLine a /= sourceLine b then "multi" else "")
+
 instance ToStat Meta where
 
     -- Expressions are ignored for Libraries, and rendered as tests for Test
     toStat (Meta { target = Library, expr = ExpressionStatement _ _ }) = mempty
     toStat (Meta { target = Test,    expr = ExpressionStatement (a, b) e }) = 
 
-        [jmacro| it(`(serial ++ "::" ++ show e)`, function() {
+        [jmacro| it(`(serial a b ++ "::" ++ show e)`, function() {
                      `(Jasmine e)`;
                  }); |]
-
-            where serial = show (sourceLine a - 1) ++ "_" ++ show (sourceLine b - 1)
 
     -- Imports work identically for both targets
     toStat (Meta { modules, 

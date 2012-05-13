@@ -84,7 +84,7 @@ annotate_tests zz (Program xs) = annotate_tests' zz (get_tests xs)
     where annotate_tests' x [] = x
           annotate_tests' x ((a, b):ys) = 
               annotate_tests' marked ys
-                  where marked = mark (mark x (serial ++ "--") row' col') ("--" ++ serial) row col
+                  where marked = mark (mark x (serial a b ++ "--") row' col') ("--" ++ serial a b) row col
 
                         mark str tk x y =
                             let str' = lines str
@@ -98,19 +98,10 @@ annotate_tests zz (Program xs) = annotate_tests' zz (get_tests xs)
                         row' = sourceLine b - 1
                         col' = sourceColumn b +1
 
-                        serial = show row ++ "_" ++ show row'
-
           
 highlight :: [(SourcePos, SourcePos)] -> String -> String                              
 highlight [] x = x
-highlight ((a, b):xs) y = highlight xs (replace ("--" ++ serial) ("<span class='test' id='test_" ++ serial ++ "'>") (replace (serial ++ "--") "</span>" y))
-
-    where serial = show row ++ "_" ++ show row'
-          row = sourceLine a - 1
-          col = sourceColumn a - 1
-                    
-          row' = sourceLine b - 1
-          col' = sourceColumn b +1
+highlight ((a, b):xs) y = highlight xs (replace ("--" ++ serial a b) ("<span class='test' id='test_" ++ serial a b ++ "'>") (replace (serial a b ++ "--") "</span>" y))
 
 
 newtype Program = Program [Statement]
