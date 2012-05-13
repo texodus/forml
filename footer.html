@@ -18,6 +18,7 @@ $(function() {
 
     prettyPrint();
 
+    jasmine.getEnv().addReporter(new jasmine.FormalReporter());
     jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
     jasmine.getEnv().execute();
 

@@ -91,7 +91,7 @@ describe("prelude",
             var jmId_3;
             jmId_3 = new (function()
                           {
-                            it("object_ {  }",
+                            it("33_33::object_ {  }",
                                (function()
                                 {
                                   expect((function()
@@ -108,7 +108,7 @@ describe("prelude",
                                           })()).
                                   toEqual(true);
                                 }));
-                            it("array_ [  ]",
+                            it("34_34::array_ [  ]",
                                (function()
                                 {
                                   expect((function()
@@ -125,7 +125,7 @@ describe("prelude",
                                           })()).
                                   toEqual(true);
                                 }));
-                            it("not false",
+                            it("36_36::not false",
                                (function()
                                 {
                                   expect((function()
@@ -142,7 +142,7 @@ describe("prelude",
                                           })()).
                                   toEqual(true);
                                 }));
-                            it("not array_ {  }",
+                            it("37_37::not array_ {  }",
                                (function()
                                 {
                                   expect((function()
@@ -159,7 +159,7 @@ describe("prelude",
                                           })()).
                                   toEqual(true);
                                 }));
-                            it("not object_ 0",
+                            it("38_38::not object_ 0",
                                (function()
                                 {
                                   expect((function()
@@ -176,7 +176,7 @@ describe("prelude",
                                           })()).
                                   toEqual(true);
                                 }));
-                            it("run `(function()\n {\n   return (1 + 4);\n })` >>= (λx = `(function()\n {\n   return (2 + 3);\n })` >>= (λy = log \"x is \" + x + \" and y is \" + y >>= (λ_ = `(function()\n {\n   return (x + y);\n })` >>= (λans = ret 10 == ans))))",
+                            it("51_55::run `(function()\n {\n   return (1 + 4);\n })` >>= (λx = `(function()\n {\n   return (2 + 3);\n })` >>= (λy = log \"x is \" + x + \" and y is \" + y >>= (λ_ = `(function()\n {\n   return (x + y);\n })` >>= (λans = ret 10 == ans))))",
                                (function()
                                 {
                                   expect((function()
@@ -294,12 +294,12 @@ describe("prelude",
                                           })()).
                                   toEqual(true);
                                 }));
-                            it("run ret 5 == 5",
+                            it("57_57::run ret 5 == 5",
                                (function()
                                 {
                                   expect(run(ret(5))).toEqual(5);
                                 }));
-                            it("run log \"test\" >> `(function()\n {\n   return (5 + 5);\n })` == 10",
+                            it("58_58::run log \"test\" >> `(function()\n {\n   return (5 + 5);\n })` == 10",
                                (function()
                                 {
                                   expect(run(_grea_grea(log("test"))((function()
@@ -308,7 +308,7 @@ describe("prelude",
                                                                       })))).
                                   toEqual(10);
                                 }));
-                            it("let x  = 0\n| y  = `(function()\n {\n   x = 1;\n })` >>= (λz = ret z) in (x == 0)",
+                            it("64_67::let x  = 0\n| y  = `(function()\n {\n   x = 1;\n })` >>= (λz = ret z) in (x == 0)",
                                (function()
                                 {
                                   expect((function()
@@ -379,22 +379,22 @@ describe("prelude",
                                           })()).
                                   toEqual(true);
                                 }));
-                            it("3 * 4 + 5 * 4 == 64 \/ 2",
+                            it("114_114::3 * 4 + 5 * 4 == 64 \/ 2",
                                (function()
                                 {
                                   expect(((3 * 4) + (5 * 4))).toEqual(_forw(64)(2));
                                 }));
-                            it("4 - 1 != 5 - 10",
+                            it("115_115::4 - 1 != 5 - 10",
                                (function()
                                 {
                                   expect((4 - 1)).toNotEqual((5 - 10));
                                 }));
-                            it("10 >= 5 + 5 != 4 + 5 <= 10 - 2",
+                            it("116_116::10 >= 5 + 5 != 4 + 5 <= 10 - 2",
                                (function()
                                 {
                                   expect((10 >= (5 + 5))).toNotEqual(((4 + 5) <= (10 - 2)));
                                 }));
-                            it("{ test = 1 } == { test = 1 } == true",
+                            it("117_117::{ test = 1 } == { test = 1 } == true",
                                (function()
                                 {
                                   expect(_eq_eq({ 'test': 1
@@ -402,7 +402,7 @@ describe("prelude",
                                                    })).
                                   toEqual(true);
                                 }));
-                            it("{ test = 1 } != { test = 1 } == false",
+                            it("118_118::{ test = 1 } != { test = 1 } == false",
                                (function()
                                 {
                                   expect(!(_eq_eq({ 'test': 1
@@ -422,12 +422,12 @@ describe("prelude",
                                         var jmId_11;
                                         jmId_11 = new (function()
                                                        {
-                                                         it("fast_fib 7 == fib 7",
+                                                         it("149_149::fast_fib 7 == fib 7",
                                                             (function()
                                                              {
                                                                expect(fast_fib(7)).toEqual(fib(7));
                                                              }));
-                                                         it("run ret <| fast_fib 35 >>= (λ_ = time (λ_ = fast_fib 35) >>= (λfast_time = time (λ_ = fib 35) >>= (λslow_time = let ratio  = floor <| fast_time \/ slow_time * 100 in (log \"Runtime speed ~\" + ratio + \"%\" >>= (λ_ = ret ratio >= 80)))))",
+                                                         it("159_166::run ret <| fast_fib 35 >>= (λ_ = time (λ_ = fast_fib 35) >>= (λfast_time = time (λ_ = fib 35) >>= (λslow_time = let ratio  = floor <| fast_time \/ slow_time * 100 in (log \"Runtime speed ~\" + ratio + \"%\" >>= (λ_ = ret ratio >= 80)))))",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -580,7 +580,7 @@ describe("prelude",
                                                              }));
                                                        })();
                                       }));
-                            it("3 |> (λy = y + 1) |> (λy = y + 1) == 5",
+                            it("175_175::3 |> (λy = y + 1) |> (λy = y + 1) == 5",
                                (function()
                                 {
                                   expect(_or_grea(_or_grea(3)((function()
@@ -630,7 +630,7 @@ describe("prelude",
                                                                        })())).
                                   toEqual(5);
                                 }));
-                            it("(λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9",
+                            it("176_176::(λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9",
                                (function()
                                 {
                                   expect(_less_or(_less_or((function()
@@ -686,7 +686,7 @@ describe("prelude",
                                                             })()(1))(3))(4)).
                                   toEqual(9);
                                 }));
-                            it("(λx = x - 3) <: (λx = x - 3) <: 5 + 5 == 4",
+                            it("183_183::(λx = x - 3) <: (λx = x - 3) <: 5 + 5 == 4",
                                (function()
                                 {
                                   expect(_less_col((function()
@@ -736,7 +736,7 @@ describe("prelude",
                                                                      })())((5 + 5)))).
                                   toEqual(4);
                                 }));
-                            it("(λx = x + 1) .: (λx = x * 2) .: (λx = x - 3) 4 == 3",
+                            it("191_191::(λx = x + 1) .: (λx = x * 2) .: (λx = x - 3) 4 == 3",
                                (function()
                                 {
                                   expect(_comp_col((function()
@@ -810,12 +810,12 @@ describe("prelude",
                                                                             })()))(4)).
                                   toEqual(3);
                                 }));
-                            it("id [ 1, 2, 3 ] == [ 1, 2, 3 ]",
+                            it("192_192::id [ 1, 2, 3 ] == [ 1, 2, 3 ]",
                                (function()
                                 {
                                   expect(id([1, 2, 3])).toEqual([1, 2, 3]);
                                 }));
-                            it("flip (λx y = x - y) 3 5 == 2",
+                            it("193_193::flip (λx y = x - y) 3 5 == 2",
                                (function()
                                 {
                                   expect(flip((function()
@@ -854,7 +854,7 @@ describe("prelude",
                                                })())(3)(5)).
                                   toEqual(2);
                                 }));
-                            it("option 3 { some = 2 } == 2",
+                            it("218_218::option 3 { some = 2 } == 2",
                                (function()
                                 {
                                   expect(option(3)({ 'some': 2
@@ -921,7 +921,7 @@ describe("prelude",
                                         var jmId_13;
                                         jmId_13 = new (function()
                                                        {
-                                                         it("let xs  = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = 1 :: 2 :: 3 :: { nil = true }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { nil = true } } } } } in (all_ (λy = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == y) xs)",
+                                                         it("240_248::let xs  = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { head = 1 :: 2 :: 3 :: { nil = true }, tail = { head = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } }, tail = { nil = true } } } } } in (all_ (λy = { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == y) xs)",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1016,7 +1016,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("not empty_ 1 :: { nil = true }",
+                                                         it("275_275::not empty_ 1 :: { nil = true }",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1034,7 +1034,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("empty_ { nil = true }",
+                                                         it("276_276::empty_ { nil = true }",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1052,7 +1052,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("head { head = 1, tail = { head = 2, tail = { nil = true } } } == 1",
+                                                         it("278_278::head { head = 1, tail = { head = 2, tail = { nil = true } } } == 1",
                                                             (function()
                                                              {
                                                                expect(head({ 'head': 1,
@@ -1063,7 +1063,7 @@ describe("prelude",
                                                                            })).
                                                                toEqual(1);
                                                              }));
-                                                         it("tail { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 2, tail = { nil = true } }",
+                                                         it("279_279::tail { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 2, tail = { nil = true } }",
                                                             (function()
                                                              {
                                                                expect(tail({ 'head': 1,
@@ -1077,7 +1077,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("last { head = 1, tail = { head = 2, tail = { nil = true } } } == 2",
+                                                         it("280_280::last { head = 1, tail = { head = 2, tail = { nil = true } } } == 2",
                                                             (function()
                                                              {
                                                                expect(last({ 'head': 1,
@@ -1088,7 +1088,7 @@ describe("prelude",
                                                                            })).
                                                                toEqual(2);
                                                              }));
-                                                         it("err (λ_ = head { nil = true }) == \"Head called on empty list\"",
+                                                         it("282_282::err (λ_ = head { nil = true }) == \"Head called on empty list\"",
                                                             (function()
                                                              {
                                                                expect(err((function()
@@ -1111,7 +1111,7 @@ describe("prelude",
                                                                            })())).
                                                                toEqual("Head called on empty list");
                                                              }));
-                                                         it("err (λ_ = tail { nil = true }) == \"Tail called on empty list\"",
+                                                         it("283_283::err (λ_ = tail { nil = true }) == \"Tail called on empty list\"",
                                                             (function()
                                                              {
                                                                expect(err((function()
@@ -1134,7 +1134,7 @@ describe("prelude",
                                                                            })())).
                                                                toEqual("Tail called on empty list");
                                                              }));
-                                                         it("err (λ_ = last { nil = true }) == \"Last called on empty list\"",
+                                                         it("284_284::err (λ_ = last { nil = true }) == \"Last called on empty list\"",
                                                             (function()
                                                              {
                                                                expect(err((function()
@@ -1157,7 +1157,7 @@ describe("prelude",
                                                                            })())).
                                                                toEqual("Last called on empty list");
                                                              }));
-                                                         it("take 2 { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
+                                                         it("286_286::take 2 { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect(take(2)({ 'head': 1,
@@ -1175,7 +1175,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("drop 2 { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 3, tail = { nil = true } }",
+                                                         it("287_287::drop 2 { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 3, tail = { nil = true } }",
                                                             (function()
                                                              {
                                                                expect(drop(2)({ 'head': 1,
@@ -1191,7 +1191,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("take_while (λx = x < 0) { nil = true } == { nil = true }",
+                                                         it("289_289::take_while (λx = x < 0) { nil = true } == { nil = true }",
                                                             (function()
                                                              {
                                                                expect(take_while((function()
@@ -1221,7 +1221,7 @@ describe("prelude",
                                                                toEqual({ 'nil': true
                                                                        });
                                                              }));
-                                                         it("take_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 2, tail = { head = 1, tail = { nil = true } } }",
+                                                         it("290_290::take_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 2, tail = { head = 1, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect(take_while((function()
@@ -1261,7 +1261,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("drop_while (λx = x < 0) { nil = true } == { nil = true }",
+                                                         it("292_292::drop_while (λx = x < 0) { nil = true } == { nil = true }",
                                                             (function()
                                                              {
                                                                expect(drop_while((function()
@@ -1291,7 +1291,7 @@ describe("prelude",
                                                                toEqual({ 'nil': true
                                                                        });
                                                              }));
-                                                         it("drop_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 0, tail = { nil = true } }",
+                                                         it("293_293::drop_while (λx = x > 0) { head = 2, tail = { head = 1, tail = { head = 0, tail = { nil = true } } } } == { head = 0, tail = { nil = true } }",
                                                             (function()
                                                              {
                                                                expect(drop_while((function()
@@ -1329,7 +1329,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("length { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 4",
+                                                         it("300_300::length { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 4",
                                                             (function()
                                                              {
                                                                expect(length({ 'head': 1,
@@ -1344,19 +1344,19 @@ describe("prelude",
                                                                              })).
                                                                toEqual(4);
                                                              }));
-                                                         it("length init 30 0 == 30",
+                                                         it("307_307::length init 30 0 == 30",
                                                             (function()
                                                              {
                                                                expect(length(init(30)(0))).
                                                                toEqual(30);
                                                              }));
-                                                         it("tail init 3 0 == init 2 0",
+                                                         it("308_308::tail init 3 0 == init 2 0",
                                                             (function()
                                                              {
                                                                expect(tail(init(3)(0))).
                                                                toEqual(init(2)(0));
                                                              }));
-                                                         it("{ nil = true } ++ 1 :: 2 :: { nil = true } == 1 :: 2 :: { nil = true }",
+                                                         it("316_316::{ nil = true } ++ 1 :: 2 :: { nil = true } == 1 :: 2 :: { nil = true }",
                                                             (function()
                                                              {
                                                                expect(_plus_plus({ 'nil': true
@@ -1365,7 +1365,7 @@ describe("prelude",
                                                                toEqual(_col_col(1)(_col_col(2)({ 'nil': true
                                                                                                })));
                                                              }));
-                                                         it("{ head = 1, tail = { head = 2, tail = { nil = true } } } ++ { head = 3, tail = { head = 4, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } }",
+                                                         it("317_317::{ head = 1, tail = { head = 2, tail = { nil = true } } } ++ { head = 3, tail = { head = 4, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } }",
                                                             (function()
                                                              {
                                                                expect(_plus_plus({ 'head': 1,
@@ -1390,7 +1390,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("filter (λx = x > 2) { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == { head = 3, tail = { head = 4, tail = { nil = true } } }",
+                                                         it("325_325::filter (λx = x > 2) { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == { head = 3, tail = { head = 4, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect(filter((function()
@@ -1432,7 +1432,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("map (λx = x + 1) { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } }",
+                                                         it("332_332::map (λx = x + 1) { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } }",
                                                             (function()
                                                              {
                                                                expect(map((function()
@@ -1476,7 +1476,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("reverse { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == { head = 4, tail = { head = 3, tail = { head = 2, tail = { head = 1, tail = { nil = true } } } } }",
+                                                         it("343_343::reverse { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == { head = 4, tail = { head = 3, tail = { head = 2, tail = { head = 1, tail = { nil = true } } } } }",
                                                             (function()
                                                              {
                                                                expect(reverse({ 'head': 1,
@@ -1500,7 +1500,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("foldl (λx y = x + y) 0 { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 10",
+                                                         it("375_375::foldl (λx y = x + y) 0 { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 10",
                                                             (function()
                                                              {
                                                                expect(foldl((function()
@@ -1550,7 +1550,7 @@ describe("prelude",
                                                                                       })).
                                                                toEqual(10);
                                                              }));
-                                                         it("foldr (λx y = x + y) 0 { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 10",
+                                                         it("376_376::foldr (λx y = x + y) 0 { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } } == 10",
                                                             (function()
                                                              {
                                                                expect(foldr((function()
@@ -1600,7 +1600,7 @@ describe("prelude",
                                                                                       })).
                                                                toEqual(10);
                                                              }));
-                                                         it("all_ id { head = true, tail = { head = true, tail = { nil = true } } }",
+                                                         it("377_377::all_ id { head = true, tail = { head = true, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1622,7 +1622,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("not all_ id { head = true, tail = { head = false, tail = { nil = true } } }",
+                                                         it("378_378::not all_ id { head = true, tail = { head = false, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1644,7 +1644,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("any_ id { head = true, tail = { head = false, tail = { nil = true } } }",
+                                                         it("379_379::any_ id { head = true, tail = { head = false, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1666,7 +1666,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("not any_ id { head = false, tail = { head = false, tail = { nil = true } } }",
+                                                         it("380_380::not any_ id { head = false, tail = { head = false, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1688,7 +1688,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("sum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 6",
+                                                         it("381_381::sum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 6",
                                                             (function()
                                                              {
                                                                expect(sum({ 'head': 1,
@@ -1701,7 +1701,7 @@ describe("prelude",
                                                                           })).
                                                                toEqual(6);
                                                              }));
-                                                         it("product { head = 1, tail = { head = 2, tail = { head = 4, tail = { nil = true } } } } == 8",
+                                                         it("382_382::product { head = 1, tail = { head = 2, tail = { head = 4, tail = { nil = true } } } } == 8",
                                                             (function()
                                                              {
                                                                expect(product({ 'head': 1,
@@ -1714,7 +1714,7 @@ describe("prelude",
                                                                               })).
                                                                toEqual(8);
                                                              }));
-                                                         it("let x  = { head = 1, tail = { head = 2, tail = { nil = true } } }\n| y  = { head = 3, tail = { head = 4, tail = { nil = true } } } in (concat { head = x, tail = { head = y, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
+                                                         it("384_386::let x  = { head = 1, tail = { head = 2, tail = { nil = true } } }\n| y  = { head = 3, tail = { head = 4, tail = { nil = true } } } in (concat { head = x, tail = { head = y, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -1788,7 +1788,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("concat_map (λx = { head = x, tail = { head = x + 1, tail = { nil = true } } }) { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } }",
+                                                         it("388_388::concat_map (λx = { head = x, tail = { head = x + 1, tail = { nil = true } } }) { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } }",
                                                             (function()
                                                              {
                                                                expect(concat_map((function()
@@ -1837,7 +1837,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("minimum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 1",
+                                                         it("390_390::minimum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 2",
                                                             (function()
                                                              {
                                                                expect(minimum({ 'head': 1,
@@ -1848,9 +1848,9 @@ describe("prelude",
                                                                                                   }
                                                                                         }
                                                                               })).
-                                                               toEqual(1);
+                                                               toEqual(2);
                                                              }));
-                                                         it("maximum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 3",
+                                                         it("391_391::maximum { head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == 3",
                                                             (function()
                                                              {
                                                                expect(maximum({ 'head': 1,
@@ -1935,7 +1935,7 @@ describe("prelude",
                                         var jmId_22;
                                         jmId_22 = new (function()
                                                        {
-                                                         it("to_list from_list { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
+                                                         it("419_419::to_list from_list { head = 1, tail = { head = 2, tail = { nil = true } } } == { head = 1, tail = { head = 2, tail = { nil = true } } }",
                                                             (function()
                                                              {
                                                                expect(to_list(from_list({ 'head': 1,
@@ -1951,7 +1951,7 @@ describe("prelude",
                                                                                  }
                                                                        });
                                                              }));
-                                                         it("let f  = to_list .: take 3 .: from_list in ({ head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == f { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
+                                                         it("436_437::let f  = to_list .: take 3 .: from_list in ({ head = 1, tail = { head = 2, tail = { head = 3, tail = { nil = true } } } } == f { head = 1, tail = { head = 2, tail = { head = 3, tail = { head = 4, tail = { nil = true } } } } })",
                                                             (function()
                                                              {
                                                                expect((function()
@@ -2002,7 +2002,7 @@ describe("prelude",
                                                                        })()).
                                                                toEqual(true);
                                                              }));
-                                                         it("500 == iterate (λx = x + 1) 0 |> take 500 |> to_list |> length",
+                                                         it("439_442::500 == iterate (λx = x + 1) 0 |> take 500 |> to_list |> length",
                                                             (function()
                                                              {
                                                                expect(500).
@@ -2042,7 +2042,7 @@ describe("prelude",
                                         var jmId_24;
                                         jmId_24 = new (function()
                                                        {
-                                                         it("\"test\" % true == { key = \"test\", val = true }",
+                                                         it("456_456::\"test\" % true == { key = \"test\", val = true }",
                                                             (function()
                                                              {
                                                                expect(_perc("test")(true)).
