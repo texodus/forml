@@ -167,12 +167,20 @@ instance (Syntax d) => Syntax (Expression d) where
 
                   where table  = [ [ix "^"]
                                  , [ix "*", ix "/"]
+                                 , [px "-" ]
                                  , [ix "+", ix "-"]
                                  , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
                                  , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!="]
                                  , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
                         ix s   = Infix (try . op $ (Operator <$> string s) <* notFollowedBy operator) AssocLeft
+
+                        px s   = Prefix (try neg)
+                                 where neg = do spaces
+                                                op <- SymbolExpression . Operator <$> string s
+                                                spaces
+                                                return (\x -> ApplyExpression op [x])
+                                 
                         term   = try other
                         
                         user_op_left = try $ do spaces
@@ -321,6 +329,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x])  = [jmacroE| 0 - `(x)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "<=")) [x, y]) = [jmacroE| `(x)` <= `(y)` |]
