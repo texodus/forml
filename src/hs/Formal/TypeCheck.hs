@@ -14,21 +14,31 @@
 
 
 module Formal.TypeCheck where
+
 import List (nub, (\\), intersect, union, partition)
 import Monad (msum)
 
 import qualified Data.Map as M
+import qualified Data.List as L
 
 import Data.Monoid
 
 import Formal.Types.Literal
+import Formal.Types.Pattern
+import Formal.Types.Symbol
+import Formal.Types.Expression
+import Formal.Types.Definition
+import Formal.Types.Axiom
+import Formal.Types.Statement hiding (find)
+import Formal.Parser
 
 type Id = String
 
 enumId :: Int -> Id
 enumId n = "v" ++ show n
 
-data Kind = Star | KindFunction Kind Kind deriving Eq
+data Kind = Star | KindFunction Kind Kind deriving (Show, Eq)
+
 
 type Key = String
 
@@ -39,14 +49,23 @@ data Type = TypeVar TypeVar
           | TypeGen Int -- (?)
             deriving Eq
 
+instance Show Type where
+    show (TypeVar (TVar i _)) = i
+    show (Type (TypeConst i _)) = i
+    show (TypeApplication (Type (TypeConst "->" _)) u) = show u ++ " ->"
+    show (TypeApplication t u) = "(" ++ show t ++ " " ++ show u ++ ")"
+    show (TypeGen x) = "v" ++ show x
+
+
+
 data TypeRecord = TRecord (M.Map Key Type) Kind
-                deriving Eq
+                deriving (Show, Eq)
 
 data TypeVar = TVar Id Kind
-               deriving Eq
+               deriving (Show, Eq)
 
 data TypeConst = TypeConst Id Kind -- (?)
-                 deriving Eq
+                 deriving (Show, Eq)
 
 
 -- These are primitive type constants (MPJ pg.6)
@@ -95,6 +114,7 @@ instance Types Type where
     tv (TypeVar u) = [u]
     tv (TypeApplication l r) = tv l `union` tv r
     tv (TypeRecord (TRecord xs _)) = nub $ M.elems xs >>= tv
+    tv t = []
 
 instance Types a => Types [a] where
     apply s = map (apply s)
@@ -156,7 +176,10 @@ match t u              = fail "Types do not match"
 -- --------------------------------------------------------------------------------
 
 data Qual t = [Pred] :=> t deriving Eq
-data Pred = IsIn Id Type deriving Eq
+data Pred = IsIn Id Type deriving (Show, Eq)
+
+instance (Show t) => Show (Qual t) where
+    show (_ :=> t) = show t
 
 instance Types t => Types (Qual t) where
   apply s (ps :=> t) = apply s ps :=> apply s t
@@ -294,9 +317,14 @@ scEntail ce ps p = any (p `elem`) (map (bySuper ce) ps)
 
 data Scheme = Forall [Kind] (Qual Type) deriving Eq
 
+instance Show Scheme where
+    show (Forall [] t) = show t
+    show (Forall xs t) = "forall " ++ vars ++ " => " ++ show t
+        where vars = concat . L.intersperse " " . map (\x -> "_" ++ show x) . take (length xs) $ [0..]
+
 instance Types Scheme where
   apply s (Forall ks qt) = Forall ks (apply s qt)
-  tv (Forall ks qt)      = tv qt
+  tv (Forall _ qt)      = tv qt
 
 quantify      :: [TypeVar] -> Qual Type -> Scheme
 quantify vs qt = Forall ks (apply s qt)
@@ -314,6 +342,12 @@ toScheme t     = Forall [] ([] :=> t)
 
 data Assumption = Id :>: Scheme
 
+newtype A = A [Assumption]
+
+instance Show A where
+    show (A []) = ""
+    show (A (i :>: s : xs)) = i ++ ": " ++ show s ++ "\n" ++ show (A xs)
+
 instance Types Assumption where
     apply s (i :>: sc) = i :>: (apply s sc)
     tv (i :>: sc)      = tv sc
@@ -327,19 +361,22 @@ find i ((i':>:sc):as) = if i==i' then return sc else find i as
 -- Type Inference Monad
 -- --------------------------------------------------------------------------------
 
-newtype TI a = TI (Substitution -> Int -> (Substitution, Int, a))
+newtype TI a = TI (Substitution -> Int -> ClassEnv -> (Substitution, Int, ClassEnv, a))
 
 instance Monad TI where
-  return x   = TI (\s n -> (s,n,x))
-  TI f >>= g = TI (\s n -> case f s n of
-                            (s',m,x) -> let TI gx = g x
-                                        in  gx s' m)
+  return x   = TI (\s n ce -> (s, n, ce, x))
+  TI f >>= g = TI (\s n ce -> case f s n ce of
+                                (s',m,ce, x) -> let TI gx = g x
+                                               in  gx s' m ce)
 
 runTI :: TI a -> a
-runTI (TI f) = x where (s,n,x) = f [] 0
+runTI (TI f) = x where (s,n,ce,x) = f [] 0 initialEnv
 
-get_substitution   :: TI Substitution
-get_substitution    = TI (\s n -> (s,n,s))
+get_substitution :: TI Substitution
+get_substitution   = TI (\s n ce -> (s,n,ce,s))
+
+get_classenv :: TI ClassEnv
+get_classenv = TI (\s n ce -> (s,n,ce,ce))
 
 unify      :: Type -> Type -> TI ()
 unify t1 t2 = do s <- get_substitution
@@ -347,13 +384,13 @@ unify t1 t2 = do s <- get_substitution
                  extSubst u
 
     where extSubst   :: Substitution -> TI ()
-          extSubst s' = TI (\s n -> (s'@@s, n, ()))
+          extSubst s' = TI (\s n ce -> (s'@@s, n, ce, ()))
 
-newTVar    :: Kind -> TI Type
-newTVar k   = TI (\s n -> let v = TVar (enumId n) k
-                          in  (s, n+1, TypeVar v))
+newTVar :: Kind -> TI Type
+newTVar k   = TI (\s n ce -> let v = TVar (enumId n) k
+                             in  (s, n+1, ce, TypeVar v))
 
-freshInst               :: Scheme -> TI (Qual Type)
+freshInst :: Scheme -> TI (Qual Type)
 freshInst (Forall ks qt) = do ts <- mapM newTVar ks
                               return (inst ts qt)
 
@@ -379,12 +416,204 @@ instance Instantiate Pred where
 -- Type Inference
 -- --------------------------------------------------------------------------------
 
-tiLit            :: Literal -> TI ([Pred],Type)
-tiLit (LitChar _) = return ([], tChar)
-tiLit (LitInt _)  = do v <- newTVar Star
-                       return ([IsIn "Num" v], v)
-tiLit (LitStr _)  = return ([], tString)
-tiLit (LitRat _)  = do v <- newTVar Star
-                       return ([IsIn "Fractional" v], v)
+-- Literals
+
+tiLit :: Literal -> TI ([Pred],Type)
+tiLit (StringLiteral _) = return ([], Type (TypeConst "String" Star))
+tiLit (IntLiteral _)    = return ([], Type (TypeConst "Num" Star))
+tiLit (IntLiteral _)    = return ([], Type (TypeConst "Num" Star))
+
+-- Patterns
+
+tiPat :: forall b. Pattern b -> TI ([Pred], [Assumption], Type)
+tiPat (VarPattern i) = do v <- newTVar Star
+                          return ([], [i :>: toScheme v], v)
+
+tiPat AnyPattern = do v <- newTVar Star
+                      return ([], [], v)
+
+tiPat (LiteralPattern x) = do (ps, t) <- tiLit x
+                              return (ps, [], t)
+
+tiPat (ListPattern xs) = do (ps, as, ts) <- tiPats xs
+                            t'           <- newTVar Star
+                            (qs :=> t)   <- freshInst list_scheme
+                            mapM_ (unify t') ts
+                            return (ps ++ qs, as, t)
+
+tiPat (RecordPattern (unzip . M.toList -> (names, patterns))) =
+    
+    do (ps, as, ts) <- tiPats patterns
+       t'           <- newTVar Star
+       unify t' (TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star))
+       return (ps, as, t')
+
+    where f (Symbol x) = x
+          f (Operator x) = x
+
+list_scheme :: Scheme
+list_scheme = Forall [Star] qual_list
+    where qual_list = [] :=> TypeApplication (Type (TypeConst "List" (KindFunction Star Star))) (TypeGen 0)
+
+tiPats     :: forall b. [Pattern b] -> TI ([Pred], [Assumption], [Type])
+tiPats pats = do psasts <- mapM tiPat pats
+                 let ps = concat [ ps' | (ps',_,_) <- psasts ]
+                     as = concat [ as' | (_,as',_) <- psasts ]
+                     ts = [ t | (_,_,t) <- psasts ]
+                 return (ps, as, ts)
+
+-- Matches
+
+bool_type :: Type
+bool_type = undefined
+
+tiMatch :: [Assumption] -> (Match (Expression Definition)) -> TI ([Pred], [Assumption], [Type])
+tiMatch as (Match x Nothing) = do (ps, as', xe) <- tiPats x
+                                  return (ps, as', xe)
+
+tiMatch as (Match x (Just y)) = do (ps, as', xe) <- tiPats x
+                                   (ps', t) <- tiExpr (as' ++ as) y
+                                   unify bool_type t
+                                   return (ps ++ ps', as', xe)
+
+-- Expressions
 
 
+type Infer e t = [Assumption] -> e -> TI ([Pred], t)
+
+-- class Infer e where
+--     infer :: ClassEnv -> [Assumption] -> e -> TI ([Pred], [Assumption], Type)
+
+infixr      4 `fn`
+fn         :: Type -> Type -> Type
+a `fn` b    = TypeApplication (TypeApplication fun_type a) b
+ 
+
+tiExpr :: Infer (Expression b) Type
+tiExpr as (SymbolExpression i) = do sc <- find (show i) as
+                                    (ps :=> t) <- freshInst sc
+                                    return (ps, t)
+
+tiExpr as (LiteralExpression s) = do (ps, t) <- tiLit s
+                                     return (ps, t)
+
+tiExpr as (JSExpression s) = do t <- newTVar Star
+                                return ([], t)
+       
+
+
+tiExpr as (ApplyExpression e []) = fail "This should not be"
+tiExpr as (ApplyExpression e (x:[])) = do (ps, te) <- tiExpr as e
+                                          (qs, tx) <- tiExpr as x
+                                          t        <- newTVar Star
+                                          unify (tx `fn` t) te
+                                          return (ps ++ qs, t)
+
+tiExpr as (ApplyExpression e (x:xs)) = tiExpr as (ApplyExpression (ApplyExpression e (x:[])) xs)
+
+tiExpr as (RecordExpression (unzip . M.toList -> (names, xs))) =
+
+    do (ps, ts) <- tiExprs as xs
+       t <- newTVar Star
+       unify t (TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star))
+       return (ps, t)
+
+    where f (Symbol x) = x
+          f (Operator x) = x
+
+tiExprs :: forall b. Infer [Expression b] [Type]
+tiExprs as xs = do exprs <- mapM (tiExpr as) xs
+                   let ps = concat [ ps' | (ps',_) <- exprs ]
+                       ts = [ t | (_,t) <- exprs ]
+                   return (ps, ts)
+
+-- Axioms
+
+tiAxiom :: Infer (Axiom (Expression Definition)) Type
+tiAxiom as (EqualityAxiom m x) = do (ps, as', ts) <- tiMatch as m
+                                    (qs, t)       <- tiExpr (as' ++ as) x
+                                    return (ps ++ qs, foldr fn t ts)
+
+tiAxioms :: [Assumption] -> [Axiom (Expression Definition)] -> Type -> TI [Pred]
+tiAxioms as axs t = do ps <- mapM (tiAxiom as) axs
+                       mapM (unify t) (map snd ps)
+                       return (concat (map fst ps))
+
+-- Generalization
+
+split :: Monad m => ClassEnv -> [TypeVar] -> [TypeVar] -> [Pred] -> m ([Pred], [Pred])
+split ce fs gs ps = do ps' <- reduce ce ps
+                       let (ds, rs) = partition (all (`elem` fs) . tv) ps'
+                     --  rs' <- defaultedPreds ce (fs++gs) rs
+                       return (ds, rs) -- \\ rs')
+
+-- Ambiguity
+
+-- type Ambiguity       = (TypeVar, [Pred])
+
+-- ambiguities :: ClassEnv -> [TypeVar] -> [Pred] -> [Ambiguity]
+-- ambiguities ce vs ps = [ (v, filter (elem v . tv) ps) | v <- tv ps \\ vs ]
+
+-- defaultedPreds = undefined
+
+-- Definitions
+
+restricted :: [Definition] -> Bool
+restricted bs = any simple bs
+    where simple (Definition i axs) = any (null . f) axs
+          f (EqualityAxiom (Match p _) _) = p
+          f _ = error "Not Defined"
+
+tiImpls :: Infer [Definition] [Assumption]
+tiImpls as bs = do ts <- mapM (\_ -> newTVar Star) bs
+                   let is    = map get_name bs
+                       scs   = map toScheme ts
+                       as'   = zipWith (:>:) is scs ++ as
+                       altss = map get_axioms bs
+                   pss <- sequence (zipWith (tiAxioms as') altss ts)
+                   s   <- get_substitution
+                   let ps' = apply s (concat pss)
+                       ts' = apply s ts
+                       fs  = tv (apply s as)
+                       vss = map tv ts'
+                       gs  = foldr1 union vss \\ fs
+                   ce <- get_classenv
+                   (ds,rs) <- split ce fs (foldr1 intersect vss) ps'
+                   if restricted bs then
+                       let gs'  = gs \\ tv rs
+                           scs' = map (quantify gs' . ([]:=>)) ts'
+                       in return (ds++rs, zipWith (:>:) is scs')
+                     else
+                       let scs' = map (quantify gs . (rs:=>)) ts'
+                       in return (ds, zipWith (:>:) is scs')
+
+    where get_name (Definition (Symbol x) _) = x
+          get_name (Definition (Operator x) _) = x
+          get_axioms (Definition _ x) = x
+
+type BindGroup  = ([Definition], [[Definition]])
+
+tiBindGroup :: Infer BindGroup [Assumption]
+tiBindGroup as (es,iss) =
+  do (ps, as'') <- tiSeq tiImpls (as) iss
+     qss        <- return []
+     return (ps++concat qss, as'')
+
+tiSeq :: Infer bg [Assumption] -> Infer [bg] [Assumption]
+tiSeq ti as []       = return ([],[])
+tiSeq ti as (bs:bss) = do (ps,as')  <- ti as bs
+                          (qs,as'') <- tiSeq ti (as'++as) bss
+                          return (ps++qs, as''++as')
+
+tiProgram :: [Assumption] -> Program -> [Assumption]
+tiProgram as bgs = runTI $
+                      do let bg = to_group bgs
+                         (ps, as') <- tiSeq tiBindGroup as [([], (map (:[]) bg))]
+                         s         <- get_substitution
+                         ce        <- get_classenv
+                         rs        <- reduce ce (apply s ps)
+                         return (apply (s) as')
+
+    where to_group (Program xs) = [ y | x <- xs, y <- g x ]
+          g (DefinitionStatement a) = [a]
+          g _ = []

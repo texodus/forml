@@ -62,10 +62,10 @@ Testing to verify that escaping Javascript & utilizing escaped
 Javascript with `do` sugar and composition in general works as
 expected.
 
-    let x = 0
-        y = do z <- `x = 1`
+    let y = do z <- `x = 1`
                ret z
-    x == 0
+
+    run y == 0
 
 
 Numbers

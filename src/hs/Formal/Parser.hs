@@ -76,7 +76,7 @@ compress = run var . run nul . run fun
 get_tests :: [Statement] -> [(SourcePos, SourcePos)]
 get_tests [] = []
 get_tests (ExpressionStatement x _: xs) = x : get_tests xs
-get_tests (ModuleStatement _  x: xs) = get_tests x ++ get_tests xs
+get_tests (ModuleStatement _ x: xs) = get_tests x ++ get_tests xs
 get_tests (_: xs) = get_tests xs
 
 annotate_tests :: String -> Program -> String
