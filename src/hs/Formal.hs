@@ -47,7 +47,7 @@ main  = do RunConfig (file:_) output mode <- parseArgs <$> getArgs
            case parseFormal src of
              Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
              Right src' -> do putStrLn "\r[*] Parsing"
-                              putStrLn $ show $ A $ tiProgram [] src'
+                              putStrLn $ show $ A $ tiProgram src'
                               let tests = case src' of (Program xs) -> get_tests xs
                               let html = highlight tests $ toHTML (wrap_html output (annotate_tests src src'))
                               writeFile (output ++ ".html") html
