@@ -12,15 +12,16 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-
 module Formal.TypeCheck where
+import System.IO.Unsafe
 
 import List (nub, (\\), intersect, union, partition)
 import Monad (msum)
 
 import qualified Data.Map as M
 import qualified Data.List as L
-
+import qualified Data.Set as S
+import Control.Monad
 import Data.Monoid
 
 import Formal.Types.Literal
@@ -30,6 +31,10 @@ import Formal.Types.Expression
 import Formal.Types.Definition
 import Formal.Types.Axiom
 import Formal.Types.Statement hiding (find)
+
+import Formal.Types.TypeDefinition
+import Formal.Types.Type
+
 import Formal.Parser
 
 type Id = String
@@ -37,7 +42,7 @@ type Id = String
 enumId :: Int -> Id
 enumId n = "v" ++ show n
 
-data Kind = Star | KindFunction Kind Kind deriving (Show, Eq)
+data Kind = Star | KindFunction Kind Kind deriving (Show, Eq, Ord)
 
 
 type Key = String
@@ -55,17 +60,17 @@ instance Show Type where
     show (TypeApplication (Type (TypeConst "->" _)) u) = show u ++ " ->"
     show (TypeApplication t u) = "(" ++ show t ++ " " ++ show u ++ ")"
     show (TypeGen x) = "v" ++ show x
-
+    show (TypeRecord (TRecord m _)) = show m
 
 
 data TypeRecord = TRecord (M.Map Key Type) Kind
                 deriving (Show, Eq)
 
 data TypeVar = TVar Id Kind
-               deriving (Show, Eq)
+               deriving (Show, Eq, Ord)
 
 data TypeConst = TypeConst Id Kind -- (?)
-                 deriving (Show, Eq)
+                 deriving (Show, Eq, Ord)
 
 
 -- These are primitive type constants (MPJ pg.6)
@@ -146,11 +151,11 @@ mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
 
 mgu t (TypeVar u)  = var_bind u t
 mgu (TypeVar u) t  = var_bind u t
-mgu (TypeRecord t) (TypeRecord u) 
-    | t == u       = return [] -- (?)  is this how records should be unified?
-mgu (Type t) (Type u)
-    | t == u       = return []
-mgu t u            = fail "Types do not unify"
+mgu (TypeRecord (TRecord t _)) (TypeRecord (TRecord u _)) 
+    | M.keys t `intersect` M.keys u == M.keys t =
+        (sequence $ zipWith mgu (M.elems t) (M.elems u)) >>= (\x -> return $ foldl1 (@@) x)
+mgu (Type t) (Type u) | t == u = return []
+mgu t u = fail $ "Types do not unify: " ++ show t ++ " and " ++ show u
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail "occurs check fails"
@@ -340,22 +345,32 @@ toScheme t     = Forall [] ([] :=> t)
 -- Assumptions
 -- --------------------------------------------------------------------------------
 
-data Assumption = Id :>: Scheme
+data RecordId = RecordId (M.Map String RecordId)
+              | RecordKey
+                deriving (Ord, Eq, Show)
+
+data Assumption = Id :>: Scheme | RecordId :>>: Scheme
 
 newtype A = A [Assumption]
 
 instance Show A where
     show (A []) = ""
-    show (A (i :>: s : xs)) = i ++ ": " ++ show s ++ "\n" ++ show (A xs)
+    show (A (i :>: s : xs)) = show i ++ ": " ++ show s ++ "\n" ++ show (A xs)
+    show (A (i :>>: s : xs)) = show i ++ ": " ++ show s ++ "\n" ++ show (A xs)
+
 
 instance Types Assumption where
-    apply s (i :>: sc) = i :>: (apply s sc)
-    tv (i :>: sc)      = tv sc
+    apply s (i :>: sc)  = i :>: (apply s sc)
+    apply s (i :>>: sc) = i :>>: (apply s sc)
+
+    tv (i :>: sc)       = tv sc
+    tv (i :>>: sc)      = tv sc
 
 find :: Monad m => Id -> [Assumption] -> m Scheme
-find i []             = fail ("unbound identifier: " ++ i)
-find i ((i':>:sc):as) = if i==i' then return sc else find i as
-
+find i x = find' $ reverse x
+    where find' []             = fail ("unbound identifier: " ++ show i)
+          find' ((i':>:sc):as) = if i == i' then return sc else find i as
+          find' (_:as)         = find i as
 
 
 -- Type Inference Monad
@@ -514,22 +529,26 @@ a `fn` b    = TypeApplication (TypeApplication fun_type a) b
  
 
 instance Infer (Expression b) where
-    infer (SymbolExpression i) = do as <- get_assumptions
-                                    sc <- find (show i) as
-                                    (ps :=> t) <- freshInst sc
-                                    predicate ps
-                                    return t
+    infer (SymbolExpression i) =
+
+        do as <- get_assumptions
+           sc <- find (show i) as
+           (ps :=> t) <- freshInst sc
+           predicate ps
+           return t
 
     infer (LiteralExpression s) = infer s
 
     infer (JSExpression s) = newTVar Star
 
     infer (ApplyExpression e []) = fail "This should not be"
-    infer (ApplyExpression e (x:[])) = do te <- infer e
-                                          tx <- infer x
-                                          t  <- newTVar Star
-                                          unify (tx `fn` t) te
-                                          return t
+    infer (ApplyExpression e (x:[])) =
+
+        do te <- infer e
+           tx <- infer x
+           t  <- newTVar Star
+           unify (tx `fn` t) te
+           return t
 
     infer (ApplyExpression e (x:xs)) = infer (ApplyExpression (ApplyExpression e (x:[])) xs)
 
@@ -562,41 +581,51 @@ instance Infer (Axiom (Expression Definition)) where
 -- Generalization
 
 split :: Monad m => ClassEnv -> [TypeVar] -> [TypeVar] -> [Pred] -> m ([Pred], [Pred])
-split ce fs gs ps = do ps' <- reduce ce ps
-                       let (ds, rs) = partition (all (`elem` fs) . tv) ps'
-                       return (ds, rs) -- \\ rs')
+split ce fs gs ps =
 
+    do ps' <- reduce ce ps
+       let (ds, rs) = partition (all (`elem` fs) . tv) ps'
+       return (ds, rs) -- \\ rs')
 
 tiImpls :: [Definition] -> TI ()
-tiImpls bs    = do ts <- mapM (\_ -> newTVar Star) bs
-                   let is    = map get_name bs
-                       scs   = map toScheme ts
-                       altss = map get_axioms bs
-                   ts'' <- with_scope $ 
-                        do assume $ zipWith (:>:) is scs
-                           mapM (with_scope . mapM infer) altss
-                   mapM (\(t, vs) -> mapM (unify t) vs) (zip ts ts'')
-                   ps <- get_predicates
-                   as <- get_assumptions
-                   ps' <- substitute ps
-                   ts' <- substitute ts
-                   fs' <- substitute as
-                   let fs  = tv fs'
-                       vss = map tv ts'
-                       gs  = foldr1 union vss \\ fs
-                   ce <- get_classenv
-                   (ds,rs) <- split ce fs (foldr1 intersect vss) ps'
-                   if restricted then
-                       let gs'  = gs \\ tv rs
-                           scs' = map (quantify gs' . ([]:=>)) ts'
-                       in do predicate (ds ++ rs)
-                             assume (zipWith (:>:) is scs')
-                             return ()
-                     else
-                       let scs' = map (quantify gs . (rs:=>)) ts'
-                       in do predicate ds
-                             assume (zipWith (:>:) is scs')
-                             return ()
+tiImpls bs =
+
+    do ts <- mapM (\_ -> newTVar Star) bs
+
+       let is    = map get_name bs
+           scs   = map toScheme ts
+           altss = map get_axioms bs
+
+       ts'' <- with_scope $ 
+            do assume $ zipWith (:>:) is scs
+               mapM (with_scope . mapM infer) altss
+
+       mapM (\(t, vs) -> mapM (unify t) vs) (zip ts ts'')
+
+       ps  <- get_predicates
+       as  <- get_assumptions
+       ps' <- substitute ps
+       ts' <- substitute ts
+       fs' <- substitute as
+
+       let fs  = tv fs'
+           vss = map tv ts'
+           gs  = foldr1 union vss \\ fs
+
+       ce <- get_classenv
+       (ds,rs) <- split ce fs (foldr1 intersect vss) ps'
+
+       if restricted then
+           let gs'  = gs \\ tv rs
+               scs' = map (quantify gs' . ([]:=>)) ts'
+           in do predicate (ds ++ rs)
+                 assume (zipWith (:>:) is scs')
+                 return ()
+         else
+           let scs' = map (quantify gs . (rs:=>)) ts'
+           in do predicate ds
+                 assume (zipWith (:>:) is scs')
+                 return ()
 
     where get_name (Definition (Symbol x) _) = x
           get_name (Definition (Operator x) _) = x
@@ -615,9 +644,65 @@ tiBindGroup :: BindGroup -> TI ()
 tiBindGroup (es,iss) = do mapM tiImpls iss
                           return ()
 
+
+
+-- TODO no feckin monotype
+to_scheme :: TypeDefinition -> UnionType -> [Assumption]
+to_scheme def t = [ to_key y :>>: Forall [] ([]:=>y) | y <- enumerate_types t ] 
+
+    where to_key (TypeRecord (TRecord m _)) = RecordId . M.map (\x -> to_key x) $ m
+          to_key _ = RecordKey
+
+
+
+-- | Computes all possible types from a type signature AST.
+
+enumerate_types :: UnionType -> [Type]
+enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ types
+
+    where -- TODO YO! Free variables up in this bitch!
+          term_type (VariableType x)      = [ TypeVar (TVar x Star) ]
+          term_type (SymbolType x)        = [ Type (TypeConst (show x) Star) ]
+          term_type (PolymorphicType a b) = [ foldl TypeApplication a' b' 
+                                                  | b' <- map enumerate_types b
+                                                  , a' <- term_type a ]
+
+          enumerate_type (SimpleType x) = term_type x
+
+          enumerate_type (FunctionType a b) =
+
+              [ a' `fn` b' | a' <- enumerate_types a, b' <- enumerate_types b ]
+
+          enumerate_type (RecordType (unzip . M.toList -> (names, types'))) =
+
+              map f permutations
+        
+              where permutations = permutations' . map enumerate_types $ types'
+
+                        where permutations' (x:[]) = [ x ]
+                              permutations' (x:xs) = [ x' : xs' | x' <- x, xs' <- permutations' xs ]
+
+                    -- TODO Universally quantify this shit, dawg
+                    f = TypeRecord . (\x -> TRecord x Star) . M.fromList . zip (map show names)
+
+db :: Show a => a -> a
+db x = unsafePerformIO $ do putStrLn (show x)
+                            return x
+
+tiTypeDefs :: Program -> TI ()
+tiTypeDefs (Program []) = return ()
+tiTypeDefs (Program (TypeStatement t c : xs)) = 
+
+     do assume     $ to_scheme t c
+        tiTypeDefs $ Program xs
+
+tiTypeDefs (Program (_ : xs)) = tiTypeDefs $ Program xs
+
+
 tiProgram :: Program -> [Assumption]
 tiProgram bgs = runTI $
                       do let bg = to_group bgs
+                         tiTypeDefs bgs
                          tiBindGroup ([], (map (:[]) bg))
                          s  <- get_substitution
                          ce <- get_classenv
@@ -629,3 +714,4 @@ tiProgram bgs = runTI $
     where to_group (Program xs) = [ y | x <- xs, y <- g x ]
           g (DefinitionStatement a) = [a]
           g _ = []
+

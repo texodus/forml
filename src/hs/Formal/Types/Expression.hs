@@ -247,7 +247,7 @@ instance (Syntax d) => Syntax (Expression d) where
               withPosTemp p = do x <- get
                                  try p <|> (put x >> parserFail ("Indented to exactly" ++ show x))
 
-              function = withPosTemp $ do try (char '\\') <|> char '§' <|> char 'λ'
+              function = withPosTemp $ do try (char '\\') <|> char 'λ'
                                           whitespace
                                           t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
                                           eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)

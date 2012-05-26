@@ -31,7 +31,6 @@ data ComplexType = RecordType (M.Map Symbol UnionType)
                  | InheritType SimpleType (M.Map Symbol UnionType)
                  | FunctionType UnionType UnionType
                  | SimpleType SimpleType
-                 | NamedType String (Maybe UnionType)
                  deriving (Eq, Ord)
 
 data SimpleType = PolymorphicType SimpleType [UnionType]
@@ -44,8 +43,6 @@ instance Show UnionType where
    
 instance Show ComplexType where
     show (SimpleType y)         = [qq|$y|]
-    show (NamedType n (Just x)) = [qq|$n: ($x)|]
-    show (NamedType n Nothing)  = n ++ ":"
     show (InheritType n m)      = [qq|\{ $n with {unsep_with ": " m} \}|]
     show (RecordType m)         = [qq|\{ {unsep_with ": " m} \}|] 
 
@@ -127,16 +124,16 @@ named_type    :: Parser ComplexType
 symbol_type   :: Parser ComplexType
 var_type      :: Parser ComplexType
 
-function_type = do x <- try nested_union_type <|> lift inner_type
+function_type = do x <- try nested_union_type <|> unionize inner_type
                    spaces
                    string "->" <|> string "→"
                    spaces
-                   y <- (lift $ try function_type) <|> try nested_union_type <|> lift inner_type
+                   y <- (unionize $ try function_type) <|> try nested_union_type <|> unionize inner_type
                    return $ FunctionType x y
 
 poly_type     = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try type_var)
                    whitespace1
-                   let type_vars = try nested_union_type <|> lift (try rvs)
+                   let type_vars = try nested_union_type <|> unionize (try rvs)
                    SimpleType . PolymorphicType name <$> type_vars `sepEndBy1` whitespace
 
      where rvs = record_type <|> var_type <|> symbol_type
@@ -154,14 +151,18 @@ record_type   = let key_value = (,) <$> syntax <* div' <*> type_definition_signa
 
                 in indentPairs "{" (try inherit <|> inner) "}"
 
-named_type = NamedType <$> name <*> option Nothing (Just <$> (try nested_union_type <|> lift inner_type))
+named_type = do x <- name
+                y <- option bool (try nested_union_type <|> unionize inner_type)
+                return $ RecordType (M.fromList [(Symbol x, y)])
+
     where name = type_var <* string ":" <* whitespace
+          bool = UnionType (S.fromList [(SimpleType (SymbolType (Symbol "Bool")))])
 
 symbol_type   = SimpleType . SymbolType <$> type_name
 var_type      = SimpleType . VariableType <$> type_var
 
-lift        :: Parser ComplexType -> Parser UnionType
-lift              = fmap $ UnionType . S.fromList . (:[])
+unionize :: Parser ComplexType -> Parser UnionType
+unionize = fmap $ UnionType . S.fromList . (:[])
 
 
 type_name   :: Parser Symbol

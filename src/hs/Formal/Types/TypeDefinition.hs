@@ -40,12 +40,12 @@ instance Show TypeDefinition where
     show (TypeDefinition name vars) = concat . L.intersperse " " $ name : vars
 
 
-type_definition :: Parser TypeDefinition
+instance Syntax TypeDefinition where
 
-type_definition = do name <- (:) <$> upper <*> many alphaNum
-                     vars <- try vars' <|> return []
-                     return $ TypeDefinition name vars
+    syntax = do name <- (:) <$> upper <*> many alphaNum
+                vars <- try vars' <|> return []
+                return $ TypeDefinition name vars
 
-    where vars' = do many1 $ oneOf "\t "
-                     let var = (:) <$> lower <*> many alphaNum
-                     var `sepEndBy` whitespace
+        where vars' = do many1 $ oneOf "\t "
+                         let var = (:) <$> lower <*> many alphaNum
+                         var `sepEndBy` whitespace

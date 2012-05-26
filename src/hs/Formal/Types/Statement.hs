@@ -85,7 +85,7 @@ instance Syntax Statement where
 
               type_statement  = do string "type"
                                    whitespace1
-                                   def <- type_definition
+                                   def <- syntax
                                    whitespace
                                    sig <- try (string "=" >> spaces >> withPos (string "|" >> type_definition_signature))
                                           <|> withPos (string "=" >> whitespace >> type_definition_signature)

@@ -62,10 +62,10 @@ Testing to verify that escaping Javascript & utilizing escaped
 Javascript with `do` sugar and composition in general works as
 expected.
 
-    let y = do z <- `x = 1`
+    let x = 0
+        y = do z <- `x = 1`
                ret z
-
-    run y == 0
+    x == 0
 
 
 Numbers
@@ -284,21 +284,21 @@ incomplete definition.
         err (lazy tail nil:) == "Tail called on empty list"
         err (lazy last nil:) == "Last called on empty list"
 
-        take 2 [: 1, 2, 3 :] == [: 1, 2 :]
-        drop 2 [: 1, 2, 3 :] == [: 3 :]
+        take 2 [: 1, 2, 3 ] == [: 1, 2 ]
+        drop 2 [: 1, 2, 3 ] == [: 3 ]
 
-        take_while (λx = x < 0) [::] == [::]
-        take_while (λx = x > 0) [: 2, 1, 0 :] == [: 2, 1 :]
+        take_while (λx = x < 0) [:] == [:]
+        take_while (λx = x > 0) [: 2, 1, 0 ] == [: 2, 1 ]
 
         drop_while (λx = x < 0) nil: == nil:
-        drop_while (λx = x > 0) [: 2, 1, 0 :] == [: 0 :]
+        drop_while (λx = x > 0) [: 2, 1, 0 ] == [: 0 ]
 
 Cardinality
         
         length nil: = 0
              | { tail: x } = 1 + length x
              
-        length [: 1, 2, 3, 4 :] == 4
+        length [: 1, 2, 3, 4 ] == 4
 
 Generators
 
@@ -315,7 +315,7 @@ List concatenation
                y :: (ys ++ xs)
         
         nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
-        [: 1, 2 :] ++ [: 3, 4 :] == [: 1, 2, 3, 4 :]
+        [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]
 
 Filter
 
@@ -323,14 +323,14 @@ Filter
              | f x when f (head x) = head x :: filter f (tail x)
              | f x = filter f <| tail x
                         
-        filter (λx = x > 2) [: 1, 2, 3, 4 :] == [: 3, 4 :]
+        filter (λx = x > 2) [: 1, 2, 3, 4 ] == [: 3, 4 ]
 
 Map
 
         map f nil: = nil:
           | f x = f (head x) :: map f (tail x)
           
-        map (λx = x + 1) [: 1, 2, 3 :] == [: 2, 3, 4 :]
+        map (λx = x + 1) [: 1, 2, 3 ] == [: 2, 3, 4 ]
             
 Reverse
 
