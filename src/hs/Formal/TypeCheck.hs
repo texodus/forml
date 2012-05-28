@@ -130,7 +130,7 @@ infixr 4 @@
 s1 @@ s2 = ([(u, apply s1 t) | (u, t) <- s2] ++ s1)
 
 merge :: Monad m => Substitution -> Substitution -> m Substitution
-merge s1 s2 = if agree then return (s1 ++ s2) else fail "merge fails"
+merge s1 s2 = if agree then return (s1 ++ s2) else fail $ "merge fails " ++ show s1 ++ show s2
     where agree = all f (map fst s1 `intersect` map fst s2)
           f (TypeVar -> v) = apply s1 v == apply s2 v
 
@@ -146,19 +146,22 @@ match    :: Monad m => Type -> Type -> m Substitution
 
 mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
     do s1 <- mgu l1 l2
-       s2 <- mgu r1 r2
-       return (s1 @@ s2)
+       s2 <- mgu (apply s1 r1) (apply s1 r2)
+       return $ s1 @@ s2
 
 mgu t (TypeVar u)  = var_bind u t
 mgu (TypeVar u) t  = var_bind u t
 mgu (TypeRecord (TRecord t _)) (TypeRecord (TRecord u _)) 
     | M.keys t `intersect` M.keys u == M.keys t =
-        (sequence $ zipWith mgu (M.elems t) (M.elems u)) >>= (\x -> return $ foldl1 (@@) x)
+
+        do x:xs <- sequence $ zipWith mgu (M.elems t) (M.elems u) 
+           return $ foldl (@@) x xs
+
 mgu (Type t) (Type u) | t == u = return []
 mgu t u = fail $ "Types do not unify: " ++ show t ++ " and " ++ show u
 
 var_bind u t | t == TypeVar u   = return []
-             | u `elem` tv t    = fail "occurs check fails"
+             | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t
              | kind u /= kind t = fail "kinds do not match"
              | otherwise        = return (u +-> t)
 
@@ -173,7 +176,7 @@ match (TypeRecord t) (TypeRecord u)
     | t == u           = return [] -- (?)  is this how records should be matched?
 match (Type t) (Type u)
     | t == u           = return []
-match t u              = fail "Types do not match"
+match t u             = fail "Types do not match"
 
 
 
@@ -349,7 +352,7 @@ data RecordId = RecordId (M.Map String RecordId)
               | RecordKey
                 deriving (Ord, Eq, Show)
 
-data Assumption = Id :>: Scheme | RecordId :>>: Scheme
+data Assumption = Id :>: Scheme | RecordId :>>: Scheme deriving Show
 
 newtype A = A [Assumption]
 
@@ -445,10 +448,11 @@ substitute x = do y <- get_substitution
 unify :: Type -> Type -> TI ()
 unify t1 t2 = do s <- get_substitution
                  u <- mgu (apply s t1) (apply s t2)
-                 extSubst u
+                 m <- merge u s
+                 extSubst $ m
 
     where extSubst   :: Substitution -> TI ()
-          extSubst s' = TI (\x -> (x { substitution = s' @@ substitution x }, ()))
+          extSubst s' = TI (\x -> (x { substitution = s' }, ()))
 
 newTVar :: Kind -> TI Type
 newTVar k   = TI (\x -> let v = TVar (enumId (seed x)) k
@@ -587,26 +591,34 @@ split ce fs gs ps =
        let (ds, rs) = partition (all (`elem` fs) . tv) ps'
        return (ds, rs) -- \\ rs')
 
+log_state :: TI ()
+log_state = do (db -> s) <- get_substitution
+               (db -> a) <- get_assumptions
+               return ()
+               assume a
+
 tiImpls :: [Definition] -> TI ()
 tiImpls bs =
 
-    do ts <- mapM (\_ -> newTVar Star) bs
-
+    do def_types <- mapM (\_ -> newTVar Star) bs
        let is    = map get_name bs
-           scs   = map toScheme ts
+           scs   = map toScheme def_types
            altss = map get_axioms bs
 
-       ts'' <- with_scope $ 
+       axiom_types <- with_scope $ 
             do assume $ zipWith (:>:) is scs
                mapM (with_scope . mapM infer) altss
 
-       mapM (\(t, vs) -> mapM (unify t) vs) (zip ts ts'')
-
+       mapM (\(t, as) -> mapM (unify t) as) (zip def_types axiom_types)
+       
        ps  <- get_predicates
        as  <- get_assumptions
        ps' <- substitute ps
-       ts' <- substitute ts
+
+       ss <- get_substitution
+--       ts' <- substitute def_types
        fs' <- substitute as
+       let ts' = apply ss def_types
 
        let fs  = tv fs'
            vss = map tv ts'
