@@ -49,15 +49,15 @@ class ToLocalStat a where
     toLocal :: a -> JStat
 
 data Expression d = ApplyExpression (Expression d) [Expression d]
-                | IfExpression (Expression d) (Expression d) (Expression d)
-                | LiteralExpression Literal
-                | SymbolExpression Symbol
-                | JSExpression JExpr
-                | FunctionExpression [Axiom (Expression d)]
-                | RecordExpression (M.Map Symbol (Expression d))
-                | InheritExpression (Expression d) (M.Map Symbol (Expression d))
-                | LetExpression [d] (Expression d)
-                | ListExpression [Expression d]
+                  | IfExpression (Expression d) (Expression d) (Expression d)
+                  | LiteralExpression Literal
+                  | SymbolExpression Symbol
+                  | JSExpression JExpr
+                  | FunctionExpression [Axiom (Expression d)]
+                  | RecordExpression (M.Map Symbol (Expression d))
+                  | InheritExpression (Expression d) (M.Map Symbol (Expression d))
+                  | LetExpression [d] (Expression d)
+                  | ListExpression [Expression d]
 
 instance (Show d) => Show (Expression d) where
 

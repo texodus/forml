@@ -9,6 +9,9 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -23,6 +26,7 @@ import qualified Data.List as L
 import qualified Data.Set as S
 import Control.Monad
 import Data.Monoid
+import Data.Char
 
 import Formal.Types.Literal
 import Formal.Types.Pattern
@@ -44,22 +48,25 @@ enumId n = "v" ++ show n
 
 data Kind = Star | KindFunction Kind Kind deriving (Show, Eq, Ord)
 
-
 type Key = String
 
 data Type = TypeVar TypeVar
           | Type TypeConst
           | TypeApplication Type Type
           | TypeRecord TypeRecord
-          | TypeGen Int -- (?)
+          | TypeGen Int
             deriving Eq
 
 instance Show Type where
     show (TypeVar (TVar i _)) = i
     show (Type (TypeConst i _)) = i
-    show (TypeApplication (Type (TypeConst "->" _)) u) = show u ++ " ->"
-    show (TypeApplication t u) = "(" ++ show t ++ " " ++ show u ++ ")"
-    show (TypeGen x) = "v" ++ show x
+    show (TypeApplication (TypeApplication (Type (TypeConst "->" _)) 
+                          u @ (TypeApplication (TypeApplication (Type (TypeConst "->" _)) _) _)) v) = 
+        "(" ++ show u ++ ") → " ++ show v
+    show (TypeApplication (TypeApplication (Type (TypeConst "->" _)) u) v) = 
+        show u ++ " → " ++ show v
+    show (TypeApplication t u) = show t ++ " " ++ show u
+    show (TypeGen x) = (map (:[])$ concat$ repeat "abcdefghijklmnopqrstuvwxyz") !! x
     show (TypeRecord (TRecord m _)) = show m
 
 
@@ -72,17 +79,8 @@ data TypeVar = TVar Id Kind
 data TypeConst = TypeConst Id Kind -- (?)
                  deriving (Show, Eq, Ord)
 
-
--- These are primitive type constants (MPJ pg.6)
-
-unit_type = TypeRecord (TRecord mempty Star)
-char_type = Type (TypeConst "Char" Star)
 num_type  = Type (TypeConst "Num" Star)
 fun_type  = Type (TypeConst "->"  (KindFunction Star (KindFunction Star Star)))
-
-array_type  = Type (TypeConst "Array" (KindFunction Star Star))
-string_type = TypeApplication array_type char_type
-
 
 infixr 4 -:>
 (-:>) :: Type -> Type -> Type
@@ -98,6 +96,7 @@ instance HasKind Type where
     kind (TypeVar x) = kind x
     kind (TypeRecord x) = kind x
     kind (TypeApplication (kind -> KindFunction _ k)  _) = k
+    kind t = Star -- error$ "Could not determine kind of " ++ show t
 
 type Substitution = [(TypeVar, Type)]
 
@@ -149,13 +148,17 @@ mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
        s2 <- mgu (apply s1 r1) (apply s1 r2)
        return $ s1 @@ s2
 
-mgu t (TypeVar u)  = var_bind u t
 mgu (TypeVar u) t  = var_bind u t
-mgu (TypeRecord (TRecord t _)) (TypeRecord (TRecord u _)) 
-    | M.keys t `intersect` M.keys u == M.keys t =
+mgu t (TypeVar u)  = var_bind u t
 
-        do x:xs <- sequence $ zipWith mgu (M.elems t) (M.elems u) 
-           return $ foldl (@@) x xs
+mgu (TypeRecord (TRecord t _)) (TypeRecord (TRecord u _)) 
+    | M.keys t `intersect` M.keys u == M.keys t = 
+
+        f (M.elems t) (M.elems u) []
+
+    where f [] _ s = return s
+          f (x:xs) (y:ys) s = do s' <- mgu (apply s x) (apply s y)
+                                 f xs ys (s @@ s')
 
 mgu (Type t) (Type u) | t == u = return []
 mgu t u = fail $ "Types do not unify: " ++ show t ++ " and " ++ show u
@@ -198,8 +201,8 @@ instance Types Pred where
   tv (IsIn i t)      = tv t
 
 mguPred, matchPred :: Pred -> Pred -> Maybe Substitution
-mguPred             = lift mgu
-matchPred           = lift match
+mguPred   = lift mgu
+matchPred = lift match
 
 lift m (IsIn i t) (IsIn i' t')
          | i == i'   = m t t'
@@ -216,10 +219,10 @@ type Inst     = Qual Pred
 data ClassEnv = ClassEnv { classes  :: Id -> Maybe Class,
                            defaults :: [Type] }
 
-super     :: ClassEnv -> Id -> [Id]
+super :: ClassEnv -> Id -> [Id]
 super ce i = case classes ce i of Just (is, its) -> is
 
-insts     :: ClassEnv -> Id -> [Inst]
+insts :: ClassEnv -> Id -> [Inst]
 insts ce i = case classes ce i of Just (is, its) -> its
 
 defined :: Maybe a -> Bool
@@ -327,8 +330,8 @@ data Scheme = Forall [Kind] (Qual Type) deriving Eq
 
 instance Show Scheme where
     show (Forall [] t) = show t
-    show (Forall xs t) = "forall " ++ vars ++ " => " ++ show t
-        where vars = concat . L.intersperse " " . map (\x -> "v" ++ show x) . take (length xs) $ [0..]
+    show (Forall xs t) = show t --"∀" ++ vars ++ " ⇒ " ++ show t
+        where vars = concat . L.intersperse " " . map (\x -> (map (:[]) "abcdefghijklmnopqrstuvwxyz") !! x) . take (length xs) $ [0..]
 
 instance Types Scheme where
   apply s (Forall ks qt) = Forall ks (apply s qt)
@@ -350,30 +353,53 @@ toScheme t     = Forall [] ([] :=> t)
 
 data RecordId = RecordId (M.Map String RecordId)
               | RecordKey
-                deriving (Ord, Eq, Show)
+                deriving (Ord, Eq)
 
-data Assumption = Id :>: Scheme | RecordId :>>: Scheme deriving Show
+data Assumption = Id :>: Scheme | RecordId :>>: (Scheme, Scheme) deriving Show
 
 newtype A = A [Assumption]
 
+instance Show RecordId where
+    show (RecordId m) = "{" ++ (concat$ L.intersperse ", "$ M.keys m) ++ "}"
+
 instance Show A where
     show (A []) = ""
-    show (A (i :>: s : xs)) = show i ++ ": " ++ show s ++ "\n" ++ show (A xs)
-    show (A (i :>>: s : xs)) = show i ++ ": " ++ show s ++ "\n" ++ show (A xs)
+    show (A (i :>: s : xs))  = i ++ ": " ++ show s ++ "\n" ++ show (A xs)
+    show (A (i :>>: (_,s) : xs)) = show i ++ ": " ++ show s ++ "\n" ++ show (A xs)
 
 
 instance Types Assumption where
     apply s (i :>: sc)  = i :>: (apply s sc)
-    apply s (i :>>: sc) = i :>>: (apply s sc)
+    apply s (i :>>: (sc, sd)) = i :>>: (apply s sc, apply s sd)
 
     tv (i :>: sc)       = tv sc
-    tv (i :>>: sc)      = tv sc
+    tv (i :>>: (sc, _)) = tv sc
 
-find :: Monad m => Id -> [Assumption] -> m Scheme
-find i x = find' $ reverse x
-    where find' []             = fail ("unbound identifier: " ++ show i)
-          find' ((i':>:sc):as) = if i == i' then return sc else find i as
-          find' (_:as)         = find i as
+class Find a b | a -> b where
+    find :: a -> TI b
+
+instance Find Id Scheme where
+
+    find i = do (reverse -> x) <- get_assumptions
+                find' x 
+
+        where find' []             = fail ("unbound identifier: " ++ show i)
+              find' ((i':>:sc):as) = if i == i' then return sc else find' as
+              find' (_:as)         = find' as
+
+subkey :: RecordId -> RecordId -> Bool
+subkey (RecordId m) (RecordId n) = M.keys m == M.keys n && all id (zipWith subkey (M.elems m) (M.elems n))
+subkey _ _ = True
+
+instance Find RecordId (Maybe (Scheme, Scheme)) where
+
+    find i = do (reverse -> x) <- get_assumptions
+                return$ find' x 
+
+        where find' []              = Nothing
+              find' ((i':>>:sc):as) = if i `subkey` i' then Just sc else find' as
+              find' (_:as)          = find' as
+
 
 
 -- Type Inference Monad
@@ -448,8 +474,7 @@ substitute x = do y <- get_substitution
 unify :: Type -> Type -> TI ()
 unify t1 t2 = do s <- get_substitution
                  u <- mgu (apply s t1) (apply s t2)
-                 m <- merge u s
-                 extSubst $ m
+                 extSubst $ u @@ s
 
     where extSubst   :: Substitution -> TI ()
           extSubst s' = TI (\x -> (x { substitution = s' }, ()))
@@ -468,6 +493,7 @@ class Instantiate t where
 instance Instantiate Type where
   inst ts (TypeApplication l r) = TypeApplication (inst ts l) (inst ts r)
   inst ts (TypeGen n)  = ts !! n
+  inst ts (TypeRecord (TRecord m k))  = TypeRecord (TRecord (M.map (inst ts) m) k)
   inst ts t   = t
 
 instance Instantiate a => Instantiate [a] where
@@ -491,6 +517,10 @@ instance Infer Literal where
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
 
+instance ToKey (Pattern a) where
+    key (RecordPattern m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
+    key _ = RecordKey
+
 instance Infer (Pattern b) where
     infer (VarPattern i) = do v <- newTVar Star
                               assume (i :>: toScheme v)
@@ -507,12 +537,22 @@ instance Infer (Pattern b) where
                                 predicate qs
                                 return t
 
-    infer (RecordPattern (unzip . M.toList -> (names, patterns))) =
+    infer m @ (RecordPattern (unzip . M.toList -> (names, patterns))) =
         
         do ts <- mapM infer patterns
+           sc <- find$ key m
+           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star)
            t' <- newTVar Star
-           unify t' (TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star))
-           return t'
+           case sc of
+             Nothing ->
+                 do unify t' r
+                    return t'
+             Just (Forall _ scr, sct) ->
+                 do (qs' :=> t'') <- freshInst sct
+                    (qs :=> t) <- return$ inst (map TypeVar$ tv t'') scr
+                    unify t r
+                    unify t' t''
+                    return t'
 
         where f (Symbol x) = x
               f (Operator x) = x
@@ -522,7 +562,7 @@ list_scheme = Forall [Star] qual_list
     where qual_list = [] :=> TypeApplication (Type (TypeConst "List" (KindFunction Star Star))) (TypeGen 0)
 
 bool_type :: Type
-bool_type = undefined
+bool_type = Type (TypeConst "Bool" Star)
 
 -- Expressions
 
@@ -531,19 +571,38 @@ infixr      4 `fn`
 fn         :: Type -> Type -> Type
 a `fn` b    = TypeApplication (TypeApplication fun_type a) b
  
+instance ToKey (Expression a) where
+    key (RecordExpression m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
+    key _ = RecordKey
 
-instance Infer (Expression b) where
+instance Infer (Expression Definition) where
     infer (SymbolExpression i) =
 
-        do as <- get_assumptions
-           sc <- find (show i) as
+        do sc <- find (show i)
            (ps :=> t) <- freshInst sc
            predicate ps
+           return t
+
+    infer (IfExpression a b c) =
+        
+        do ta <- infer a
+           tb <- infer b
+           tc <- infer c
+           t  <- newTVar Star
+           unify ta bool_type
+           unify t tb
+           unify t tc
            return t
 
     infer (LiteralExpression s) = infer s
 
     infer (JSExpression s) = newTVar Star
+
+    infer (LetExpression xs x) = with_scope$ do tiBindGroup ([], (map (:[]) xs))
+                                                infer x
+        -- where to_group xs = [ y | x <- xs, y <- g x ]
+        --       g (DefinitionStatement a) = [a]
+        --       g _ = []
 
     infer (ApplyExpression e []) = fail "This should not be"
     infer (ApplyExpression e (x:[])) =
@@ -556,12 +615,21 @@ instance Infer (Expression b) where
 
     infer (ApplyExpression e (x:xs)) = infer (ApplyExpression (ApplyExpression e (x:[])) xs)
 
-    infer (RecordExpression (unzip . M.toList -> (names, xs))) =
+    infer m @ (RecordExpression (unzip . M.toList -> (names, xs))) =
 
         do ts <- mapM infer xs
-           t <- newTVar Star
-           unify t (TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star))
-           return t
+           sc <- find$ key m
+           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star)
+           t' <- newTVar Star
+           case sc of
+             Nothing ->  do unify t' r
+                            return t'
+             Just (Forall _ scr, sct) ->
+                 do (qs' :=> t'') <- freshInst sct
+                    (qs :=> t) <- return$ inst (map TypeVar$ tv t'') scr
+                    unify t r
+                    unify t' t''
+                    return t'
 
         where f (Symbol x) = x
               f (Operator x) = x
@@ -574,7 +642,7 @@ instance Infer (Axiom (Expression Definition)) where
 
         do ts <- mapM infer y
            case z of 
-             (Just q) -> infer q >>= unify bool_type 
+             (Just q) -> infer q >>= (flip unify) bool_type 
              _ -> return ()
            t  <- infer x
            return (foldr fn t ts)
@@ -604,19 +672,20 @@ tiImpls bs =
        let is    = map get_name bs
            scs   = map toScheme def_types
            altss = map get_axioms bs
-
+           
        axiom_types <- with_scope $ 
             do assume $ zipWith (:>:) is scs
                mapM (with_scope . mapM infer) altss
 
-       mapM (\(t, as) -> mapM (unify t) as) (zip def_types axiom_types)
+       s <- get_substitution
+       let axiom_types' = apply s axiom_types
+       mapM (\(t, as) -> mapM (unify t) as) (zip def_types axiom_types')
        
        ps  <- get_predicates
        as  <- get_assumptions
        ps' <- substitute ps
 
        ss <- get_substitution
---       ts' <- substitute def_types
        fs' <- substitute as
        let ts' = apply ss def_types
 
@@ -656,24 +725,33 @@ tiBindGroup :: BindGroup -> TI ()
 tiBindGroup (es,iss) = do mapM tiImpls iss
                           return ()
 
+class ToKey a where
+    key :: a -> RecordId
 
+instance ToKey Type where
+    key (TypeRecord (TRecord m _)) = RecordId . M.map (\x -> key x) $ m
+    key _ = RecordKey
+    
 
--- TODO no feckin monotype
 to_scheme :: TypeDefinition -> UnionType -> [Assumption]
-to_scheme def t = [ to_key y :>>: Forall [] ([]:=>y) | y <- enumerate_types t ] 
+to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify vars ([]:=> y), def_type) | y <- enumerate_types t ] 
 
-    where to_key (TypeRecord (TRecord m _)) = RecordId . M.map (\x -> to_key x) $ m
-          to_key _ = RecordKey
+    where vars :: [TypeVar]
+          vars = map (\x -> TVar x Star) vs
 
+          def_type :: Scheme
+          def_type = quantify vars ([] :=> foldl app (Type (TypeConst n Star)) (map TypeVar vars))
 
+          app :: Type -> Type -> Type
+          --app x [] = x
+          app y x = TypeApplication y x
 
 -- | Computes all possible types from a type signature AST.
 
 enumerate_types :: UnionType -> [Type]
 enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ types
 
-    where -- TODO YO! Free variables up in this bitch!
-          term_type (VariableType x)      = [ TypeVar (TVar x Star) ]
+    where term_type (VariableType x)      = [ TypeVar (TVar x Star) ]
           term_type (SymbolType x)        = [ Type (TypeConst (show x) Star) ]
           term_type (PolymorphicType a b) = [ foldl TypeApplication a' b' 
                                                   | b' <- map enumerate_types b
@@ -694,11 +772,10 @@ enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ typ
                         where permutations' (x:[]) = [ x ]
                               permutations' (x:xs) = [ x' : xs' | x' <- x, xs' <- permutations' xs ]
 
-                    -- TODO Universally quantify this shit, dawg
                     f = TypeRecord . (\x -> TRecord x Star) . M.fromList . zip (map show names)
 
 db :: Show a => a -> a
-db x = unsafePerformIO $ do putStrLn (show x)
+db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
                             return x
 
 tiTypeDefs :: Program -> TI ()
@@ -710,10 +787,12 @@ tiTypeDefs (Program (TypeStatement t c : xs)) =
 
 tiTypeDefs (Program (_ : xs)) = tiTypeDefs $ Program xs
 
-
 tiProgram :: Program -> [Assumption]
 tiProgram bgs = runTI $
                       do let bg = to_group bgs
+                         assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
+                         assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
+                         assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
                          tiTypeDefs bgs
                          tiBindGroup ([], (map (:[]) bg))
                          s  <- get_substitution
