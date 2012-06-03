@@ -596,9 +596,9 @@ instance Infer (Expression Definition) where
 
     infer (LiteralExpression s) = infer s
 
-    infer (JSExpression s) = newTVar Star
+    infer (JSExpression _) = newTVar Star
 
-    infer (LetExpression xs x) = with_scope$ do tiBindGroup ([], (map (:[]) xs))
+    infer (LetExpression xs x) = with_scope$ do tiBindGroup$ Scope [] (map (:[]) xs) []
                                                 infer x
 
     -- TODO this may be removeable at no perf cost?
@@ -612,7 +612,7 @@ instance Infer (Expression Definition) where
                                        return t
                                                    
 
-    infer (ApplyExpression e []) = fail "This should not be"
+    infer (ApplyExpression _ []) = fail "This should not be"
     infer (ApplyExpression e (x:[])) =
 
         do te <- infer e
@@ -730,7 +730,8 @@ tiImpls bs =
           f _ = error "Not Defined"
 
 
-type BindGroup  = ([Definition], [[Definition]])
+data BindGroup = Scope [Definition] [[Definition]] [Expression Definition]
+               | Module String [BindGroup]
 
 tiExpl :: Definition -> TI ()
 tiExpl (Definition name axs) =
@@ -762,12 +763,20 @@ tiExpl (Definition name axs) =
     where f (Symbol x) = x
           f (Operator x) = x
 
+tiTest :: Expression Definition -> TI ()
+tiTest ex = do t <- newTVar Star
+               x <- infer ex
+               unify t x
+               unify t bool_type
+               
+
 tiBindGroup :: BindGroup -> TI ()
-tiBindGroup (es,iss) =
+tiBindGroup (Scope es iss ts) =
 
     do mapM assume$ sigs es
        mapM tiImpls iss
-       mapM tiExpl es
+       with_scope$ mapM tiExpl es
+       mapM tiTest ts
        return ()
 
     where f (TypeAxiom t) = True
@@ -787,6 +796,10 @@ tiBindGroup (es,iss) =
 
           h (Symbol x) = x
           h (Operator x) = x
+
+tiBindGroup (Module name bgs) = do with_scope$ mapM tiBindGroup bgs
+                                   return ()
+    
 
 class ToKey a where
     key :: a -> RecordId
@@ -840,24 +853,64 @@ db :: Show a => a -> a
 db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
                             return x
 
-tiTypeDefs :: Program -> TI ()
-tiTypeDefs (Program []) = return ()
-tiTypeDefs (Program (TypeStatement t c : xs)) = 
+tiTypeDefs :: [Statement] -> TI ()
+tiTypeDefs [] = return ()
+tiTypeDefs (TypeStatement t c : xs) = 
 
      do assume     $ to_scheme t c
-        tiTypeDefs $ Program xs
+        tiTypeDefs xs
 
-tiTypeDefs (Program (_ : xs)) = tiTypeDefs $ Program xs
+tiTypeDefs (_ : xs) = tiTypeDefs xs
+
+sort_dep :: [[Definition]] -> [[Definition]]
+sort_dep [] = []
+sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
+                [] -> error$ "Unresolvable dependency ordering in " ++ show (get_names xs)
+                xs -> xs ++ sort_dep (map snd$ filter (not . fst) free)
+
+
+    where as = get_needed (get_names xs) (zip (get_names xs) (get_expressions xs))
+
+          free = get_free as `zip` xs
+
+          get_free [] = []
+          get_free ([]:xs) = True : get_free xs
+          get_free (_:xs) = False : get_free xs 
+
+          get_names [] = []
+          get_names ([Definition n _]:xs) = show n : get_names xs
+
+          get_needed _ [] = []
+          get_needed names ((n,x):xs) = ((names \\ [n]) `L.intersect` (concat$ map get_symbols x)) : get_needed names xs
+
+          get_expressions :: [[Definition]] -> [[Expression Definition]]
+          get_expressions [] = []
+          get_expressions ([Definition _ as]:xs) = get_expressions' as : get_expressions xs
+
+          get_expressions' [] = []
+          get_expressions' (TypeAxiom _: xs) = get_expressions' xs
+          get_expressions' (EqualityAxiom (Match _ (Just y)) x: xs) = y : x : get_expressions' xs
+          get_expressions' (EqualityAxiom _ x: xs) = x : get_expressions' xs
+
+          get_symbols (ApplyExpression a b) = get_symbols a ++ concat (map get_symbols b)
+          get_symbols (IfExpression a b c) = get_symbols a ++ get_symbols b ++ get_symbols c
+          get_symbols (LiteralExpression _) = []
+          get_symbols (SymbolExpression x) = [show x]
+          get_symbols (JSExpression _) = []
+          get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
+          get_symbols (RecordExpression (unzip . M.toList -> (_, xs))) = concat (map get_symbols xs)
+          get_symbols (LetExpression _ x) = get_symbols x
+          get_symbols (ListExpression x) = concat (map get_symbols x)
+
 
 tiProgram :: Program -> [Assumption]
-tiProgram bgs = 
+tiProgram (Program bgs) = 
     
-    runTI $ do let bg = to_group bgs
-               assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
+    runTI $ do assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
                tiTypeDefs bgs
-               tiBindGroup$ to_group bgs
+               mapM tiBindGroup$ to_group bgs
                s  <- get_substitution
                ce <- get_classenv
                ps <- get_predicates
@@ -865,13 +918,23 @@ tiProgram bgs =
                rs <- reduce ce (apply s ps)
                return (apply s as)
 
-    where to_group :: Program -> BindGroup
-          to_group (Program xs) = ([ y | x <- xs, y <- h x ], [ [y] | x <- xs, y <- g x ])
+    where to_group :: [Statement] -> [BindGroup]
+          to_group [] = []
+          to_group xs = case takeWhile not_module xs of
+                          [] -> to_group' xs
+                          yx -> sort_deps (foldl f (Scope [] [] []) xs) : to_group' (dropWhile not_module xs)
 
-          -- TODO this is wrong
-          g (DefinitionStatement a @ (Definition _ (EqualityAxiom _ _:_))) = [a]
-          g _ = []
+          to_group' [] = []
+          to_group' (ModuleStatement x y:xs) = Module (show x) (to_group y) : to_group xs
+          to_group' _ = error "Unexpected"
 
-          h (DefinitionStatement a @ (Definition _ (TypeAxiom _:_))) = [a]
-          h _ = []
+          sort_deps (Scope a b c) = Scope a (sort_dep b) c
+
+          not_module (ModuleStatement _ _) = False
+          not_module _ = True
+
+          f (Scope a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) = Scope a (b ++ [[x]]) c
+          f (Scope a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) = Scope (a ++ [x]) b c
+          f (Scope a b c) (ExpressionStatement _ x) = Scope a b (c ++ [x])
+          f x _ = x
 

@@ -48,7 +48,7 @@ data Match a = Match [Pattern a] (Maybe a)
 
 instance (Show a) => Show (Match a) where
     show (Match p Nothing)  = sep_with " " p
-    show (Match p (Just x)) = undefined -- [qq|{sep_with " " p} when $x|]
+    show (Match p (Just x)) = [qq|{sep_with " " p} when $x|]
 
 instance (Syntax a) => Syntax (Match a) where
 
