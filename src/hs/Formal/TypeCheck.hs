@@ -355,7 +355,7 @@ data RecordId = RecordId (M.Map String RecordId)
               | RecordKey
                 deriving (Ord, Eq)
 
-data Assumption = Id :>: Scheme | RecordId :>>: (Scheme, Scheme) deriving Show
+data Assumption = Id :>: Scheme | RecordId :>>: (Scheme, Scheme) deriving (Eq, Show)
 
 newtype A = A [Assumption]
 
@@ -600,9 +600,17 @@ instance Infer (Expression Definition) where
 
     infer (LetExpression xs x) = with_scope$ do tiBindGroup ([], (map (:[]) xs))
                                                 infer x
-        -- where to_group xs = [ y | x <- xs, y <- g x ]
-        --       g (DefinitionStatement a) = [a]
-        --       g _ = []
+
+    -- TODO this may be removeable at no perf cost?
+    infer (FunctionExpression rs) = do t <- newTVar Star
+                                       as <- get_assumptions
+                                       [_ :>: q] <- with_scope$ do tiImpls [Definition (Symbol "") rs]
+                                                                   as'' <- get_assumptions
+                                                                   return$ as'' \\ as
+                                       (_ :=> t') <- freshInst q
+                                       unify t t'
+                                       return t
+                                                   
 
     infer (ApplyExpression e []) = fail "This should not be"
     infer (ApplyExpression e (x:[])) =
@@ -647,6 +655,9 @@ instance Infer (Axiom (Expression Definition)) where
            t  <- infer x
            return (foldr fn t ts)
 
+    infer _ = newTVar Star
+
+ 
 
 
 
@@ -721,9 +732,61 @@ tiImpls bs =
 
 type BindGroup  = ([Definition], [[Definition]])
 
+tiExpl :: Definition -> TI ()
+tiExpl (Definition name axs) =
+
+    do sc <- find$ f name 
+       (qs :=> t) <- freshInst sc
+       axiom_types <- with_scope$ mapM (with_scope . infer) axs
+       s <- get_substitution
+       mapM (unify t) (apply s axiom_types)
+       as <- get_assumptions
+       ce <- get_classenv
+       ps <- get_predicates
+       let qs' = apply s qs
+           t' = apply s t
+           fs = tv (apply s as)
+           gs = tv t' \\ fs
+           sc' = quantify gs (qs' :=> t')
+           ps' = filter (not . entail ce qs') (apply s ps)
+       (ds, rs) <- split ce fs gs ps'
+       if sc /= sc' then
+           fail "signature too general"
+         else if not (null rs) then
+           fail "context too weak"
+         else
+           assume (f name :>: sc)
+
+       return ()
+
+    where f (Symbol x) = x
+          f (Operator x) = x
+
 tiBindGroup :: BindGroup -> TI ()
-tiBindGroup (es,iss) = do mapM tiImpls iss
-                          return ()
+tiBindGroup (es,iss) =
+
+    do mapM assume$ sigs es
+       mapM tiImpls iss
+       mapM tiExpl es
+       return ()
+
+    where f (TypeAxiom t) = True
+          f _ = False
+
+          g name (TypeAxiom t) = [ name :>: to_scheme' t' | t' <- enumerate_types t ]
+
+          to_scheme' :: Type -> Scheme
+          to_scheme' t = quantify (tv t) ([] :=> t)
+
+          sigs :: [Definition] -> [Assumption]
+          sigs [] = []
+          sigs (Definition name as:xs) =
+              case L.find f as of
+                Nothing -> sigs xs
+                Just x -> g (h name) x ++ sigs xs
+
+          h (Symbol x) = x
+          h (Operator x) = x
 
 class ToKey a where
     key :: a -> RecordId
@@ -737,13 +800,12 @@ to_scheme :: TypeDefinition -> UnionType -> [Assumption]
 to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify vars ([]:=> y), def_type) | y <- enumerate_types t ] 
 
     where vars :: [TypeVar]
-          vars = map (\x -> TVar x Star) vs
+          vars = map (flip TVar Star) vs
 
           def_type :: Scheme
           def_type = quantify vars ([] :=> foldl app (Type (TypeConst n Star)) (map TypeVar vars))
 
           app :: Type -> Type -> Type
-          --app x [] = x
           app y x = TypeApplication y x
 
 -- | Computes all possible types from a type signature AST.
@@ -760,19 +822,19 @@ enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ typ
           enumerate_type (SimpleType x) = term_type x
 
           enumerate_type (FunctionType a b) =
-
               [ a' `fn` b' | a' <- enumerate_types a, b' <- enumerate_types b ]
 
           enumerate_type (RecordType (unzip . M.toList -> (names, types'))) =
 
               map f permutations
         
-              where permutations = permutations' . map enumerate_types $ types'
+              where f = TypeRecord . flip TRecord Star . M.fromList . zip (map show names)
+                    permutations = permutations' . map enumerate_types $ types'
 
                         where permutations' (x:[]) = [ x ]
                               permutations' (x:xs) = [ x' : xs' | x' <- x, xs' <- permutations' xs ]
 
-                    f = TypeRecord . (\x -> TRecord x Star) . M.fromList . zip (map show names)
+
 
 db :: Show a => a -> a
 db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
@@ -788,21 +850,28 @@ tiTypeDefs (Program (TypeStatement t c : xs)) =
 tiTypeDefs (Program (_ : xs)) = tiTypeDefs $ Program xs
 
 tiProgram :: Program -> [Assumption]
-tiProgram bgs = runTI $
-                      do let bg = to_group bgs
-                         assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
-                         assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
-                         assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
-                         tiTypeDefs bgs
-                         tiBindGroup ([], (map (:[]) bg))
-                         s  <- get_substitution
-                         ce <- get_classenv
-                         ps <- get_predicates
-                         as <- get_assumptions
-                         rs <- reduce ce (apply s ps)
-                         return (apply s as)
+tiProgram bgs = 
+    
+    runTI $ do let bg = to_group bgs
+               assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
+               assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
+               assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
+               tiTypeDefs bgs
+               tiBindGroup$ to_group bgs
+               s  <- get_substitution
+               ce <- get_classenv
+               ps <- get_predicates
+               as <- get_assumptions
+               rs <- reduce ce (apply s ps)
+               return (apply s as)
 
-    where to_group (Program xs) = [ y | x <- xs, y <- g x ]
-          g (DefinitionStatement a) = [a]
+    where to_group :: Program -> BindGroup
+          to_group (Program xs) = ([ y | x <- xs, y <- h x ], [ [y] | x <- xs, y <- g x ])
+
+          -- TODO this is wrong
+          g (DefinitionStatement a @ (Definition _ (EqualityAxiom _ _:_))) = [a]
           g _ = []
+
+          h (DefinitionStatement a @ (Definition _ (TypeAxiom _:_))) = [a]
+          h _ = []
 
