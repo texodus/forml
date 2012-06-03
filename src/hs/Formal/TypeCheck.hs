@@ -576,12 +576,16 @@ instance ToKey (Expression a) where
     key _ = RecordKey
 
 instance Infer (Expression Definition) where
-    infer (SymbolExpression i) =
+    infer (ApplyExpression _ []) = fail "This should not be"
+    infer (ApplyExpression e (x:[])) =
 
-        do sc <- find (show i)
-           (ps :=> t) <- freshInst sc
-           predicate ps
+        do te <- infer e
+           tx <- infer x
+           t  <- newTVar Star
+           unify (tx `fn` t) te
            return t
+
+    infer (ApplyExpression e (x:xs)) = infer (ApplyExpression (ApplyExpression e (x:[])) xs)
 
     infer (IfExpression a b c) =
         
@@ -596,10 +600,14 @@ instance Infer (Expression Definition) where
 
     infer (LiteralExpression s) = infer s
 
-    infer (JSExpression _) = newTVar Star
+    infer (SymbolExpression i) =
 
-    infer (LetExpression xs x) = with_scope$ do tiBindGroup$ Scope [] (map (:[]) xs) []
-                                                infer x
+        do sc <- find (show i)
+           (ps :=> t) <- freshInst sc
+           predicate ps
+           return t
+
+    infer (JSExpression _) = newTVar Star
 
     -- TODO this may be removeable at no perf cost?
     infer (FunctionExpression rs) = do t <- newTVar Star
@@ -610,18 +618,6 @@ instance Infer (Expression Definition) where
                                        (_ :=> t') <- freshInst q
                                        unify t t'
                                        return t
-                                                   
-
-    infer (ApplyExpression _ []) = fail "This should not be"
-    infer (ApplyExpression e (x:[])) =
-
-        do te <- infer e
-           tx <- infer x
-           t  <- newTVar Star
-           unify (tx `fn` t) te
-           return t
-
-    infer (ApplyExpression e (x:xs)) = infer (ApplyExpression (ApplyExpression e (x:[])) xs)
 
     infer m @ (RecordExpression (unzip . M.toList -> (names, xs))) =
 
@@ -641,6 +637,18 @@ instance Infer (Expression Definition) where
 
         where f (Symbol x) = x
               f (Operator x) = x
+                                                   
+    infer (LetExpression xs x) = with_scope$ do tiBindGroup$ Scope [] [] (map (:[]) xs) []
+                                                infer x
+
+    infer (ListExpression x) =
+
+        do t <- newTVar Star
+           ts <- mapM infer x
+           mapM (unify t) ts
+           t' <- newTVar Star
+           unify t' (TypeApplication (Type (TypeConst "Array" (KindFunction Star Star))) t)
+           return t'
 
 -- Axioms
 
@@ -730,7 +738,7 @@ tiImpls bs =
           f _ = error "Not Defined"
 
 
-data BindGroup = Scope [Definition] [[Definition]] [Expression Definition]
+data BindGroup = Scope [Statement] [Definition] [[Definition]] [Expression Definition]
                | Module String [BindGroup]
 
 tiExpl :: Definition -> TI ()
@@ -771,9 +779,10 @@ tiTest ex = do t <- newTVar Star
                
 
 tiBindGroup :: BindGroup -> TI ()
-tiBindGroup (Scope es iss ts) =
+tiBindGroup (Scope tts es iss ts) =
 
-    do mapM assume$ sigs es
+    do tiTypeDefs tts
+       mapM assume$ sigs es
        mapM tiImpls iss
        with_scope$ mapM tiExpl es
        mapM tiTest ts
@@ -909,7 +918,7 @@ tiProgram (Program bgs) =
     runTI $ do assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
-               tiTypeDefs bgs
+              -- tiTypeDefs bgs
                mapM tiBindGroup$ to_group bgs
                s  <- get_substitution
                ce <- get_classenv
@@ -922,19 +931,20 @@ tiProgram (Program bgs) =
           to_group [] = []
           to_group xs = case takeWhile not_module xs of
                           [] -> to_group' xs
-                          yx -> sort_deps (foldl f (Scope [] [] []) xs) : to_group' (dropWhile not_module xs)
+                          yx -> sort_deps (foldl f (Scope [] [] [] []) xs) : to_group' (dropWhile not_module xs)
 
           to_group' [] = []
           to_group' (ModuleStatement x y:xs) = Module (show x) (to_group y) : to_group xs
           to_group' _ = error "Unexpected"
 
-          sort_deps (Scope a b c) = Scope a (sort_dep b) c
+          sort_deps (Scope t a b c) = Scope t a (sort_dep b) c
 
           not_module (ModuleStatement _ _) = False
           not_module _ = True
 
-          f (Scope a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) = Scope a (b ++ [[x]]) c
-          f (Scope a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) = Scope (a ++ [x]) b c
-          f (Scope a b c) (ExpressionStatement _ x) = Scope a b (c ++ [x])
+          f (Scope t a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) = Scope t a (b ++ [[x]]) c
+          f (Scope t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) = Scope t (a ++ [x]) b c
+          f (Scope t a b c) (ExpressionStatement _ x) = Scope t a b (c ++ [x])
+          f (Scope t a b c) x @ (TypeStatement _ _) = Scope (t ++ [x]) a b c
           f x _ = x
 

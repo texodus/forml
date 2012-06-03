@@ -27,7 +27,7 @@ here, as the "==" operator defined in [Numbers](#numbers) is defined
 in terms of them.
 
     object? x = run `typeof x === "object"`
-    array? = is_array
+    array? = run `is_array` -- This is necessary because of a bug in JMacro
     
     not x = run `!x`
 
@@ -41,7 +41,7 @@ in terms of them.
 Side effects can only happen in Javascript, so we use a monadic container to
 compose these bits.
 
-    run x = x null
+    run x = x {}
 
     (>>=) x y = lazy run (y (run x))
     ret x     = lazy x
@@ -213,7 +213,7 @@ Option
     
     type Option a = some: a | none:
     
-    option b nil: = b
+    option b none: = b
          | _ (some: x) = x
          
     option 3 (some: 2) == 2
@@ -254,12 +254,12 @@ incomplete definition.
 
         empty? nil: = true | _ = false
 
-        head { head: x } = x
+        head { head: x, tail: _ } = x
            | nil: = error "Head called on empty list"
-        tail { tail: x } = x 
+        tail { head: _, tail: x } = x 
            | nil: = error "Tail called on empty list"
         last { head: x, tail: nil: } = x
-           | { tail: x } = last x
+           | { head: _, tail: x } = last x
            | nil: = error "Last called on empty list"
 
         take 0 _ = nil: | n x = head x :: take (n - 1) (tail x)
@@ -296,7 +296,7 @@ incomplete definition.
 Cardinality
         
         length nil: = 0
-             | { tail: x } = 1 + length x
+             | { head: _, tail: x } = 1 + length x
              
         length [: 1, 2, 3, 4 ] == 4
 
