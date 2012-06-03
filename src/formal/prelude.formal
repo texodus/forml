@@ -1,13 +1,13 @@
-Formal is a functional programming language which targets Javascript.
-Designed for readability and compiler verification, Formal is
-powerful, flexible and easy to learn.
+Formal is a functional programming language which targets Javascript.  Designed
+for readability and compiler verification, Formal is powerful, flexible and easy
+to learn.  
 
-This document is a literate program defining the Formal standard library,
-namespaced `prelude`.  To compile it, simply clone the repo and run `sh deps.sh
-&& sh build.sh` - this will generate the HTML documentation, compiled Javascript
-source, [Jasmine](http://pivotal.github.com/jasmine) test suite and Node.js
-test suite, then run the test suite from Node.  You can also see the results of
-the Jasmine specifications at the bottom of this document.
+This document is a literate program defining the Formal standard
+library, namespaced `prelude`.  To compile it, simply clone the repo and run `sh
+deps.sh && sh build.sh` - this will generate the HTML documentation, compiled
+Javascript source, [Jasmine](http://pivotal.github.com/jasmine) test suite and
+Node.js test suite, then run the test suite from Node.  You can also see the
+results of the Jasmine specifications at the bottom of this document.
 
 Formal is a literate language embedded in
 [Markdown](http://daringfireball.net/projects/markdown/syntax), so any
@@ -27,7 +27,7 @@ here, as the "==" operator defined in [Numbers](#numbers) is defined
 in terms of them.
 
     object? x = run `typeof x === "object"`
-    array? = run `is_array` -- This is necessary because of a bug in JMacro
+    array? = run `is_array`
     
     not x = run `!x`
 
@@ -256,8 +256,10 @@ incomplete definition.
 
         head { head: x, tail: _ } = x
            | nil: = error "Head called on empty list"
+           
         tail { head: _, tail: x } = x 
            | nil: = error "Tail called on empty list"
+           
         last { head: x, tail: nil: } = x
            | { head: _, tail: x } = last x
            | nil: = error "Last called on empty list"
@@ -391,70 +393,3 @@ Folds
         minimum [: 1, 2, 3 :] == 1
         maximum [: 1, 2, 3 :] == 3
         
-
-
-Sequences
----------
-Sequences are an abstract data type which resembles a list, except that elements
-of a sequence are constructed lazily as they are requested.
-
-    module sequence
-    
-        open list
-
-        type Seq a = Js ( { val: a, next: Seq a } | end: )
-
-Converting a `List` to a `Seq` is simple and O(1) as the list need not be walked
-
-        from_list nil: = lazy end:
-                | x    = lazy { val:  head x
-                                next: from_list (tail x) }
-
-... but converting back is not.
-
-        to_list =
-            let f { val: x, next: xs } = x :: to_list xs
-                | end: = nil:
-            f .: run
-
-        to_list (from_list [: 1, 2 :]) == [: 1, 2:]
-
-Sequences may be infinite, as long as you never try to read every element.
-However, the current implementation is stack-consuming and thus limited by the
-underlying javascript runtime ...
-
-        iterate f x = lazy { val: x, next: iterate f (f x) } 
-
-        match x f = f x
-
-        take 0 _ = lazy end:
-           | n x = do y <- x
-                      ret (match y λ end: = end:
-                                   | { val: y, next: ys } = 
-                                       { val: y
-                                         next: take (n - 1) ys })
-                                       
-        let f = to_list .: take 3 .: from_list
-        [: 1, 2, 3 :] == f [: 1, 2, 3, 4 :]
-
-        500 == iterate (λx = x + 1) 0
-               |> take 500
-               |> to_list
-               |> length
-                    
-
-
-
-Maps
-----
-
-    module map
-        
-        type Map a b = map: Array { key: a, val: b }
-        
-        (%) x y = { key = x, val = y }
-        
-        "test" % true == { key = "test", val = true }
-
-
-    

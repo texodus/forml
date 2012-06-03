@@ -372,8 +372,8 @@ instance Types Assumption where
     apply s (i :>: sc)  = i :>: (apply s sc)
     apply s (i :>>: (sc, sd)) = i :>>: (apply s sc, apply s sd)
 
-    tv (i :>: sc)       = tv sc
-    tv (i :>>: (sc, _)) = tv sc
+    tv (_ :>: sc)       = tv sc
+    tv (_ :>>: (sc, _)) = tv sc
 
 class Find a b | a -> b where
     find :: a -> TI b
