@@ -51,7 +51,7 @@ compose these bits.
 
     run (do x <- `1 + 4`
             y <- `2 + 3`
-            log ("x is " + x + " and y is " + y)
+            log (run `"x is " + x + " and y is " + y`)
             ans <- `x + y`
             ret (10 == ans))
               
@@ -70,43 +70,48 @@ expected.
 
 Numbers
 -------
-Some basic aliases to native javascript infix functions.
+Some basic aliases to native javascript infix functions.  These are type
+annotated to constrain inferrence - otherwise, these functions would all be
+inferred as `a -> b -> c`.
 
-    (&&) x y = run `x && y`
-    (||) x y = run `x || y`
-    (*)  x y = run `x * y`
-    (/)  x y = run `x / y`
-    (+)  x y = run `x + y`
-    (-)  x y = run `x - y`
-    (<=) x y = run `x <= y`
-    (>=) x y = run `x >= y`
-    (<)  x y = run `x < y`
-    (>)  x y = run `x > y`
+    (&&): Bool -> Bool -> Bool | x y = run `x && y`
+    (||): Bool -> Bool -> Bool | x y = run `x || y`
+    (*):  Num -> Num -> Num    | x y = run `x * y`
+    (/):  Num -> Num -> Num    | x y = run `x / y`
+    (+):  Num -> Num -> Num    | x y = run `x + y`
+    (-):  Num -> Num -> Num    | x y = run `x - y`
+    (<=): Num -> Num -> Bool   | x y = run `x <= y`
+    (>=): Num -> Num -> Bool   | x y = run `x >= y`
+    (<):  Num -> Num -> Bool   | x y = run `x < y`
+    (>):  Num -> Num -> Bool   | x y = run `x > y`
 
-Equality is overloaded to match records and arrays
+Equality is overloaded to match records and arrays. By constraining the type of
+this operator, we need only dispatch on the type of the first element,
+constraining 
 
     (!=) x y = not (x == y)
 
-    (==) x y when object? x && object? y =
-           let result = true
-           run `for (key in x) {
-                    result = result && y.hasOwnProperty(key) && _eq_eq(x[key])(y[key]);
-                };
+    (==) : a -> a -> Bool
+        | x y when object? x && object? y =
+            let result = true
+            run `for (key in x) {
+                     result = result && y.hasOwnProperty(key) && _eq_eq(x[key])(y[key]);
+                 };
 
-                var z = Object.keys(x).length 
-                            === Object.keys(y).length;
+                 var z = Object.keys(x).length 
+                             === Object.keys(y).length;
 
-                return result && z;`
-                
-       | x y when array? x && array? y =
-           let result = true
-           run `for (z in x) {
-                    result = result && _eq_eq(x[z])(y[z]);
-                };
+                 return result && z;`
+                 
+        | x y when array? x && array? y =
+            let result = true
+            run `for (z in x) {
+                     result = result && _eq_eq(x[z])(y[z]);
+                 };
 
-                return (result && x.length == y.length);`
+                 return (result && x.length == y.length);`
 
-       | x y = run `x === y`
+        | x y = run `x === y`
     
 And a few simple tests to verify the correctness of these
 implementations.  This is not meant to be exhaustive, only a smoke
@@ -163,7 +168,7 @@ otherwise in practice the first eval tends to be favored in V8.
                slow_time <- time (lazy fib 35)
 
                let ratio = floor <| fast_time / slow_time * 100
-               log ("Runtime speed ~" + ratio + "%")
+               log (run `"Runtime speed ~" + ratio + "%"`)
                ret (ratio >= 80)
 
 Function Combinators
@@ -189,7 +194,7 @@ Function composition
     id x = x
     flip f a b = f b a
      
-    ((λx = x + 1) .: (λx = x * 2) .: (λx = x - 3)) 4 == 3
+    ((λx = x + 1) .: (λx = x * 2) .: λx = x - 3) 4 == 3
     id [1, 2, 3] == [1, 2, 3]
     flip (λx y = x - y) 3 5 == 2
 
@@ -246,7 +251,7 @@ synonyms.
                               tail: { head: 3
                                       tail: nil: }}} ]
 
-        all? (\y = [:1,2,3] == y) xs 
+        all? (λy = [:1,2,3] == y) xs 
                            
 
 Simple implementations of list accessors, which illustrate
@@ -390,6 +395,6 @@ Folds
 
         concat_map (λx = [:x,x+1]) [:1,2] == [:1,2,2,3]
              
-        minimum [: 1, 2, 3 :] == 1
-        maximum [: 1, 2, 3 :] == 3
+        minimum [: 1, 2, 3 ] == 1
+        maximum [: 1, 2, 3 ] == 3
         

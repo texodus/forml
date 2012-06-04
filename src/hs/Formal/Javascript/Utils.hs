@@ -17,6 +17,7 @@ import Data.Monoid
 import qualified Data.Map as M
 import qualified Data.List as L
 import Formal.Parser.Utils
+import Text.ParserCombinators.Parsec
 
 import Prelude hiding (curry, (++))
 
@@ -38,8 +39,6 @@ prelude = [jmacro| function !is_array(x) {
 instance (ToStat a) => ToStat [a] where
     toStat [] = mempty
     toStat x = foldl1 mappend . map toStat $ x
-
-
 
 --------------------------------------------------------------------------------
 ----
@@ -68,9 +67,6 @@ declare_window name expr =
 
     [jmacro| `(declare name expr)`;
              (typeof global == "undefined" ? window : global)[`(name)`] = `(ref name)`; |]
-
-
-
 
 declare name expr =
 

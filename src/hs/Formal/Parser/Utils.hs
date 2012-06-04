@@ -30,10 +30,23 @@ import Data.String.Utils
 -- {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 -- {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-
 import Text.Parsec.Prim hiding ((<|>), State, many, parse, label)
-
 import qualified Data.Text as T
+
+
+
+
+data Addr a = Addr SourcePos SourcePos a
+
+addr :: Parser a -> Parser (Addr a)
+addr p = do x <- getPosition
+            y <- p
+            z <- getPosition
+            return$ Addr x z y
+            
+
+instance (Show a) => Show (Addr a) where
+    show (Addr _ _ x) = show x
 
 instance (Monad m) => Stream T.Text m Char where
     uncons = return . T.uncons

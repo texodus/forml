@@ -46,14 +46,14 @@ import Prelude hiding (curry, (++))
 
 data Statement = TypeStatement TypeDefinition UnionType
                | DefinitionStatement Definition
-               | ExpressionStatement (SourcePos, SourcePos) (Expression Definition)
+               | ExpressionStatement (Addr (Expression Definition))
                | ImportStatement Namespace
                | ModuleStatement Namespace [Statement]
 
 instance Show Statement where
     show (TypeStatement t c)     = [qq|type $t = $c|]
     show (DefinitionStatement d) = show d
-    show (ExpressionStatement _ x) = show x
+    show (ExpressionStatement (Addr _ _ x)) = show x
     show (ImportStatement x) = [qq|import $x|]
     show (ModuleStatement x xs) = replace "\n |" "\n     |" 
                                   $ replace "\n\n" "\n\n    " 
@@ -94,9 +94,9 @@ instance Syntax Statement where
 
               expression_statement = do whitespace
                                         x <- getPosition 
-                                        y <- withPos syntax
+                                        y <- withPos$ addr syntax
                                         z <- getPosition
-                                        return $ ExpressionStatement (x, z) y
+                                        return $ ExpressionStatement y
                                                                    
 
 
@@ -118,8 +118,8 @@ serial a b = show (sourceLine a - 1) ++ "_" ++ show (sourceLine b - 1) ++ (if so
 instance ToStat Meta where
 
     -- Expressions are ignored for Libraries, and rendered as tests for Test
-    toStat (Meta { target = Library, expr = ExpressionStatement _ _ }) = mempty
-    toStat (Meta { target = Test,    expr = ExpressionStatement (a, b) e }) = 
+    toStat (Meta { target = Library, expr = ExpressionStatement _ }) = mempty
+    toStat (Meta { target = Test,    expr = ExpressionStatement (Addr a b e) }) = 
 
         [jmacro| it(`(serial a b ++ "::" ++ show e)`, function() {
                      `(Jasmine e)`;

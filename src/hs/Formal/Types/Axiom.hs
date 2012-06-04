@@ -17,9 +17,13 @@ import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 
 import qualified Data.Map as M
+
+import Formal.Parser.Utils
 import Formal.Javascript.Utils
+
 import Formal.Types.Type
 import Formal.Types.Pattern
+
 
 import Data.Monoid
 
@@ -30,7 +34,7 @@ import Prelude hiding (curry, (++))
 -- --------------------------------------------------------------------------------
 
 data Axiom a = TypeAxiom UnionType
-             | EqualityAxiom (Match a) a
+             | EqualityAxiom (Match a) (Addr a)
 
 instance (Show a) => Show (Axiom a) where
     show (TypeAxiom x) = ": " ++ show x
@@ -45,7 +49,7 @@ newtype Curried a = Curried [Axiom a]
 
 instance (Show a, ToJExpr a) => ToStat (Curried a) where
     toStat (Curried []) = [jmacro| args = []; exhaust(); |]
-    toStat (Curried (EqualityAxiom (Match pss cond) ex : xss)) = 
+    toStat (Curried (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss)) = 
 
         [jmacro| `(declare_bindings pss)`;
                  if (`(pss)` && `(cond)`) {

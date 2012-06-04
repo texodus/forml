@@ -28,6 +28,8 @@ import Control.Monad
 import Data.Monoid
 import Data.Char
 
+import Text.ParserCombinators.Parsec
+
 import Formal.Types.Literal
 import Formal.Types.Pattern
 import Formal.Types.Symbol
@@ -39,6 +41,7 @@ import Formal.Types.Statement hiding (find)
 import Formal.Types.TypeDefinition
 import Formal.Types.Type
 
+import Formal.Parser.Utils
 import Formal.Parser
 
 type Id = String
@@ -161,7 +164,7 @@ mgu (TypeRecord (TRecord t _)) (TypeRecord (TRecord u _))
                                  f xs ys (s @@ s')
 
 mgu (Type t) (Type u) | t == u = return []
-mgu t u = fail $ "Types do not unify: " ++ show t ++ " and " ++ show u
+mgu t u = fail $ "TYPE ERROR\n\nUnification failed: found " ++ show t ++ ", expecting " ++ show u
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t
@@ -239,10 +242,10 @@ initialEnv  = ClassEnv { classes  = \_ -> fail "class not defined",
 
 type EnvTransformer = ClassEnv -> Maybe ClassEnv
 
-infixr 5 <:>
-(<:>)       :: EnvTransformer -> EnvTransformer -> EnvTransformer
-(f <:> g) ce = do ce' <- f ce
-                  g ce'
+infixr 5 <::>
+(<::>)       :: EnvTransformer -> EnvTransformer -> EnvTransformer
+(f <::> g) ce = do ce' <- f ce
+                   g ce'
 
 addClass                              :: Id -> [Id] -> EnvTransformer
 addClass i is ce
@@ -251,26 +254,26 @@ addClass i is ce
  | otherwise                           = return (modify ce i (is, []))
 
 addPreludeClasses :: EnvTransformer
-addPreludeClasses  = addCoreClasses <:> addNumClasses
+addPreludeClasses  = addCoreClasses <::> addNumClasses
 
 addCoreClasses ::   EnvTransformer
 addCoreClasses  =   addClass "Eq" []
-                <:> addClass "Ord" ["Eq"]
-                <:> addClass "Show" []
-                <:> addClass "Read" []
-                <:> addClass "Bounded" []
-                <:> addClass "Enum" []
-                <:> addClass "Functor" []
-                <:> addClass "Monad" []
+                <::> addClass "Ord" ["Eq"]
+                <::> addClass "Show" []
+                <::> addClass "Read" []
+                <::> addClass "Bounded" []
+                <::> addClass "Enum" []
+                <::> addClass "Functor" []
+                <::> addClass "Monad" []
 
 addNumClasses  ::   EnvTransformer
 addNumClasses   =   addClass "Num" ["Eq", "Show"]
-                <:> addClass "Real" ["Num", "Ord"]
-                <:> addClass "Fractional" ["Num"]
-                <:> addClass "Integral" ["Real", "Enum"]
-                <:> addClass "RealFrac" ["Real", "Fractional"]
-                <:> addClass "Floating" ["Fractional"]
-                <:> addClass "RealFloat" ["RealFrac", "Floating"]
+                <::> addClass "Real" ["Num", "Ord"]
+                <::> addClass "Fractional" ["Num"]
+                <::> addClass "Integral" ["Real", "Enum"]
+                <::> addClass "RealFrac" ["Real", "Fractional"]
+                <::> addClass "Floating" ["Fractional"]
+                <::> addClass "RealFloat" ["RealFrac", "Floating"]
 
 
 
@@ -408,19 +411,21 @@ instance Find RecordId (Maybe (Scheme, Scheme)) where
 data TIState = TIState { substitution :: Substitution
                        , seed :: Int
                        , class_env :: ClassEnv
+                       , msg :: String
                        , assumptions :: [Assumption]
                        , predicates :: [Pred] }
 
 newtype TI a = TI (TIState -> (TIState, a))
 
 instance Monad TI where
+  fail x     = TI (\y -> error$ x ++ "\n" ++ msg y) 
   return x   = TI (\y -> (y, x))
   TI f >>= g = TI (\x -> case f x of
                           (y, x) -> let TI gx = g x
                                    in  gx y)
 
 runTI :: TI a -> a
-runTI (TI f) = x where (t,x) = f (TIState [] 0 initialEnv [] [])
+runTI (TI f) = x where (t,x) = f (TIState [] 0 initialEnv "" [] [])
 
 get_substitution :: TI Substitution
 get_substitution = TI (\x -> (x, substitution x))
@@ -441,6 +446,9 @@ instance Assume [Assumption] where
 
 get_assumptions = TI (\x -> (x, assumptions x))
 set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
+
+get_msg = TI (\x -> (x, msg x))
+set_msg x = TI (\y -> (y { msg = x }, ()))
 
 
 
@@ -610,14 +618,20 @@ instance Infer (Expression Definition) where
     infer (JSExpression _) = newTVar Star
 
     -- TODO this may be removeable at no perf cost?
-    infer (FunctionExpression rs) = do t <- newTVar Star
-                                       as <- get_assumptions
-                                       [_ :>: q] <- with_scope$ do tiImpls [Definition (Symbol "") rs]
-                                                                   as'' <- get_assumptions
-                                                                   return$ as'' \\ as
-                                       (_ :=> t') <- freshInst q
-                                       unify t t'
-                                       return t
+    infer (FunctionExpression rs) =
+
+        do t <- newTVar Star
+           as <- get_assumptions
+           [_ :>: q] <- with_scope$ ims as
+           (_ :=> t') <- freshInst q
+           unify t t'
+           return t
+
+        where ims as = 
+
+                  do tiImpls [Definition (Symbol "") rs]
+                     as'' <- get_assumptions
+                     return$ as'' \\ as
 
     infer m @ (RecordExpression (unzip . M.toList -> (names, xs))) =
 
@@ -651,6 +665,14 @@ instance Infer (Expression Definition) where
            return t'
 
 -- Axioms
+
+instance (Infer a) => Infer (Addr a) where
+    
+    infer (Addr s f x) = do m <- get_msg
+                            set_msg (m ++ "  at line " ++ show (sourceLine s) ++ ", column " ++ show (sourceColumn s) ++ "\n")
+                            z <- infer x
+                            set_msg m
+                            return z
 
 instance Infer (Axiom (Expression Definition)) where
 
@@ -898,8 +920,8 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
 
           get_expressions' [] = []
           get_expressions' (TypeAxiom _: xs) = get_expressions' xs
-          get_expressions' (EqualityAxiom (Match _ (Just y)) x: xs) = y : x : get_expressions' xs
-          get_expressions' (EqualityAxiom _ x: xs) = x : get_expressions' xs
+          get_expressions' (EqualityAxiom (Match _ (Just y)) (Addr _ _ x): xs) = y : x : get_expressions' xs
+          get_expressions' (EqualityAxiom _ (Addr _ _ x): xs) = x : get_expressions' xs
 
           get_symbols (ApplyExpression a b) = get_symbols a ++ concat (map get_symbols b)
           get_symbols (IfExpression a b c) = get_symbols a ++ get_symbols b ++ get_symbols c
@@ -944,7 +966,7 @@ tiProgram (Program bgs) =
 
           f (Scope t a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) = Scope t a (b ++ [[x]]) c
           f (Scope t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) = Scope t (a ++ [x]) b c
-          f (Scope t a b c) (ExpressionStatement _ x) = Scope t a b (c ++ [x])
+          f (Scope t a b c) (ExpressionStatement (Addr _ _ x)) = Scope t a b (c ++ [x])
           f (Scope t a b c) x @ (TypeStatement _ _) = Scope (t ++ [x]) a b c
           f x _ = x
 

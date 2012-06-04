@@ -71,7 +71,7 @@ instance Syntax Definition where
                                   no_args_eq_axiom patterns
 
               no_args_eq_axiom patterns = do whitespace *> string "=" *> spaces *> indented
-                                             ex <- withPos syntax
+                                             ex <- withPos (addr syntax)
                                              return $ EqualityAxiom patterns ex
 
               type_axiom = do spaces

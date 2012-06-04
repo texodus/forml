@@ -118,7 +118,7 @@ instance (Syntax d) => Syntax (Expression d) where
                                   whitespace <* (string "<-" <|> string "←") <* whitespace 
                                   ex <- withPos syntax 
                                   spaces *> same
-                                  f ex p <$> line
+                                  f ex p <$> addr line
 
                         let_bind = withPosTemp $ do string "let"
                                                     whitespace1
@@ -133,7 +133,7 @@ instance (Syntax d) => Syntax (Expression d) where
                                      option v $ try $ unit_bind v
 
                         unit_bind v = do spaces *> same
-                                         f v AnyPattern <$> line
+                                         f v AnyPattern <$> addr line
 
                         f ex pat zx = ApplyExpression 
                                          (SymbolExpression (Operator ">>="))
@@ -144,7 +144,7 @@ instance (Syntax d) => Syntax (Expression d) where
 
               lazy  = do string "lazy"
                          whitespace1
-                         f <$> withPos (try syntax)
+                         f <$> withPos (addr$ try syntax)
 
                   where f ex = (FunctionExpression 
                                    [ EqualityAxiom 
@@ -214,7 +214,8 @@ instance (Syntax d) => Syntax (Expression d) where
                                              z <- other
                                              return $ RecordExpression (M.fromList [(k, z)])
 
-              accessor = do x <- indentPairs "(" syntax ")" 
+              accessor = do s <- getPosition
+                            x <- indentPairs "(" syntax ")" 
                                  <|> js 
                                  <|> record 
                                  <|> literal
@@ -223,14 +224,16 @@ instance (Syntax d) => Syntax (Expression d) where
 
                             string "."
                             z <- syntax
-                            return $ acc_exp x z
+                            f <- getPosition
+                            return $ acc_exp (Addr s f) x z
 
-              acc_exp x z = ApplyExpression 
-                            (FunctionExpression 
-                             [ EqualityAxiom 
-                               (Match [RecordPattern (M.fromList [(z, VarPattern "x")])] Nothing)
-                               (SymbolExpression (Symbol "x")) ] )
-                            [x]
+              -- TODO this is nasty & may trip up closure, please fix
+              acc_exp f x z = ApplyExpression 
+                              (FunctionExpression 
+                               [ EqualityAxiom 
+                                 (Match [RecordPattern (M.fromList [(z, VarPattern "x")])] Nothing)
+                                 (f (SymbolExpression (Symbol "x"))) ] )
+                              [x]
 
               apply = ApplyExpression <$> inner <*>  (try cont <|> halt)
 
@@ -262,7 +265,7 @@ instance (Syntax d) => Syntax (Expression d) where
                                         string "="
                                         spaces
                                         indented
-                                        ex <- withPos syntax
+                                        ex <- withPos (addr syntax)
                                         return $ EqualityAxiom patterns ex
 
               js = JSExpression <$> join (p <$> indentPairs "`" (many $ noneOf "`") "`")
@@ -289,7 +292,7 @@ instance (Syntax d) => Syntax (Expression d) where
                                         string "="
                                         spaces
                                         indented
-                                        ex <- withPos syntax
+                                        ex <- withPos (addr syntax)
                                         return $ EqualityAxiom patterns ex
 
                         inherit = do ex <- syntax
