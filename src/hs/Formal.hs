@@ -18,11 +18,17 @@ import Control.Monad.State hiding (lift)
 
 import System.IO
 import System.Environment
+import System.Exit
+import System.Console.ANSI
+
+import Network.HTTP
+import Network.URI
 
 import Text.Pandoc
 
 import Data.Char (ord, isAscii)
 import Data.String.Utils
+import Data.URLEncoded
 
 import Formal.Parser
 import Formal.Javascript
@@ -39,30 +45,67 @@ toEntities (c:cs) | isAscii c = c : toEntities cs
 toHTML :: String -> String
 toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
 
+monitor :: String -> IO (Either [String] a) -> IO a
+monitor x d = do putStr$ "[ ] " ++ x
+                 hFlush stdout
+                 d' <- d
+                 case d' of
+                   Right y -> do putStr "\r["
+                                 setSGR [SetColor Foreground Dull Green]
+                                 putStr "*"
+                                 setSGR []
+                                 putStrLn$ "] " ++ x
+                                 return y
+                   Left y  -> do putStr "\r["
+                                 setSGR [SetColor Foreground Dull Red]
+                                 putStr "X"
+                                 setSGR []
+                                 putStrLn$ "] " ++ x
+                                 putStrLn ""
+                                 mapM putStrLn y
+                                 exitFailure
+
 main :: IO ()
-main  = do RunConfig (file:_) output mode <- parseArgs <$> getArgs
+main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            hFile  <- openFile file ReadMode
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
-           putStr "[ ] Parsing"
-           case parseFormal src of
-             Left  ex   -> putStrLn "\r[X] Parsing" >> putStrLn (show ex)
-             Right src' -> do putStrLn "\r[*] Parsing"
-                              putStrLn $ show $ A $ tiProgram src'
-                              let tests = case src' of (Program xs) -> get_tests xs
-                              let html = highlight tests $ toHTML (annotate_tests src src')
-                              writeFile (output ++ ".html") html
-                              writeFile (output ++ ".raw.html") $ highlight tests $ toHTML (annotate_tests src src')
-                              putStr "[ ] Generating Javascript"
-                              let js = compress $ render src'
-                              writeFile (output ++ ".js") js
-                              putStrLn "\r[*] Generating Javascript"
-                              putStr "[ ] Generating Tests"
-                              let spec = render_spec src'
-                              writeFile (output ++ ".spec.js") spec
-                              putStrLn "\r[*] Generating Tests"
+           src' <- monitor "Parsing" . return$
+                  case parseFormal src of
+                    Left ex -> Left [show ex]
+                    Right x -> Right x
+           monitor "Type Checking" . return $
+                   case tiProgram src' of
+                     (_, []) -> Right ()
+                     (_, y)  -> Left y
+           (js, tests) <- monitor "Generating Javascript"$
+                   do let tests = case src' of (Program xs) -> get_tests xs
+                      let html = highlight tests $ toHTML (annotate_tests src src')
+                      writeFile (output ++ ".html") html
+                      let js = compress $ render src'
+                      return$ Right (js, render_spec src')
+           opt <- monitor "Optimizing"$ closure js
+           writeFile (output ++ ".js") opt
+           writeFile (output ++ ".spec.js") tests
+           return ()
 
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode
+
+closure :: String -> IO (Either [String] String)
+closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
+
+               let y = export$ importList [ ("output_format", "text")
+                                          , ("output_info", "compiled_code")
+                                          , ("compilation_level", "ADVANCED_OPTIMIZATIONS")
+                                          , ("js_code", x) ]
+
+               let args = [ mkHeader HdrContentLength (show$ length y)
+                          , mkHeader HdrContentType "application/x-www-form-urlencoded" ]
+
+               rsp <- simpleHTTP (Request uri POST args y)
+               txt <- getResponseBody rsp
+               return$ Right txt
+                                         
 
 parseArgs :: [String] -> RunConfig
 parseArgs = fst . runState argsParser

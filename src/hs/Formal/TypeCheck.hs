@@ -145,7 +145,6 @@ mgu      :: Monad m => Type -> Type -> m Substitution
 var_bind :: Monad m => TypeVar -> Type -> m Substitution
 match    :: Monad m => Type -> Type -> m Substitution
 
-
 mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
     do s1 <- mgu l1 l2
        s2 <- mgu (apply s1 r1) (apply s1 r2)
@@ -164,7 +163,21 @@ mgu (TypeRecord (TRecord t _)) (TypeRecord (TRecord u _))
                                  f xs ys (s @@ s')
 
 mgu (Type t) (Type u) | t == u = return []
-mgu t u = fail $ "TYPE ERROR\n\nUnification failed: found " ++ show t ++ ", expecting " ++ show u
+mgu t u = fail $ "Types do not unify: found " ++ show t ++ ", expecting " ++ show u
+
+data Z a = Z a | Error String
+
+instance Monad Z where
+    return x = Z x
+    (Z x) >>= f = f x
+    (Error x) >>= _ = Error x
+    fail x = Error x
+
+mgut :: Type -> Type -> TI Substitution
+mgut x y = case mgu x y of
+             Z z -> return z
+             Error e -> do add_error e
+                           return []
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t
@@ -386,9 +399,11 @@ instance Find Id Scheme where
     find i = do (reverse -> x) <- get_assumptions
                 find' x 
 
-        where find' []             = fail ("unbound identifier: " ++ show i)
-              find' ((i':>:sc):as) = if i == i' then return sc else find' as
+        where find' ((i':>:sc):as) = if i == i' then return sc else find' as
               find' (_:as)         = find' as
+              find' []             = do add_error ("Unbound identifier " ++ show i)
+                                        return$ toScheme$ TypeVar (TVar "a" Star)
+              
 
 subkey :: RecordId -> RecordId -> Bool
 subkey (RecordId m) (RecordId n) = M.keys m == M.keys n && all id (zipWith subkey (M.elems m) (M.elems n))
@@ -412,6 +427,9 @@ data TIState = TIState { substitution :: Substitution
                        , seed :: Int
                        , class_env :: ClassEnv
                        , msg :: String
+                       , warnings :: [String]
+                       , errors :: [String]
+                       , namespaces :: [(String, [Assumption])]
                        , assumptions :: [Assumption]
                        , predicates :: [Pred] }
 
@@ -425,15 +443,27 @@ instance Monad TI where
                                    in  gx y)
 
 runTI :: TI a -> a
-runTI (TI f) = x where (t,x) = f (TIState [] 0 initialEnv "" [] [])
+runTI (TI f) = x where (t,x) = f (TIState [] 0 initialEnv "" [] [] [] [] [])
 
+get_assumptions  :: TI [Assumption]
+get_msg          :: TI String
+set_msg          :: String -> TI ()
+get_predicates   :: TI [Pred]
+set_predicates   :: [Pred] -> TI ()
 get_substitution :: TI Substitution
+get_classenv     :: TI ClassEnv
+add_error        :: String -> TI ()
+
+get_assumptions  = TI (\x -> (x, assumptions x))
+get_msg          = TI (\x -> (x, msg x))
+set_msg x        = TI (\y -> (y { msg = x }, ()))
+get_predicates   = TI (\x -> (x, predicates x))
+set_predicates x = TI (\y -> (y { predicates = x }, ()))
 get_substitution = TI (\x -> (x, substitution x))
+get_classenv     = TI (\x -> (x, class_env x))
+add_error y      = TI (\x -> (x { errors = errors x ++ [y ++ "\n" ++ msg x] }, ()))
+get_errors       = TI (\x -> (x, errors x))
 
-get_classenv :: TI ClassEnv
-get_classenv = TI (\x -> (x, class_env x))
-
-get_assumptions :: TI [Assumption]
 
 class Assume a where
     assume :: a -> TI ()
@@ -443,19 +473,6 @@ instance Assume Assumption where
 
 instance Assume [Assumption] where
     assume x = TI (\y -> (y { assumptions = assumptions y ++ x}, ()))
-
-get_assumptions = TI (\x -> (x, assumptions x))
-set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
-
-get_msg = TI (\x -> (x, msg x))
-set_msg x = TI (\y -> (y { msg = x }, ()))
-
-
-
-get_predicates :: TI [Pred]
-get_predicates = TI (\x -> (x, predicates x))
-set_predicates x = TI (\y -> (y { predicates = x }, ()))
-
 
 class Predicated a where
     predicate :: a -> TI ()
@@ -475,13 +492,16 @@ with_scope x = do as <- get_assumptions
                   set_predicates ps
                   return y
 
+    where set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
+
+
 substitute :: Types a => a -> TI a
 substitute x = do y <- get_substitution
                   return $ apply y x
 
 unify :: Type -> Type -> TI ()
 unify t1 t2 = do s <- get_substitution
-                 u <- mgu (apply s t1) (apply s t2)
+                 u <- mgut (apply s t1) (apply s t2)
                  extSubst $ u @@ s
 
     where extSubst   :: Substitution -> TI ()
@@ -669,10 +689,12 @@ instance Infer (Expression Definition) where
 instance (Infer a) => Infer (Addr a) where
     
     infer (Addr s f x) = do m <- get_msg
-                            set_msg (m ++ "  at line " ++ show (sourceLine s) ++ ", column " ++ show (sourceColumn s) ++ "\n")
+                            set_msg new_msg
                             z <- infer x
                             set_msg m
                             return z
+
+        where new_msg = "  at line " ++ show (sourceLine s) ++ ", column " ++ show (sourceColumn s) ++ "\n"
 
 instance Infer (Axiom (Expression Definition)) where
 
@@ -923,18 +945,18 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_expressions' (EqualityAxiom (Match _ (Just y)) (Addr _ _ x): xs) = y : x : get_expressions' xs
           get_expressions' (EqualityAxiom _ (Addr _ _ x): xs) = x : get_expressions' xs
 
-          get_symbols (ApplyExpression a b) = get_symbols a ++ concat (map get_symbols b)
-          get_symbols (IfExpression a b c) = get_symbols a ++ get_symbols b ++ get_symbols c
-          get_symbols (LiteralExpression _) = []
-          get_symbols (SymbolExpression x) = [show x]
-          get_symbols (JSExpression _) = []
-          get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
           get_symbols (RecordExpression (unzip . M.toList -> (_, xs))) = concat (map get_symbols xs)
-          get_symbols (LetExpression _ x) = get_symbols x
-          get_symbols (ListExpression x) = concat (map get_symbols x)
+          get_symbols (ApplyExpression a b)   = get_symbols a ++ concat (map get_symbols b)
+          get_symbols (IfExpression a b c)    = get_symbols a ++ get_symbols b ++ get_symbols c
+          get_symbols (LiteralExpression _)   = []
+          get_symbols (SymbolExpression x)    = [show x]
+          get_symbols (JSExpression _)        = []
+          get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
+          get_symbols (LetExpression _ x)     = get_symbols x
+          get_symbols (ListExpression x)      = concat (map get_symbols x)
 
 
-tiProgram :: Program -> [Assumption]
+tiProgram :: Program -> ([Assumption], [String])
 tiProgram (Program bgs) = 
     
     runTI $ do assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
@@ -947,7 +969,8 @@ tiProgram (Program bgs) =
                ps <- get_predicates
                as <- get_assumptions
                rs <- reduce ce (apply s ps)
-               return (apply s as)
+               e  <- get_errors
+               return ((apply s as), e)
 
     where to_group :: [Statement] -> [BindGroup]
           to_group [] = []

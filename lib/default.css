@@ -42,7 +42,14 @@ h2 + p:first-letter {
     margin-right: 5px;
     float: left;
 }
-body div { width: 560px; text-align: left; margin: 0 auto; }
+body div { 
+    width: 760px; 
+    text-align: left; 
+    margin: 0 auto;
+    -webkit-column-count:2;
+    -webkit-column-gap: 40px;
+    column-count: 2
+ }
 
 pre { 
     padding: 15px 0 15px 25px;
@@ -53,6 +60,7 @@ pre {
 }
 code {
     font-family: "Courier New";
+    font-size: 12px;
 }
 
 a {

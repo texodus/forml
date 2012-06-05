@@ -283,9 +283,9 @@ incomplete definition.
         not (empty? (1 :: nil:))
         empty? [:]
    
-        head [: 1, 2 :] == 1
-        tail [: 1, 2 :] == [:2]
-        last [: 1, 2 :] == 2
+        head [: 1, 2 ] == 1
+        tail [: 1, 2 ] == [:2]
+        last [: 1, 2 ] == 2
 
         err (lazy head nil:) == "Head called on empty list"
         err (lazy tail nil:) == "Tail called on empty list"
