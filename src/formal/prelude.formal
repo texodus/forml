@@ -398,3 +398,7 @@ Folds
         minimum [: 1, 2, 3 ] == 1
         maximum [: 1, 2, 3 ] == 3
         
+    open prelude.list
+    
+    minimum [: 1, 2, 3 ] == 1
+        

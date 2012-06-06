@@ -470,8 +470,9 @@ get_substitution = TI (\x -> (x, substitution x))
 get_classenv     = TI (\x -> (x, class_env x))
 add_error y      = TI (\x -> (x { errors = errors x ++ [y ++ "\n" ++ msg x] }, ()))
 get_errors       = TI (\x -> (x, errors x))
-
-
+get_modules      = TI (\x -> (x, modules x))
+set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
+          
 class Assume a where
     assume :: a -> TI ()
 
@@ -499,8 +500,6 @@ with_scope x = do as <- get_assumptions
                   set_predicates ps
                   return y
 
-    where set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
-
 with_module :: String -> TI () -> TI ()
 with_module name x = do as <- get_assumptions
                         ns <- get_namespace
@@ -511,8 +510,7 @@ with_module name x = do as <- get_assumptions
                         add_module (ns `mappend` Namespace [name], drop (length as) as')
                         set_namespace ns
 
-    where set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
-          add_module x = TI (\y -> (y { modules = modules y ++ [x] }, ()))
+    where add_module x = TI (\y -> (y { modules = modules y ++ [x] }, ()))
 
           get_namespace = TI (\y -> (y, namespace y))
           set_namespace x = TI (\y -> (y { namespace = x }, ()))
@@ -695,7 +693,7 @@ instance Infer (Expression Definition) Type where
         where f (Symbol x) = x
               f (Operator x) = x
                                                    
-    infer (LetExpression xs x) = with_scope$ do infer$ Scope [] [] (map (:[]) xs) []
+    infer (LetExpression xs x) = with_scope$ do infer$ Scope [] [] [] (map (:[]) xs) []
                                                 infer x
 
     infer (ListExpression x) =
@@ -805,7 +803,7 @@ instance Infer [Definition] () where
               f _ = error "Not Defined"
 
 
-data BindGroup = Scope [Statement] [Definition] [[Definition]] [Expression Definition]
+data BindGroup = Scope [Namespace] [Statement] [Definition] [[Definition]] [Expression Definition]
                | Module String [BindGroup]
                deriving (Show)
 
@@ -816,19 +814,24 @@ instance Infer Definition () where
         do sc <- find$ f name 
            (qs :=> t) <- freshInst sc
            axiom_types <- with_scope$ mapM (with_scope . infer) axs
+
            s <- get_substitution
            mapM (unify t) (apply s axiom_types)
+
            as <- get_assumptions
            ce <- get_classenv
            ps <- get_predicates
-           s <- get_substitution
+           s  <- get_substitution
+
            let qs' = apply s qs
-               t' = apply s t
-               fs = tv (apply s as)
-               gs = tv t' \\ fs
+               t'  = apply s t
+               fs  = tv (apply s as)
+               gs  = tv t' \\ fs
                sc' = quantify gs (qs' :=> t')
                ps' = filter (not . entail ce qs') (apply s ps)
+
            (ds, rs) <- split ce fs gs ps'
+
            if sc /= sc' then
                add_error "Signature too general"
              else if not (null rs) then
@@ -851,13 +854,18 @@ instance Infer Test () where
 newtype Test = Test (Expression Definition)
 
 instance Infer BindGroup () where
-    infer (Scope tts es iss ts) =
+    infer (Scope imps tts es iss ts) =
 
-        do tiTypeDefs tts
+        do as <- get_assumptions
+           mapM import' imps
+           as' <- get_assumptions
+           infer tts
            mapM assume$ sigs es
            mapM infer iss
            with_scope$ mapM infer es
            mapM infer (map Test ts)
+           as'' <- get_assumptions
+           set_assumptions$ as'' \\ (as' \\ as)
            return ()
 
         where f (TypeAxiom t) = True
@@ -875,6 +883,15 @@ instance Infer BindGroup () where
                     Nothing -> sigs xs
                     Just x -> g (h name) x ++ sigs xs
 
+              import' ns = do z <- get_modules
+                              z' <- find'' z ns
+                              a <- get_assumptions
+                              assume$ a ++ z'
+
+              find'' [] ns = add_error ("Namespace " ++ show ns ++ " not found") >> return []
+              find'' ((x, ts):_) ns | ns == x = return ts
+              find'' (_:xs) ns = find'' xs ns
+              
               h (Symbol x) = x
               h (Operator x) = x
 
@@ -936,14 +953,15 @@ db :: Show a => a -> a
 db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
                             return x
 
-tiTypeDefs :: [Statement] -> TI ()
-tiTypeDefs [] = return ()
-tiTypeDefs (TypeStatement t c : xs) = 
+instance Infer [Statement] () where
 
-     do assume     $ to_scheme t c
-        tiTypeDefs xs
+    infer [] = return ()
+    infer (TypeStatement t c : xs) = 
 
-tiTypeDefs (_ : xs) = tiTypeDefs xs
+        do assume     $ to_scheme t c
+           infer xs
+
+    infer (_ : xs) = infer xs
 
 sort_dep :: [[Definition]] -> [[Definition]]
 sort_dep [] = []
@@ -1005,20 +1023,21 @@ tiProgram (Program bgs) =
           to_group [] = []
           to_group xs = case takeWhile not_module xs of
                           [] -> to_group' xs
-                          yx -> sort_deps (foldl f (Scope [] [] [] []) yx) : to_group' (dropWhile not_module xs)
+                          yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx) : to_group' (dropWhile not_module xs)
 
           to_group' [] = []
           to_group' (ModuleStatement x y:xs) = Module (show x) (to_group y) : to_group xs
           to_group' _ = error "Unexpected"
 
-          sort_deps (Scope t a b c) = Scope t a (sort_dep b) c
+          sort_deps (Scope i t a b c) = Scope i t a (sort_dep b) c
 
           not_module (ModuleStatement _ _) = False
           not_module _ = True
 
-          f (Scope t a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) = Scope t a (b ++ [[x]]) c
-          f (Scope t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) = Scope t (a ++ [x]) b c
-          f (Scope t a b c) (ExpressionStatement (Addr _ _ x)) = Scope t a b (c ++ [x])
-          f (Scope t a b c) x @ (TypeStatement _ _) = Scope (t ++ [x]) a b c
+          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) = Scope i t a (b ++ [[x]]) c
+          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) = Scope i t (a ++ [x]) b c
+          f (Scope i t a b c) (ExpressionStatement (Addr _ _ x)) = Scope i t a b (c ++ [x])
+          f (Scope i t a b c) (ImportStatement ns) = Scope (i ++ [ns]) t a b c
+          f (Scope i t a b c) x @ (TypeStatement _ _) = Scope i (t ++ [x]) a b c
           f x _ = x
 
