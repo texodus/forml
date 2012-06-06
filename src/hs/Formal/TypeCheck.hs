@@ -36,7 +36,8 @@ import Formal.Types.Symbol
 import Formal.Types.Expression
 import Formal.Types.Definition
 import Formal.Types.Axiom
-import Formal.Types.Statement hiding (find)
+import Formal.Types.Statement hiding (find, namespace, modules)
+import Formal.Types.Namespace hiding (Module)
 
 import Formal.Types.TypeDefinition
 import Formal.Types.Type
@@ -429,7 +430,8 @@ data TIState = TIState { substitution :: Substitution
                        , msg :: String
                        , warnings :: [String]
                        , errors :: [String]
-                       , namespaces :: [(String, [Assumption])]
+                       , modules :: [(Namespace, [Assumption])]
+                       , namespace :: Namespace
                        , assumptions :: [Assumption]
                        , predicates :: [Pred] }
 
@@ -442,8 +444,13 @@ instance Monad TI where
                           (y, x) -> let TI gx = g x
                                    in  gx y)
 
+instance Types [(Namespace, [Assumption])] where
+    apply s v = map (\(x, y) -> (x, apply s y)) v
+    tv = concat . map (\(_, y) -> tv y)
+
+
 runTI :: TI a -> a
-runTI (TI f) = x where (t,x) = f (TIState [] 0 initialEnv "" [] [] [] [] [])
+runTI (TI f) = x where (t,x) = f (TIState [] 0 initialEnv "" [] [] [] (Namespace []) [] [])
 
 get_assumptions  :: TI [Assumption]
 get_msg          :: TI String
@@ -493,6 +500,22 @@ with_scope x = do as <- get_assumptions
                   return y
 
     where set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
+
+with_module :: String -> TI () -> TI ()
+with_module name x = do as <- get_assumptions
+                        ns <- get_namespace
+                        set_namespace (ns `mappend` Namespace [name])
+                        x
+                        as' <- get_assumptions
+                        set_assumptions as
+                        add_module (ns `mappend` Namespace [name], drop (length as) as')
+                        set_namespace ns
+
+    where set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
+          add_module x = TI (\y -> (y { modules = modules y ++ [x] }, ()))
+
+          get_namespace = TI (\y -> (y, namespace y))
+          set_namespace x = TI (\y -> (y { namespace = x }, ()))
 
 
 substitute :: Types a => a -> TI a
@@ -784,6 +807,7 @@ tiImpls bs =
 
 data BindGroup = Scope [Statement] [Definition] [[Definition]] [Expression Definition]
                | Module String [BindGroup]
+               deriving (Show)
 
 tiExpl :: Definition -> TI ()
 tiExpl (Definition name axs) =
@@ -796,6 +820,7 @@ tiExpl (Definition name axs) =
        as <- get_assumptions
        ce <- get_classenv
        ps <- get_predicates
+       s <- get_substitution
        let qs' = apply s qs
            t' = apply s t
            fs = tv (apply s as)
@@ -850,7 +875,8 @@ tiBindGroup (Scope tts es iss ts) =
           h (Symbol x) = x
           h (Operator x) = x
 
-tiBindGroup (Module name bgs) = do with_scope$ mapM tiBindGroup bgs
+tiBindGroup (Module name bgs) = do with_module name$ do mapM tiBindGroup bgs
+                                                        return ()
                                    return ()
     
 
@@ -956,7 +982,7 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_symbols (ListExpression x)      = concat (map get_symbols x)
 
 
-tiProgram :: Program -> ([Assumption], [String])
+tiProgram :: Program -> ([(Namespace, [Assumption])], [String])
 tiProgram (Program bgs) = 
     
     runTI $ do assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
@@ -967,16 +993,16 @@ tiProgram (Program bgs) =
                s  <- get_substitution
                ce <- get_classenv
                ps <- get_predicates
-               as <- get_assumptions
+               ms <- TI (\y -> (y, modules y))
                rs <- reduce ce (apply s ps)
                e  <- get_errors
-               return ((apply s as), e)
+               return ((apply s ms), e)
 
     where to_group :: [Statement] -> [BindGroup]
           to_group [] = []
           to_group xs = case takeWhile not_module xs of
                           [] -> to_group' xs
-                          yx -> sort_deps (foldl f (Scope [] [] [] []) xs) : to_group' (dropWhile not_module xs)
+                          yx -> sort_deps (foldl f (Scope [] [] [] []) yx) : to_group' (dropWhile not_module xs)
 
           to_group' [] = []
           to_group' (ModuleStatement x y:xs) = Module (show x) (to_group y) : to_group xs

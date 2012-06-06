@@ -161,13 +161,13 @@ version.  This test "primes" the JIT by running the fast calc first,
 otherwise in practice the first eval tends to be favored in V8.
 
         floor = run `Math.floor`
-     
-        run do ret <| fast_fib 35
+
+        run do ret (fast_fib 35)
                
                fast_time <- time (lazy fast_fib 35)
                slow_time <- time (lazy fib 35)
 
-               let ratio = floor <| fast_time / slow_time * 100
+               let ratio = floor (fast_time / slow_time * 100)
                log (run `"Runtime speed ~" + ratio + "%"`)
                ret (ratio >= 80)
 
@@ -238,9 +238,8 @@ works more like a traditional cons.
 
         (::) x y = { head = x, tail = y }
 
-The compiler itself also supports the list sugar `[: 1, 2, 3 :]` (or
-`[: 1, 2, 3 ]`, as formal prefers to allow innocuous, unambiguous
-syntax variations to be equivalent).  All of these lists are
+The compiler itself also supports the list sugar `[: 1, 2, 3 ]` (or
+`[: 1, 2, 3 :]`, if you prefer symmetry).  All of these lists are
 synonyms.
 
         let xs = [: [: 1, 2, 3 ]
@@ -326,9 +325,10 @@ List concatenation
 
 Filter
 
-        filter f nil: = nil:
-             | f x when f (head x) = head x :: filter f (tail x)
-             | f x = filter f <| tail x
+        filter: (a -> Bool) -> List a -> List a
+              | f nil: = nil:
+              | f x when f (head x) = head x :: filter f (tail x)
+              | f x = filter f <| tail x
                         
         filter (λx = x > 2) [: 1, 2, 3, 4 ] == [: 3, 4 ]
 

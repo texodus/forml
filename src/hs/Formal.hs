@@ -27,6 +27,7 @@ import Network.URI
 import Text.Pandoc
 
 import Data.Char (ord, isAscii)
+import Data.List as L
 import Data.String.Utils
 import Data.URLEncoded
 
@@ -69,21 +70,27 @@ main :: IO ()
 main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
            hFile  <- openFile file ReadMode
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
+   
            src' <- monitor "Parsing" . return$
-                  case parseFormal src of
-                    Left ex -> Left [show ex]
-                    Right x -> Right x
-           monitor "Type Checking" . return $
+                   case parseFormal src of
+                     Left ex -> Left [show ex]
+                     Right x -> Right x
+   
+           monitor "Type Checking" $
                    case tiProgram src' of
-                     (_, []) -> Right ()
-                     (_, y)  -> Left y
+                     (as, []) -> do putStrLn (concat$ map (\(x, y) -> show x ++ "\n" ++ concat (L.intersperse "\n" (map show y)) ++ "\n\n") as)
+                                    return$ Right ()
+                     (_, y)  -> return$ Left y
+   
            (js, tests) <- monitor "Generating Javascript"$
                    do let tests = case src' of (Program xs) -> get_tests xs
                       let html = highlight tests $ toHTML (annotate_tests src src')
                       writeFile (output ++ ".html") html
                       let js = compress $ render src'
                       return$ Right (js, render_spec src')
+   
            opt <- monitor "Optimizing"$ closure js
+   
            writeFile (output ++ ".js") opt
            writeFile (output ++ ".spec.js") tests
            return ()
@@ -91,19 +98,20 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
 data RunMode   = Compile | JustTypeCheck
 data RunConfig = RunConfig [String] String RunMode
 
-closure :: String -> IO (Either [String] String)
+closure :: String -> IO (Either a String)
 closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
 
-               let y = export$ importList [ ("output_format", "text")
+                   y = export$ importList [ ("output_format", "text")
                                           , ("output_info", "compiled_code")
                                           , ("compilation_level", "ADVANCED_OPTIMIZATIONS")
                                           , ("js_code", x) ]
 
-               let args = [ mkHeader HdrContentLength (show$ length y)
+                   args = [ mkHeader HdrContentLength (show$ length y)
                           , mkHeader HdrContentType "application/x-www-form-urlencoded" ]
 
                rsp <- simpleHTTP (Request uri POST args y)
                txt <- getResponseBody rsp
+
                return$ Right txt
                                          
 
