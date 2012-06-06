@@ -71,7 +71,7 @@ instance Show Type where
         show u ++ " → " ++ show v
     show (TypeApplication t u) = show t ++ " " ++ show u
     show (TypeGen x) = (map (:[])$ concat$ repeat "abcdefghijklmnopqrstuvwxyz") !! x
-    show (TypeRecord (TRecord m _)) = show m
+    show (TypeRecord (TRecord m _)) = "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ "}"
 
 
 data TypeRecord = TRecord (M.Map Key Type) Kind
@@ -372,17 +372,16 @@ data RecordId = RecordId (M.Map String RecordId)
               | RecordKey
                 deriving (Ord, Eq)
 
-data Assumption = Id :>: Scheme | RecordId :>>: (Scheme, Scheme) deriving (Eq, Show)
+data Assumption = Id :>: Scheme | RecordId :>>: (Scheme, Scheme) deriving (Eq)
 
 newtype A = A [Assumption]
 
 instance Show RecordId where
     show (RecordId m) = "{" ++ (concat$ L.intersperse ", "$ M.keys m) ++ "}"
 
-instance Show A where
-    show (A []) = ""
-    show (A (i :>: s : xs))  = i ++ ": " ++ show s ++ "\n" ++ show (A xs)
-    show (A (i :>>: (_,s) : xs)) = show i ++ ": " ++ show s ++ "\n" ++ show (A xs)
+instance Show Assumption where
+    show (i :>: s)  = i ++ ": " ++ show s
+    show (i :>>: (_,s)) = show i ++ ": " ++ show s
 
 
 instance Types Assumption where
@@ -829,9 +828,9 @@ tiExpl (Definition name axs) =
            ps' = filter (not . entail ce qs') (apply s ps)
        (ds, rs) <- split ce fs gs ps'
        if sc /= sc' then
-           fail "signature too general"
+           add_error "Signature too general"
          else if not (null rs) then
-           fail "context too weak"
+           add_error "Context too weak"
          else
            assume (f name :>: sc)
 

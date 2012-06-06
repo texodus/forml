@@ -9,5 +9,4 @@ node prelude.node.js
 
 }
 
-cabal build
-./dist/build/formal/formal src/formal/prelude.formal && clean
+cabal build && ./dist/build/formal/formal -t src/formal/prelude.formal && clean

@@ -91,7 +91,7 @@ constraining
 
     (!=) x y = not (x == y)
 
-    (==) : a -> a -> Bool
+    (==): a -> a -> Bool
         | x y when object? x && object? y =
             let result = true
             run `for (key in x) {

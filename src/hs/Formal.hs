@@ -67,8 +67,8 @@ monitor x d = do putStr$ "[ ] " ++ x
                                  exitFailure
 
 main :: IO ()
-main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
-           hFile  <- openFile file ReadMode
+main  = do rc <- parseArgs <$> getArgs
+           hFile  <- openFile (head $ inputs rc) ReadMode
            src <- (\ x -> x ++ "\n") <$> hGetContents hFile
    
            src' <- monitor "Parsing" . return$
@@ -76,27 +76,31 @@ main  = do RunConfig (file:_) output _ <- parseArgs <$> getArgs
                      Left ex -> Left [show ex]
                      Right x -> Right x
    
-           monitor "Type Checking" $
+           as <- monitor "Type Checking" . return $
                    case tiProgram src' of
-                     (as, []) -> do putStrLn (concat$ map (\(x, y) -> show x ++ "\n" ++ concat (L.intersperse "\n" (map show y)) ++ "\n\n") as)
-                                    return$ Right ()
-                     (_, y)  -> return$ Left y
+                     (as, []) -> Right as
+                     (_, y)  -> Left y
    
            (js, tests) <- monitor "Generating Javascript"$
                    do let tests = case src' of (Program xs) -> get_tests xs
                       let html = highlight tests $ toHTML (annotate_tests src src')
-                      writeFile (output ++ ".html") html
+                      writeFile ((output rc) ++ ".html") html
                       let js = compress $ render src'
                       return$ Right (js, render_spec src')
    
            opt <- monitor "Optimizing"$ closure js
    
-           writeFile (output ++ ".js") opt
-           writeFile (output ++ ".spec.js") tests
-           return ()
+           writeFile ((output rc) ++ ".js") opt
+           writeFile ((output rc) ++ ".spec.js") tests
+           if (show_types rc) 
+              then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
+              else return ()
 
-data RunMode   = Compile | JustTypeCheck
-data RunConfig = RunConfig [String] String RunMode
+    where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
+
+data RunConfig = RunConfig { inputs :: [String]
+                           , output :: String
+                           , show_types :: Bool }
 
 closure :: String -> IO (Either a String)
 closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
@@ -120,11 +124,11 @@ parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" Compile
+                          []     -> return $ RunConfig [] "default" False
                           (x:xs) -> do put xs
                                        case x of
-                                         "-t"    -> do RunConfig a b _ <- argsParser
-                                                       return $ RunConfig (x:a) b JustTypeCheck
+                                         "-t"    -> do x <- argsParser
+                                                       return $ x { show_types = True }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
                                                        RunConfig a _ c <- argsParser
