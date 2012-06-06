@@ -14,6 +14,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Formal.TypeCheck where
 import System.IO.Unsafe
@@ -36,7 +37,7 @@ import Formal.Types.Symbol
 import Formal.Types.Expression
 import Formal.Types.Definition
 import Formal.Types.Axiom
-import Formal.Types.Statement hiding (find, namespace, modules)
+import Formal.Types.Statement hiding (find, namespace, modules, Test)
 import Formal.Types.Namespace hiding (Module)
 
 import Formal.Types.TypeDefinition
@@ -560,9 +561,9 @@ instance Instantiate Pred where
 -- Type Inference
 -- --------------------------------------------------------------------------------
 
-class Infer e where infer :: e -> TI Type
+class Infer e t | e -> t where infer :: e -> TI t
 
-instance Infer Literal where
+instance Infer Literal Type where
     infer (StringLiteral _) = return (Type (TypeConst "String" Star))
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
@@ -571,7 +572,7 @@ instance ToKey (Pattern a) where
     key (RecordPattern m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
     key _ = RecordKey
 
-instance Infer (Pattern b) where
+instance Infer (Pattern b) Type where
     infer (VarPattern i) = do v <- newTVar Star
                               assume (i :>: toScheme v)
                               return v
@@ -625,7 +626,7 @@ instance ToKey (Expression a) where
     key (RecordExpression m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
     key _ = RecordKey
 
-instance Infer (Expression Definition) where
+instance Infer (Expression Definition) Type where
     infer (ApplyExpression _ []) = fail "This should not be"
     infer (ApplyExpression e (x:[])) =
 
@@ -671,7 +672,7 @@ instance Infer (Expression Definition) where
 
         where ims as = 
 
-                  do tiImpls [Definition (Symbol "") rs]
+                  do infer [Definition (Symbol "") rs]
                      as'' <- get_assumptions
                      return$ as'' \\ as
 
@@ -694,7 +695,7 @@ instance Infer (Expression Definition) where
         where f (Symbol x) = x
               f (Operator x) = x
                                                    
-    infer (LetExpression xs x) = with_scope$ do tiBindGroup$ Scope [] [] (map (:[]) xs) []
+    infer (LetExpression xs x) = with_scope$ do infer$ Scope [] [] (map (:[]) xs) []
                                                 infer x
 
     infer (ListExpression x) =
@@ -708,7 +709,7 @@ instance Infer (Expression Definition) where
 
 -- Axioms
 
-instance (Infer a) => Infer (Addr a) where
+instance (Infer a t) => Infer (Addr a) t where
     
     infer (Addr s f x) = do m <- get_msg
                             set_msg new_msg
@@ -718,7 +719,7 @@ instance (Infer a) => Infer (Addr a) where
 
         where new_msg = "  at line " ++ show (sourceLine s) ++ ", column " ++ show (sourceColumn s) ++ "\n"
 
-instance Infer (Axiom (Expression Definition)) where
+instance Infer (Axiom (Expression Definition)) Type where
 
     infer (EqualityAxiom (Match y z) x) =
 
@@ -750,133 +751,137 @@ log_state = do (db -> s) <- get_substitution
                return ()
                assume a
 
-tiImpls :: [Definition] -> TI ()
-tiImpls bs =
+instance Infer [Definition] () where
+    infer bs =
 
-    do def_types <- mapM (\_ -> newTVar Star) bs
-       let is    = map get_name bs
-           scs   = map toScheme def_types
-           altss = map get_axioms bs
+        do def_types <- mapM (\_ -> newTVar Star) bs
+           let is    = map get_name bs
+               scs   = map toScheme def_types
+               altss = map get_axioms bs
+               
+           axiom_types <- with_scope $ 
+                do assume $ zipWith (:>:) is scs
+                   mapM (with_scope . mapM infer) altss
+
+           s <- get_substitution
+           let axiom_types' = apply s axiom_types
+           mapM (\(t, as) -> mapM (unify t) as) (zip def_types axiom_types')
            
-       axiom_types <- with_scope $ 
-            do assume $ zipWith (:>:) is scs
-               mapM (with_scope . mapM infer) altss
+           ps  <- get_predicates
+           as  <- get_assumptions
+           ps' <- substitute ps
 
-       s <- get_substitution
-       let axiom_types' = apply s axiom_types
-       mapM (\(t, as) -> mapM (unify t) as) (zip def_types axiom_types')
-       
-       ps  <- get_predicates
-       as  <- get_assumptions
-       ps' <- substitute ps
+           ss <- get_substitution
+           fs' <- substitute as
+           let ts' = apply ss def_types
 
-       ss <- get_substitution
-       fs' <- substitute as
-       let ts' = apply ss def_types
+           let fs  = tv fs'
+               vss = map tv ts'
+               gs  = foldr1 union vss \\ fs
 
-       let fs  = tv fs'
-           vss = map tv ts'
-           gs  = foldr1 union vss \\ fs
+           ce <- get_classenv
+           (ds,rs) <- split ce fs (foldr1 intersect vss) ps'
 
-       ce <- get_classenv
-       (ds,rs) <- split ce fs (foldr1 intersect vss) ps'
+           if restricted then
+               let gs'  = gs \\ tv rs
+                   scs' = map (quantify gs' . ([]:=>)) ts'
+               in do predicate (ds ++ rs)
+                     assume (zipWith (:>:) is scs')
+                     return ()
+             else
+               let scs' = map (quantify gs . (rs:=>)) ts'
+               in do predicate ds
+                     assume (zipWith (:>:) is scs')
+                     return ()
 
-       if restricted then
-           let gs'  = gs \\ tv rs
-               scs' = map (quantify gs' . ([]:=>)) ts'
-           in do predicate (ds ++ rs)
-                 assume (zipWith (:>:) is scs')
-                 return ()
-         else
-           let scs' = map (quantify gs . (rs:=>)) ts'
-           in do predicate ds
-                 assume (zipWith (:>:) is scs')
-                 return ()
+        where get_name (Definition (Symbol x) _) = x
+              get_name (Definition (Operator x) _) = x
+              get_axioms (Definition _ x) = x
 
-    where get_name (Definition (Symbol x) _) = x
-          get_name (Definition (Operator x) _) = x
-          get_axioms (Definition _ x) = x
+              restricted = any simple bs
+              simple (Definition i axs) = any (null . f) axs
 
-          restricted = any simple bs
-          simple (Definition i axs) = any (null . f) axs
-
-          f (EqualityAxiom (Match p _) _) = p
-          f _ = error "Not Defined"
+              f (EqualityAxiom (Match p _) _) = p
+              f _ = error "Not Defined"
 
 
 data BindGroup = Scope [Statement] [Definition] [[Definition]] [Expression Definition]
                | Module String [BindGroup]
                deriving (Show)
 
-tiExpl :: Definition -> TI ()
-tiExpl (Definition name axs) =
+instance Infer Definition () where
 
-    do sc <- find$ f name 
-       (qs :=> t) <- freshInst sc
-       axiom_types <- with_scope$ mapM (with_scope . infer) axs
-       s <- get_substitution
-       mapM (unify t) (apply s axiom_types)
-       as <- get_assumptions
-       ce <- get_classenv
-       ps <- get_predicates
-       s <- get_substitution
-       let qs' = apply s qs
-           t' = apply s t
-           fs = tv (apply s as)
-           gs = tv t' \\ fs
-           sc' = quantify gs (qs' :=> t')
-           ps' = filter (not . entail ce qs') (apply s ps)
-       (ds, rs) <- split ce fs gs ps'
-       if sc /= sc' then
-           add_error "Signature too general"
-         else if not (null rs) then
-           add_error "Context too weak"
-         else
-           assume (f name :>: sc)
+    infer (Definition name axs) =
 
-       return ()
+        do sc <- find$ f name 
+           (qs :=> t) <- freshInst sc
+           axiom_types <- with_scope$ mapM (with_scope . infer) axs
+           s <- get_substitution
+           mapM (unify t) (apply s axiom_types)
+           as <- get_assumptions
+           ce <- get_classenv
+           ps <- get_predicates
+           s <- get_substitution
+           let qs' = apply s qs
+               t' = apply s t
+               fs = tv (apply s as)
+               gs = tv t' \\ fs
+               sc' = quantify gs (qs' :=> t')
+               ps' = filter (not . entail ce qs') (apply s ps)
+           (ds, rs) <- split ce fs gs ps'
+           if sc /= sc' then
+               add_error "Signature too general"
+             else if not (null rs) then
+               add_error "Context too weak"
+             else
+               assume (f name :>: sc)
 
-    where f (Symbol x) = x
-          f (Operator x) = x
+           return ()
 
-tiTest :: Expression Definition -> TI ()
-tiTest ex = do t <- newTVar Star
-               x <- infer ex
-               unify t x
-               unify t bool_type
+        where f (Symbol x) = x
+              f (Operator x) = x
+
+instance Infer Test () where
+
+    infer (Test ex) = do t <- newTVar Star
+                         x <- infer ex
+                         unify t x
+                         unify t bool_type
                
+newtype Test = Test (Expression Definition)
 
-tiBindGroup :: BindGroup -> TI ()
-tiBindGroup (Scope tts es iss ts) =
+instance Infer BindGroup () where
+    infer (Scope tts es iss ts) =
 
-    do tiTypeDefs tts
-       mapM assume$ sigs es
-       mapM tiImpls iss
-       with_scope$ mapM tiExpl es
-       mapM tiTest ts
-       return ()
+        do tiTypeDefs tts
+           mapM assume$ sigs es
+           mapM infer iss
+           with_scope$ mapM infer es
+           mapM infer (map Test ts)
+           return ()
 
-    where f (TypeAxiom t) = True
-          f _ = False
+        where f (TypeAxiom t) = True
+              f _ = False
 
-          g name (TypeAxiom t) = [ name :>: to_scheme' t' | t' <- enumerate_types t ]
+              g name (TypeAxiom t) = [ name :>: to_scheme' t' | t' <- enumerate_types t ]
 
-          to_scheme' :: Type -> Scheme
-          to_scheme' t = quantify (tv t) ([] :=> t)
+              to_scheme' :: Type -> Scheme
+              to_scheme' t = quantify (tv t) ([] :=> t)
 
-          sigs :: [Definition] -> [Assumption]
-          sigs [] = []
-          sigs (Definition name as:xs) =
-              case L.find f as of
-                Nothing -> sigs xs
-                Just x -> g (h name) x ++ sigs xs
+              sigs :: [Definition] -> [Assumption]
+              sigs [] = []
+              sigs (Definition name as:xs) =
+                  case L.find f as of
+                    Nothing -> sigs xs
+                    Just x -> g (h name) x ++ sigs xs
 
-          h (Symbol x) = x
-          h (Operator x) = x
+              h (Symbol x) = x
+              h (Operator x) = x
 
-tiBindGroup (Module name bgs) = do with_module name$ do mapM tiBindGroup bgs
-                                                        return ()
-                                   return ()
+    infer (Module name bgs) = 
+
+        with_module name$ do mapM infer bgs
+                             return ()
     
 
 class ToKey a where
@@ -987,8 +992,7 @@ tiProgram (Program bgs) =
     runTI $ do assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
-              -- tiTypeDefs bgs
-               mapM tiBindGroup$ to_group bgs
+               mapM infer$ to_group bgs
                s  <- get_substitution
                ce <- get_classenv
                ps <- get_predicates
