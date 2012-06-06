@@ -85,7 +85,7 @@ data TypeConst = TypeConst Id Kind -- (?)
                  deriving (Show, Eq, Ord)
 
 num_type  = Type (TypeConst "Num" Star)
-fun_type  = Type (TypeConst "->"  (KindFunction Star (KindFunction Star Star)))
+fun_type  = Type (TypeConst "->" (KindFunction Star (KindFunction Star Star)))
 
 infixr 4 -:>
 (-:>) :: Type -> Type -> Type
@@ -101,7 +101,7 @@ instance HasKind Type where
     kind (TypeVar x) = kind x
     kind (TypeRecord x) = kind x
     kind (TypeApplication (kind -> KindFunction _ k)  _) = k
-    kind t = Star -- error$ "Could not determine kind of " ++ show t
+    kind t = error$ "Could not determine kind of " ++ show t
 
 type Substitution = [(TypeVar, Type)]
 
@@ -656,7 +656,10 @@ instance Infer (Expression Definition) Type where
            predicate ps
            return t
 
-    infer (JSExpression _) = newTVar Star
+    infer (JSExpression _) =
+
+        do t <- newTVar Star
+           return (TypeApplication (Type (TypeConst "JS" (KindFunction Star Star))) t)
 
     -- TODO this may be removeable at no perf cost?
     infer (FunctionExpression rs) =
@@ -916,7 +919,10 @@ to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify vars ([]:=> y), def_t
           vars = map (flip TVar Star) vs
 
           def_type :: Scheme
-          def_type = quantify vars ([] :=> foldl app (Type (TypeConst n Star)) (map TypeVar vars))
+          def_type = quantify vars ([] :=> foldl app (Type (TypeConst n (to_kind (length vars)))) (map TypeVar vars))
+
+          to_kind 0 = Star
+          to_kind n = KindFunction Star (to_kind$ n - 1)
 
           app :: Type -> Type -> Type
           app y x = TypeApplication y x
@@ -930,7 +936,14 @@ enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ typ
           term_type (SymbolType x)        = [ Type (TypeConst (show x) Star) ]
           term_type (PolymorphicType a b) = [ foldl TypeApplication a' b' 
                                                   | b' <- map enumerate_types b
-                                                  , a' <- term_type a ]
+                                                  , a' <- to_kind' (length b')$ term_type a ]
+
+          to_kind 0 = Star
+          to_kind n = KindFunction Star (to_kind$ n - 1)
+
+          to_kind' _ [] = []
+          to_kind' n (TypeVar (TVar x _) : xs) = TypeVar (TVar x (to_kind n)) : to_kind' n xs
+          to_kind' n (Type (TypeConst x _) : xs) = Type (TypeConst x (to_kind n)) : to_kind' n xs
 
           enumerate_type (SimpleType x) = term_type x
 
@@ -1010,6 +1023,7 @@ tiProgram (Program bgs) =
     runTI $ do assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
+               assume$ "run" :>: (Forall [Star] ([] :=> (TypeApplication (Type (TypeConst "JS" (KindFunction Star Star))) (TypeGen 0) -:> (TypeGen 0))))
                mapM infer$ to_group bgs
                s  <- get_substitution
                ce <- get_classenv

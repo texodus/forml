@@ -41,10 +41,9 @@ in terms of them.
 Side effects can only happen in Javascript, so we use a monadic container to
 compose these bits.
 
-    run x = x {}
-
-    (>>=) x y = lazy run (y (run x))
-    ret x     = lazy x
+    (>>=): JS a -> (a -> JS b) -> JS b | x y = `run (y (run x))`
+    ret: a -> JS a | x = `x`
+    
     (>>) x y  = `x(); return y();`
     
     log x = `console.log(x)`
@@ -164,8 +163,8 @@ otherwise in practice the first eval tends to be favored in V8.
 
         run do ret (fast_fib 35)
                
-               fast_time <- time (lazy fast_fib 35)
-               slow_time <- time (lazy fib 35)
+               fast_time <- time `fast_fib 35`
+               slow_time <- time `fib 35`
 
                let ratio = floor (fast_time / slow_time * 100)
                log (run `"Runtime speed ~" + ratio + "%"`)
@@ -178,7 +177,7 @@ Simple left & right pipes, ala F#.
     (<|) x y = x y
     (|>) x y = y x
     
-    3 |> (λy = y + 1) |> (λy = y + 1)    == 5
+    3 |> (λy = y + 1) |> λy = y + 1 == 5
     (λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9
     
 Alternatively, there is a right associative version of `<|`, ala
@@ -398,7 +397,20 @@ Folds
         minimum [: 1, 2, 3 ] == 1
         maximum [: 1, 2, 3 ] == 3
         
-    open prelude.list
+    module seq
     
-    minimum [: 1, 2, 3 ] == 1
-        
+        open prelude.list
+    
+        type Seq a = { seq: JS { elem: a, next: Seq a}}
+                   | end:
+                   
+        from_list nil: = end:
+                | { head: x, tail: xs } =
+                    seq: ret { elem: x, next: from_list xs }
+                    
+        to_list =
+            let f { val: x, next: xs } = x :: to_list xs
+                | end: = nil:
+            f .: run
+
+        to_list (from_list [: 1, 2 :]) == [: 1, 2:]
