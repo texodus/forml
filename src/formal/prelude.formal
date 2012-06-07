@@ -318,7 +318,7 @@ List concatenation
         (++) nil: y = y
            | { head: y, tail: ys } xs = 
                y :: (ys ++ xs)
-        
+
         nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
         [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]
 
@@ -376,7 +376,7 @@ Folds
         concat = foldl1 (λx y = x ++ y)
         concat_map f xs = concat (map f xs)
         
-        maximum = foldl1 (λx y = if x > y then x else y)
+        maximum = foldl1 (λx y when x > y = x | _ _ = y)
         minimum = foldl1 (λx y = if x > y then y else x)
 
         foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
@@ -396,21 +396,39 @@ Folds
              
         minimum [: 1, 2, 3 ] == 1
         maximum [: 1, 2, 3 ] == 3
-        
+
+
+
+Sequences
+---------
+Sequences are an abstract data type which resembles a list, except that elements
+Sequences may be infinite, as long as you never try to read every element.
+However, the current implementation is stack-consuming and thus limited by the
+underlying javascript runtime ...
+
     module seq
+
+        open list
     
-        open prelude.list
-    
-        type Seq a = { seq: JS { elem: a, next: Seq a}}
+        type Seq a = seq: JS { elem: a, next: Seq a}
                    | end:
                    
+        iterate f x = seq: `{ elem: x, next: iterate(f)(f x) }`
+
         from_list nil: = end:
                 | { head: x, tail: xs } =
                     seq: ret { elem: x, next: from_list xs }
                     
-        to_list =
-            let f { val: x, next: xs } = x :: to_list xs
-                | end: = nil:
-            f .: run
+        to_list end: = nil:
+              | { seq: x } = run do { elem: y, next: ys } <- x
+                                    ret (y :: to_list ys)
 
-        to_list (from_list [: 1, 2 :]) == [: 1, 2:]
+        take _ end: = end:
+           | 0 _ = end:
+           | x { seq: y } = seq: do { elem: z, next: zs } <- y
+                                    ret { elem: z, next: take(x - 1)(zs) }
+
+        to_list (from_list [:1,2]) == [:1,2]
+        iterate (λx = x + 1) 0 |> take 500 |> to_list |> length == 500
+
+

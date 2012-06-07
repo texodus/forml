@@ -43,12 +43,9 @@ h2 + p:first-letter {
     float: left;
 }
 body div { 
-    width: 760px; 
+    width: 560px; 
     text-align: left; 
     margin: 0 auto;
-    -webkit-column-count:2;
-    -webkit-column-gap: 40px;
-    column-count: 2
  }
 
 pre { 

@@ -472,6 +472,7 @@ add_error y      = TI (\x -> (x { errors = errors x ++ [y ++ "\n" ++ msg x] }, (
 get_errors       = TI (\x -> (x, errors x))
 get_modules      = TI (\x -> (x, modules x))
 set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
+get_namespace = TI (\y -> (y, namespace y))
           
 class Assume a where
     assume :: a -> TI ()
@@ -512,7 +513,6 @@ with_module name x = do as <- get_assumptions
 
     where add_module x = TI (\y -> (y { modules = modules y ++ [x] }, ()))
 
-          get_namespace = TI (\y -> (y, namespace y))
           set_namespace x = TI (\y -> (y { namespace = x }, ()))
 
 
@@ -746,12 +746,6 @@ split ce fs gs ps =
        let (ds, rs) = partition (all (`elem` fs) . tv) ps'
        return (ds, rs) -- \\ rs')
 
-log_state :: TI ()
-log_state = do (db -> s) <- get_substitution
-               (db -> a) <- get_assumptions
-               return ()
-               assume a
-
 instance Infer [Definition] () where
     infer bs =
 
@@ -760,19 +754,22 @@ instance Infer [Definition] () where
                scs   = map toScheme def_types
                altss = map get_axioms bs
                
-           axiom_types <- with_scope $ 
+           axiom_types <- with_scope$ 
                 do assume $ zipWith (:>:) is scs
                    mapM (with_scope . mapM infer) altss
 
-           s <- get_substitution
-           let axiom_types' = apply s axiom_types
-           mapM (\(t, as) -> mapM (unify t) as) (zip def_types axiom_types')
+           let f g []     = return ()
+               f g (x:xs) = do s <- get_substitution
+                               g (apply s x) 
+                               f g xs
+
+           mapM (\(t, as) -> f (unify t) as) (zip def_types axiom_types)
            
            ps  <- get_predicates
            as  <- get_assumptions
            ps' <- substitute ps
 
-           ss <- get_substitution
+           ss  <- get_substitution
            fs' <- substitute as
            let ts' = apply ss def_types
 
@@ -781,7 +778,7 @@ instance Infer [Definition] () where
                gs  = foldr1 union vss \\ fs
 
            ce <- get_classenv
-           (ds,rs) <- split ce fs (foldr1 intersect vss) ps'
+           (ds, rs) <- split ce fs (foldr1 intersect vss) ps'
 
            if restricted then
                let gs'  = gs \\ tv rs
@@ -886,14 +883,15 @@ instance Infer BindGroup () where
                     Nothing -> sigs xs
                     Just x -> g (h name) x ++ sigs xs
 
-              import' ns = do z <- get_modules
-                              z' <- find'' z ns
+              import' (Namespace ns) =
+                           do z <- get_modules
                               a <- get_assumptions
-                              assume$ a ++ z'
-
-              find'' [] ns = add_error ("Namespace " ++ show ns ++ " not found") >> return []
-              find'' ((x, ts):_) ns | ns == x = return ts
-              find'' (_:xs) ns = find'' xs ns
+                              (Namespace ns') <- get_namespace
+                              case Namespace ns `lookup` z of
+                                Just z' -> assume$ a ++ z'
+                                Nothing -> if length ns' > 0 && head ns' /= head ns
+                                           then import' (Namespace (head ns' : ns))
+                                           else add_error$ "Unknown namespace " ++ show (Namespace ns)
               
               h (Symbol x) = x
               h (Operator x) = x
