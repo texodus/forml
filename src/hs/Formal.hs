@@ -34,6 +34,10 @@ import Data.URLEncoded
 import Formal.Parser
 import Formal.Javascript
 import Formal.TypeCheck hiding (split)
+import qualified Data.ByteString.Char8 as B
+
+import Data.FileEmbed
+import System.Process
 
 -- Main
 -- ----
@@ -84,23 +88,24 @@ main  = do rc <- parseArgs <$> getArgs
            (js, tests) <- monitor "Generating Javascript"$
                    do let tests = case src' of (Program xs) -> get_tests xs
                       let html = highlight tests $ toHTML (annotate_tests src src')
-                      writeFile ((output rc) ++ ".html") html
+                      writeFile ((output rc) ++ ".html") (B.unpack header ++ html ++ B.unpack footer)
                       let js = compress $ render src'
                       return$ Right (js, render_spec src')
    
-           opt <- monitor "Optimizing"$ closure js
+           js <- if optimize rc then (monitor "Optimizing"$ closure js) else return js
    
-           writeFile ((output rc) ++ ".js") opt
-           writeFile ((output rc) ++ ".spec.js") tests
-           if (show_types rc) 
-              then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
-              else return ()
+           writeFile (output rc ++ ".js") js
+           writeFile (output rc ++ ".spec.js") tests
+           writeFile (output rc ++ ".node.js") 
+                         (B.unpack jasmine ++ "\n" ++ js ++ "\n" ++ tests ++ "\n" ++ B.unpack console)
+           z <- system$  "node " ++ output rc ++ ".node.js"
+           case z of 
+             ExitFailure _ -> return ()
+             ExitSuccess -> if (show_types rc) 
+                            then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
+                            else return ()
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
-
-data RunConfig = RunConfig { inputs :: [String]
-                           , output :: String
-                           , show_types :: Bool }
 
 closure :: String -> IO (Either a String)
 closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
@@ -118,79 +123,35 @@ closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/comp
 
                return$ Right txt
                                          
+data RunConfig = RunConfig { inputs :: [String]
+                           , output :: String
+                           , show_types :: Bool
+                           , optimize :: Bool
+                           , run_tests :: Bool 
+                           , write_docs :: Bool }
 
 parseArgs :: [String] -> RunConfig
 parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False
+                          []     -> return $ RunConfig [] "default" False True True True
                           (x:xs) -> do put xs
                                        case x of
                                          "-t"    -> do x <- argsParser
                                                        return $ x { show_types = True }
+                                         "-no-opt" -> do x <- argsParser
+                                                         return $ x { optimize = False }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
-                                                       RunConfig a _ c <- argsParser
-                                                       return $ RunConfig (x:a) name c
-                                         ('-':_) -> do error "Could not parse options"
-                                         z       -> do RunConfig a _ c <- argsParser
+                                                       RunConfig a _ c d e f <- argsParser
+                                                       return $ RunConfig (x:a) name c d e f
+                                         ('-':_) -> error "Could not parse options"
+                                         z       -> do RunConfig a _ c d e f<- argsParser
                                                        let b = last $ split "/" $ head $ split "." z
-                                                       return $ RunConfig (x:a) b c
+                                                       return $ RunConfig (x:a) b c d e f
 
-
--- Docs
-
--- wrap_html :: String -> String -> String
--- wrap_html name body = [qq|
-
---  <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN' 'http://www.w3.org/TR/html4/loose.dtd'>
---  <html>
---  <head>
---  <title>$name</title>
---  <link rel='stylesheet' type='text/css' href='lib/js/jasmine-1.0.1/jasmine.css'>
---  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine.js'></script>
---  <script type='text/javascript' src='lib/js/jasmine-1.0.1/jasmine-html.js'></script>
---  <script type='text/javascript' src='lib/js/zepto.js'></script>
---  <script type='text/javascript' src='src/js/FormalReporter.js'></script>
---  <script type='text/javascript' src='src/js/table_of_contents.js'></script>
---  <script type='text/javascript' src='$name.js'></script>
---  <script type='text/javascript' src='$name.spec.js'></script>
---  <link href='http://kevinburke.bitbucket.org/markdowncss/markdown.css' rel='stylesheet'></link>
---  <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
---  <script type='text/javascript' src='lib/js/prettify.js'></script>
---  <script type='text/javascript' src='lib/js/lang-hs.js'></script>
---  <script type='text/javascript' src='lib/js/jquery.js'></script>
---  <style>
---      ul\{
---          padding-left:40px;
---      \};
---      .jasmine_reporter\{
---          position: absolute;
---          bottom: 0px;
---      \}
---      a, a:visited, a:active, a:link \{
---          text-decoration: none;
---          color: #cccccc;
---      \}
---      .jasmine_reporter a, .jasmine_reporter a:visited, .jasmine_reporter a:active, .jasmine_reporter a:link \{
---          text-decoration: none;
---          color: #000000;
---      \}
-
-
---  </style>
---  </head>
---  <body>
---  <div style='position:fixed;top:0px;bottom:0px;width:100%;background:none;padding:105px 0px 0px 20px;line-height:1.5'>
---  <div style='position:absolute;left:0px;width:15%'>
---  <div id="contents" style='float:right'>
---  </div></div></div>
---  <div style='position:absolute;top:0px;left:0px;margin-left:15%; width:85%'>
---  <div id='main' style='margin: 0 0 50px 10%'>$body</div>
---  </div>
---  </body>
---  </html>
-
--- |]
-
+header  = $(embedFile "header.html")
+footer  = $(embedFile "footer.html")
+jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
+console = $(embedFile "lib/js/console.js")

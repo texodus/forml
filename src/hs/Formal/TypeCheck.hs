@@ -917,7 +917,9 @@ to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify vars ([]:=> y), def_t
           vars = map (flip TVar Star) vs
 
           def_type :: Scheme
-          def_type = quantify vars ([] :=> foldl app (Type (TypeConst n (to_kind (length vars)))) (map TypeVar vars))
+          def_type = quantify vars ([] :=> foldl app poly_type (map TypeVar vars))
+
+          poly_type = Type (TypeConst n (to_kind (length vars)))
 
           to_kind 0 = Star
           to_kind n = KindFunction Star (to_kind$ n - 1)
@@ -993,7 +995,8 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_names ([Definition n _]:xs) = show n : get_names xs
 
           get_needed _ [] = []
-          get_needed names ((n,x):xs) = ((names \\ [n]) `L.intersect` (concat$ map get_symbols x)) : get_needed names xs
+          get_needed names ((n,x):xs) =
+              ((names \\ [n]) `L.intersect` (concat$ map get_symbols x)) : get_needed names xs
 
           get_expressions :: [[Definition]] -> [[Expression Definition]]
           get_expressions [] = []
@@ -1014,14 +1017,15 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_symbols (LetExpression _ x)     = get_symbols x
           get_symbols (ListExpression x)      = concat (map get_symbols x)
 
+js_type = Type (TypeConst "JS" (KindFunction Star Star))
 
 tiProgram :: Program -> ([(Namespace, [Assumption])], [String])
 tiProgram (Program bgs) = 
     
-    runTI $ do assume$ "true" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
+    runTI $ do assume$ "true"  :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
-               assume$ "run" :>: (Forall [Star] ([] :=> (TypeApplication (Type (TypeConst "JS" (KindFunction Star Star))) (TypeGen 0) -:> (TypeGen 0))))
+               assume$ "run"   :>: (Forall [Star] ([] :=> (TypeApplication js_type (TypeGen 0) -:> TypeGen 0)))
                mapM infer$ to_group bgs
                s  <- get_substitution
                ce <- get_classenv
@@ -1035,7 +1039,8 @@ tiProgram (Program bgs) =
           to_group [] = []
           to_group xs = case takeWhile not_module xs of
                           [] -> to_group' xs
-                          yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx) : to_group' (dropWhile not_module xs)
+                          yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx) 
+                                : to_group' (dropWhile not_module xs)
 
           to_group' [] = []
           to_group' (ModuleStatement x y:xs) = Module (show x) (to_group y) : to_group xs
@@ -1046,8 +1051,10 @@ tiProgram (Program bgs) =
           not_module (ModuleStatement _ _) = False
           not_module _ = True
 
-          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) = Scope i t a (b ++ [[x]]) c
-          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) = Scope i t (a ++ [x]) b c
+          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) =
+              Scope i t a (b ++ [[x]]) c
+          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) =
+              Scope i t (a ++ [x]) b c
           f (Scope i t a b c) (ExpressionStatement (Addr _ _ x)) = Scope i t a b (c ++ [x])
           f (Scope i t a b c) (ImportStatement ns) = Scope (i ++ [ns]) t a b c
           f (Scope i t a b c) x @ (TypeStatement _ _) = Scope i (t ++ [x]) a b c
