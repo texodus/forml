@@ -803,7 +803,7 @@ instance Infer [Definition] () where
               f _ = error "Not Defined"
 
 
-data BindGroup = Scope [Namespace] [Statement] [Definition] [[Definition]] [Expression Definition]
+data BindGroup = Scope [Namespace] [Statement] [Definition] [[Definition]] [Addr (Expression Definition)]
                | Module String [BindGroup]
                deriving (Show)
 
@@ -851,7 +851,7 @@ instance Infer Test () where
                          unify t x
                          unify t bool_type
                
-newtype Test = Test (Expression Definition)
+newtype Test = Test (Addr (Expression Definition))
 
 instance Infer BindGroup () where
     infer (Scope imps tts es iss ts) =
@@ -1055,7 +1055,7 @@ tiProgram (Program bgs) =
               Scope i t a (b ++ [[x]]) c
           f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) =
               Scope i t (a ++ [x]) b c
-          f (Scope i t a b c) (ExpressionStatement (Addr _ _ x)) = Scope i t a b (c ++ [x])
+          f (Scope i t a b c) (ExpressionStatement x) = Scope i t a b (c ++ [x])
           f (Scope i t a b c) (ImportStatement ns) = Scope (i ++ [ns]) t a b c
           f (Scope i t a b c) x @ (TypeStatement _ _) = Scope i (t ++ [x]) a b c
           f x _ = x
