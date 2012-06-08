@@ -661,6 +661,14 @@ instance Infer (Expression Definition) Type where
         do t <- newTVar Star
            return (TypeApplication (Type (TypeConst "JS" (KindFunction Star Star))) t)
 
+    infer (LazyExpression x) =
+
+        do t <- newTVar Star
+           t' <- infer x
+           unify t t'
+           return (TypeApplication (Type (TypeConst "JS" (KindFunction Star Star))) t)
+
+
     -- TODO this may be removeable at no perf cost?
     infer (FunctionExpression rs) =
 
@@ -958,7 +966,8 @@ enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ typ
               where f = TypeRecord . flip TRecord Star . M.fromList . zip (map show names)
                     permutations = permutations' . map enumerate_types $ types'
 
-                        where permutations' (x:[]) = [ x ]
+                        where permutations' [] = [] 
+                              permutations' (x:[]) = [ x ]
                               permutations' (x:xs) = [ x' : xs' | x' <- x, xs' <- permutations' xs ]
 
 
@@ -1014,6 +1023,7 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_symbols (LiteralExpression _)   = []
           get_symbols (SymbolExpression x)    = [show x]
           get_symbols (JSExpression _)        = []
+          get_symbols (LazyExpression (Addr _ _ x))      = get_symbols x
           get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
           get_symbols (LetExpression _ x)     = get_symbols x
           get_symbols (ListExpression x)      = concat (map get_symbols x)

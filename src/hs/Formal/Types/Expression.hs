@@ -25,6 +25,7 @@ import Text.Parsec.Indent  hiding (same)
 import Text.Parsec.Expr
 
 import qualified Data.Map as M
+import qualified Data.List as L
 
 import Formal.Parser.Utils
 import Formal.Javascript.Utils
@@ -53,6 +54,7 @@ data Expression d = ApplyExpression (Expression d) [Expression d]
                   | LiteralExpression Literal
                   | SymbolExpression Symbol
                   | JSExpression JExpr
+                  | LazyExpression (Addr (Expression d))
                   | FunctionExpression [Axiom (Expression d)]
                   | RecordExpression (M.Map Symbol (Expression d))
                   | InheritExpression (Expression d) (M.Map Symbol (Expression d))
@@ -72,6 +74,7 @@ instance (Show d) => Show (Expression d) where
     show (ListExpression x)      = [qq|[ {sep_with ", " x} ]|]
     show (FunctionExpression as) = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
     show (JSExpression x)        = "`" ++ show (renderJs x) ++ "`"
+    show (LazyExpression x)      = "lazy " ++ show x
     show (LetExpression ax e)    = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
     show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|] 
     show (InheritExpression x m) = [qq|\{ $x with {unsep_with " = " m} \}|] 
@@ -108,11 +111,18 @@ instance (Syntax d) => Syntax (Expression d) where
 
                   where def = try syntax `sepBy1` try (spaces *> same)
 
-              do'  = do string "do"
+              do'  = do s <- getPosition
+                        string "do"
+                        i <- try (string "!") <|> return ""
                         whitespace1
-                        withPos line
+                        l <- withPos line
+                        if i == "!" 
+                           then return$ ApplyExpression (SymbolExpression (Symbol "run")) [wrap s l]
+                           else return$ wrap s l
 
                   where line = try bind <|> try let_bind <|> try return'
+
+                        wrap s x = LazyExpression (Addr s s (ApplyExpression (SymbolExpression (Symbol "run")) [x]))
 
                         bind = do p <- syntax
                                   whitespace <* (string "<-" <|> string "←") <* whitespace 
@@ -144,12 +154,7 @@ instance (Syntax d) => Syntax (Expression d) where
 
               lazy  = do string "lazy"
                          whitespace1
-                         f <$> withPos (addr$ try syntax)
-
-                  where f ex = (FunctionExpression 
-                                   [ EqualityAxiom 
-                                     (Match [AnyPattern] Nothing)
-                                     ex ])
+                         LazyExpression <$> withPos (addr$ try syntax)
 
               if' = withPos $ do string "if"
                                  whitespace1
@@ -231,8 +236,8 @@ instance (Syntax d) => Syntax (Expression d) where
               acc_exp f x z = ApplyExpression 
                               (FunctionExpression 
                                [ EqualityAxiom 
-                                 (Match [RecordPattern (M.fromList [(z, VarPattern "x")])] Nothing)
-                                 (f (SymbolExpression (Symbol "x"))) ] )
+                                 (Match [RecordPattern (M.fromList [(z, VarPattern "__x__")])] Nothing)
+                                 (f (SymbolExpression (Symbol "__x__"))) ] )
                               [x]
 
               apply = ApplyExpression <$> inner <*>  (try cont <|> halt)
@@ -268,14 +273,30 @@ instance (Syntax d) => Syntax (Expression d) where
                                         ex <- withPos (addr syntax)
                                         return $ EqualityAxiom patterns ex
 
-              js = JSExpression <$> join (p <$> indentPairs "`" (many $ noneOf "`") "`")
+              js = g <$> indentPairs "`" (many $ noneOf "`") "`"
                   where p (parseJM . wrap -> Right (BlockStat [AssignStat _ x])) =
-                            return [jmacroE| (function() { return `(x)`; }) |]
-                        p y @ (parseJM . wrap -> Left _)  =
-                            case parseJM y of
-                              Left _  -> parserFail "Javascript"
-                              Right z -> return [jmacroE| (function() { `(z)`; }) |] 
+                            [jmacroE| (function() { return `(x)`; }) |]
+                        p (parseJM -> Right z) = 
+                            case z of
+                              (BlockStat z @ (last -> ApplStat x y)) ->
+                                  [jmacroE| (function() {
+                                                `(drop (length z - 1) z)`;
+                                                return `(ApplExpr x y)`;
+                                             }) |]
+                              z -> [jmacroE| (function() { `(z)`; }) |] 
+                        p (parseJM . (++";") -> Right z) = [jmacroE| (function() { `(z)`; }) |]
+                        p (parseJM . concat . L.intersperse ";" . h . split ";" -> Right x) = 
+                            [jmacroE| (function() { `(x)`; }) |]
+                        p _ = error "\n\nJavascript parsing failed"
                         
+                        g x | last x == '!' = ApplyExpression (SymbolExpression (Symbol "run"))
+                                              [JSExpression (p (take (length x - 1) x))]
+                            | otherwise = JSExpression$ p x
+
+                        h [] = []
+                        h (x:[]) = ["return " ++ x]
+                        h (x:xs) = x : h xs
+ 
                         wrap x = "__ans__ = " ++ x ++ ";"
 
               record = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
@@ -352,6 +373,11 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (LiteralExpression l)   = toJExpr l
     toJExpr (SymbolExpression (Symbol x))    = ref x
     toJExpr (FunctionExpression x)  = toJExpr x
+    toJExpr (LazyExpression x)      = toJExpr (FunctionExpression 
+                                               [ EqualityAxiom 
+                                                 (Match [AnyPattern] Nothing)
+                                                 x ])
+
     toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
     toJExpr (JSExpression s)        = s
     toJExpr (LetExpression bs ex)   = [jmacroE| (function() { `(foldl1 mappend $ map toLocal bs)`; return `(ex)` })() |]

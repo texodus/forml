@@ -50,6 +50,14 @@ toEntities (c:cs) | isAscii c = c : toEntities cs
 toHTML :: String -> String
 toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
 
+warn :: String -> a -> IO a
+warn x js = do putStr "\r["
+               setSGR [SetColor Foreground Dull Yellow]
+               putStr "-"
+               setSGR []
+               putStrLn$ "] " ++ x
+               return js
+
 monitor :: String -> IO (Either [String] a) -> IO a
 monitor x d = do putStr$ "[ ] " ++ x
                  hFlush stdout
@@ -92,13 +100,20 @@ main  = do rc <- parseArgs <$> getArgs
                       let js = compress $ render src'
                       return$ Right (js, render_spec src')
    
-           js <- if optimize rc then (monitor "Optimizing"$ closure js) else return js
+           js <- if optimize rc 
+                 then (monitor "Optimizing"$ closure js)
+                 else do warn "Optimizing" js
    
            writeFile (output rc ++ ".js") js
            writeFile (output rc ++ ".spec.js") tests
-           writeFile (output rc ++ ".node.js") 
-                         (B.unpack jasmine ++ "\n" ++ js ++ "\n" ++ tests ++ "\n" ++ B.unpack console)
-           z <- system$  "node " ++ output rc ++ ".node.js"
+
+           (Just std_in, _, _, p) <- createProcess (proc "node" []) { std_in = CreatePipe }
+           hPutStrLn std_in$ B.unpack jasmine
+           hPutStrLn std_in$ js
+           hPutStrLn std_in$ tests
+           hPutStrLn std_in$ B.unpack console
+           z <- waitForProcess p
+
            case z of 
              ExitFailure _ -> return ()
              ExitSuccess -> if (show_types rc) 
@@ -106,6 +121,10 @@ main  = do rc <- parseArgs <$> getArgs
                             else return ()
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
+          header  = $(embedFile "src/html/header.html")
+          footer  = $(embedFile "src/html/footer.html")
+          jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
+          console = $(embedFile "lib/js/console.js")
 
 closure :: String -> IO (Either a String)
 closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
@@ -151,7 +170,3 @@ parseArgs = fst . runState argsParser
                                                        let b = last $ split "/" $ head $ split "." z
                                                        return $ RunConfig (x:a) b c d e f
 
-header  = $(embedFile "header.html")
-footer  = $(embedFile "footer.html")
-jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
-console = $(embedFile "lib/js/console.js")

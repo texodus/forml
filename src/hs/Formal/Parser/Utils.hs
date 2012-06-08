@@ -157,7 +157,7 @@ not_reserved x = do y <- x
 
     where reserved_words = [ "if", "then", "else", "type", "let", "when", "with", "and", "or", "do",
                              "module", "open", "import",
-                             "|", "\\", "=", ".", ":", ",", "->", "<-" ]
+                             "|", "\\", "=", ":", ",", "->", "<-" ]
 
 not_system :: Parser String -> Parser String
 not_system x = do y <- x
@@ -165,7 +165,7 @@ not_system x = do y <- x
                      then parserFail "non-reserved word"
                      else return y
 
-    where reserved_words = [ "==", "<=", ">=", "!=", "<", ">"  ]
+    where reserved_words = [ "==", "<=", ">=", "!=", "<", ">", "||", "&&"  ]
 
 
 type_sep    :: Parser Char
