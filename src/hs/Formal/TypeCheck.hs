@@ -750,6 +750,7 @@ instance Infer [Definition] () where
     infer bs =
 
         do def_types <- mapM (\_ -> newTVar Star) bs
+
            let is    = map get_name bs
                scs   = map toScheme def_types
                altss = map get_axioms bs
@@ -758,8 +759,9 @@ instance Infer [Definition] () where
                 do assume $ zipWith (:>:) is scs
                    mapM (with_scope . mapM infer) altss
 
-           let f g []     = return ()
+           let f _ []     = return ()
                f g (x:xs) = do s <- get_substitution
+                               g x
                                g (apply s x) 
                                f g xs
 
@@ -768,12 +770,11 @@ instance Infer [Definition] () where
            ps  <- get_predicates
            as  <- get_assumptions
            ps' <- substitute ps
-
            ss  <- get_substitution
            fs' <- substitute as
-           let ts' = apply ss def_types
 
-           let fs  = tv fs'
+           let ts' = apply ss def_types
+               fs  = tv fs'
                vss = map tv ts'
                gs  = foldr1 union vss \\ fs
 
