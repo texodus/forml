@@ -159,8 +159,8 @@ mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
 mgu (TypeVar u) t  = var_bind u t
 mgu t (TypeVar u)  = var_bind u t
 
-mgu (TypeRecord (TRecord t Complete _)) (TypeRecord (TRecord u Complete _)) =
---   | M.keys t `intersect` M.keys u == M.keys t = 
+mgu (TypeRecord (TRecord t Complete _)) (TypeRecord (TRecord u Complete _))
+   | M.keysSet t == M.keysSet u = 
 
         f (M.elems t) (M.elems u) []
 
@@ -173,7 +173,7 @@ mgu (TypeRecord (TRecord t Partial k)) (TypeRecord (TRecord u _ k')) =
     let new_keys = M.keysSet t `S.intersection` M.keysSet u
         r = u `M.(\\)` (u `M.(\\)` t) -- (S.toList new_keys)
     in  if new_keys == M.keysSet t
-        then do mgu (TypeRecord (TRecord t Complete k)) (TypeRecord (TRecord r Complete k'))
+        then mgu (TypeRecord (TRecord t Complete k)) (TypeRecord (TRecord r Complete k'))
         else fail $ "Records do not unify: found " ++ show t ++ ", expecting " ++ show u 
 
 mgu t u @ (TypeRecord (TRecord _ Partial _)) = mgu u t

@@ -146,16 +146,27 @@ instance (Syntax a) => Syntax (Pattern a) where
                          y <- syntax
                          return $ RecordPattern (M.fromList [(Symbol x, y)]) Complete
 
-              record  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
-                                                   <*> option Complete (try (spaces >> char '_' >> many (char '_') >> return Partial))
+              record  = indentPairs "{" qqq "}"
+                                                   
 
-                  where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
+                  where pairs' = (try key_eq_val <|> (many1 (char '_') >> return Nothing)) `sepEndBy` try (comma <|> not_comma)
+                        qqq = do ps <- pairs'
+                                 let ps' = z ps
+                                 case (length ps, last ps) of
+                                   (0, _) -> return$ RecordPattern M.empty Complete
+                                   (_, Nothing) -> return$ RecordPattern (M.fromList ps') Partial
+                                   (_, Just _)  -> return$ RecordPattern (M.fromList ps') Complete
+                        z (Just x:xs) = x : z xs
+                        z (Nothing:[]) = []
+                        z [] = []
+                        z _ = error "Bad Record Pattern"
+
                         key_eq_val = do key <- syntax
                                         spaces
                                         string "=" <|> string ":"
                                         spaces
                                         value <- syntax
-                                        return (key, value)
+                                        return$ Just (key, value)
 
               list = ListPattern <$> indentPairs "[" (syntax `sepBy` try (try comma <|> not_comma)) "]"
 
