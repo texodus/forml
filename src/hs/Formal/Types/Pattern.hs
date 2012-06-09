@@ -86,8 +86,8 @@ instance (Show a) => ToJExpr (PatternMatch a) where
                    })() |]
 
     toJExpr (PM n (LiteralPattern x))               = [jmacroE| `(ref n)` === `(x)` |]
-    toJExpr (PM _ (RecordPattern (M.toList -> []))) = [jmacroE| true |]
-    toJExpr (PM n (RecordPattern (M.toList -> xs))) = [jmacroE| `(map g xs)` && `(map f xs)` |]
+    toJExpr (PM _ (RecordPattern (M.toList -> []) Complete)) = [jmacroE| true |]
+    toJExpr (PM n (RecordPattern (M.toList -> xs) _)) = [jmacroE| `(map g xs)` && `(map f xs)` |]
             where f (key, val) = PM (n ++ "[\"" ++ to_name key ++ "\"]") val
                   g (key, _) = Condition [jmacroE| `(ref n)`.hasOwnProperty(`(to_name key)`) |]
 
@@ -98,11 +98,12 @@ instance (Show a) => ToJExpr (PatternMatch a) where
         in   [jmacroE| `(x)` && `(ref n)`.length == `(length xs)` |]
     toJExpr (PM _ x) = error $ "Unimplemented " ++ show x
 
+data Partial = Partial | Complete deriving (Eq, Show)
 
 data Pattern a = VarPattern String
                | AnyPattern
                | LiteralPattern Literal
-               | RecordPattern (M.Map Symbol (Pattern a))
+               | RecordPattern (M.Map Symbol (Pattern a)) Partial
                | ListPattern [Pattern a]
                | ViewPattern a (Pattern a)
 
@@ -112,7 +113,8 @@ instance (Show a) => Show (Pattern a) where
     show (LiteralPattern x) = show x
     show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
     show (ViewPattern x y)  = [qq|($x -> $y)|]
-    show (RecordPattern m)  = [qq|\{ {unsep_with " = " m} \}|] 
+    show (RecordPattern m Complete)  = [qq|\{ {unsep_with " = " m} \}|] 
+    show (RecordPattern m Partial)   = [qq|\{ {unsep_with " = " m}, _ \}|] 
 
 instance (Show a, ToJExpr a) => ToJExpr [Pattern a] where
     toJExpr ps = toJExpr $ zipWith PM (reverse . take (length ps) . map local_pool $ [0 .. 26]) ps
@@ -136,15 +138,16 @@ instance (Syntax a) => Syntax (Pattern a) where
 
                   do x <- many1 letter
                      string ":"
-                     return $ RecordPattern (M.fromList [(Symbol x, AnyPattern )])
+                     return $ RecordPattern (M.fromList [(Symbol x, AnyPattern )]) Complete
 
               apply = do x <- many1 letter 
                          string ":" 
                          whitespace
                          y <- syntax
-                         return $ RecordPattern (M.fromList [(Symbol x, y)])
+                         return $ RecordPattern (M.fromList [(Symbol x, y)]) Complete
 
               record  = RecordPattern . M.fromList <$> indentPairs "{" pairs' "}"
+                                                   <*> option Complete (try (spaces >> char '_' >> many (char '_') >> return Partial))
 
                   where pairs' = key_eq_val `sepEndBy` try (comma <|> not_comma)
                         key_eq_val = do key <- syntax
@@ -161,8 +164,8 @@ instance (Syntax a) => Syntax (Pattern a) where
                   where v = do whitespace
                                withPos (syntax `sepBy` try (try comma <|> not_comma))
 
-                        f []     = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)])
-                        f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
+                        f []     = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)]) Complete
+                        f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)]) Complete
 
 
 

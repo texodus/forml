@@ -59,7 +59,7 @@ instance (Show a, ToJExpr a) => ToStat (Curried a) where
 
             where declare_bindings [] = mempty
                   declare_bindings (VarPattern x : zs) = declare x [jmacroE| null |] ++ declare_bindings zs
-                  declare_bindings (RecordPattern x : zs) = 
+                  declare_bindings (RecordPattern x _: zs) = 
                       let (_, z) = unzip . M.toList $ x
                       in  declare_bindings z ++ declare_bindings zs
 

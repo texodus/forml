@@ -60,6 +60,7 @@ data Expression d = ApplyExpression (Expression d) [Expression d]
                   | InheritExpression (Expression d) (M.Map Symbol (Expression d))
                   | LetExpression [d] (Expression d)
                   | ListExpression [Expression d]
+                  | AccessorExpression (Expression d) [Symbol]
 
 instance (Show d) => Show (Expression d) where
 
@@ -236,7 +237,7 @@ instance (Syntax d) => Syntax (Expression d) where
               acc_exp f x z = ApplyExpression 
                               (FunctionExpression 
                                [ EqualityAxiom 
-                                 (Match [RecordPattern (M.fromList [(z, VarPattern "__x__")])] Nothing)
+                                 (Match [RecordPattern (M.fromList [(z, VarPattern "__x__")]) Partial] Nothing)
                                  (f (SymbolExpression (Symbol "__x__"))) ] )
                               [x]
 
@@ -330,7 +331,26 @@ instance (Syntax d) => Syntax (Expression d) where
                                         value <- withPos syntax
                                         return (key, value)
 
-              literal = LiteralExpression <$> syntax
+              literal = undo <$> syntax
+
+              undo (StringLiteral x) = to_escaped . split "`" $ x
+              undo l = LiteralExpression l
+
+              to_escaped (x:s:y:xs) =
+                  ApplyExpression (SymbolExpression$ Operator "+++") 
+                                      [ ApplyExpression (SymbolExpression$ Operator "+++") 
+                                        [ ApplyExpression (SymbolExpression$ Operator "+++")
+                                          [LiteralExpression $ StringLiteral x
+                                          , p s ]
+                                        , LiteralExpression $ StringLiteral y]
+                                      , to_escaped xs ]
+              to_escaped (l:[]) = LiteralExpression $ StringLiteral l
+              to_escaped [] =  LiteralExpression $ StringLiteral ""
+
+              p s = case parse syntax "Escaped String" s of
+                      Left x -> error$ show x
+                      Right x -> x
+
               symbol  = SymbolExpression <$> syntax
 
               list    = ListExpression <$> indentPairs "[" v "]"

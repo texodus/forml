@@ -87,7 +87,7 @@ inferred as `a -> b -> c`.
     (>=): Num -> Num -> Bool   | x y = do! `x >= y`
     (<):  Num -> Num -> Bool   | x y = do! `x < y`
     (>):  Num -> Num -> Bool   | x y = do! `x > y`
-
+    
 Equality is overloaded to match records and arrays. By constraining the type of
 this operator, we need only dispatch on the type of the first element,
 constraining 
@@ -132,7 +132,18 @@ Fibonacci function
 
     fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
 
-Due to the nested recursion, this is an excellent function for testing the
+Strings
+-------
+
+    (+++): String -> String -> String | x y = do! `x + y`
+    
+    let x = "test"
+    "hello `x`" == "hello test"
+    
+Speed
+-----
+
+Due to the nested recursion, `fib` is an excellent function for testing the
 runtime speed versus raw javascript.  `fast_fib` is a trivial javascript
 implementation of the same function, recursed itself to remove any potential
 overhead from formal's dispatch mechanism.
@@ -174,7 +185,7 @@ otherwise in practice the first eval tends to be favored in V8.
             slow_time <- time `fib 35`
 
             let ratio = floor (fast_time / slow_time * 100)
-            log do! `"Runtime speed ~" + ratio + "%"`
+            log "Runtime speed ~`ratio`%"
             lazy ratio >= 80
 
 Function Combinators
@@ -278,7 +289,7 @@ incomplete definition.
         drop 0 x = x | n x = drop (n - 1) (tail x)
 
         (..) x y when x < y = x :: (x + 1 .. y)
-           | _ _ = [:x]
+           | x _ = [:x]
            
         1 .. 5 == [:1,2,3,4,5]
 
@@ -357,7 +368,7 @@ Map
 Reverse
 
         reverse = 
-            let r rest [::] = rest
+            let r rest [:] = rest
                 | rest { head: x, tail: xs } = 
                     r (x :: rest) xs
 
@@ -392,7 +403,7 @@ Folds
         concat = foldl1 (λx y = x ++ y)
         concat_map f xs = concat (map f xs)
         
-        maximum = foldl1 (λx y when x > y = x | _ _ = y)
+        maximum = foldl1 (λx y when x > y = x | _ y = y)
         minimum = foldl1 (λx y = if x > y then y else x)
 
         foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
@@ -464,7 +475,7 @@ underlying javascript runtime ...
         tail:
               Seq a   -> Seq a
             | end:     = error "tail called on empty seq"
-            | {seq: t} = do! t >>= λ{ elem: _, next: xs } = ret xs
+            | {seq: t} = do! t >>= λx = ret x.next
  
         fibs = 1 ::: do ret (1 ::: do ret (zip_with (λx y = x + y) fibs (tail fibs)))
         

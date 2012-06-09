@@ -15,6 +15,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE NewQualifiedOperators #-}
 
 module Formal.TypeCheck where
 import System.IO.Unsafe
@@ -62,6 +63,15 @@ data Type = TypeVar TypeVar
           | TypeGen Int
             deriving Eq
 
+data TypeRecord = TRecord (M.Map Key Type) Partial Kind
+                deriving (Show, Eq)
+
+data TypeVar = TVar Id Kind
+               deriving (Show, Eq, Ord)
+
+data TypeConst = TypeConst Id Kind -- (?)
+                 deriving (Show, Eq, Ord)
+
 instance Show Type where
     show (TypeVar (TVar i _)) = i
     show (Type (TypeConst i _)) = i
@@ -72,17 +82,11 @@ instance Show Type where
         show u ++ " → " ++ show v
     show (TypeApplication t u) = show t ++ " " ++ show u
     show (TypeGen x) = (map (:[])$ concat$ repeat "abcdefghijklmnopqrstuvwxyz") !! x
-    show (TypeRecord (TRecord m _)) = "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ "}"
+    show (TypeRecord (TRecord m Complete _)) =
+        "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ "}"
+    show (TypeRecord (TRecord m Partial _)) =
+        "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ ", _}"
 
-
-data TypeRecord = TRecord (M.Map Key Type) Kind
-                deriving (Show, Eq)
-
-data TypeVar = TVar Id Kind
-               deriving (Show, Eq, Ord)
-
-data TypeConst = TypeConst Id Kind -- (?)
-                 deriving (Show, Eq, Ord)
 
 num_type  = Type (TypeConst "Num" Star)
 fun_type  = Type (TypeConst "->" (KindFunction Star (KindFunction Star Star)))
@@ -95,7 +99,7 @@ class HasKind t where kind :: t -> Kind
 
 instance HasKind TypeVar where   kind (TVar _ k) = k
 instance HasKind TypeConst where kind (TypeConst _ k) = k
-instance HasKind TypeRecord where kind (TRecord _ k) = k
+instance HasKind TypeRecord where kind (TRecord _ _ k) = k
 instance HasKind Type where
     kind (Type x) = kind x
     kind (TypeVar x) = kind x
@@ -117,12 +121,12 @@ instance Types Type where
                             Just x -> x
                             Nothing -> TypeVar u
     apply s (TypeApplication l r) = TypeApplication (apply s l) (apply s r)
-    apply s (TypeRecord (TRecord xs k)) = TypeRecord (TRecord (fmap (apply s) xs) k)
+    apply s (TypeRecord (TRecord xs y k)) = TypeRecord (TRecord (fmap (apply s) xs) y k)
     apply _ t = t
 
     tv (TypeVar u) = [u]
     tv (TypeApplication l r) = tv l `union` tv r
-    tv (TypeRecord (TRecord xs _)) = nub $ M.elems xs >>= tv
+    tv (TypeRecord (TRecord xs _ _)) = nub $ M.elems xs >>= tv
     tv t = []
 
 instance Types a => Types [a] where
@@ -155,14 +159,24 @@ mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
 mgu (TypeVar u) t  = var_bind u t
 mgu t (TypeVar u)  = var_bind u t
 
-mgu (TypeRecord (TRecord t _)) (TypeRecord (TRecord u _)) 
-    | M.keys t `intersect` M.keys u == M.keys t = 
+mgu (TypeRecord (TRecord t Complete _)) (TypeRecord (TRecord u Complete _)) =
+--   | M.keys t `intersect` M.keys u == M.keys t = 
 
         f (M.elems t) (M.elems u) []
 
     where f [] _ s = return s
           f (x:xs) (y:ys) s = do s' <- mgu (apply s x) (apply s y)
                                  f xs ys (s @@ s')
+
+mgu (TypeRecord (TRecord t Partial k)) (TypeRecord (TRecord u _ k')) =
+
+    let new_keys = M.keysSet t `S.intersection` M.keysSet u
+        r = u `M.(\\)` (u `M.(\\)` t) -- (S.toList new_keys)
+    in  if new_keys == M.keysSet t
+        then do mgu (TypeRecord (TRecord t Complete k)) (TypeRecord (TRecord r Complete k'))
+        else fail $ "Records do not unify: found " ++ show t ++ ", expecting " ++ show u 
+
+mgu t u @ (TypeRecord (TRecord _ Partial _)) = mgu u t
 
 mgu (Type t) (Type u) | t == u = return []
 mgu t u = fail $ "Types do not unify: found " ++ show t ++ ", expecting " ++ show u
@@ -370,20 +384,28 @@ toScheme t     = Forall [] ([] :=> t)
 -- --------------------------------------------------------------------------------
 
 data RecordId = RecordId (M.Map String RecordId)
+              | RecordPartial (M.Map String RecordId)
               | RecordKey
-                deriving (Ord, Eq)
+
 
 data Assumption = Id :>: Scheme | RecordId :>>: (Scheme, Scheme) deriving (Eq)
 
 newtype A = A [Assumption]
 
+instance Eq RecordId where
+    (RecordId m) == (RecordId n) = m == n
+    RecordKey == RecordKey = True
+    (RecordPartial m) == (RecordId n) = m == (n `M.(\\)` (n `M.(\\)` m))
+    n == m @ (RecordPartial _) = m == n
+    _ == _ = False
+
 instance Show RecordId where
     show (RecordId m) = "{" ++ (concat$ L.intersperse ", "$ M.keys m) ++ "}"
+    show (RecordPartial m) = "{" ++ (concat$ L.intersperse ", "$ M.keys m) ++ ", _}"
 
 instance Show Assumption where
     show (i :>: s)  = i ++ ": " ++ show s
     show (i :>>: (_,s)) = show i ++ ": " ++ show s
-
 
 instance Types Assumption where
     apply s (i :>: sc)  = i :>: (apply s sc)
@@ -542,7 +564,8 @@ class Instantiate t where
 instance Instantiate Type where
   inst ts (TypeApplication l r) = TypeApplication (inst ts l) (inst ts r)
   inst ts (TypeGen n)  = ts !! n
-  inst ts (TypeRecord (TRecord m k))  = TypeRecord (TRecord (M.map (inst ts) m) k)
+  inst ts (TypeRecord (TRecord m Complete k))  = TypeRecord (TRecord (M.map (inst ts) m) Complete k)
+  inst ts (TypeRecord (TRecord m Partial k))  =  TypeRecord (TRecord (M.map (inst ts) m) Partial k)
   inst ts t   = t
 
 instance Instantiate a => Instantiate [a] where
@@ -566,10 +589,6 @@ instance Infer Literal Type where
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
 
-instance ToKey (Pattern a) where
-    key (RecordPattern m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
-    key _ = RecordKey
-
 instance Infer (Pattern b) Type where
     infer (VarPattern i) = do v <- newTVar Star
                               assume (i :>: toScheme v)
@@ -586,11 +605,11 @@ instance Infer (Pattern b) Type where
                                 predicate qs
                                 return t
 
-    infer m @ (RecordPattern (unzip . M.toList -> (names, patterns))) =
+    infer m @ (RecordPattern (unzip . M.toList -> (names, patterns)) p) =
         
         do ts <- mapM infer patterns
            sc <- find$ key m
-           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star)
+           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) p Star)
            t' <- newTVar Star
            case sc of
              Nothing ->
@@ -620,10 +639,6 @@ infixr      4 `fn`
 fn         :: Type -> Type -> Type
 a `fn` b    = TypeApplication (TypeApplication fun_type a) b
  
-instance ToKey (Expression a) where
-    key (RecordExpression m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
-    key _ = RecordKey
-
 instance Infer (Expression Definition) Type where
     infer (ApplyExpression _ []) = fail "This should not be"
     infer (ApplyExpression e (x:[])) =
@@ -689,7 +704,7 @@ instance Infer (Expression Definition) Type where
 
         do ts <- mapM infer xs
            sc <- find$ key m
-           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Star)
+           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Complete Star)
            t' <- newTVar Star
            case sc of
              Nothing ->  do unify t' r
@@ -765,7 +780,7 @@ instance Infer [Definition] () where
                
            axiom_types <- with_scope$ 
                 do assume $ zipWith (:>:) is scs
-                   mapM (with_scope . mapM infer) altss
+                   mapM (mapM (with_scope . infer)) altss
 
            let f _ []     = return ()
                f g (x:xs) = do s <- get_substitution
@@ -914,8 +929,17 @@ instance Infer BindGroup () where
 class ToKey a where
     key :: a -> RecordId
 
+instance ToKey (Pattern a) where
+    key (RecordPattern m Complete) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
+    key (RecordPattern m Partial) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
+    key _ = RecordKey
+
+instance ToKey (Expression a) where
+    key (RecordExpression m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
+    key _ = RecordKey
+
 instance ToKey Type where
-    key (TypeRecord (TRecord m _)) = RecordId . M.map (\x -> key x) $ m
+    key (TypeRecord (TRecord m Complete _)) = RecordId . M.map (\x -> key x) $ m
     key _ = RecordKey
     
 
@@ -963,7 +987,7 @@ enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ typ
 
               map f permutations
         
-              where f = TypeRecord . flip TRecord Star . M.fromList . zip (map show names)
+              where f = TypeRecord . (\x -> TRecord x Complete Star) . M.fromList . zip (map show names)
                     permutations = permutations' . map enumerate_types $ types'
 
                         where permutations' [] = [] 
