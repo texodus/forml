@@ -40,15 +40,15 @@ jasmine.FormalReporter = function(doc) {
 
      if (status == "passed") {
          if (k.indexOf("multi") >= 0) {
-             $(k).before("<span style='background-color:rgba(0,150,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>PASSED</span> </span> ")
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:#20BA18'> <span style='color:rgb(255,255,255);font-weight:bold'>PASS</span> </span> ")
          } else {
-             $(k).before("<span style='background-color:rgba(0,150,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>PASSED</span> </span> ")
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:#20BA18'> <span style='color:rgb(255,255,255);font-weight:bold'>PASS</span> </span> ")
          }
      } else {
          if (k.indexOf("multi") >= 0) {
-             $(k).before("<span style='background-color:rgba(200,0,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>FAILED</span> </span> ")
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:#BA1820'> <span style='color:rgb(255,255,255);font-weight:bold'>FAIL</span> </span> ")
          } else {
-             $(k).before("<span style='background-color:rgba(200,0,0,0.5)'> <span style='color:rgb(255,255,255);font-weight:bold'>FAILED</span> </span> ")
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:#BA1820'> <span style='color:rgb(255,255,255);font-weight:bold'>FAIL</span> </span> ")
          }
      }
  };

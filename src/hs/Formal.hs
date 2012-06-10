@@ -94,10 +94,7 @@ main  = do rc <- parseArgs <$> getArgs
                      (_, y)  -> Left y
    
            (js, tests) <- monitor "Generating Javascript"$
-                   do let tests = case src' of (Program xs) -> get_tests xs
-                      let html = highlight tests $ toHTML (annotate_tests src src')
-                      writeFile ((output rc) ++ ".html") (B.unpack header ++ html ++ B.unpack footer)
-                      let js = compress $ render src'
+                   do let js = compress $ render src'
                       return$ Right (js, render_spec src')
    
            js <- if optimize rc 
@@ -106,6 +103,11 @@ main  = do rc <- parseArgs <$> getArgs
    
            writeFile (output rc ++ ".js") js
            writeFile (output rc ++ ".spec.js") tests
+
+           let html = highlight (case src' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests src src')
+           let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
+           let hook = "<script>" ++ B.unpack htmljs ++ "</script>"
+           writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
 
            (Just std_in, _, _, p) <- createProcess (proc "node" []) { std_in = CreatePipe }
            hPutStrLn std_in$ B.unpack jasmine
@@ -121,10 +123,14 @@ main  = do rc <- parseArgs <$> getArgs
                             else return ()
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
+
           header  = $(embedFile "src/html/header.html")
           footer  = $(embedFile "src/html/footer.html")
           jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
           console = $(embedFile "lib/js/console.js")
+          report  = $(embedFile "src/js/FormalReporter.js")
+          htmljs  = $(embedFile "src/js/table_of_contents.js")
+
 
 closure :: String -> IO (Either a String)
 closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x

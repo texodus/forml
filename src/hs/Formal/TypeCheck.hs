@@ -895,7 +895,7 @@ instance Infer Definition () where
     infer (Definition name axs) =
 
         do sc <- find$ f name 
-           (qs :=> t) <- freshInst sc
+           (qs :=> t)  <- freshInst sc
            axiom_types <- with_scope$ mapM (with_scope . infer) axs
 
            s <- get_substitution
