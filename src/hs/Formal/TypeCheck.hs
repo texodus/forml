@@ -86,8 +86,8 @@ instance Show Type where
     show (TypeGen x) = (map (:[])$ concat$ repeat "abcdefghijklmnopqrstuvwxyz") !! x
     show (TypeRecord (TRecord m TComplete _)) =
         "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ "}"
-    show (TypeRecord (TRecord m (TPartial _) _)) =
-        "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ ", _}"
+    show (TypeRecord (TRecord m (TPartial z) _)) =
+        "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ ", _ }"
 
 
 num_type  = Type (TypeConst "Num" Star)
@@ -128,12 +128,14 @@ instance Types Type where
         case apply s p of
           p' | p' == p   -> TypeRecord (TRecord (fmap (apply s) xs) (TPartial p) k)
           TypeRecord (TRecord ys p' _) -> TypeRecord (TRecord (fmap (apply s) (xs `M.union` ys)) p' k)
+          x -> TypeRecord (TRecord (fmap (apply s) xs) (TPartial x) k)
     apply _ t = t
 
     tv (TypeVar u) = [u]
     tv (TypeApplication l r) = tv l `union` tv r
-    tv (TypeRecord (TRecord xs _ _)) = nub $ M.elems xs >>= tv
-    tv t = []
+    tv (TypeRecord (TRecord xs TComplete _)) = nub $ M.elems xs >>= tv
+    tv (TypeRecord (TRecord xs (TPartial t) _)) = (nub $ M.elems xs >>= tv) ++ tv t
+    tv _ = []
 
 instance Types a => Types [a] where
     apply s = map (apply s)
@@ -180,8 +182,12 @@ mgu t''@(TypeRecord (TRecord t (TPartial (TypeVar p)) k)) u''@(TypeRecord (TReco
         u' = t `M.(\\)` (t `M.(\\)` u)
 
     in  do a <- mgu (TypeRecord (TRecord t' TComplete k)) (TypeRecord (TRecord u' TComplete k'))
-           b <- var_bind p (TypeRecord (TRecord (u `M.(\\)` t) (TPartial (TypeVar p')) k))
-           c <- var_bind p' (TypeRecord (TRecord (t `M.(\\)` u) (TPartial (TypeVar p')) k))
+           b <- if M.size (u `M.(\\)` t) > 0 
+                then var_bind p (TypeRecord (TRecord (u `M.(\\)` t) (TPartial (TypeVar p)) k))
+                else return []
+           c <- if M.size (t `M.(\\)` u) > 0
+                then var_bind p' (TypeRecord (TRecord (t `M.(\\)` u) (TPartial (TypeVar p)) k))
+                else return []
            return$ a @@ b @@ c
 
 mgu t'@(TypeRecord (TRecord t (TPartial (TypeVar p)) k)) u'@(TypeRecord (TRecord u TComplete k')) =
@@ -191,7 +197,9 @@ mgu t'@(TypeRecord (TRecord t (TPartial (TypeVar p)) k)) u'@(TypeRecord (TRecord
 
     in  if new_keys == M.keysSet t
         then do a <- mgu (TypeRecord (TRecord t TComplete k)) (TypeRecord (TRecord r TComplete k'))
-                b <- var_bind p (TypeRecord (TRecord (u `M.(\\)` t) TComplete Star))
+                b <- if (M.size u > M.size t)
+                              then var_bind p (TypeRecord (TRecord (u `M.(\\)` t) TComplete Star))
+                              else return []
                 return$ a @@ b
         else fail$ "Records do not unify: found " ++ show t' ++ ", expecting " ++ show u'
                 
@@ -243,9 +251,6 @@ mgut x y = case mgu x y of
                  case mgu t t' of
                    Error _ -> find''' xs t
                    Z x  -> return$ Just (x, y)
-
-
-
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t

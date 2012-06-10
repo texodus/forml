@@ -214,14 +214,13 @@ Function composition
     ((λx = x + 1) .: (λx = x * 2) .: λx = x - 3) 4 == 3
     id [1, 2, 3] == [1, 2, 3]
     flip (λx y = x - y) 3 5 == 2
-
-    ff {a: x, b: y, _} = x + y
-     | {a: x, b: y, c: z} = x - y
-
-    ff {a: 5, b: 5, c: 5} == 10
     
-    fff {a: x, b: y, _ } = x + y
-      | {b: x, c: y, _ } = x - y
+Partial records
+    
+    let f {a: x, b: y, _ } = x + y
+    f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }
+
+
 
 
 Tests
