@@ -49,12 +49,14 @@ import Prelude hiding (curry, (++))
 class ToLocalStat a where
     toLocal :: a -> JStat
 
+data Lazy = Once | Every
+
 data Expression d = ApplyExpression (Expression d) [Expression d]
                   | IfExpression (Expression d) (Expression d) (Expression d)
                   | LiteralExpression Literal
                   | SymbolExpression Symbol
                   | JSExpression JExpr
-                  | LazyExpression (Addr (Expression d))
+                  | LazyExpression (Addr (Expression d)) Lazy
                   | FunctionExpression [Axiom (Expression d)]
                   | RecordExpression (M.Map Symbol (Expression d))
                   | InheritExpression (Expression d) (M.Map Symbol (Expression d))
@@ -75,7 +77,8 @@ instance (Show d) => Show (Expression d) where
     show (ListExpression x)      = [qq|[ {sep_with ", " x} ]|]
     show (FunctionExpression as) = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
     show (JSExpression x)        = "`" ++ show (renderJs x) ++ "`"
-    show (LazyExpression x)      = "lazy " ++ show x
+    show (LazyExpression x Once)      = "lazy " ++ show x
+    show (LazyExpression x Every)      = "do " ++ show x
     show (LetExpression ax e)    = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
     show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|] 
     show (InheritExpression x m) = [qq|\{ $x with {unsep_with " = " m} \}|] 
@@ -123,7 +126,7 @@ instance (Syntax d) => Syntax (Expression d) where
 
                   where line = try bind <|> try let_bind <|> try return'
 
-                        wrap s x = LazyExpression (Addr s s (ApplyExpression (SymbolExpression (Symbol "run")) [x]))
+                        wrap s x = LazyExpression (Addr s s (ApplyExpression (SymbolExpression (Symbol "run")) [x])) Every
 
                         bind = do p <- syntax
                                   whitespace <* (string "<-" <|> string "←") <* whitespace 
@@ -155,7 +158,7 @@ instance (Syntax d) => Syntax (Expression d) where
 
               lazy  = do string "lazy"
                          whitespace1
-                         LazyExpression <$> withPos (addr$ try syntax)
+                         LazyExpression <$> withPos (addr$ try syntax) <*> return Once
 
               if' = withPos $ do string "if"
                                  whitespace1
@@ -277,14 +280,14 @@ instance (Syntax d) => Syntax (Expression d) where
               js = g <$> indentPairs "`" (many $ noneOf "`") "`"
                   where p (parseJM . wrap -> Right (BlockStat [AssignStat _ x])) =
                             [jmacroE| (function() { return `(x)`; }) |]
-                        p (parseJM -> Right z) = 
-                            case z of
-                              (BlockStat z @ (last -> ApplStat x y)) ->
-                                  [jmacroE| (function() {
-                                                `(drop (length z - 1) z)`;
-                                                return `(ApplExpr x y)`;
-                                             }) |]
-                              z -> [jmacroE| (function() { `(z)`; }) |] 
+                        -- p (parseJM -> Right z) = 
+                        --     case z of
+                        --       (BlockStat z @ (last -> ApplStat x y)) ->
+                        --           [jmacroE| (function() {
+                        --                         `(drop (length z - 1) z)`;
+                        --                         return `(ApplExpr x y)`;
+                        --                      }) |]
+                        --       z -> [jmacroE| (function() { `(z)`; }) |] 
                         p (parseJM . (++";") -> Right z) = [jmacroE| (function() { `(z)`; }) |]
                         p (parseJM . concat . L.intersperse ";" . h . split ";" -> Right x) = 
                             [jmacroE| (function() { `(x)`; }) |]
@@ -393,10 +396,22 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (LiteralExpression l)   = toJExpr l
     toJExpr (SymbolExpression (Symbol x))    = ref x
     toJExpr (FunctionExpression x)  = toJExpr x
-    toJExpr (LazyExpression x)      = toJExpr (FunctionExpression 
-                                               [ EqualityAxiom 
-                                                 (Match [AnyPattern] Nothing)
-                                                 x ])
+    toJExpr (LazyExpression x Every)      = toJExpr (FunctionExpression 
+                                                     [ EqualityAxiom 
+                                                       (Match [AnyPattern] Nothing)
+                                                       x ])
+
+    toJExpr (LazyExpression (Addr _ _ x) Once) = [jmacroE| (function() {
+                                                    var y = undefined;
+                                                    return function() {
+                                                        if (y) {
+                                                            return y;
+                                                        } else {
+                                                            y = `(x)`;
+                                                            return y;
+                                                        }
+                                                    }
+                                                })() |]
 
     toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
     toJExpr (JSExpression s)        = s

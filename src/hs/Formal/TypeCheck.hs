@@ -740,7 +740,7 @@ instance Infer (Expression Definition) Type where
         do t <- newTVar Star
            return (TypeApplication (Type (TypeConst "JS" (KindFunction Star Star))) t)
 
-    infer (LazyExpression x) =
+    infer (LazyExpression x _) =
 
         do t <- newTVar Star
            t' <- infer x
@@ -1112,7 +1112,7 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_symbols (LiteralExpression _)   = []
           get_symbols (SymbolExpression x)    = [show x]
           get_symbols (JSExpression _)        = []
-          get_symbols (LazyExpression (Addr _ _ x))      = get_symbols x
+          get_symbols (LazyExpression (Addr _ _ x) _)      = get_symbols x
           get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
           get_symbols (LetExpression _ x)     = get_symbols x
           get_symbols (ListExpression x)      = concat (map get_symbols x)

@@ -42,7 +42,7 @@ Side effects can only happen in Javascript, so we use a monadic container to
 compose these bits.
 
     (>>=): JS a -> (a -> JS b) -> JS b | x y = `run (y (run x))`
-    (>>): JS a -> JS b -> JS b         | x y = `run x; run y`
+    (>>): JS a -> JS b -> JS b         | x y = `run x; return (run y)`
     ret: a -> JS a                     | x   = `x`
     
     do! x <- `1 + 4`
@@ -179,14 +179,14 @@ otherwise in practice the first eval tends to be favored in V8.
 
         floor = do! `Math.floor`
 
-        do! lazy fast_fib 35
+        do! ret (fast_fib 35)
            
             fast_time <- time `fast_fib 35`
             slow_time <- time `fib 35`
 
             let ratio = floor (fast_time / slow_time * 100)
             log "Runtime speed ~`ratio`%"
-            lazy ratio >= 80
+            ret (ratio >= 80)
 
 Function Combinators
 --------------------
@@ -255,6 +255,9 @@ A simple implementation of a library for manipulating linked lists.
     
         type List a = { head: a, tail: List a } 
                     | nil:
+
+         --   with map { head: x, tail: xs } f = { head: f x, tail: xs.map f } 
+        
         
 This complex type can be hidden behind a constructor function which
 works more like a traditional cons.
@@ -318,9 +321,9 @@ Project Euler problem 1, modified to protect the innocent:
         tail [: 1, 2 ] == [:2]
         last [: 1, 2 ] == 2
 
-        err (lazy head nil:) == "Head called on empty list"
-        err (lazy tail nil:) == "Tail called on empty list"
-        err (lazy last nil:) == "Last called on empty list"
+        err (do ret <: head nil:) == "Head called on empty list"
+        err (do ret <: tail nil:) == "Tail called on empty list"
+        err (do ret <: last nil:) == "Last called on empty list"
 
         take 2 [: 1, 2, 3 ] == [: 1, 2 ]
         drop 2 [: 1, 2, 3 ] == [: 3 ]
@@ -483,11 +486,27 @@ underlying javascript runtime ...
             | end:     = error "tail called on empty seq"
             | {seq: t} = do! t >>= λx = ret x.next
  
+        to_lazy end: = end:
+              | {seq: y} = seq: lazy do! { elem: x, next: xs } <- y
+                                         ret { elem: x, next: to_lazy xs }
+
+ 
  Infinite sequence example
  
-        fibs = 1 ::: do ret (1 ::: do ret (zip_with (λx y = x + y) fibs (tail fibs)))
-        
+        fibs = to_lazy (1 ::: do ret (1 ::: do ret (zip_with (λx y = x + y) fibs (tail fibs))))
+    
+Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
+is ridiculously faster than the recursive version.
+
+        do! fast_time <- time (do ret (fast_fib 35))
+            slow_time <- time (do ret (fibs |> take 35 |> to_list |> last))
+
+            let ratio = floor (fast_time / slow_time * 100)
+            log "Runtime speed ~`ratio`%"
+            ret (ratio >= 10000)
+
         fibs |> take 5 |> to_list == [:1,1,2,3,5]
+        fast_fib 35 == fibs |> take 35 |> to_list |> last
         
 
 
