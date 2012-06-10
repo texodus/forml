@@ -24,6 +24,8 @@ import System.Console.ANSI
 import Network.HTTP
 import Network.URI
 
+import Data.Monoid
+
 import Text.Pandoc
 
 import Data.Char (ord, isAscii)
@@ -87,7 +89,7 @@ main  = do rc <- parseArgs <$> getArgs
                    case parseFormal src of
                      Left ex -> Left [show ex]
                      Right x -> Right x
-   
+    
            as <- monitor "Type Checking" . return $
                    case tiProgram src' of
                      (as, []) -> Right as
@@ -126,7 +128,7 @@ main  = do rc <- parseArgs <$> getArgs
 
           header  = $(embedFile "src/html/header.html")
           footer  = $(embedFile "src/html/footer.html")
-          jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
+          jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js") `mappend` $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
           console = $(embedFile "lib/js/console.js")
           report  = $(embedFile "src/js/FormalReporter.js")
           htmljs  = $(embedFile "src/js/table_of_contents.js")

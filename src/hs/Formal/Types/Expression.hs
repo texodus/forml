@@ -401,17 +401,19 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
                                                        (Match [AnyPattern] Nothing)
                                                        x ])
 
-    toJExpr (LazyExpression (Addr _ _ x) Once) = [jmacroE| (function() {
-                                                    var y = undefined;
-                                                    return function() {
-                                                        if (y) {
-                                                            return y;
-                                                        } else {
-                                                            y = `(x)`;
-                                                            return y;
-                                                        }
-                                                    }
-                                                })() |]
+    toJExpr (LazyExpression (Addr _ _ x) Once) =
+
+        [jmacroE| (function() {
+                      var y = undefined;
+                      return function() {
+                          if (y) {
+                              return y;
+                          } else {
+                              y = `(x)`;
+                              return y;
+                          }
+                      }
+                  })() |]
 
     toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
     toJExpr (JSExpression s)        = s

@@ -179,6 +179,8 @@ otherwise in practice the first eval tends to be favored in V8.
 
         floor = do! `Math.floor`
 
+        ($=) x y = `if (typeof $ != 'undefined') { $(x)["html"](y); }`
+
         do! ret (fast_fib 35)
            
             fast_time <- time `fast_fib 35`
@@ -439,7 +441,7 @@ Sequences
 Sequences are an abstract data type which resembles a list, except that elements
 Sequences may be infinite, as long as you never try to read every element.
 However, the current implementation is stack-consuming and thus limited by the
-underlying javascript runtime ...
+underlying javascript runtime [TODO].  
 
     module seq
 
@@ -491,22 +493,29 @@ underlying javascript runtime ...
                                          ret { elem: x, next: to_lazy xs }
 
  
- Infinite sequence example
+Infinite sequence example
  
         fibs = to_lazy (1 ::: do ret (1 ::: do ret (zip_with (λx y = x + y) fibs (tail fibs))))
     
 Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
-is ridiculously faster than the recursive version.
+is ridiculously faster than the recursive version.  For example, the runtime
+speed of this fib implementation compared to the native recursive one is <span
+id="speedtest">__________</span>% (filled in dynamically).
 
-        do! fast_time <- time (do ret (fast_fib 35))
-            slow_time <- time (do ret (fibs |> take 35 |> to_list |> last))
+        do! fast_time <- time do ret (fast_fib 35)
+            slow_time <- time do ret (fibs |> take 35 |> to_list |> last)
 
             let ratio = floor (fast_time / slow_time * 100)
-            log "Runtime speed ~`ratio`%"
-            ret (ratio >= 10000)
+
+            "#speedtest" $= ratio
+            
+            ret (ratio >= 10)
 
         fibs |> take 5 |> to_list == [:1,1,2,3,5]
-        fast_fib 35 == fibs |> take 35 |> to_list |> last
+
+        fast_fib 35 == fibs |> take 35
+                            |> to_list
+                            |> last
         
 
 

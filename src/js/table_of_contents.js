@@ -20,12 +20,12 @@ $(function() {
     prettyPrint();
 
     jasmine.getEnv().addReporter(new jasmine.FormalReporter());
-   // jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
     jasmine.getEnv().execute();
 
     var reporter = $(".jasmine_reporter").detach();
 
-    $("#main").append(reporter)
+    $("body div").append(reporter)
 });
 
 function time(f) {
