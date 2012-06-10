@@ -63,7 +63,9 @@ data Type = TypeVar TypeVar
           | TypeGen Int
             deriving Eq
 
-data TypeRecord = TRecord (M.Map Key Type) Partial Kind
+data TPartial = TComplete | TPartial Type deriving (Eq, Show)
+
+data TypeRecord = TRecord (M.Map Key Type) TPartial Kind
                 deriving (Show, Eq)
 
 data TypeVar = TVar Id Kind
@@ -82,9 +84,9 @@ instance Show Type where
         show u ++ " → " ++ show v
     show (TypeApplication t u) = show t ++ " " ++ show u
     show (TypeGen x) = (map (:[])$ concat$ repeat "abcdefghijklmnopqrstuvwxyz") !! x
-    show (TypeRecord (TRecord m Complete _)) =
+    show (TypeRecord (TRecord m TComplete _)) =
         "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ "}"
-    show (TypeRecord (TRecord m Partial _)) =
+    show (TypeRecord (TRecord m (TPartial _) _)) =
         "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ ", _}"
 
 
@@ -121,7 +123,11 @@ instance Types Type where
                             Just x -> x
                             Nothing -> TypeVar u
     apply s (TypeApplication l r) = TypeApplication (apply s l) (apply s r)
-    apply s (TypeRecord (TRecord xs y k)) = TypeRecord (TRecord (fmap (apply s) xs) y k)
+    apply s (TypeRecord (TRecord xs TComplete k)) = TypeRecord (TRecord (fmap (apply s) xs) TComplete k)
+    apply s (TypeRecord (TRecord xs (TPartial p) k)) =
+        case apply s p of
+          p' | p' == p   -> TypeRecord (TRecord (fmap (apply s) xs) (TPartial p) k)
+          TypeRecord (TRecord ys p' _) -> TypeRecord (TRecord (fmap (apply s) (xs `M.union` ys)) p' k)
     apply _ t = t
 
     tv (TypeVar u) = [u]
@@ -159,7 +165,7 @@ mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
 mgu (TypeVar u) t  = var_bind u t
 mgu t (TypeVar u)  = var_bind u t
 
-mgu (TypeRecord (TRecord t Complete _)) (TypeRecord (TRecord u Complete _))
+mgu (TypeRecord (TRecord t TComplete _)) (TypeRecord (TRecord u TComplete _))
    | M.keysSet t == M.keysSet u = 
 
         f (M.elems t) (M.elems u) []
@@ -168,17 +174,31 @@ mgu (TypeRecord (TRecord t Complete _)) (TypeRecord (TRecord u Complete _))
           f (x:xs) (y:ys) s = do s' <- mgu (apply s x) (apply s y)
                                  f xs ys (s @@ s')
 
-mgu (TypeRecord (TRecord t Partial k)) (TypeRecord (TRecord u _ k')) =
+mgu t''@(TypeRecord (TRecord t (TPartial (TypeVar p)) k)) u''@(TypeRecord (TRecord u (TPartial (TypeVar p')) k')) =
+
+    let t' = u `M.(\\)` (u `M.(\\)` t)
+        u' = t `M.(\\)` (t `M.(\\)` u)
+
+    in  do a <- mgu (TypeRecord (TRecord t' TComplete k)) (TypeRecord (TRecord u' TComplete k'))
+           b <- var_bind p (TypeRecord (TRecord (u `M.(\\)` t) (TPartial (TypeVar p')) k))
+           c <- var_bind p' (TypeRecord (TRecord (t `M.(\\)` u) (TPartial (TypeVar p')) k))
+           return$ a @@ b @@ c
+
+mgu t'@(TypeRecord (TRecord t (TPartial (TypeVar p)) k)) u'@(TypeRecord (TRecord u TComplete k')) =
 
     let new_keys = M.keysSet t `S.intersection` M.keysSet u
-        r = u `M.(\\)` (u `M.(\\)` t) -- (S.toList new_keys)
-    in  if new_keys == M.keysSet t
-        then mgu (TypeRecord (TRecord t Complete k)) (TypeRecord (TRecord r Complete k'))
-        else fail $ "Records do not unify: found " ++ show t ++ ", expecting " ++ show u 
+        r = u `M.(\\)` (u `M.(\\)` t)
 
-mgu t u @ (TypeRecord (TRecord _ Partial _)) = mgu u t
+    in  if new_keys == M.keysSet t
+        then do a <- mgu (TypeRecord (TRecord t TComplete k)) (TypeRecord (TRecord r TComplete k'))
+                b <- var_bind p (TypeRecord (TRecord (u `M.(\\)` t) TComplete Star))
+                return$ a @@ b
+        else fail$ "Records do not unify: found " ++ show t' ++ ", expecting " ++ show u'
+                
+mgu t u @ (TypeRecord (TRecord _ (TPartial _) _)) = mgu u t
 
 mgu (Type t) (Type u) | t == u = return []
+
 mgu t u = fail $ "Types do not unify: found " ++ show t ++ ", expecting " ++ show u
 
 data Z a = Z a | Error String
@@ -192,8 +212,40 @@ instance Monad Z where
 mgut :: Type -> Type -> TI Substitution
 mgut x y = case mgu x y of
              Z z -> return z
-             Error e -> do add_error e
-                           return []
+             Error e -> add_error e >> return [] --second_chance e x y
+
+    where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
+              
+              do as <- get_assumptions
+                 g  <- find''' as x
+
+                 case g of
+                   Nothing -> add_error e >> return []
+                   Just (x, sct) ->
+                       do (qs' :=> t'') <- freshInst sct
+                          return x
+
+          second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
+          second_chance e (TypeApplication a b) (TypeApplication c d) =
+              do xss <- second_chance e a c
+                 yss <- second_chance e b d
+                 return$ xss @@ yss
+
+          second_chance e x y = case mgu x y of
+                                  Error _ -> add_error e >> return []
+                                  Z x -> return x
+ 
+          find''' [] _ = return Nothing
+          find''' (_:>:_:xs) t = find''' xs t
+          find''' (_:>>:(Forall _ x, y):xs) t =
+
+              do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
+                 case mgu t t' of
+                   Error _ -> find''' xs t
+                   Z x  -> return$ Just (x, y)
+
+
+
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t
@@ -564,8 +616,10 @@ class Instantiate t where
 instance Instantiate Type where
   inst ts (TypeApplication l r) = TypeApplication (inst ts l) (inst ts r)
   inst ts (TypeGen n)  = ts !! n
-  inst ts (TypeRecord (TRecord m Complete k))  = TypeRecord (TRecord (M.map (inst ts) m) Complete k)
-  inst ts (TypeRecord (TRecord m Partial k))  =  TypeRecord (TRecord (M.map (inst ts) m) Partial k)
+  inst ts (TypeRecord (TRecord m TComplete k)) =
+      TypeRecord (TRecord (M.map (inst ts) m) TComplete k)
+  inst ts (TypeRecord (TRecord m (TPartial p) k)) =
+      TypeRecord (TRecord (M.map (inst ts) m) (TPartial (inst ts p)) k)
   inst ts t   = t
 
 instance Instantiate a => Instantiate [a] where
@@ -609,7 +663,12 @@ instance Infer (Pattern b) Type where
         
         do ts <- mapM infer patterns
            sc <- find$ key m
-           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) p Star)
+           p' <- case p of
+                   Complete -> return TComplete
+                   Partial  -> do t <-  newTVar Star
+                                  return$ TPartial t
+
+           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) p' Star)
            t' <- newTVar Star
            case sc of
              Nothing ->
@@ -704,7 +763,7 @@ instance Infer (Expression Definition) Type where
 
         do ts <- mapM infer xs
            sc <- find$ key m
-           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) Complete Star)
+           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) TComplete Star)
            t' <- newTVar Star
            case sc of
              Nothing ->  do unify t' r
@@ -931,7 +990,7 @@ class ToKey a where
 
 instance ToKey (Pattern a) where
     key (RecordPattern m Complete) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
-    key (RecordPattern m Partial) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
+    key (RecordPattern m Partial)  = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
     key _ = RecordKey
 
 instance ToKey (Expression a) where
@@ -939,7 +998,8 @@ instance ToKey (Expression a) where
     key _ = RecordKey
 
 instance ToKey Type where
-    key (TypeRecord (TRecord m Complete _)) = RecordId . M.map (\x -> key x) $ m
+    key (TypeRecord (TRecord m TComplete _)) = RecordId . M.map (\x -> key x) $ m
+    key (TypeRecord (TRecord m (TPartial _) _)) = error "Unimplemented" --RecordId . M.map (\x -> key x) $ m
     key _ = RecordKey
     
 
@@ -987,7 +1047,7 @@ enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ typ
 
               map f permutations
         
-              where f = TypeRecord . (\x -> TRecord x Complete Star) . M.fromList . zip (map show names)
+              where f = TypeRecord . (\x -> TRecord x TComplete Star) . M.fromList . zip (map show names)
                     permutations = permutations' . map enumerate_types $ types'
 
                         where permutations' [] = [] 
@@ -1068,7 +1128,7 @@ tiProgram (Program bgs) =
                ms <- TI (\y -> (y, modules y))
                rs <- reduce ce (apply s ps)
                e  <- get_errors
-               return ((apply s ms), e)
+               return ((apply s ms), S.toList . S.fromList $ e)
 
     where to_group :: [Statement] -> [BindGroup]
           to_group [] = []

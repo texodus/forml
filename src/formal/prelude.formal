@@ -29,7 +29,7 @@ in terms of them.
     object? x = run `typeof x === "object"`
     array? = run `is_array`
     
-    not x = run `!x`
+    not: Bool -> Bool | x = run `!x`
 
     object? {}
     array? []
@@ -215,8 +215,13 @@ Function composition
     id [1, 2, 3] == [1, 2, 3]
     flip (λx y = x - y) 3 5 == 2
 
-    let ff {a: x, b: y, _} = x + y
+    ff {a: x, b: y, _} = x + y
+     | {a: x, b: y, c: z} = x - y
+
     ff {a: 5, b: 5, c: 5} == 10
+    
+    fff {a: x, b: y, _ } = x + y
+      | {b: x, c: y, _ } = x - y
 
 
 Tests
@@ -478,6 +483,8 @@ underlying javascript runtime ...
               Seq a   -> Seq a
             | end:     = error "tail called on empty seq"
             | {seq: t} = do! t >>= λx = ret x.next
+ 
+ Infinite sequence example
  
         fibs = 1 ::: do ret (1 ::: do ret (zip_with (λx y = x + y) fibs (tail fibs)))
         

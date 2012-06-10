@@ -48,7 +48,7 @@ instance (Show a, ToJExpr a) => ToJExpr [Axiom a] where
 newtype Curried a = Curried [Axiom a]
 
 instance (Show a, ToJExpr a) => ToStat (Curried a) where
-    toStat (Curried []) = [jmacro| args = []; exhaust(); |]
+    toStat (Curried []) = [jmacro| exhaust(); |]
     toStat (Curried (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss)) = 
 
         [jmacro| `(declare_bindings pss)`;
