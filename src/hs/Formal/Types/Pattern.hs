@@ -117,7 +117,7 @@ instance (Show a) => Show (Pattern a) where
     show (RecordPattern m Partial)   = [qq|\{ {unsep_with " = " m}, _ \}|] 
 
 instance (Show a, ToJExpr a) => ToJExpr [Pattern a] where
-    toJExpr ps = toJExpr $ zipWith PM (reverse . take (length ps) . map local_pool $ [0 .. 26]) ps
+    toJExpr ps = toJExpr$ zipWith PM (reverse . take (length ps) . map local_pool $ [0 .. 26]) ps
 
 instance (Syntax a) => Syntax (Pattern a) where
     

@@ -15,7 +15,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE NewQualifiedOperators #-}
 
 module Formal.TypeCheck where
 import System.IO.Unsafe
@@ -156,58 +155,60 @@ merge s1 s2 = if agree then return (s1 ++ s2) else fail $ "merge fails " ++ show
 -- --------------------------------------------------------------------------------
 
 mgu      :: Monad m => Type -> Type -> m Substitution
+mgr      :: Monad m => TypeRecord -> TypeRecord -> m Substitution
 var_bind :: Monad m => TypeVar -> Type -> m Substitution
 match    :: Monad m => Type -> Type -> m Substitution
 
-mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
-    do s1 <- mgu l1 l2
-       s2 <- mgu (apply s1 r1) (apply s1 r2)
-       return $ s1 @@ s2
-
-mgu (TypeVar u) t  = var_bind u t
-mgu t (TypeVar u)  = var_bind u t
-
-mgu (TypeRecord (TRecord t TComplete _)) (TypeRecord (TRecord u TComplete _))
+mgr (TRecord t TComplete _) (TRecord u TComplete _)
    | M.keysSet t == M.keysSet u = 
 
         f (M.elems t) (M.elems u) []
 
     where f [] _ s = return s
-          f (x:xs) (y:ys) s = do s' <- mgu (apply s x) (apply s y)
+          f (x:xs) (y:ys) s = do s' <- apply s x `mgu` apply s y
                                  f xs ys (s @@ s')
 
-mgu t''@(TypeRecord (TRecord t (TPartial (TypeVar p)) k)) u''@(TypeRecord (TRecord u (TPartial (TypeVar p')) k')) =
+mgr (TRecord t (TPartial (TypeVar p)) k) (TRecord u (TPartial (TypeVar p')) k') =
 
-    let t' = u `M.(\\)` (u `M.(\\)` t)
-        u' = t `M.(\\)` (t `M.(\\)` u)
+    do a <- TRecord t' TComplete k `mgr` TRecord u' TComplete k'
+       b <- f (u M.\\ t) p p k
+       c <- f (t M.\\ u) p' p k
+       return$ a @@ b @@ c
 
-    in  do a <- mgu (TypeRecord (TRecord t' TComplete k)) (TypeRecord (TRecord u' TComplete k'))
-           b <- if M.size (u `M.(\\)` t) > 0 
-                then var_bind p (TypeRecord (TRecord (u `M.(\\)` t) (TPartial (TypeVar p)) k))
+    where t' = u M.\\ (u M.\\ t)
+          u' = t M.\\ (t M.\\ u)
+          
+          f x p p' k | M.size x > 0 = var_bind p (TypeRecord (TRecord x (TPartial (TypeVar p')) k))
+                     | otherwise    = return []
+
+mgr t'@(TRecord t (TPartial (TypeVar p)) k) u'@(TRecord u TComplete k')
+    | M.keysSet t `S.intersection` M.keysSet u == M.keysSet t =
+
+        do a <- TRecord t TComplete k
+                    `mgr` TRecord (u M.\\ (u M.\\ t)) TComplete k'
+
+           b <- if (M.size u > M.size t)
+                then var_bind p (TypeRecord (TRecord (u M.\\ t) TComplete Star))
                 else return []
-           c <- if M.size (t `M.(\\)` u) > 0
-                then var_bind p' (TypeRecord (TRecord (t `M.(\\)` u) (TPartial (TypeVar p)) k))
-                else return []
-           return$ a @@ b @@ c
 
-mgu t'@(TypeRecord (TRecord t (TPartial (TypeVar p)) k)) u'@(TypeRecord (TRecord u TComplete k')) =
+           return$ a @@ b
 
-    let new_keys = M.keysSet t `S.intersection` M.keysSet u
-        r = u `M.(\\)` (u `M.(\\)` t)
-
-    in  if new_keys == M.keysSet t
-        then do a <- mgu (TypeRecord (TRecord t TComplete k)) (TypeRecord (TRecord r TComplete k'))
-                b <- if (M.size u > M.size t)
-                              then var_bind p (TypeRecord (TRecord (u `M.(\\)` t) TComplete Star))
-                              else return []
-                return$ a @@ b
-        else fail$ "Records do not unify: found " ++ show t' ++ ", expecting " ++ show u'
+    | otherwise = fail$ "Records do not unify: found " ++ show (TypeRecord t')
+                         ++ ", expecting " ++ show (TypeRecord u')
                 
-mgu t u @ (TypeRecord (TRecord _ (TPartial _) _)) = mgu u t
+mgr t u @ (TRecord _ (TPartial _) _) = mgr u t
 
+mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
+
+    do s1 <- mgu l1 l2
+       s2 <- mgu (apply s1 r1) (apply s1 r2)
+       return $ s1 @@ s2
+
+mgu (TypeVar u) t = var_bind u t
+mgu t (TypeVar u) = var_bind u t
+mgu (TypeRecord a) (TypeRecord b) = mgr a b
 mgu (Type t) (Type u) | t == u = return []
-
-mgu t u = fail $ "Types do not unify: found " ++ show t ++ ", expecting " ++ show u
+mgu t u = fail$ "Types do not unify: found " ++ show t ++ ", expecting " ++ show u
 
 data Z a = Z a | Error String
 
@@ -222,35 +223,35 @@ mgut x y = case mgu x y of
              Z z -> return z
              Error e -> add_error e >> return [] --second_chance e x y
 
-    where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
+    -- where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
               
-              do as <- get_assumptions
-                 g  <- find''' as x
+    --           do as <- get_assumptions
+    --              g  <- find''' as x
 
-                 case g of
-                   Nothing -> add_error e >> return []
-                   Just (x, sct) ->
-                       do (qs' :=> t'') <- freshInst sct
-                          return x
+    --              case g of
+    --                Nothing -> add_error e >> return []
+    --                Just (x, sct) ->
+    --                    do (qs' :=> t'') <- freshInst sct
+    --                       return x
 
-          second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
-          second_chance e (TypeApplication a b) (TypeApplication c d) =
-              do xss <- second_chance e a c
-                 yss <- second_chance e b d
-                 return$ xss @@ yss
+    --       second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
+    --       second_chance e (TypeApplication a b) (TypeApplication c d) =
+    --           do xss <- second_chance e a c
+    --              yss <- second_chance e b d
+    --              return$ xss @@ yss
 
-          second_chance e x y = case mgu x y of
-                                  Error _ -> add_error e >> return []
-                                  Z x -> return x
+    --       second_chance e x y = case mgu x y of
+    --                               Error _ -> add_error e >> return []
+    --                               Z x -> return x
  
-          find''' [] _ = return Nothing
-          find''' (_:>:_:xs) t = find''' xs t
-          find''' (_:>>:(Forall _ x, y):xs) t =
+    --       find''' [] _ = return Nothing
+    --       find''' (_:>:_:xs) t = find''' xs t
+    --       find''' (_:>>:(Forall _ x, y):xs) t =
 
-              do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
-                 case mgu t t' of
-                   Error _ -> find''' xs t
-                   Z x  -> return$ Just (x, y)
+    --           do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
+    --              case mgu t t' of
+    --                Error _ -> find''' xs t
+    --                Z x  -> return$ Just (x, y)
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t
@@ -452,7 +453,7 @@ newtype A = A [Assumption]
 instance Eq RecordId where
     (RecordId m) == (RecordId n) = m == n
     RecordKey == RecordKey = True
-    (RecordPartial m) == (RecordId n) = m == (n `M.(\\)` (n `M.(\\)` m))
+    (RecordPartial m) == (RecordId n) = m == ((M.\\) n ((M.\\) n  m))
     n == m @ (RecordPartial _) = m == n
     _ == _ = False
 
@@ -1155,8 +1156,11 @@ tiProgram (Program bgs) =
               Scope i t a (b ++ [[x]]) c
           f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) =
               Scope i t (a ++ [x]) b c
-          f (Scope i t a b c) (ExpressionStatement x) = Scope i t a b (c ++ [x])
-          f (Scope i t a b c) (ImportStatement ns) = Scope (i ++ [ns]) t a b c
-          f (Scope i t a b c) x @ (TypeStatement _ _) = Scope i (t ++ [x]) a b c
+          f (Scope i t a b c) (ExpressionStatement x) =
+              Scope i t a b (c ++ [x])
+          f (Scope i t a b c) (ImportStatement ns) =
+              Scope (i ++ [ns]) t a b c
+          f (Scope i t a b c) x @ (TypeStatement _ _) =
+              Scope i (t ++ [x]) a b c
           f x _ = x
 

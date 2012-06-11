@@ -257,9 +257,6 @@ A simple implementation of a library for manipulating linked lists.
     
         type List a = { head: a, tail: List a } 
                     | nil:
-
-         --   with map { head: x, tail: xs } f = { head: f x, tail: xs.map f } 
-        
         
 This complex type can be hidden behind a constructor function which
 works more like a traditional cons.
@@ -491,7 +488,6 @@ underlying javascript runtime [TODO].
         to_lazy end: = end:
               | {seq: y} = seq: lazy do! { elem: x, next: xs } <- y
                                          ret { elem: x, next: to_lazy xs }
-
  
 Infinite sequence example
  
