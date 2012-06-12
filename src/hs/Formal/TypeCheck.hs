@@ -154,61 +154,67 @@ merge s1 s2 = if agree then return (s1 ++ s2) else fail $ "merge fails " ++ show
 -- Unification
 -- --------------------------------------------------------------------------------
 
-mgu      :: Monad m => Type -> Type -> m Substitution
-mgr      :: Monad m => TypeRecord -> TypeRecord -> m Substitution
+instance Monoid TypeVar where
+    mappend (TVar x k) (TVar y k') | k == k' = TVar (x ++ y) k
+    mempty = TVar "" Star
+
 var_bind :: Monad m => TypeVar -> Type -> m Substitution
 match    :: Monad m => Type -> Type -> m Substitution
 
-mgr (TRecord t TComplete _) (TRecord u TComplete _)
-   | M.keysSet t == M.keysSet u = 
+class Unify a where
+    (|=|) :: Monad m => a -> a -> m Substitution
 
-        f (M.elems t) (M.elems u) []
+instance Unify TypeRecord where
 
-    where f [] _ s = return s
-          f (x:xs) (y:ys) s = do s' <- apply s x `mgu` apply s y
-                                 f xs ys (s @@ s')
+    TRecord t TComplete _ |=| TRecord u TComplete _
+       | M.keysSet t == M.keysSet u = 
 
-mgr (TRecord t (TPartial (TypeVar p)) k) (TRecord u (TPartial (TypeVar p')) k') =
+            f (M.elems t) (M.elems u) []
 
-    do a <- TRecord t' TComplete k `mgr` TRecord u' TComplete k'
-       b <- f (u M.\\ t) p p k
-       c <- f (t M.\\ u) p' p k
-       return$ a @@ b @@ c
+        where f [] _ s = return s
+              f (x:xs) (y:ys) s = do s' <- apply s x |=| apply s y
+                                     f xs ys (s @@ s')
 
-    where t' = u M.\\ (u M.\\ t)
-          u' = t M.\\ (t M.\\ u)
-          
-          f x p p' k | M.size x > 0 = var_bind p (TypeRecord (TRecord x (TPartial (TypeVar p')) k))
-                     | otherwise    = return []
+    TRecord t (TPartial (TypeVar p)) k |=| TRecord u (TPartial (TypeVar p')) k' =
 
-mgr t'@(TRecord t (TPartial (TypeVar p)) k) u'@(TRecord u TComplete k')
-    | M.keysSet t `S.intersection` M.keysSet u == M.keysSet t =
+        do a <- TRecord t' TComplete k |=| TRecord u' TComplete k'
+           b <- f (u M.\\ t) p  (p `mappend` p') k
+           c <- f (t M.\\ u) p' (p `mappend` p') k
+           return$ a @@ b @@ c
 
-        do a <- TRecord t TComplete k
-                    `mgr` TRecord (u M.\\ (u M.\\ t)) TComplete k'
+        where t' = u M.\\ (u M.\\ t)
+              u' = t M.\\ (t M.\\ u)
+              
+              f x p p' k | M.size x > 0 = var_bind p (TypeRecord (TRecord x (TPartial (TypeVar p')) k))
+                         | otherwise    = return []
 
-           b <- if (M.size u > M.size t)
-                then var_bind p (TypeRecord (TRecord (u M.\\ t) TComplete Star))
-                else return []
+    t' @ (TRecord t (TPartial (TypeVar p)) k) |=| u' @ (TRecord u TComplete k')
+        | M.keysSet t `S.intersection` M.keysSet u == M.keysSet t =
 
-           return$ a @@ b
+            do a <- TRecord t TComplete k |=| TRecord (u M.\\ (u M.\\ t)) TComplete k'
+               b <- if (M.size u > M.size t)
+                    then var_bind p (TypeRecord (TRecord (u M.\\ t) TComplete Star))
+                    else return []
+               return$ a @@ b
 
-    | otherwise = fail$ "Records do not unify: found " ++ show (TypeRecord t')
-                         ++ ", expecting " ++ show (TypeRecord u')
-                
-mgr t u @ (TRecord _ (TPartial _) _) = mgr u t
+        | otherwise = fail$ "Records do not unify: found " ++ show (TypeRecord t')
+                             ++ ", expecting " ++ show (TypeRecord u')
+                    
+    t |=| u @ (TRecord _ (TPartial _) _) = u |=| t
 
-mgu (TypeApplication l1 r1) (TypeApplication l2 r2) =
+instance Unify Type where
 
-    do s1 <- mgu l1 l2
-       s2 <- mgu (apply s1 r1) (apply s1 r2)
-       return $ s1 @@ s2
+    TypeApplication l1 r1 |=| TypeApplication l2 r2 =
 
-mgu (TypeVar u) t = var_bind u t
-mgu t (TypeVar u) = var_bind u t
-mgu (TypeRecord a) (TypeRecord b) = mgr a b
-mgu (Type t) (Type u) | t == u = return []
-mgu t u = fail$ "Types do not unify: found " ++ show t ++ ", expecting " ++ show u
+        do s1 <- l1 |=| l2
+           s2 <- apply s1 r1 |=| apply s1 r2
+           return$ s1 @@ s2
+
+    TypeVar u |=| t = var_bind u t
+    t |=| TypeVar u = var_bind u t
+    TypeRecord a |=| TypeRecord b = a |=| b
+    Type t |=| Type u | t == u = return []
+    t |=| u = fail$ "Types do not unify: found " ++ show t ++ ", expecting " ++ show u
 
 data Z a = Z a | Error String
 
@@ -218,8 +224,8 @@ instance Monad Z where
     (Error x) >>= _ = Error x
     fail x = Error x
 
-mgut :: Type -> Type -> TI Substitution
-mgut x y = case mgu x y of
+mgu :: Type -> Type -> TI Substitution
+mgu x y = case x |=| y of
              Z z -> return z
              Error e -> add_error e >> return [] --second_chance e x y
 
@@ -291,7 +297,7 @@ instance Types Pred where
   tv (IsIn i t)      = tv t
 
 mguPred, matchPred :: Pred -> Pred -> Maybe Substitution
-mguPred   = lift mgu
+mguPred   = lift (|=|)
 matchPred = lift match
 
 lift m (IsIn i t) (IsIn i' t')
@@ -602,7 +608,7 @@ substitute x = do y <- get_substitution
 
 unify :: Type -> Type -> TI ()
 unify t1 t2 = do s <- get_substitution
-                 u <- mgut (apply s t1) (apply s t2)
+                 u <- apply s t1 `mgu` apply s t2
                  extSubst $ u @@ s
 
     where extSubst   :: Substitution -> TI ()

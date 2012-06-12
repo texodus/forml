@@ -26,10 +26,10 @@ Some simple reflection by lifting from Javascript.  The definitions of
 here, as the "==" operator defined in [Numbers](#numbers) is defined
 in terms of them.
 
-    object? x = run `typeof x === "object"`
-    array? = run `is_array`
+    object? x = do! `typeof x === "object"`
+    array? = do! `is_array`
     
-    not: Bool -> Bool | x = run `!x`
+    not: Bool -> Bool | x = do! `!x`
 
     object? {}
     array? []
@@ -117,7 +117,7 @@ constraining
                  result && x.length == y.length`
 
         | x y = do! `x === y`
-    
+
 And a few simple tests to verify the correctness of these
 implementations.  This is not meant to be exhaustive, only a smoke
 test against regressions.
@@ -159,15 +159,10 @@ overhead from formal's dispatch mechanism.
                stop  <- get_time
                ret (stop - start)
 
-        fast_fib = do! `f = function(n) {
-                            if (n === 0) {
-                                return 0;
-                            } else if (n === 1) {
-                                return 1;
-                            } else {
-                                return f(n - 1) + f(n - 2)
-                            };
-                        }; f`
+        fast_fib =
+            do! `var f = function(n) {
+                     return 0 === n ? 0 : 1 === n ? 1 : f(n - 1) + f(n - 2)
+                 }; f`
                 
         fast_fib 7 == fib 7
         
@@ -177,18 +172,14 @@ if the formal version isn't at least 80% as fast as the native javascript
 version.  This test "primes" the JIT by running the fast calc first,
 otherwise in practice the first eval tends to be favored in V8.
 
-        floor = do! `Math.floor`
+        floor: Num -> Num = do! `Math.floor`
 
         ($=) x y = `if (typeof $ != 'undefined') { $(x)["html"](y); }`
 
-        do! ret (fast_fib 35)
-           
-            fast_time <- time `fast_fib 35`
+        do! fast_time <- time `fast_fib 35`
             slow_time <- time `fib 35`
-
-            let ratio = floor (fast_time / slow_time * 100)
-            log "Runtime speed ~`ratio`%"
-            ret (ratio >= 80)
+            `console.log (floor (fast_time / slow_time * 100))`
+            ret (floor (fast_time / slow_time * 100) >= 80)
 
 Function Combinators
 --------------------
@@ -217,13 +208,15 @@ Function composition
     id [1, 2, 3] == [1, 2, 3]
     flip (λx y = x - y) 3 5 == 2
     
-Partial records
+Partial records tests - these need to bemoved to some sort of test suite
+eventually, when I'm not using the prelude as a test suite [TODO].
     
     let f {a: x, b: y, _ } = x + y
     f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }
 
-
-
+    let f {a: 1, b: 1, _ } = 2
+        | {b: 2, c: 2, _ } = 2
+    f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4
 
 Tests
 -----
@@ -235,8 +228,6 @@ By invoking javascript, we can listen for exceptions.
                  } catch (e) {
                      return e;
                  }`
-
-
 
 Option
 ------
@@ -320,9 +311,9 @@ Project Euler problem 1, modified to protect the innocent:
         tail [: 1, 2 ] == [:2]
         last [: 1, 2 ] == 2
 
-        err (do ret <: head nil:) == "Head called on empty list"
-        err (do ret <: tail nil:) == "Tail called on empty list"
-        err (do ret <: last nil:) == "Last called on empty list"
+        err (lazy head nil:) == "Head called on empty list"
+        err (lazy tail nil:) == "Tail called on empty list"
+        err (lazy last nil:) == "Last called on empty list"
 
         take 2 [: 1, 2, 3 ] == [: 1, 2 ]
         drop 2 [: 1, 2, 3 ] == [: 3 ]
@@ -500,11 +491,8 @@ id="speedtest">__________</span>% (filled in dynamically).
 
         do! fast_time <- time do ret (fast_fib 35)
             slow_time <- time do ret (fibs |> take 35 |> to_list |> last)
-
             let ratio = floor (fast_time / slow_time * 100)
-
             "#speedtest" $= ratio
-            
             ret (ratio >= 10)
 
         fibs |> take 5 |> to_list == [:1,1,2,3,5]
@@ -512,7 +500,4 @@ id="speedtest">__________</span>% (filled in dynamically).
         fast_fib 35 == fibs |> take 35
                             |> to_list
                             |> last
-        
-
-
-
+                            

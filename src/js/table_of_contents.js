@@ -27,22 +27,3 @@ $(function() {
 
     $("body div").append(reporter)
 });
-
-function time(f) {
-    var start = new Date().getTime();
-    
-    f();
-
-    var end = new Date().getTime();
-    return end - start;
-};
-
-function fibb(n) {
-    if (n === 0) {
-    	return 0;
-    } else if (n === 1) {
-    	return 1;
-    } else {
-    	return fibb(n - 1) + fibb(n - 2)
-    }
-}
