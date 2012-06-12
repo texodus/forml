@@ -80,11 +80,20 @@ monitor x d = do putStr$ "[ ] " ++ x
                                  mapM putStrLn y
                                  exitFailure
 
+to_literate :: String -> String
+to_literate (lstrip -> '-':'-':xs) = lstrip xs
+to_literate x = "    " ++ x
+
 main :: IO ()
 main  = do rc <- parseArgs <$> getArgs
            hFile  <- openFile (head $ inputs rc) ReadMode
-           src <- (\ x -> x ++ "\n") <$> hGetContents hFile
+
+           let f' = if not (literate rc) 
+                        then unlines . map to_literate . lines
+                        else id
    
+           src <- f' . (\ x -> x ++ "\n") <$> hGetContents hFile
+
            src' <- monitor "Parsing" . return$
                    case parseFormal src of
                      Left ex -> Left [show ex]
@@ -155,14 +164,15 @@ data RunConfig = RunConfig { inputs :: [String]
                            , show_types :: Bool
                            , optimize :: Bool
                            , run_tests :: Bool 
-                           , write_docs :: Bool }
+                           , write_docs :: Bool
+                           , literate :: Bool }
 
 parseArgs :: [String] -> RunConfig
 parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False True True True
+                          []     -> return $ RunConfig [] "default" False True True True True
                           (x:xs) -> do put xs
                                        case x of
                                          "-t"    -> do x <- argsParser
@@ -171,10 +181,11 @@ parseArgs = fst . runState argsParser
                                                          return $ x { optimize = False }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
-                                                       RunConfig a _ c d e f <- argsParser
-                                                       return $ RunConfig (x:a) name c d e f
+                                                       RunConfig a _ c d e f g <- argsParser
+                                                       return $ RunConfig (x:a) name c d e f g
                                          ('-':_) -> error "Could not parse options"
-                                         z       -> do RunConfig a _ c d e f<- argsParser
+                                         z       -> do RunConfig a _ c d e f _ <- argsParser
                                                        let b = last $ split "/" $ head $ split "." z
-                                                       return $ RunConfig (x:a) b c d e f
+                                                       let g = (head . tail . split "." $ z) == "lformal"
+                                                       return $ RunConfig (x:a) b c d e f g
 

@@ -1,30 +1,30 @@
-Formal is a functional programming language which targets Javascript.  Designed
-for readability and compiler verification, Formal is powerful, flexible and easy
-to learn.  
+-- Formal is a functional programming language which targets Javascript.  Designed
+-- for readability and compiler verification, Formal is powerful, flexible and easy
+-- to learn.  
 
-This document is a literate program defining the Formal standard
-library, namespaced `prelude`.  To compile it, simply clone the repo and run `sh
-deps.sh && sh build.sh` - this will generate the HTML documentation, compiled
-Javascript source, [Jasmine](http://pivotal.github.com/jasmine) test suite and
-Node.js test suite, then run the test suite from Node.  You can also see the
-results of the Jasmine specifications at the bottom of this document.
+-- This document is a literate program defining the Formal standard
+-- library, namespaced `prelude`.  To compile it, simply clone the repo and run `sh
+-- deps.sh && sh build.sh` - this will generate the HTML documentation, compiled
+-- Javascript source, [Jasmine](http://pivotal.github.com/jasmine) test suite and
+-- Node.js test suite, then run the test suite from Node.  You can also see the
+-- results of the Jasmine specifications at the bottom of this document.
 
-Formal is a literate language embedded in
-[Markdown](http://daringfireball.net/projects/markdown/syntax), so any
-line not indented at least 4 spaces is considered a comment.  The
-primary unit of code organization is the `module`, a named collection
-of functions and values.
+-- Formal is a literate language embedded in
+-- [Markdown](http://daringfireball.net/projects/markdown/syntax), so any
+-- line not indented at least 4 spaces is considered a comment.  The
+-- primary unit of code organization is the `module`, a named collection
+-- of functions and values.
 
-    module prelude
+module prelude
     
 
 
-Bootstrap
----------
-Some simple reflection by lifting from Javascript.  The definitions of
-`object?` and `array?` must use Javascript's `===` operator directly
-here, as the "==" operator defined in [Numbers](#numbers) is defined
-in terms of them.
+    -- Bootstrap
+    -- ---------
+    -- Some simple reflection by lifting from Javascript.  The definitions of
+    -- `object?` and `array?` must use Javascript's `===` operator directly
+    -- here, as the "==" operator defined in [Numbers](#numbers) is defined
+    -- in terms of them.
 
     object? x = do! `typeof x === "object"`
     array? = do! `is_array`
@@ -38,8 +38,8 @@ in terms of them.
     not (array? {})
     not (object? 0)
 
-Side effects can only happen in Javascript, so we use a monadic container to
-compose these bits.
+    -- Side effects can only happen in Javascript, so we use a monadic container to
+    -- compose these bits.
 
     (>>=): JS a -> (a -> JS b) -> JS b | x y = `run (y (run x))`
     (>>): JS a -> JS b -> JS b         | x y = `run x; return (run y)`
@@ -53,16 +53,16 @@ compose these bits.
     5  == do! ret 5
     10 == do! log "test" >> `5 + 5`
 
-Purely side-effectful functions are not posible to annotate with an explicit
-type currently.  This is due to a bug in the current compiler implementation,
-that the Unit type is not expressable as a value in the type checker.  Once
-resolved, `log: a -> JS {}`
+    -- Purely side-effectful functions are not posible to annotate with an explicit
+    -- type currently.  This is due to a bug in the current compiler implementation,
+    -- that the Unit type is not expressable as a value in the type checker.  Once
+    -- resolved, `log: a -> JS {}`
 
     log x = `console.log x`
 
-Testing to verify that escaping Javascript & utilizing escaped
-Javascript with `do` sugar and composition in general works as
-expected.
+    -- Testing to verify that escaping Javascript & utilizing escaped
+    -- Javascript with `do` sugar and composition in general works as
+    -- expected.
 
     let x = 0
         y = do z <- `x = 1`
@@ -70,11 +70,11 @@ expected.
     x == 0
 
 
-Numbers
--------
-Some basic aliases to native javascript infix functions.  These are type
-annotated to constrain inferrence - otherwise, these functions would all be
-inferred as `a -> b -> c`.
+    -- Numbers
+    -- -------
+    -- Some basic aliases to native javascript infix functions.  These are type
+    -- annotated to constrain inferrence - otherwise, these functions would all be
+    -- inferred as `a -> b -> c`.
 
     (&&): Bool -> Bool -> Bool | x y = do! `x && y`
     (||): Bool -> Bool -> Bool | x y = do! `x || y`
@@ -88,9 +88,9 @@ inferred as `a -> b -> c`.
     (<):  Num -> Num -> Bool   | x y = do! `x < y`
     (>):  Num -> Num -> Bool   | x y = do! `x > y`
     
-Equality is overloaded to match records and arrays. By constraining the type of
-this operator, we need only dispatch on the type of the first element,
-constraining 
+    -- Equality is overloaded to match records and arrays. By constraining the type of
+    -- this operator, we need only dispatch on the type of the first element,
+    -- constraining 
 
     (!=) x y = not (x == y)
 
@@ -118,9 +118,9 @@ constraining
 
         | x y = do! `x === y`
 
-And a few simple tests to verify the correctness of these
-implementations.  This is not meant to be exhaustive, only a smoke
-test against regressions.
+    -- And a few simple tests to verify the correctness of these
+    -- implementations.  This is not meant to be exhaustive, only a smoke
+    -- test against regressions.
 
     (3 * 4) + 5 * 4 == 64 / 2
     4 - 1 != 5 - 10
@@ -128,25 +128,25 @@ test against regressions.
     ({test: 1} == {test: 1}) == true
     ({test: 1} != {test: 1}) == false
 
-Fibonacci function
+    -- Fibonacci function
 
     fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
 
-Strings
--------
+    -- Strings
+    -- -------
 
     (+++): String -> String -> String | x y = do! `x + y`
     
     let x = "test"
     "hello `x`" == "hello test"
     
-Speed
------
+    -- Speed
+    -- -----
 
-Due to the nested recursion, `fib` is an excellent function for testing the
-runtime speed versus raw javascript.  `fast_fib` is a trivial javascript
-implementation of the same function, recursed itself to remove any potential
-overhead from formal's dispatch mechanism.
+    -- Due to the nested recursion, `fib` is an excellent function for testing the
+    -- runtime speed versus raw javascript.  `fast_fib` is a trivial javascript
+    -- implementation of the same function, recursed itself to remove any potential
+    -- overhead from formal's dispatch mechanism.
 
     module speedtest
 
@@ -166,24 +166,23 @@ overhead from formal's dispatch mechanism.
                 
         fast_fib 7 == fib 7
         
-With this, we can set up a simple canary to let us know if the prelude is
-suddenly dramatically slower than it previously was; in this case, we fail a test
-if the formal version isn't at least 80% as fast as the native javascript
-version.  This test "primes" the JIT by running the fast calc first,
-otherwise in practice the first eval tends to be favored in V8.
+        -- With this, we can set up a simple canary to let us know if the prelude is
+        -- suddenly dramatically slower than it previously was; in this case, we fail a test
+        -- if the formal version isn't at least 80% as fast as the native javascript
+        -- version.  This test "primes" the JIT by running the fast calc first,
+        -- otherwise in practice the first eval tends to be favored in V8.
 
         floor: Num -> Num = do! `Math.floor`
-
-        ($=) x y = `if (typeof $ != 'undefined') { $(x)["html"](y); }`
 
         do! fast_time <- time `fast_fib 35`
             slow_time <- time `fib 35`
             `console.log (floor (fast_time / slow_time * 100))`
             ret (floor (fast_time / slow_time * 100) >= 80)
 
-Function Combinators
---------------------
-Simple left & right pipes, ala F#.  
+
+    -- Function Combinators
+    -- --------------------
+    -- Simple left & right pipes, ala F#.  
 
     (<|) x y = x y
     (|>) x y = y x
@@ -191,14 +190,14 @@ Simple left & right pipes, ala F#.
     3 |> (λy = y + 1) |> λy = y + 1 == 5
     (λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9
     
-Alternatively, there is a right associative version of `<|`, ala
-haskell.  All operators which end with a `:` are right associative.
+    -- Alternatively, there is a right associative version of `<|`, ala
+    -- haskell.  All operators which end with a `:` are right associative.
 
     (<:) x y = x y
     
     (λx = x - 3) <: (λx = x - 3) <: 5 + 5 == 4
     
-Function composition
+    -- Function composition
 
     (.:) x y = λz = x (y z)
     id x = x
@@ -208,19 +207,19 @@ Function composition
     id [1, 2, 3] == [1, 2, 3]
     flip (λx y = x - y) 3 5 == 2
     
-Partial records tests - these need to bemoved to some sort of test suite
-eventually, when I'm not using the prelude as a test suite [TODO].
+    -- Partial records tests - these need to bemoved to some sort of test suite
+    -- eventually, when I'm not using the prelude as a test suite [TODO].
     
     let f {a: x, b: y, _ } = x + y
     f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }
 
     let f {a: 1, b: 1, _ } = 2
         | {b: 2, c: 2, _ } = 2
-    f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4
+    f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4    
 
-Tests
------
-By invoking javascript, we can listen for exceptions.
+    -- Tests
+    -- -----
+    -- By invoking javascript, we can listen for exceptions.
 
     err x = do! `try {
                      x();
@@ -229,34 +228,38 @@ By invoking javascript, we can listen for exceptions.
                      return e;
                  }`
 
-Option
-------
-    
-    type Option a = some: a | none:
-    
-    option b none: = b
-         | _ (some: x) = x
-         
-    option 3 (some: 2) == 2
+    -- Option
+    -- ------
 
+    module option
+    
+        type Option a = some: a | none:
+        
+        option b none: = b
+             | _ (some: x) = x
+             
+        option 3 (some: 2) == 2
 
-Lists
------
-A simple implementation of a library for manipulating linked lists.
+    module html
+        ($=) x y = `if (typeof $ != 'undefined') { $(x)["html"](y); }`
+
+    -- Lists
+    -- -----
+    -- A simple implementation of a library for manipulating linked lists.
 
     module list
     
         type List a = { head: a, tail: List a } 
                     | nil:
-        
-This complex type can be hidden behind a constructor function which
-works more like a traditional cons.
+                
+        -- This complex type can be hidden behind a constructor function which
+        -- works more like a traditional cons.
 
         (::) x y = { head = x, tail = y }
 
-The compiler itself also supports the list sugar `[: 1, 2, 3 ]` (or
-`[: 1, 2, 3 :]`, if you prefer symmetry).  All of these lists are
-synonyms.
+        -- The compiler itself also supports the list sugar `[: 1, 2, 3 ]` (or
+        -- `[: 1, 2, 3 :]`, if you prefer symmetry).  All of these lists are
+        -- synonyms.
 
         let xs = [: [: 1, 2, 3 ]
                     [: 1, 2, 3 :]
@@ -269,8 +272,8 @@ synonyms.
         all? (λy = [:1,2,3] == y) xs 
                            
 
-Simple implementations of list accessors, which illustrate
-incomplete definition.
+        -- Simple implementations of list accessors, which illustrate
+        -- incomplete definition.
 
         empty? nil: = true | _ = false
 
@@ -292,7 +295,7 @@ incomplete definition.
            
         1 .. 5 == [:1,2,3,4,5]
 
-Project Euler problem 1, modified to protect the innocent:
+        -- Project Euler problem 1, modified to protect the innocent:
 
         288045 == 1 .. 1111 |> filter (λx = x % 3 == 0 || x % 5 == 0) |> sum
 
@@ -324,14 +327,14 @@ Project Euler problem 1, modified to protect the innocent:
         drop_while (λx = x < 0) nil: == nil:
         drop_while (λx = x > 0) [: 2, 1, 0 ] == [: 0 ]
 
-Cardinality
+        -- Cardinality
         
         length nil: = 0
              | { head: _, tail: x } = 1 + length x
              
         length [: 1, 2, 3, 4 ] == 4
 
-Generators
+        -- Generators
 
         init 0 _ = nil:
            | n x = x :: init (n - 1) x
@@ -339,7 +342,7 @@ Generators
         length (init 30 0) == 30
         tail (init 3 0)    == init 2 0
 
-List concatenation
+        -- List concatenation
 
         (++) nil: y = y
            | { head: y, tail: ys } xs = 
@@ -348,7 +351,7 @@ List concatenation
         nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
         [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]
 
-Filter
+        -- Filter
 
         filter: (a -> Bool) -> List a -> List a
               | f nil: = nil:
@@ -357,14 +360,14 @@ Filter
                         
         filter (λx = x > 2) [: 1, 2, 3, 4 ] == [: 3, 4 ]
 
-Map
+        -- Map
 
         map f nil: = nil:
           | f x = f (head x) :: map f (tail x)
           
         map (λx = x + 1) [: 1, 2, 3 ] == [: 2, 3, 4 ]
             
-Reverse
+        -- Reverse
 
         reverse = 
             let r rest [:] = rest
@@ -375,7 +378,7 @@ Reverse
         
         reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
 
-Folds
+        -- Folds
 
         foldl f x xs =
             let g y nil: = y
@@ -424,17 +427,18 @@ Folds
         maximum [: 1, 2, 3 ] == 3
         
 
-Sequences
----------
-Sequences are an abstract data type which resembles a list, except that elements
-Sequences may be infinite, as long as you never try to read every element.
-However, the current implementation is stack-consuming and thus limited by the
-underlying javascript runtime [TODO].  
+    -- Sequences
+    -- ---------
+    -- Sequences are an abstract data type which resembles a list, except that elements
+    -- Sequences may be infinite, as long as you never try to read every element.
+    -- However, the current implementation is stack-consuming and thus limited by the
+    -- underlying javascript runtime [TODO].  
 
     module seq
 
         open list
         open speedtest
+        open html
     
         type Seq a = seq: JS { elem: a, next: Seq a}
                    | end:
@@ -480,14 +484,14 @@ underlying javascript runtime [TODO].
               | {seq: y} = seq: lazy do! { elem: x, next: xs } <- y
                                          ret { elem: x, next: to_lazy xs }
  
-Infinite sequence example
+        -- Infinite sequence example
  
         fibs = to_lazy (1 ::: do ret (1 ::: do ret (zip_with (λx y = x + y) fibs (tail fibs))))
     
-Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
-is ridiculously faster than the recursive version.  For example, the runtime
-speed of this fib implementation compared to the native recursive one is <span
-id="speedtest">__________</span>% (filled in dynamically).
+        -- Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
+        -- is ridiculously faster than the recursive version.  For example, the runtime
+        -- speed of this fib implementation compared to the native recursive one is <span
+        -- id="speedtest">__________</span>% (filled in dynamically).
 
         do! fast_time <- time do ret (fast_fib 35)
             slow_time <- time do ret (fibs |> take 35 |> to_list |> last)
@@ -500,4 +504,16 @@ id="speedtest">__________</span>% (filled in dynamically).
         fast_fib 35 == fibs |> take 35
                             |> to_list
                             |> last
-                            
+
+    module functor
+
+        open list
+                                
+        type Functor f = { map: (a -> b) -> f a -> f b }
+
+        list_functor = { map f { head: x, tail: xs } = { head: f x, tail: list_functor.map f xs }
+                             | _ nil: = nil: }
+
+        other_functor = { map f {x: x} = {x: f x } }
+
+        map { map: m } x f = m f x 

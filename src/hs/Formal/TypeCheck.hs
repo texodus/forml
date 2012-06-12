@@ -202,6 +202,8 @@ instance Unify TypeRecord where
                     
     t |=| u @ (TRecord _ (TPartial _) _) = u |=| t
 
+    t |=| u = fail$ "Unimplemented record unification " ++ show (TypeRecord t) ++ ", " ++ show (TypeRecord u)
+
 instance Unify Type where
 
     TypeApplication l1 r1 |=| TypeApplication l2 r2 =
@@ -272,10 +274,10 @@ match (TypeApplication l1 r1) (TypeApplication l2 r2) =
 match (TypeVar u) t 
     | kind u == kind t = return (u +-> t)
 match (TypeRecord t) (TypeRecord u) 
-    | t == u           = return [] -- (?)  is this how records should be matched?
+    | t == u = return []
 match (Type t) (Type u)
-    | t == u           = return []
-match t u             = fail "Types do not match"
+    | t == u = return []
+match _ _ = fail "Types do not match"
 
 
 
