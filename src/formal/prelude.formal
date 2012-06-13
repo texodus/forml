@@ -508,9 +508,8 @@ module prelude
     module functor
 
         open list
-                                
-        type Functor f = { map: (a -> b) -> f a -> f b }
 
+        type Functor f = { map: (a -> b) -> f a -> f b }
 
         list_functor = { map f { head: x, tail: xs } = { head: f x, tail: list_functor.map f xs }
                              | _ nil: = nil: }
@@ -522,5 +521,6 @@ module prelude
 
         list_monad = { (>>=) x g = concat_map g x
                        ret x = [:x] }
-            
 
+        js_monad = { (>>=) x f = x >>= f
+                     ret x = ret x }

@@ -192,7 +192,7 @@ instance Unify TypeRecord where
         | M.keysSet t `S.intersection` M.keysSet u == M.keysSet t =
 
             do a <- TRecord t TComplete k |=| TRecord (u M.\\ (u M.\\ t)) TComplete k'
-               b <- if (M.size u > M.size t)
+               b <- if (M.size u >= M.size t)
                     then var_bind p (TypeRecord (TRecord (u M.\\ t) TComplete Star))
                     else return []
                return$ a @@ b
@@ -694,7 +694,17 @@ instance Infer (Pattern b) Type where
                     (qs :=> t) <- freshInst (quantify (tv t \\ tv t'') (qs :=> t))
                     unify t r
                     unify t' t''
-                    return t'
+                    s <- get_substitution
+                    let t''' = apply s t
+                        r''' = apply s r
+                        qt = quantify (tv t''') $ [] :=> t'''
+                        rt = quantify (tv r''') $ [] :=> r'''
+                    if qt /= rt
+                        then do add_error$ "Object constructor does not match signature\n" 
+                                             ++ "  Expected: " ++ show qt ++ "\n" 
+                                             ++ "  Actual:   " ++ show rt
+                                return t'
+                        else return t'
 
         where f (Symbol x) = x
               f (Operator x) = x
@@ -1031,7 +1041,8 @@ instance ToKey Type where
     
 
 to_scheme :: TypeDefinition -> UnionType -> [Assumption]
-to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify (vars y) ([]:=> y), def_type y) | y <- enumerate_types t ] 
+to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify (vars y) ([]:=> y), def_type y)
+                                          | y <- enumerate_types t ] 
 
     where vars y = map (\x -> TVar x (infer_kind x y)) vs
 
