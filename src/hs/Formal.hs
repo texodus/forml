@@ -119,19 +119,23 @@ main  = do rc <- parseArgs <$> getArgs
            let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
            let hook = "<script>" ++ B.unpack htmljs ++ "</script>"
            writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
+           if run_tests rc
+               then do (Just std_in, _, _, p) <- createProcess (proc "node" []) { std_in = CreatePipe }
+                       hPutStrLn std_in$ B.unpack jasmine
+                       hPutStrLn std_in$ js
+                       hPutStrLn std_in$ tests
+                       hPutStrLn std_in$ B.unpack console
+                       z <- waitForProcess p
 
-           (Just std_in, _, _, p) <- createProcess (proc "node" []) { std_in = CreatePipe }
-           hPutStrLn std_in$ B.unpack jasmine
-           hPutStrLn std_in$ js
-           hPutStrLn std_in$ tests
-           hPutStrLn std_in$ B.unpack console
-           z <- waitForProcess p
-
-           case z of 
-             ExitFailure _ -> return ()
-             ExitSuccess -> if (show_types rc) 
-                            then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
-                            else return ()
+                       case z of 
+                         ExitFailure _ -> return ()
+                         ExitSuccess -> if (show_types rc) 
+                                        then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
+                                        else return ()
+               else do warn "Testing" ()
+                       if (show_types rc) 
+                         then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
+                         else return ()
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
@@ -179,6 +183,8 @@ parseArgs = fst . runState argsParser
                                                        return $ x { show_types = True }
                                          "-no-opt" -> do x <- argsParser
                                                          return $ x { optimize = False }
+                                         "-no-test" -> do x <- argsParser
+                                                          return $ x { run_tests = False }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
                                                        RunConfig a _ c d e f g <- argsParser

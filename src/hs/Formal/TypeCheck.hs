@@ -691,6 +691,7 @@ instance Infer (Pattern b) Type where
              Just (Forall _ scr, sct) ->
                  do (qs' :=> t'') <- freshInst sct
                     (qs :=> t) <- return$ inst (map TypeVar$ tv t'') scr
+                    (qs :=> t) <- freshInst (quantify (tv t \\ tv t'') (qs :=> t))
                     unify t r
                     unify t' t''
                     return t'
@@ -780,14 +781,26 @@ instance Infer (Expression Definition) Type where
            let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) TComplete Star)
            t' <- newTVar Star
            case sc of
-             Nothing ->  do unify t' r
-                            return t'
+             Nothing ->
+                 do unify t' r
+                    return t'
              Just (Forall _ scr, sct) ->
-                 do (qs' :=> t'') <- freshInst sct
-                    (qs :=> t) <- return$ inst (map TypeVar$ tv t'') scr
+                 do (qs' :=> (t'')) <- freshInst sct
+                    (qs :=> t) <- return$ inst (map TypeVar$ tv t'') (scr)
+                    (qs :=> t) <- freshInst (quantify (tv t \\ tv t'') (qs :=> t))
                     unify t r
                     unify t' t''
-                    return t'
+                    s <- get_substitution
+                    let t''' = apply s t
+                        r''' = apply s r
+                        qt = quantify (tv t''') $ [] :=> t'''
+                        rt = quantify (tv r''') $ [] :=> r'''
+                    if qt /= rt
+                        then do add_error$ "Object constructor does not match signature\n" 
+                                             ++ "  Expected: " ++ show qt ++ "\n" 
+                                             ++ "  Actual:   " ++ show rt
+                                return t'
+                        else return t'
 
         where f (Symbol x) = x
               f (Operator x) = x
@@ -1018,21 +1031,33 @@ instance ToKey Type where
     
 
 to_scheme :: TypeDefinition -> UnionType -> [Assumption]
-to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify vars ([]:=> y), def_type) | y <- enumerate_types t ] 
+to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify (vars y) ([]:=> y), def_type y) | y <- enumerate_types t ] 
 
-    where vars :: [TypeVar]
-          vars = map (flip TVar Star) vs
+    where vars y = map (\x -> TVar x (infer_kind x y)) vs
 
-          def_type :: Scheme
-          def_type = quantify vars ([] :=> foldl app poly_type (map TypeVar vars))
+          def_type y = quantify (vars y) ([] :=> foldl app poly_type (map TypeVar (vars y)))
 
-          poly_type = Type (TypeConst n (to_kind (length vars)))
+          poly_type = Type (TypeConst n (to_kind (length vs)))
 
           to_kind 0 = Star
           to_kind n = KindFunction Star (to_kind$ n - 1)
 
           app :: Type -> Type -> Type
           app y x = TypeApplication y x
+
+          -- TODO this is still wrong - have to check for all enumerated types
+
+          infer_kind x y = let ks = infer_kinds x y
+                           in if ks == []
+                              then Star 
+                              else if all (\x -> x == head ks) ks
+                                   then head ks
+                                   else error "Kind mismatch in schemer"
+
+          infer_kinds x (TypeApplication a b) = infer_kinds x a ++ infer_kinds x b
+          infer_kinds x (TypeVar (TVar y k)) | x == y = [k]
+          infer_kinds x (TypeRecord (TRecord m _ _)) = concat$ map (infer_kinds x) (M.elems m)
+          infer_kinds _ _ = []
 
 -- | Computes all possible types from a type signature AST.
 

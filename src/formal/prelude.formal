@@ -511,9 +511,16 @@ module prelude
                                 
         type Functor f = { map: (a -> b) -> f a -> f b }
 
+
         list_functor = { map f { head: x, tail: xs } = { head: f x, tail: list_functor.map f xs }
                              | _ nil: = nil: }
 
-        other_functor = { map f {x: x} = {x: f x } }
-
         map { map: m } x f = m f x 
+
+        type Monad m = { (>>=): m a -> (a -> m b) -> m b,
+                         ret: a -> m a }
+
+        list_monad = { (>>=) x g = concat_map g x
+                       ret x = [:x] }
+            
+
