@@ -1165,10 +1165,11 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
 
 js_type = Type (TypeConst "JS" (KindFunction Star Star))
 
-tiProgram :: Program -> ([(Namespace, [Assumption])], [String])
-tiProgram (Program bgs) = 
+tiProgram :: Program -> [(Namespace, [Assumption])] -> ([(Namespace, [Assumption])], [String])
+tiProgram (Program bgs) env = 
     
-    runTI $ do assume$ "true"  :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
+    runTI $ do TI (\x -> (x { modules = env }, ()))
+               assume$ "true"  :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
                assume$ "run"   :>: (Forall [Star] ([] :=> (TypeApplication js_type (TypeGen 0) -:> TypeGen 0)))
