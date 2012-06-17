@@ -64,7 +64,7 @@ instance Syntax Statement where
 
     syntax = whitespace >> withPos statement_types <* many newline
 
-        where statement_types = (try type_statement       <?> "Type Definition")
+        where statement_types = (type_statement       <?> "Type Definition")
                                 <|> (try import_statement <?> "Import Statement")
                                 <|> (try module_statement <?> "Module Declaration")
                                 <|> (try def_statement    <?> "Symbol Definition")
@@ -83,13 +83,13 @@ instance Syntax Statement where
                                     spaces *> (indented <|> same)
                                     ModuleStatement name <$> withPos (many1 ((spaces >> same >> syntax)))
 
-              type_statement  = do string "type"
-                                   whitespace1
-                                   def <- syntax
+              type_statement  = do def <- syntax
+                                   set_indentation (+1)
                                    whitespace
-                                   sig <- try (string "=" >> spaces >> withPos (string "|" >> type_definition_signature))
-                                          <|> withPos (string "=" >> whitespace >> type_definition_signature)
+                                   sig <- try (string "=" >> spaces >> (string "|" >> type_definition_signature))
+                                          <|> (string "=" >> spaces >> type_definition_signature)
                                    whitespace
+                                   set_indentation (+(-1))
                                    return $ TypeStatement def sig
 
               expression_statement = do whitespace

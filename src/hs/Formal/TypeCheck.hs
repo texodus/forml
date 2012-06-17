@@ -192,8 +192,8 @@ instance Unify TypeRecord where
         | M.keysSet t `S.intersection` M.keysSet u == M.keysSet t =
 
             do a <- TRecord t TComplete k |=| TRecord (u M.\\ (u M.\\ t)) TComplete k'
-               b <- if (M.size u >= M.size t)
-                    then var_bind p (TypeRecord (TRecord (u M.\\ t) TComplete Star))
+               b <- if M.size u >= M.size t
+                    then var_bind p$ TypeRecord$ TRecord (u M.\\ t) TComplete Star
                     else return []
                return$ a @@ b
 
@@ -634,7 +634,7 @@ instance Instantiate Type where
       TypeRecord (TRecord (M.map (inst ts) m) TComplete k)
   inst ts (TypeRecord (TRecord m (TPartial p) k)) =
       TypeRecord (TRecord (M.map (inst ts) m) (TPartial (inst ts p)) k)
-  inst ts t   = t
+  inst _ t   = t
 
 instance Instantiate a => Instantiate [a] where
   inst ts = map (inst ts)
@@ -803,10 +803,11 @@ instance Infer (Expression Definition) Type where
                     s <- get_substitution
                     let t''' = apply s t
                         r''' = apply s r
-                        qt = quantify (tv t''') $ [] :=> t'''
-                        rt = quantify (tv r''') $ [] :=> r'''
+                        qt   = quantify (tv t''') $ [] :=> t'''
+                        rt   = quantify (tv r''') $ [] :=> r'''
+                        sct' = apply s t''
                     if qt /= rt
-                        then do add_error$ "Object constructor does not match signature\n" 
+                        then do add_error$ "Record does not match expected signature for " ++ show sct' ++ "\n" 
                                              ++ "  Expected: " ++ show qt ++ "\n" 
                                              ++ "  Actual:   " ++ show rt
                                 return t'
@@ -920,7 +921,7 @@ instance Infer [Definition] () where
               simple (Definition i axs) = any (null . f) axs
 
               f (EqualityAxiom (Match p _) _) = p
-              f _ = error "Not Defined"
+              f _ = error "Fatal error occurred while reticulating splines"
 
 
 data BindGroup = Scope [Namespace] [Statement] [Definition] [[Definition]] [Addr (Expression Definition)]

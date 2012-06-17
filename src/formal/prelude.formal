@@ -1,13 +1,107 @@
--- Formal is a functional programming language which targets Javascript.  Designed
--- for readability and compiler verification, Formal is powerful, flexible and easy
--- to learn.  
+-- Formal is a functional programming language for the people, targetting
+-- Javascript.  Designed around the principles of readability, verifiability and
+-- simplicity, Formal takes the pain out of ML, while simultaeniously bringing a
+-- little discipline to Javascript.  Features:
 
--- This document is a literate program defining the Formal standard
--- library, namespaced `prelude`.  To compile it, simply clone the repo and run `sh
--- deps.sh && sh build.sh` - this will generate the HTML documentation, compiled
--- Javascript source, [Jasmine](http://pivotal.github.com/jasmine) test suite and
--- Node.js test suite, then run the test suite from Node.  You can also see the
--- results of the Jasmine specifications at the bottom of this document.
+--   * Heavily nspired by Haskell, F#, Coffeescript, ML.  Type inferred, curried,
+--     strictly evaluated.
+
+--   * Hybrid type system - Formal features a complete polymorphic type
+--     inferrence engine w/structural types ala ML, with a twist.  The type of a
+--     definition with an explicit type signature is verifed just like any other
+--     ML, but for implicitly typed definitions, a failure to infer a principal
+--     type only emits a warning by default, and the type of the definition is
+--     assumed to be dynamic (ie unifies with all types).  If you don't like
+--     spending time keeping your application's types consistent while working on an
+--     experimental or rapidly changing codebase, Formal lets you code first, type
+--     later.
+    
+--   * First class testing - In Formal, types and tests are equal first class
+--     citizens of the language.  Formal allows you to write inline, definition
+--     scope assertions about the expected behavior of your functions, which
+--     compile to a seperate [Jasmine](http://pivotal.github.com/jasmine) test
+--     suite.  Definitions not referenced in an assertion emit compiler warnings,
+--     and the test suite is run by default (just like the type checker).  No more
+--     excuses for not testing your code!
+
+--   * Inline Javascript - For bootstrapping, quickly importing a Javascript
+--     library, accessing un-formalized APIs or simply writing fast mutation
+--     algorithms "natively", Formal allows quick and easy anti-quoting into
+--     Javascript with backticks (`). Together with dynamic types, this allow
+--     no-fuss interfacing with Javascript when you need it, but still allows you
+--     to tell the type checker explicitly what types to expect when you get around
+--     to it.
+
+--   * Simple data types - The basic data types in Formal are the exact same basic
+--     data types of Javascript:  Num, String, Array, Object.  Despite this
+--     simplicity, Formal supports many of the features of the fuly algebraic data
+--     types of languages like ML and Haskell, including partial object types,
+--     polymorphic type unions, synonyms, existential types and more.
+    
+--   * Advanced pattern matching - Traditional pattern matching goodness with a few
+--     extras: match on record partials & define your own matches with view
+--     patterns.
+    
+--   * Pure by default - Like Haskell, any function which has a side effect returns
+--     the polymorphic type `JS a` by default, including any inline Javascript, and
+--     these types can be composed without evaluation via `do` sugar or any other
+--     combinator.  Unlike haskell, `JS a` types can be trivially unwrapped
+--     anywhere via `do!` (type `JS a -> a`), even inside a pure function.  Formal
+--     gives you the power of choice:  side effects are restricted by
+--     default, but if you need to log a messages deep in a pure library or want a
+--     function to mutate a variable for speed, just `do!` it.
+    
+--   * Targets Closure advanced mode - Formal does not aim to emit readable
+--     Javascript, instead opting to produce the most efficient output possible.
+--     To this end, it currently relies heavily on Google Closure's advanced
+--     optimizations mode for aggressive function inlining & dead code elimination.
+
+-- This document is a both the compiler's README, and the Formal language's
+-- standard library as literate code, which serves as a simple language feature
+-- spec/tutorial
+
+-- Installation
+-- ------------
+
+-- Mac OSX (tested on Snow Leopard & Lion)
+
+-- 1. Install the
+-- [Haskell Platform](http://hackage.haskell.org/platform/index.html)
+
+-- 2. Install [Node.js](http://nodejs.org/), preferably via
+-- [Homebrew](http://mxcl.github.com/homebrew/).  This is only strictly necessary
+-- if you want the compiler to run your test suite - you can develop browser
+-- applications without Node if you want.
+
+-- 3. Clone the formal repo via
+
+--    <pre><code>--$ git clone git://github.com/texodus/formal.git</code></pre>
+    
+-- 4. Change to the formal directory and run cabal install
+
+--    <pre><code>--$ cd formal
+--       --$ cabal install</pre></code>
+    
+-- 5. Open a beer, you've had a long day!  The `formal` executable should now be on
+--    your path.
+
+-- To compile some formal files:
+   
+--        <pre><code>--$ formal -o app test.formal test2.formal</pre></code>
+
+-- will create an app.js, app.spec.js and app.html file with the compiled code,
+-- test suite and annotated documentation respectively.  To compile literate
+-- formal (eg, Formal code embedded in Markdown, ala this file):
+   
+--        <pre><code>--$ formal test.lformal</pre></code>
+   
+-- To see the inferred types:
+   
+--        <pre><code>--$ formal -t test.formal</pre></code>
+   
+-- To turn off optimizing (eg, Closure) or testing:
+   
+--        <pre><code>--$ formal -no-test -no-opt test.formal</pre></code>
 
 -- Formal is a literate language embedded in
 -- [Markdown](http://daringfireball.net/projects/markdown/syntax), so any
@@ -16,8 +110,6 @@
 -- of functions and values.
 
 module prelude
-    
-
 
     -- Bootstrap
     -- ---------
@@ -179,7 +271,6 @@ module prelude
             `console.log (floor (fast_time / slow_time * 100))`
             ret (floor (fast_time / slow_time * 100) >= 80)
 
-
     -- Function Combinators
     -- --------------------
     -- Simple left & right pipes, ala F#.  
@@ -207,7 +298,7 @@ module prelude
     id [1, 2, 3] == [1, 2, 3]
     flip (λx y = x - y) 3 5 == 2
     
-    -- Partial records tests - these need to bemoved to some sort of test suite
+    -- Partial records tests - these need to be moved to some sort of test suite
     -- eventually, when I'm not using the prelude as a test suite [TODO].
     
     let f {a: x, b: y, _ } = x + y
@@ -215,7 +306,12 @@ module prelude
 
     let f {a: 1, b: 1, _ } = 2
         | {b: 2, c: 2, _ } = 2
-    f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4    
+    f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4
+
+    let f {a: 1, b: 2, _ } = 1
+        g {b: 2, c: 3, _ } = 2
+        x = {a: 1, b: 2, c: 3, d: 4 }
+    f x + 1 == g x
 
     -- Tests
     -- -----
@@ -233,7 +329,7 @@ module prelude
 
     module option
     
-        type Option a = some: a | none:
+        Option a = some: a | none:
         
         option b none: = b
              | _ (some: x) = x
@@ -241,7 +337,7 @@ module prelude
         option 3 (some: 2) == 2
 
     module html
-        ($=) x y = `if (typeof $ != 'undefined') { $(x)["html"](y); }`
+        ($=) x y = `if (typeof $ != "undefined") { $(x)["html"](y); }`
 
     -- Lists
     -- -----
@@ -249,9 +345,9 @@ module prelude
 
     module list
     
-        type List a = { head: a, tail: List a } 
-                    | nil:
-                
+        List a = { head: a, tail: List a } 
+               | nil:
+                 
         -- This complex type can be hidden behind a constructor function which
         -- works more like a traditional cons.
 
@@ -318,8 +414,8 @@ module prelude
         err (lazy tail nil:) == "Tail called on empty list"
         err (lazy last nil:) == "Last called on empty list"
 
-        take 2 [: 1, 2, 3 ] == [: 1, 2 ]
-        drop 2 [: 1, 2, 3 ] == [: 3 ]
+        take 2 [: 1, 2, 3 ]  == [: 1, 2 ]
+        drop 2 [: 1, 2, 3 ]  == [: 3 ]
 
         take_while (λx = x < 0) [:] == [:]
         take_while (λx = x > 0) [: 2, 1, 0 ] == [: 2, 1 ]
@@ -440,8 +536,8 @@ module prelude
         open speedtest
         open html
     
-        type Seq a = seq: JS { elem: a, next: Seq a}
-                   | end:
+        Seq a = seq: JS { elem: a, next: Seq a}
+              | end:
                    
         iterate f x = seq: do ret { elem: x, next: iterate f (f x) }
 
@@ -486,7 +582,7 @@ module prelude
  
         -- Infinite sequence example
  
-        fibs = to_lazy (1 ::: do ret (1 ::: do ret (zip_with (λx y = x + y) fibs (tail fibs))))
+        fibs = to_lazy <: 1 ::: ret <: 1 ::: do ret <: zip_with (λx y = x + y) fibs <: tail fibs
     
         -- Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
         -- is ridiculously faster than the recursive version.  For example, the runtime
@@ -505,22 +601,51 @@ module prelude
                             |> to_list
                             |> last
 
-    module functor
+    -- FormalZ
+    -- -------
+    -- Demonstration of some classic FP data structures.  This form of polymorphism can
+    -- be simulated in Formal the same way they are implemented in Haskell - as a function
+    -- dictionary, the only difference being that you must explicitly bind the dictionary
+    -- instance to a symbol (as opposed to it being referenced by the type variable's
+    -- instantiation).
+
+    module formalz
 
         open list
 
-        type Functor f = { map: (a -> b) -> f a -> f b }
+        Functor f =
 
-        list_functor = { map f { head: x, tail: xs } = { head: f x, tail: list_functor.map f xs }
-                             | _ nil: = nil: }
+            { map: (a -> b) -> f a -> f b } | swill:
 
-        map { map: m } x f = m f x 
+        Monad m =
 
-        type Monad m = { (>>=): m a -> (a -> m b) -> m b,
-                         ret: a -> m a }
+            { (>>=): m a -> (a -> m b) -> m b
+              ret: a -> m a }
 
-        list_monad = { (>>=) x g = concat_map g x
-                       ret x = [:x] }
+        map z x f = z.map f x
 
-        js_monad = { (>>=) x f = x >>= f
-                     ret x = ret x }
+        bind { ret: f, _ } x = f x
+
+        list_functor =
+
+            { map _ nil: = nil: 
+
+                | f { head: x, tail: xs } =
+
+                      { head: f x
+                        tail: list_functor.map f xs }}
+
+        list_monad =
+
+            { (>>=) x g = concat_map g x
+              ret x = [:x] }
+
+        (>>>=) x g = concat_map g x
+
+        let z = 1 .. 3 >>>= λx = [: x, x + 1, x + 2 ]
+        z == [: 1, 2, 3, 2, 3, 4, 3, 4, 5 ]
+
+        js_monad   =
+
+            { (>>=) x f = x >>= f
+              ret x = ret x }

@@ -19,8 +19,8 @@ $(function() {
     $(".test").css("position", "relative").css("left", "50px")
     prettyPrint();
 
-    jasmine.getEnv().addReporter(new jasmine.FormalReporter());
     jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+    jasmine.getEnv().addReporter(new jasmine.FormalReporter());
     jasmine.getEnv().execute();
 
     var reporter = $(".jasmine_reporter").detach();

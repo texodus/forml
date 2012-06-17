@@ -140,7 +140,7 @@ poly_type     = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try 
 
 record_type   = let key_value = (,) <$> syntax <* div' <*> type_definition_signature
                     div'      = spaces <* string ":" <* spaces
-                    pairs     = key_value `sepEndBy` try (comma <|> not_comma)
+                    pairs     = key_value `sepEndBy` try (try comma <|> not_comma)
                     inner     = RecordType . M.fromList <$> pairs 
                     inherit   = do SimpleType n <- try poly_type <|> try symbol_type <|> var_type
                                    spaces

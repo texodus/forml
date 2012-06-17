@@ -38,6 +38,8 @@ jasmine.FormalReporter = function(doc) {
      var k = "#test_" + spec.description.split("::")[0]
      var el = $(k)
 
+     spec.description = spec.description.split("::")[1]
+
      if (status == "passed") {
          if (k.indexOf("multi") >= 0) {
              $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:rgba(32,186,24,0.5)' title='" + JSON.stringify(spec.results_.items_[0].actual)+ "'> <span style='color:rgb(255,255,255);font-weight:bold'>PASS</span> </span> ")

@@ -87,6 +87,10 @@ same = spaces >> do pos <- getPosition
                        else do put $ setSourceLine s (sourceLine pos)
                                return ()
 
+set_indentation :: (Int -> Int) -> Parser ()
+set_indentation f = do s <- get
+                       put$ setSourceColumn s (f (sourceColumn s))
+
 spaces :: Parser ()
 spaces = try emptyline `manyTill` try line_start >> return ()
 
