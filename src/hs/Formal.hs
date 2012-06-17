@@ -7,6 +7,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TupleSections #-}
 
 
 module Main where
@@ -36,6 +37,9 @@ import Data.URLEncoded
 import Formal.Parser
 import Formal.Javascript
 import Formal.TypeCheck hiding (split)
+
+import Formal.Types.Namespace
+
 import qualified Data.ByteString.Char8 as B
 
 import Data.FileEmbed
@@ -80,33 +84,46 @@ monitor x d = do putStr$ "[ ] " ++ x
                                  mapM putStrLn y
                                  exitFailure
 
-to_literate :: String -> String
-to_literate (lstrip -> '-':'-':xs) = lstrip xs
-to_literate x = "    " ++ x
+
+to_literate :: String -> String -> String
+to_literate filename
+    | (head . tail . split "." $ filename) == "formal" = unlines . map l . lines
+    | otherwise = id
+
+    where l (lstrip -> '-':'-':xs) = lstrip xs
+          l x = "    " ++ x
+
+
+type TypeSystem = [(Namespace, [Assumption])]
+
+to_parsed :: String -> TypeSystem -> Either [String] (TypeSystem, (Program, String))
+to_parsed src env = case parseFormal src of
+                      Left x  -> Left [show x]
+                      Right x -> case tiProgram x env of
+                                   (as, []) -> Right (as, (x, src))
+                                   (_, y)   -> Left y
+
+parse_formal :: [String] -> IO (TypeSystem, [(Program, String)])
+parse_formal xs = foldM parse' ([], []) xs
+
+    where parse' :: (TypeSystem, [(Program, String)]) -> String -> IO (TypeSystem, [(Program, String)])
+          parse' (ts, as) filename = do hFile <- openFile filename ReadMode
+                                        src <-   hGetContents hFile
+                                        let src' = to_literate filename . (++ "\n") $ src
+                                        (ts', as') <- monitor "Parsing"$ return$ to_parsed src' ts
+                                        return (ts ++ ts', as ++ [as'])
+
+gen_js :: [(Program, String)] -> (String, [(String, String)])
+gen_js ps = let p = Program$ get_program ps
+            in  (compress (render p), [("", render_spec p)])
+
+    where get_program ((Program ss, _): ps) = ss ++ get_program ps
+          get_program [] = []
 
 main :: IO ()
 main  = do rc <- parseArgs <$> getArgs
-           hFile  <- openFile (head $ inputs rc) ReadMode
-
-           let f' = if not (literate rc) 
-                        then unlines . map to_literate . lines
-                        else id
-   
-           src <- f' . (\ x -> x ++ "\n") <$> hGetContents hFile
-
-           src' <- monitor "Parsing" . return$
-                   case parseFormal src of
-                     Left ex -> Left [show ex]
-                     Right x -> Right x
-    
-           as <- monitor "Type Checking" . return $
-                   case tiProgram src' of
-                     (as, []) -> Right as
-                     (_, y)  -> Left y
-   
-           (js, tests) <- monitor "Generating Javascript"$
-                   do let js = compress $ render src'
-                      return$ Right (js, render_spec src')
+           (as, src') <- parse_formal$ inputs rc
+           (js, ((_, tests):_)) <- monitor "Generating Javascript" . return . Right . gen_js $ src'
    
            js <- if optimize rc 
                  then (monitor "Optimizing"$ closure js)
@@ -115,14 +132,23 @@ main  = do rc <- parseArgs <$> getArgs
            writeFile (output rc ++ ".js") js
            writeFile (output rc ++ ".spec.js") tests
 
-           let html = highlight (case src' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests src src')
+           -- let html = highlight (case src' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests "" src')
+           -- let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
+           -- let hook = "<script>" ++ B.unpack htmljs ++ "</script>"
+           -- writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
+
+           let xxx = fst . head $ src'
+           let yyy = snd . head $ src'
+           let html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
            let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
            let hook = "<script>" ++ B.unpack htmljs ++ "</script>"
            writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
+
+
            if run_tests rc
                then do (Just std_in, _, _, p) <- createProcess (proc "node" []) { std_in = CreatePipe }
                        hPutStrLn std_in$ B.unpack jasmine
-                       hPutStrLn std_in$ js
+                       hPutStrLn std_in$ js ++ "\n\n"
                        hPutStrLn std_in$ tests
                        hPutStrLn std_in$ B.unpack console
                        z <- waitForProcess p
@@ -168,15 +194,14 @@ data RunConfig = RunConfig { inputs :: [String]
                            , show_types :: Bool
                            , optimize :: Bool
                            , run_tests :: Bool 
-                           , write_docs :: Bool
-                           , literate :: Bool }
+                           , write_docs :: Bool }
 
 parseArgs :: [String] -> RunConfig
 parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False True True True True
+                          []     -> return $ RunConfig [] "default" False True True True
                           (x:xs) -> do put xs
                                        case x of
                                          "-t"    -> do x <- argsParser
@@ -187,11 +212,11 @@ parseArgs = fst . runState argsParser
                                                           return $ x { run_tests = False }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
-                                                       RunConfig a _ c d e f g <- argsParser
-                                                       return $ RunConfig (x:a) name c d e f g
+                                                       RunConfig a _ c d e f <- argsParser
+                                                       return $ RunConfig (x:a) name c d e f
                                          ('-':_) -> error "Could not parse options"
-                                         z       -> do RunConfig a _ c d e f _ <- argsParser
+                                         z       -> do RunConfig a _ c d e f <- argsParser
                                                        let b = last $ split "/" $ head $ split "." z
-                                                       let g = (head . tail . split "." $ z) == "lformal"
-                                                       return $ RunConfig (x:a) b c d e f g
+                                                       
+                                                       return $ RunConfig (x:a) b c d e f
 
