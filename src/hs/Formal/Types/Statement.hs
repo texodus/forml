@@ -64,9 +64,9 @@ instance Syntax Statement where
 
     syntax = whitespace >> withPos statement_types <* many newline
 
-        where statement_types = (type_statement       <?> "Type Definition")
+        where statement_types = (type_statement <?> "Type Definition")
                                 <|> (try import_statement <?> "Import Statement")
-                                <|> (try module_statement <?> "Module Declaration")
+                                <|> (module_statement <?> "Module Declaration")
                                 <|> (try def_statement    <?> "Symbol Definition")
                                 <|> (expression_statement <?> "Assertion")
 
@@ -76,7 +76,7 @@ instance Syntax Statement where
                                     whitespace
                                     ImportStatement <$> syntax
 
-              module_statement = do string "module"
+              module_statement = do try (string "module")
                                     whitespace1
                                     name <- syntax
                                     whitespace *> newline

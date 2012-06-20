@@ -116,7 +116,6 @@ nested_union_type = indentPairs "(" type_definition_signature ")"
 -- recursive, the recursion is uniform, as the various allowable combinations
 -- have already been defined above.
 
-
 function_type :: Parser ComplexType
 poly_type     :: Parser ComplexType
 record_type   :: Parser ComplexType
@@ -131,10 +130,10 @@ function_type = do x <- try nested_union_type <|> unionize inner_type
                    y <- (unionize $ try function_type) <|> try nested_union_type <|> unionize inner_type
                    return $ FunctionType x y
 
-poly_type     = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try type_var)
-                   whitespace1
-                   let type_vars = try nested_union_type <|> unionize (try rvs)
-                   SimpleType . PolymorphicType name <$> type_vars `sepEndBy1` whitespace
+poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try type_var)
+               whitespace
+               let type_vars = try nested_union_type <|> unionize (try rvs)
+               SimpleType . PolymorphicType name <$> type_vars `sepEndBy1` whitespace
 
      where rvs = record_type <|> var_type <|> symbol_type
 

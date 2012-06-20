@@ -25,6 +25,8 @@ instance ToJExpr Symbol where
     toJExpr = toJExpr . to_name
 
 to_name :: Symbol -> String
+to_name (Symbol "return") = "_return_"
+to_name (Symbol "new") = "_new_"
 to_name (Symbol x) = x
 to_name (Operator op) = concat . map (\x -> M.findWithDefault "_" x operator_dict) $ op
 

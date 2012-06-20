@@ -90,6 +90,7 @@ instance (Syntax d) => Syntax (Expression d) where
 
         where other = try let'
                       <|> try do'
+                      <|> try yield
                       <|> try lazy
                       <|> try named
                       <|> try apply
@@ -159,6 +160,11 @@ instance (Syntax d) => Syntax (Expression d) where
               lazy  = do string "lazy"
                          whitespace1
                          LazyExpression <$> withPos (addr$ try syntax) <*> return Once
+
+              yield = do string "yield"
+                         whitespace1
+                         LazyExpression <$> withPos (addr$ try syntax) <*> return Every
+
 
               if' = withPos $ do string "if"
                                  whitespace1
@@ -252,6 +258,7 @@ instance (Syntax d) => Syntax (Expression d) where
                         halt = (:[]) <$> (whitespace *> (try let'
                                           <|> try do'
                                           <|> try lazy
+                                          <|> try yield
                                           <|> function))
                                   
 
@@ -334,18 +341,24 @@ instance (Syntax d) => Syntax (Expression d) where
                                         value <- withPos syntax
                                         return (key, value)
 
-              literal = undo <$> syntax
+              literal = do (sourceColumn -> x) <- getPosition
+                           undo x <$> syntax
 
-              undo (StringLiteral x) = to_escaped . split "`" $ x
-              undo l = LiteralExpression l
+              strip_indent x y = let splitted = split "\n" y
+                                     r x' | strip (take x x') == "" = drop x x'
+                                          | otherwise = error$ "Badly formatted string \"" ++ show splitted ++ "\""
+                                 in  if length splitted > 1 
+                                     then head splitted ++ "\n" ++ (concat . L.intersperse "\n" . fmap r . tail $ splitted)
+                                     else y
 
-              to_escaped (x:s:y:xs) =
+              undo z (StringLiteral x) = to_escaped . split "`" . strip_indent z $ x
+              undo _ l = LiteralExpression l
+
+              to_escaped (x:s:xs) =
                   ApplyExpression (SymbolExpression$ Operator "+++") 
                                       [ ApplyExpression (SymbolExpression$ Operator "+++") 
-                                        [ ApplyExpression (SymbolExpression$ Operator "+++")
-                                          [LiteralExpression $ StringLiteral x
+                                        [LiteralExpression $ StringLiteral x
                                           , p s ]
-                                        , LiteralExpression $ StringLiteral y]
                                       , to_escaped xs ]
               to_escaped (l:[]) = LiteralExpression $ StringLiteral l
               to_escaped [] =  LiteralExpression $ StringLiteral ""
@@ -368,15 +381,77 @@ instance (Syntax d) => Syntax (Expression d) where
                         f [] = RecordExpression (M.fromList [(Symbol "nil", SymbolExpression (Symbol "true"))])
                         f (x:xs) = RecordExpression (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
 
+class Opt a where
+    opt :: a -> a
+
+instance (Opt a, Opt b) => Opt (a, b) where
+    opt (a, b) = (opt a, opt b)
+
+instance (Opt a) => Opt [a] where
+    opt x = map opt x
+
+instance (Functor m, Opt a) => Opt (m a) where
+    opt x = fmap opt x
+
+instance Opt JStat where
+    opt (ReturnStat x)      = ReturnStat (opt x)
+    opt (IfStat a b c)      = IfStat (opt a) (opt b) (opt c)
+    opt (WhileStat a b)     = WhileStat (opt a) (opt b)
+    opt (ForInStat a b c d) = ForInStat a b (opt c) (opt d)
+    opt (SwitchStat a b c)  = SwitchStat (opt a) (opt b) (opt c)
+    opt (TryStat a b c d)   = TryStat (opt a) b (opt c) (opt d)
+    opt (BlockStat xs)      = BlockStat (opt xs)
+    opt (ApplStat a b)      = ApplStat (opt a) (opt b)
+    opt (PPostStat a b c)   = PPostStat a b (opt c)
+    opt (AssignStat a b)    = AssignStat (opt a) (opt b)
+    opt (UnsatBlock a)      = UnsatBlock (opt a)
+
+    opt x = x
+
+    -- opt (DeclStat    Ident (Maybe JLocalType)
+    -- opt (UnsatBlock (IdentSupply JStat)
+    -- opt (AntiStat   String
+    -- opt (ForeignStat Ident JLocalType
+    -- opt (BreakStat
+
+
+instance Opt JVal where
+    opt (JList xs)   = JList (opt xs)
+    opt (JHash m)    = JHash (M.map opt m)
+    opt (JFunc xs x) = JFunc xs (opt x)
+    opt (UnsatVal x) = UnsatVal (opt x)
+
+    opt x = x
+
+    -- opt x@(JVar _) = x
+    -- opt x@(JDouble _) = x
+    -- opt x@(JInt _) = x
+    -- opt x@(JStr _) = x
+    -- opt x@(JRegEx _) = x
+
+instance Opt JExpr where
+    opt (SelExpr e (StrI i))  = IdxExpr (opt e) (ValExpr (JStr i))  -- Closure fix - advanced mode nukes these
+    opt (IdxExpr a b)         = IdxExpr (opt a) (opt b)
+    opt (InfixExpr a b c)     = InfixExpr a (opt b) (opt c)
+    opt (PPostExpr a b c)     = PPostExpr a b (opt c)
+    opt (IfExpr a b c)        = IfExpr (opt a) (opt b) (opt c)
+    opt (NewExpr a)           = NewExpr (opt a)
+    opt (ApplExpr a b)        = ApplExpr (opt a) (map opt b)
+    opt (TypeExpr a b c)      = TypeExpr a (opt b) c
+    opt (ValExpr a)           = ValExpr (opt a)
+    opt (UnsatExpr a)         = UnsatExpr (opt a)
+
 instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     -- These are inline cheats to improve performance
+    -- TODO wouldn't need this if there was an inline keyword ...
+
     toJExpr (ApplyExpression (SymbolExpression (Operator "==")) [x, y]) = [jmacroE| _eq_eq(`(x)`)(`(y)`) |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "!=")) [x, y]) = [jmacroE| !_eq_eq(`(x)`)(`(y)`) |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x])  = [jmacroE| 0 - `(x)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x])     = [jmacroE| 0 - `(x)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "<=")) [x, y]) = [jmacroE| `(x)` <= `(y)` |]
@@ -388,13 +463,13 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (ApplyExpression (SymbolExpression (Operator _)) x) =
         error $ "Operator with " ++ show (length x) ++ " params"
 
-    toJExpr (ApplyExpression (SymbolExpression (Symbol f)) []) = ref f
+    toJExpr (ApplyExpression (SymbolExpression f) []) = ref (to_name f)
     toJExpr (ApplyExpression f []) = [jmacroE| `(f)` |]
     toJExpr (ApplyExpression f (end -> x : xs)) = [jmacroE| `(ApplyExpression f xs)`(`(x)`) |]
 
     toJExpr (ListExpression x)      = toJExpr x
     toJExpr (LiteralExpression l)   = toJExpr l
-    toJExpr (SymbolExpression (Symbol x))    = ref x
+    toJExpr (SymbolExpression x)    = ref (to_name x)
     toJExpr (FunctionExpression x)  = toJExpr x
     toJExpr (LazyExpression x Every)      = toJExpr (FunctionExpression 
                                                      [ EqualityAxiom 
@@ -416,7 +491,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
                   })() |]
 
     toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
-    toJExpr (JSExpression s)        = s
+    toJExpr (JSExpression s)        = opt s
     toJExpr (LetExpression bs ex)   = [jmacroE| (function() { `(foldl1 mappend $ map toLocal bs)`; return `(ex)` })() |]
 
     toJExpr (IfExpression x y z)    = [jmacroE| (function(){ 

@@ -1,9 +1,18 @@
 -- Formal is a functional programming language for the people, targetting
 -- Javascript.  Designed around the principles of readability, verifiability and
 -- simplicity, Formal takes the pain out of ML, while simultaeniously bringing a
--- little discipline to Javascript.  Features:
+-- little discipline to Javascript.
 
---   * Heavily nspired by Haskell, F#, Coffeescript, ML.  Type inferred, curried,
+-- Philosophy
+--
+--   * Strong static typing and automated testing are compilimentary, equally
+--     powerful tools for verifying program correctness, as well as designing
+--     an application architecture and communicating this architecture effectively
+--     to other programmers.
+
+-- Features:
+
+--   * Heavily inspired by Haskell, F#, Coffeescript, ML.  Type inferred, curried,
 --     strictly evaluated.
 
 --   * Hybrid type system - Formal features a complete polymorphic type
@@ -120,6 +129,7 @@ module prelude
 
     object? x = do! `typeof x === "object"`
     array? = do! `is_array`
+    type? x = do! `typeof x`
     
     not: Bool -> Bool | x = do! `!x`
 
@@ -135,22 +145,22 @@ module prelude
 
     (>>=): JS a -> (a -> JS b) -> JS b | x y = `run (y (run x))`
     (>>): JS a -> JS b -> JS b         | x y = `run x; return (run y)`
-    ret: a -> JS a                     | x   = `x`
+    return: a -> JS a                  | x   = `x`
     
     do! x <- `1 + 4`
         y <- `2 + 3`
         ans <- `x + y`
-        ret (10 == ans)
+        return (10 == ans)
               
-    5  == do! ret 5
-    10 == do! log "test" >> `5 + 5`
+    5  == do! return 5
+    10 == do! `5 + 5`
 
     -- Purely side-effectful functions are not posible to annotate with an explicit
     -- type currently.  This is due to a bug in the current compiler implementation,
     -- that the Unit type is not expressable as a value in the type checker.  Once
     -- resolved, `log: a -> JS {}`
 
-    log x = `console.log x`
+    log x = `console.log(x)`
 
     -- Testing to verify that escaping Javascript & utilizing escaped
     -- Javascript with `do` sugar and composition in general works as
@@ -158,7 +168,7 @@ module prelude
 
     let x = 0
         y = do z <- `x = 1`
-               ret z
+               return z
     x == 0
 
 
@@ -249,7 +259,7 @@ module prelude
             do start <- get_time
                js
                stop  <- get_time
-               ret (stop - start)
+               return (stop - start)
 
         fast_fib =
             do! `var f = function(n) {
@@ -260,16 +270,15 @@ module prelude
         
         -- With this, we can set up a simple canary to let us know if the prelude is
         -- suddenly dramatically slower than it previously was; in this case, we fail a test
-        -- if the formal version isn't at least 80% as fast as the native javascript
-        -- version.  This test "primes" the JIT by running the fast calc first,
-        -- otherwise in practice the first eval tends to be favored in V8.
+        -- if the formal version isn't at least 90% as fast as the native javascript
+        -- version.
 
         floor: Num -> Num = do! `Math.floor`
 
-        do! fast_time <- time `fast_fib 35`
-            slow_time <- time `fib 35`
-            `console.log (floor (fast_time / slow_time * 100))`
-            ret (floor (fast_time / slow_time * 100) >= 80)
+        do! fast_time <- time `fast_fib 30`
+            slow_time <- time `fib 30`
+            log (floor (fast_time / slow_time * 100))
+            return (floor (fast_time / slow_time * 100) >= 90)
 
     -- Function Combinators
     -- --------------------
@@ -337,7 +346,117 @@ module prelude
         option 3 (some: 2) == 2
 
     module html
-        ($=) x y = `if (typeof $ != "undefined") { $(x)["html"](y); }`
+
+        HTML = { element:   a
+                 inner:     JS String
+                 on_click:  JS a -> JS b     -- TODO it is obnoxious that these must be unique
+                 set:       c -> JS d        --      type variables - need {} ...
+                 add_class: String -> JS e
+                 add_style: String -> String -> JS f }
+
+        ($=): String -> a -> JS b
+            | x y = `if (typeof $ != "undefined") { $(x).get(0).innerHTML = y; }`
+
+        ($|): String -> String -> String -> JS a
+            | x y = \z = `$(x)["css"](y, z)`
+
+        ($.): String -> String -> JS a
+            | x y = `$(x)["addClass"](y)`
+
+        get: String -> JS HTML
+            | x = do el <- `$(x).get(0)`
+                     return { element       = el
+                              inner         = `el.innerHTML`
+                              on_click y    = `el.onclick = y`
+                              set y         = `el.innerHTML = y`
+                              add_class y   = `el.setAttribute("class", el.getAttribute("class") + " " + y)`
+                              add_style y z = `el.style[y] = z` }
+
+        move: HTML -> HTML -> JS a
+            | x y = `$(y.element).append($(x.element).detach())`
+                       
+        on_load: JS a -> JS b
+            | x = `window.addEventListener("load", x, false)`
+
+        stringify: a -> String | x = do! `JSON.stringify(x)`
+
+        (!!): Array a -> Num -> a | x y = do! `x[y]`
+
+        with_page: JS a -> JS a
+            | x = do old <- get "body"
+                     `old.element.detach()`
+
+        do! "body" $= "I am a test!"
+            text <- get "body"
+            text <- text.inner
+            return (text == "I am a test!")
+
+                         
+
+        -- This is the initializer for prelude's console test suite.  The javascript
+        -- in this function is heavily sanitized against Closure, which 
+        -- should in the future be handled automagically [TODO]
+
+        console =
+
+            let report spec = 
+
+                    do! results <- `spec.results()`
+                        passed  <- `results.passed()`
+
+                        if   passed 
+                        then return 0
+                        else do items <- `spec.results_.items_`
+                                desc  <- `spec.description.split("::")[1]`
+                                line  <- `parseInt(spec.description.split("::")[0].split("_")[0]) + 1`
+                                
+                                log ""
+                                log "Test failed: `desc`
+                                         at line `line`
+                                
+                                         Expected `stringify ((items !! 0).expected)`
+                                         Actual   `stringify ((items !! 0).actual)`"
+
+                reporter = { reportSpecResults:   report 
+                             reportRunnerResults: do `phantom.exit(1)` }
+
+            do env <- `jasmine.getEnv()`
+               log <- `window.console.log`
+
+               `env.addReporter(reporter)`
+               `env.execute()`
+
+
+
+        -- This is the initializer for prelude's HTML test suite.  The javascript
+        -- in this function is heavily sanitized against Closure, which 
+        -- should in the future be handled automagically [TODO]
+
+        table_of_contents =
+
+            on_load do "code"  $. "prettyprint"
+                       "code"  $. "lang-hs"
+
+                       ".test" $| "position" <| "relative"
+                       ".test" $| "left"     <| "50px"
+
+                       `prettyPrint()`
+
+                       trivial <- `new jasmine.TrivialReporter()`
+                       formal  <- `new jasmine.FormalReporter()`
+                       env     <- `jasmine.getEnv()`
+
+                       `env.addReporter trivial`
+                       `env.addReporter formal`
+
+                       `env.execute()`
+
+                       reporter <- get ".jasmine_reporter"
+                       body     <- get "body div"
+
+                       move reporter body
+                       
+        
 
     -- Lists
     -- -----
@@ -539,23 +658,23 @@ module prelude
         Seq a = seq: JS { elem: a, next: Seq a}
               | end:
                    
-        iterate f x = seq: do ret { elem: x, next: iterate f (f x) }
+        iterate f x = seq: yield { elem: x, next: iterate f (f x) }
 
         from_list nil: = end:
                 | { head: x, tail: xs } =
-                    seq: do ret { elem: x, next: from_list xs }
+                    seq: yield { elem: x, next: from_list xs }
                     
         to_list end: = nil:
               | { seq: x } = do! { elem: y, next: ys } <- x
-                                 ret (y :: to_list ys)
+                                 return (y :: to_list ys)
 
         take _ end: = end:
            | 0 _ = end:
            | x { seq: y } = seq: do { elem: z, next: zs } <- y
-                                    ret { elem: z, next: take (x - 1) zs }
+                                    return { elem: z, next: take (x - 1) zs }
 
         to_list (from_list [:1,2]) == [:1,2]
-        iterate (λx = x + 1) 0 |> take 500 |> to_list |> length == 500
+        iterate (λx = x + 1) 0 |> take 100 |> to_list |> length == 100
 
         zip_with:
         
@@ -567,37 +686,37 @@ module prelude
                 seq: do { elem: xx, next: xs } <- a
                         { elem: yy, next: ys } <- b
 
-                        ret { elem: f xx yy, next: zip_with f xs ys }
+                        return { elem: f xx yy, next: zip_with f xs ys }
                                         
-        (:::) x y = seq: do ret { elem: x, next: do! y }
+        (:::) x y = seq: yield { elem: x, next: do! y }
         
         tail:
               Seq a   -> Seq a
             | end:     = error "tail called on empty seq"
-            | {seq: t} = do! t >>= λx = ret x.next
+            | {seq: t} = do! t >>= λx = return x.next
  
         to_lazy end: = end:
               | {seq: y} = seq: lazy do! { elem: x, next: xs } <- y
-                                         ret { elem: x, next: to_lazy xs }
+                                         return { elem: x, next: to_lazy xs }
  
         -- Infinite sequence example
  
-        fibs = to_lazy <: 1 ::: ret <: 1 ::: do ret <: zip_with (λx y = x + y) fibs <: tail fibs
+        fibs = to_lazy <: 1 ::: return <: 1 ::: yield zip_with (λx y = x + y) fibs <: tail fibs
     
         -- Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
         -- is ridiculously faster than the recursive version.  For example, the runtime
         -- speed of this fib implementation compared to the native recursive one is <span
-        -- id="speedtest">__________</span>% (filled in dynamically).
+        -- id="speedtest">__________</span>%.
 
-        do! fast_time <- time do ret (fast_fib 35)
-            slow_time <- time do ret (fibs |> take 35 |> to_list |> last)
+        do! fast_time <- time yield fast_fib 30
+            slow_time <- time yield fibs |> take 30 |> to_list |> last
             let ratio = floor (fast_time / slow_time * 100)
             "#speedtest" $= ratio
-            ret (ratio >= 10)
+            return (ratio >= 2)
 
         fibs |> take 5 |> to_list == [:1,1,2,3,5]
 
-        fast_fib 35 == fibs |> take 35
+        fast_fib 15 == fibs |> take 15
                             |> to_list
                             |> last
 
@@ -615,7 +734,7 @@ module prelude
 
         Functor f =
 
-            { map: (a -> b) -> f a -> f b } | swill:
+            { map: (a -> b) -> f a -> f b }
 
         Monad m =
 
@@ -629,23 +748,21 @@ module prelude
         list_functor =
 
             { map _ nil: = nil: 
-
                 | f { head: x, tail: xs } =
-
                       { head: f x
                         tail: list_functor.map f xs }}
 
         list_monad =
 
             { (>>=) x g = concat_map g x
-              ret x = [:x] }
-
-        (>>>=) x g = concat_map g x
-
-        let z = 1 .. 3 >>>= λx = [: x, x + 1, x + 2 ]
-        z == [: 1, 2, 3, 2, 3, 4, 3, 4, 5 ]
+              return x = [:x] }
 
         js_monad   =
 
             { (>>=) x f = x >>= f
-              ret x = ret x }
+              return x = return x }
+
+        let (>>>=) x g = concat_map g x
+            z = 1..3 >>>= λx = [:x,x+1,x+2]
+        z == [:1,2,3,2,3,4,3,4,5]
+

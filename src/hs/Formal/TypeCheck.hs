@@ -229,37 +229,42 @@ instance Monad Z where
 mgu :: Type -> Type -> TI Substitution
 mgu x y = case x |=| y of
              Z z -> return z
-             Error e -> add_error e >> return [] --second_chance e x y
+             Error e -> second_chance e x y
 
-    -- where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
+    where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
               
-    --           do as <- get_assumptions
-    --              g  <- find''' as x
+              do as <- get_assumptions
+                 g  <- find''' as x
 
-    --              case g of
-    --                Nothing -> add_error e >> return []
-    --                Just (x, sct) ->
-    --                    do (qs' :=> t'') <- freshInst sct
-    --                       return x
+                 case g of
+                   Nothing -> add_error e >> return []
+                   Just (x, sct) ->
+                       do (qs' :=> t'') <- freshInst sct
+                          return x
 
-    --       second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
-    --       second_chance e (TypeApplication a b) (TypeApplication c d) =
-    --           do xss <- second_chance e a c
-    --              yss <- second_chance e b d
-    --              return$ xss @@ yss
+          second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
+          second_chance e (TypeApplication a b) (TypeApplication c d) =
+              do xss <- second_chance e a c
+                 yss <- second_chance e b d
+                 return$ xss @@ yss
 
-    --       second_chance e x y = case mgu x y of
-    --                               Error _ -> add_error e >> return []
-    --                               Z x -> return x
+          second_chance e x y = case x |=| y of
+                                  Error _ -> add_error e >> return []
+                                  Z x -> return x
  
-    --       find''' [] _ = return Nothing
-    --       find''' (_:>:_:xs) t = find''' xs t
-    --       find''' (_:>>:(Forall _ x, y):xs) t =
+          find''' [] _ = return Nothing
+          find''' (_:>:_:xs) t = find''' xs t
+          find''' (_:>>:(Forall _ x, y):xs) t =
 
-    --           do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
-    --              case mgu t t' of
-    --                Error _ -> find''' xs t
-    --                Z x  -> return$ Just (x, y)
+              do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
+                 case t |=| t' of
+                   Error _ -> find''' xs t
+
+                   -- TODO Only allow this shorthand if the match is unique - true?
+                   Z x  -> do zz' <- find''' xs t
+                              case zz' of
+                                Nothing -> return$ Just (x, y)
+                                Just _ -> return$ Nothing
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t

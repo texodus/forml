@@ -112,10 +112,10 @@ comment = try empty_line <|> try commented_code <|> try code <|> markdown_commen
           empty_line = whitespace *> newline *> return "\n"
           code = (\x y -> x ++ rstrip y ++ "\n") <$> string "    " <*> (anyChar `manyTill` newline)
           commented_code = do string "    "
-                              x <- (noneOf "\n") `manyTill` string "--"
+                              x <- noneOf "\n" `manyTill` try (string "--")
                               anyChar `manyTill` newline
                               return $ if length (strip x) > 0 
-                                           then "    " ++ (rstrip x) ++ "\n" 
+                                           then "    " ++ rstrip x ++ "\n" 
                                            else "\n"
 
 sep_with :: Show a => String -> [a] -> String
@@ -159,8 +159,8 @@ not_reserved x = do y <- x
                        then parserFail "non-reserved word"
                        else return y
 
-    where reserved_words = [ "if", "then", "else", "type", "let", "when", "with", "and", "or", "do",
-                             "module", "open", "import",
+    where reserved_words = [ "if", "then", "else", "let", "when", "with", "and", "or", "do",
+                             "module", "open", "yield", "lazy", "inline",
                              "|", "\\", "=", ":", ",", "->", "<-" ]
 
 not_system :: Parser String -> Parser String
@@ -169,7 +169,7 @@ not_system x = do y <- x
                      then parserFail "non-reserved word"
                      else return y
 
-    where reserved_words = [ "==", "<=", ">=", "!=", "<", ">", "||", "&&"  ]
+    where reserved_words = [ "==", "<=", ">=", "!=", "<", ">", "||", "&&", "."  ]
 
 
 type_sep    :: Parser Char

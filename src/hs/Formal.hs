@@ -110,7 +110,7 @@ parse_formal xs = foldM parse' ([], []) xs
           parse' (ts, as) filename = do hFile <- openFile filename ReadMode
                                         src <-   hGetContents hFile
                                         let src' = to_literate filename . (++ "\n") $ src
-                                        (ts', as') <- monitor "Parsing"$ return$ to_parsed src' ts
+                                        (ts', as') <- monitor [qq|Loading $filename|] $ return$ to_parsed src' ts
                                         return (ts ++ ts', as ++ [as'])
 
 gen_js :: [(Program, String)] -> (String, [(String, String)])
@@ -123,7 +123,7 @@ gen_js ps = let p = Program$ get_program ps
 main :: IO ()
 main  = do rc <- parseArgs <$> getArgs
            (as, src') <- parse_formal$ inputs rc
-           (js, ((_, tests):_)) <- monitor "Generating Javascript" . return . Right . gen_js $ src'
+           let (js, ((_, tests):_)) = gen_js src'
    
            js <- if optimize rc 
                  then (monitor "Optimizing"$ closure js)
@@ -141,45 +141,69 @@ main  = do rc <- parseArgs <$> getArgs
            let yyy = snd . head $ src'
            let html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
            let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
-           let hook = "<script>" ++ B.unpack htmljs ++ "</script>"
+           let hook = "<script>" ++ htmljs ++ "</script>"
            writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
 
 
-           if run_tests rc
-               then do (Just std_in, _, _, p) <- createProcess (proc "node" []) { std_in = CreatePipe }
+           case run_tests rc of
+               Node ->
+                    monitor "Testing"$
+                    do (Just std_in, Just std_out, _, p) <-
+                           createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
                        hPutStrLn std_in$ B.unpack jasmine
                        hPutStrLn std_in$ js ++ "\n\n"
                        hPutStrLn std_in$ tests
-                       hPutStrLn std_in$ B.unpack console
+                       hPutStrLn std_in$ console
                        z <- waitForProcess p
 
                        case z of 
-                         ExitFailure _ -> return ()
+                         ExitFailure _ -> return$ Left []
                          ExitSuccess -> if (show_types rc) 
-                                        then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
-                                        else return ()
-               else do warn "Testing" ()
+                                        then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
+                                        else return$ Right ()
+
+               Phantom -> 
+                    monitor "Testing"$
+                    do writeFile (output rc ++ ".phantom.js")
+                             (B.unpack jquery ++ B.unpack jasmine ++ js ++ tests ++ console)
+                       -- (_, Just std_out, _, p) <-
+                       --       createProcess (proc "phantomjs" [output rc ++ ".phantom.js"]) { std_out = CreatePipe }
+                       -- z <- waitForProcess p
+
+                       (z, msg, _) <- readProcessWithExitCode "phantomjs" [output rc ++ ".phantom.js"] ""
+                       system$ "rm " ++ output rc ++ ".phantom.js"
+
+                       case z of 
+                         ExitFailure _ -> return$ Left [msg]
+                         ExitSuccess -> if (show_types rc) 
+                                        then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
+                                        else return$ Right ()
+               NoTest ->
+                    do warn "Testing" ()
                        if (show_types rc) 
                          then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
                          else return ()
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
+          jquery  = $(embedFile "lib/js/jquery.js")
           header  = $(embedFile "src/html/header.html")
           footer  = $(embedFile "src/html/footer.html")
-          jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js") `mappend` $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
-          console = $(embedFile "lib/js/console.js")
+          jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
+                      `mappend` $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
+
+          console = "prelude.html.console()"
           report  = $(embedFile "src/js/FormalReporter.js")
-          htmljs  = $(embedFile "src/js/table_of_contents.js")
+          htmljs  = "prelude.html.table_of_contents()"
 
 
 closure :: String -> IO (Either a String)
 closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
 
-                   y = export$ importList [ ("output_format", "text")
-                                          , ("output_info", "compiled_code")
+                   y = export$ importList [ ("output_format",     "text")
+                                          , ("output_info",       "compiled_code")
                                           , ("compilation_level", "ADVANCED_OPTIMIZATIONS")
-                                          , ("js_code", x) ]
+                                          , ("js_code",           x) ]
 
                    args = [ mkHeader HdrContentLength (show$ length y)
                           , mkHeader HdrContentType "application/x-www-form-urlencoded" ]
@@ -188,12 +212,14 @@ closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/comp
                txt <- getResponseBody rsp
 
                return$ Right txt
+
+data TestMode = NoTest | Node | Phantom
                                          
 data RunConfig = RunConfig { inputs :: [String]
                            , output :: String
                            , show_types :: Bool
                            , optimize :: Bool
-                           , run_tests :: Bool 
+                           , run_tests :: TestMode 
                            , write_docs :: Bool }
 
 parseArgs :: [String] -> RunConfig
@@ -201,7 +227,7 @@ parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False True True True
+                          []     -> return $ RunConfig [] "default" False True Phantom True
                           (x:xs) -> do put xs
                                        case x of
                                          "-t"    -> do x <- argsParser
@@ -209,7 +235,9 @@ parseArgs = fst . runState argsParser
                                          "-no-opt" -> do x <- argsParser
                                                          return $ x { optimize = False }
                                          "-no-test" -> do x <- argsParser
-                                                          return $ x { run_tests = False }
+                                                          return $ x { run_tests = NoTest }
+                                         "-node-test" -> do x <- argsParser
+                                                            return $ x { run_tests = Node }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
                                                        RunConfig a _ c d e f <- argsParser

@@ -23,29 +23,20 @@ h1, h2, h3, h4 {
 h2 + p:first-line {
 }
 
-body > div > :nth-child(2):first-letter {
-    font-size: 42px;
-    margin-top: 10px;
-    margin-right: 5px;
-    float: left;
-}
-
-
-
 p {
     hyphens: auto;
     text-align: justify;
 }
 
 
-h2 + p:first-letter {
-    font-size: 42px;
-    margin-top: 10px;
-    margin-right: 5px;
+h2 + p:first-letter, body > div > :nth-child(2):first-letter {
+    font-size: 24px;
+    margin-top: -4px;
+    margin-right: 2px;
     float: left;
 }
 body > div { 
-    width: 560px; 
+    width: 760px; 
     text-align: left; 
     margin: 0 auto;
  }
