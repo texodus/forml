@@ -79,19 +79,30 @@ instance (Show a) => ToJExpr [PatternMatch a] where
 
 instance (Show a) => ToJExpr (PatternMatch a) where
     toJExpr (PM _ AnyPattern) = toJExpr True
-    toJExpr (PM n (VarPattern x)) = 
-        [jmacroE| (function() {
-                     `(ref x)` = `(ref n)`; 
-                     return true; 
-                   })() |]
 
-    toJExpr (PM n (LiteralPattern x))               = [jmacroE| `(ref n)` === `(x)` |]
-    toJExpr (PM _ (RecordPattern (M.toList -> []) Complete)) = [jmacroE| true |]
-    toJExpr (PM n (RecordPattern (M.toList -> xs) _)) = [jmacroE| `(map g xs)` && `(map f xs)` |]
+    toJExpr (PM n (VarPattern x)) = toJExpr True
+
+        -- [jmacroE| (function() {
+        --              //`(ref x)` = `(ref n)`; 
+        --              return true; 
+        --            })() |]
+
+    toJExpr (PM n (LiteralPattern x)) =
+
+        [jmacroE| `(ref n)` === `(x)` |]
+
+    toJExpr (PM _ (RecordPattern (M.toList -> []) Complete)) =
+
+        [jmacroE| true |]
+
+    toJExpr (PM n (RecordPattern (M.toList -> xs) _)) =
+
+        [jmacroE| `(map g xs)` && `(map f xs)` |]
             where f (key, val) = PM (n ++ "[\"" ++ to_name key ++ "\"]") val
                   g (key, _) = Condition [jmacroE| typeof `(ref n)`[`(to_name key)`] != "undefined" |]
 
-    toJExpr (PM n (ListPattern []))                 = [jmacroE| equals(`(n)`)([]) |]
+    toJExpr (PM n (ListPattern [])) =
+        [jmacroE| equals(`(n)`)([]) |]
     toJExpr (PM n (ListPattern xs)) = 
         let x = toJExpr (map f (zip [0..] xs))
             f (index, val) = toJExpr (PM (n ++ "[" ++ show index ++ "]") val)

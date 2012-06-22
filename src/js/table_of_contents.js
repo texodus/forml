@@ -12,18 +12,21 @@ $(function() {
     // $('#contents').html(text);
     // $('body').css('font-family','Arial');
     // $('code').css('font-family', 'Menlo, Consolas, Monospace');
-    // $('p, ul, ol').css('text-align','justify')
-    $('code').addClass('prettyprint lang-hs');
-    // $('body').css('margin', '0 0');
-    // $('pre').css('margin', '0 0 23px 0');
-    $(".test").css("position", "relative").css("left", "50px")
-    prettyPrint();
+    /// / $('p, ul, ol').css('text-align','justify')
+    // $('code').addClass('prettyprint lang-hs');
+    // // $('body').css('margin', '0 0');
+    // // $('pre').css('margin', '0 0 23px 0');
+    // $(".test").css("position", "relative").css("left", "50px")
+    // prettyPrint();
 
-    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
-    jasmine.getEnv().addReporter(new jasmine.FormalReporter());
-    jasmine.getEnv().execute();
+    // jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+    // jasmine.getEnv().addReporter(new jasmine.FormalReporter());
+    // jasmine.getEnv().execute();
 
-    var reporter = $(".jasmine_reporter").detach();
+    // var reporter = $(".jasmine_reporter").detach();
 
-    $("body div").append(reporter)
+    // $("body div").append(reporter)
+
 });
+
+prelude.html.table_of_contents()

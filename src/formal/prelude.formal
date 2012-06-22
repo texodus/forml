@@ -277,7 +277,6 @@ module prelude
 
         do! fast_time <- time `fast_fib 30`
             slow_time <- time `fib 30`
-            log (floor (fast_time / slow_time * 100))
             return (floor (fast_time / slow_time * 100) >= 90)
 
     -- Function Combinators

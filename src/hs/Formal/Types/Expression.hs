@@ -62,7 +62,7 @@ data Expression d = ApplyExpression (Expression d) [Expression d]
                   | InheritExpression (Expression d) (M.Map Symbol (Expression d))
                   | LetExpression [d] (Expression d)
                   | ListExpression [Expression d]
-                  | AccessorExpression (Expression d) [Symbol]
+                  | AccessorExpression (Addr (Expression d)) [Symbol]
 
 instance (Show d) => Show (Expression d) where
 
@@ -82,6 +82,7 @@ instance (Show d) => Show (Expression d) where
     show (LetExpression ax e)    = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
     show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|] 
     show (InheritExpression x m) = [qq|\{ $x with {unsep_with " = " m} \}|] 
+    show (AccessorExpression x m) = [qq|$x.{sep_with "." m}|] 
 
 
 instance (Syntax d) => Syntax (Expression d) where
@@ -236,19 +237,20 @@ instance (Syntax d) => Syntax (Expression d) where
                                  <|> literal
                                  <|> symbol
                                  <|> list
-
-                            string "."
-                            z <- syntax
                             f <- getPosition
+                            string "."
+                            z <- syntax `sepBy1` string "."
                             return $ acc_exp (Addr s f) x z
 
               -- TODO this is nasty & may trip up closure, please fix
-              acc_exp f x z = ApplyExpression 
-                              (FunctionExpression 
-                               [ EqualityAxiom 
-                                 (Match [RecordPattern (M.fromList [(z, VarPattern "__x__")]) Partial] Nothing)
-                                 (f (SymbolExpression (Symbol "__x__"))) ] )
-                              [x]
+              -- acc_exp f x z = ApplyExpression 
+              --                 (FunctionExpression 
+              --                  [ EqualityAxiom 
+              --                    (Match [RecordPattern (M.fromList [(z, VarPattern "__x__")]) Partial] Nothing)
+              --                    (f (SymbolExpression (Symbol "__x__"))) ] )
+              --                 [x]
+
+              acc_exp f x z = AccessorExpression (f x) z
 
               apply = ApplyExpression <$> inner <*>  (try cont <|> halt)
 
@@ -466,6 +468,9 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (ApplyExpression (SymbolExpression f) []) = ref (to_name f)
     toJExpr (ApplyExpression f []) = [jmacroE| `(f)` |]
     toJExpr (ApplyExpression f (end -> x : xs)) = [jmacroE| `(ApplyExpression f xs)`(`(x)`) |]
+
+    toJExpr (AccessorExpression (Addr _ _ x) []) = toJExpr x
+    toJExpr (AccessorExpression x (reverse -> y:ys)) = [jmacroE| `(AccessorExpression x (reverse ys))`[`(to_name y)`] |]
 
     toJExpr (ListExpression x)      = toJExpr x
     toJExpr (LiteralExpression l)   = toJExpr l

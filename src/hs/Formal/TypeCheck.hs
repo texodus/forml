@@ -789,6 +789,18 @@ instance Infer (Expression Definition) Type where
                      as'' <- get_assumptions
                      return$ as'' \\ as
 
+    infer (AccessorExpression (Addr s f x) y) = infer (acc y)
+
+        where acc :: [Symbol] -> Expression Definition
+              acc [] = x
+              acc (y:ys) = --Addr undefined undefined $
+                  ApplyExpression 
+                  (FunctionExpression 
+                   [ EqualityAxiom 
+                     (Match [RecordPattern (M.fromList [(y, VarPattern "__x__")]) Partial] Nothing)
+                     (Addr s f (SymbolExpression (Symbol "__x__"))) ] )
+                  [acc ys]
+ 
     infer m @ (RecordExpression (unzip . M.toList -> (names, xs))) =
 
         do ts <- mapM infer xs
@@ -1158,6 +1170,7 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_expressions' (EqualityAxiom _ (Addr _ _ x): xs) = x : get_expressions' xs
 
           get_symbols (RecordExpression (unzip . M.toList -> (_, xs))) = concat (map get_symbols xs)
+          get_symbols (AccessorExpression (Addr _ _ x) _) = get_symbols x
           get_symbols (ApplyExpression a b)   = get_symbols a ++ concat (map get_symbols b)
           get_symbols (IfExpression a b c)    = get_symbols a ++ get_symbols b ++ get_symbols c
           get_symbols (LiteralExpression _)   = []

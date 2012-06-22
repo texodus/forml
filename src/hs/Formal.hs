@@ -132,18 +132,12 @@ main  = do rc <- parseArgs <$> getArgs
            writeFile (output rc ++ ".js") js
            writeFile (output rc ++ ".spec.js") tests
 
-           -- let html = highlight (case src' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests "" src')
-           -- let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
-           -- let hook = "<script>" ++ B.unpack htmljs ++ "</script>"
-           -- writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
-
            let xxx = fst . head $ src'
            let yyy = snd . head $ src'
            let html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
            let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
            let hook = "<script>" ++ htmljs ++ "</script>"
            writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
-
 
            case run_tests rc of
                Node ->
@@ -166,9 +160,7 @@ main  = do rc <- parseArgs <$> getArgs
                     monitor "Testing"$
                     do writeFile (output rc ++ ".phantom.js")
                              (B.unpack jquery ++ B.unpack jasmine ++ js ++ tests ++ console)
-                       -- (_, Just std_out, _, p) <-
-                       --       createProcess (proc "phantomjs" [output rc ++ ".phantom.js"]) { std_out = CreatePipe }
-                       -- z <- waitForProcess p
+                      
 
                        (z, msg, _) <- readProcessWithExitCode "phantomjs" [output rc ++ ".phantom.js"] ""
                        system$ "rm " ++ output rc ++ ".phantom.js"

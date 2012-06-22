@@ -51,19 +51,24 @@ instance (Show a, ToJExpr a) => ToStat (Curried a) where
     toStat (Curried []) = [jmacro| exhaust(); |]
     toStat (Curried (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss)) = 
 
-        [jmacro| `(declare_bindings pss)`;
+        [jmacro| `(declare_bindings var_names pss)`;
                  if (`(pss)` && `(cond)`) {
                      return `(ex)`;
                  } else `(Curried xss)`; |]
 
 
-            where declare_bindings [] = mempty
-                  declare_bindings (VarPattern x : zs) = declare x [jmacroE| null |] ++ declare_bindings zs
-                  declare_bindings (RecordPattern x _: zs) = 
-                      let (_, z) = unzip . M.toList $ x
-                      in  declare_bindings z ++ declare_bindings zs
+            where declare_bindings (name : names) (VarPattern x : zs) = declare x name ++ declare_bindings names zs
+                  declare_bindings (name : names) (RecordPattern x _: zs) = 
+                      let (ns, z) = unzip . M.toList $ x
+                      in  declare_bindings (map (acc name) ns) z ++ declare_bindings names zs
 
-                  declare_bindings (_ : zs) = declare_bindings zs
+                  declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
+                  declare_bindings [] [] = mempty
+                  
+                  var_names = map ref . reverse . take (length pss) . map local_pool $ [0 .. 26]
+
+                  acc n ns = [jmacroE| `(n)`[`(ns)`] |]
+
 
 instance (ToJExpr a) => ToJExpr (Maybe a) where
     toJExpr = maybe (toJExpr True) toJExpr
