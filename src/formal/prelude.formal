@@ -74,25 +74,10 @@
 
 -- Mac OSX (tested on Snow Leopard & Lion)
 
--- 1. Install the
--- [Haskell Platform](http://hackage.haskell.org/platform/index.html)
+-- Install the
+-- [Haskell Platform](http://hackage.haskell.org/platform/index.html), then
 
--- 2. Install [Node.js](http://nodejs.org/), preferably via
--- [Homebrew](http://mxcl.github.com/homebrew/).  This is only strictly necessary
--- if you want the compiler to run your test suite - you can develop browser
--- applications without Node if you want.
-
--- 3. Clone the formal repo via
-
---    <pre><code>--$ git clone git://github.com/texodus/formal.git</code></pre>
-    
--- 4. Change to the formal directory and run cabal install
-
---    <pre><code>--$ cd formal
---       --$ cabal install</pre></code>
-    
--- 5. Open a beer, you've had a long day!  The `formal` executable should now be on
---    your path.
+--        <pre><code>--$ cabal install formal</pre></code>
 
 -- To compile some formal files:
    
@@ -277,7 +262,7 @@ module prelude
 
         do! fast_time <- time `fast_fib 30`
             slow_time <- time `fib 30`
-            return (floor (fast_time / slow_time * 100) >= 90)
+            return (floor (fast_time / slow_time * 100) >= 80)
 
     -- Function Combinators
     -- --------------------
@@ -385,10 +370,10 @@ module prelude
             | x = do old <- get "body"
                      `old.element.detach()`
 
-        do! "body" $= "I am a test!"
-            text <- get "body"
-            text <- text.inner
-            return (text == "I am a test!")
+        -- do! "body" $= "I am a test!"
+        --     text <- get "body"
+        --     text <- text.inner
+        --     return (text == "I am a test!")
 
                          
 
@@ -443,7 +428,7 @@ module prelude
 
                        trivial <- `new jasmine.TrivialReporter()`
                        formal  <- `new jasmine.FormalReporter()`
-                       env     <- `jasmine.getEnv()`
+                       env     <- `jasmine.getEnv`
 
                        `env.addReporter trivial`
                        `env.addReporter formal`
@@ -565,21 +550,22 @@ module prelude
         nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
         [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]
 
-        -- Filter
+        -- Filter.  Note that you can prefix a function with `'` to create 
+        -- a flipped, infix version of said function
 
         filter: (a -> Bool) -> List a -> List a
               | f nil: = nil:
               | f x when f (head x) = head x :: filter f (tail x)
               | f x = filter f <| tail x
                         
-        filter (λx = x > 2) [: 1, 2, 3, 4 ] == [: 3, 4 ]
+        [: 1, 2, 3, 4 ] 'filter (λx = x > 2) == [: 3, 4 ]
 
         -- Map
 
         map f nil: = nil:
           | f x = f (head x) :: map f (tail x)
           
-        map (λx = x + 1) [: 1, 2, 3 ] == [: 2, 3, 4 ]
+        [: 2, 3, 4 ] == [: 1, 2, 3 ] 'map λx = x + 1
             
         -- Reverse
 

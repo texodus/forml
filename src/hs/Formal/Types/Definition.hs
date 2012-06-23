@@ -18,6 +18,7 @@ import Language.Javascript.JMacro
 
 import Control.Applicative
 import Control.Monad
+import Data.Monoid
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Text.Parsec.Indent  hiding (same)
@@ -82,7 +83,9 @@ instance Syntax Definition where
                               TypeAxiom <$> withPos type_axiom_signature
 
 instance ToStat Definition where
+    toStat (Definition _ (TypeAxiom _: [])) = mempty
     toStat (Definition name as) = declare_this (to_name name) $ toJExpr as
 
 instance ToLocalStat Definition where
+    toLocal (Definition _ (TypeAxiom _: [])) = mempty
     toLocal (Definition name as) = declare (to_name name) $ toJExpr as

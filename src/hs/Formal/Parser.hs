@@ -53,7 +53,7 @@ compress = run var . run nul . run fun
                    return $ "var " ++ name  
 
           pairs = do string "{"
-                     inner <- (try pairs <|> ((:[]) <$> anyChar)) `manyTill` string "}"
+                     inner <- (try pairs <|> try fun <|> try var <|> try nul <|> ((:[]) <$> anyChar)) `manyTill` string "}"
                      return $ "{" ++ concat inner ++ "}"
 
           fun = do string "(function()"
@@ -62,6 +62,7 @@ compress = run var . run nul . run fun
                    spaces
                    string "return"
                    spaces
+                   
                    string "(function("
                    name <- many1 (alphaNum <|> char '_')
                    string ")"

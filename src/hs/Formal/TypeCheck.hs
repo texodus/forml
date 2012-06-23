@@ -833,8 +833,12 @@ instance Infer (Expression Definition) Type where
         where f (Symbol x) = x
               f (Operator x) = x
                                                    
-    infer (LetExpression xs x) = with_scope$ do infer$ Scope [] [] [] (map (:[]) xs) []
-                                                infer x
+    infer (LetExpression xs x) =
+
+        with_scope$ do mapM infer defs 
+                       infer x
+
+        where defs = to_group (map DefinitionStatement xs)
 
     infer (ListExpression x) =
 
@@ -971,9 +975,9 @@ instance Infer Definition () where
            (ds, rs) <- split ce fs gs ps'
 
            if sc /= sc' then
-               add_error "Signature too general"
+               add_error$ "Signature too general\n\n    Expected: " ++ show sc ++ "\n    Actual: " ++ show sc'
              else if not (null rs) then
-               add_error "Context too weak"
+               add_error$ "Context too weak\n\n    Expected: " ++ show sc ++ "\n    Actual: " ++ show sc'
              else
                assume (f name :>: sc)
 
@@ -1200,14 +1204,14 @@ tiProgram (Program bgs) env =
                e  <- get_errors
                return ((apply s ms), S.toList . S.fromList $ e)
 
-    where to_group :: [Statement] -> [BindGroup]
-          to_group [] = []
-          to_group xs = case takeWhile not_module xs of
-                          [] -> to_group' xs
-                          yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx) 
-                                : to_group' (dropWhile not_module xs)
+to_group :: [Statement] -> [BindGroup]
+to_group [] = []
+to_group xs = case takeWhile not_module xs of
+                [] -> to_group' xs
+                yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx) 
+                      : to_group' (dropWhile not_module xs)
 
-          to_group' [] = []
+    where to_group' [] = []
           to_group' (ModuleStatement x y:xs) = Module (show x) (to_group y) : to_group xs
           to_group' _ = error "Unexpected"
 

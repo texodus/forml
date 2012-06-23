@@ -82,11 +82,6 @@ instance (Show a) => ToJExpr (PatternMatch a) where
 
     toJExpr (PM n (VarPattern x)) = toJExpr True
 
-        -- [jmacroE| (function() {
-        --              //`(ref x)` = `(ref n)`; 
-        --              return true; 
-        --            })() |]
-
     toJExpr (PM n (LiteralPattern x)) =
 
         [jmacroE| `(ref n)` === `(x)` |]
