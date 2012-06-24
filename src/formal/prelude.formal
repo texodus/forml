@@ -602,7 +602,7 @@ module prelude
 
         foldl1 _ nil: = error "Foldl1 called on empty list"
              | f x = foldl f (head x) (tail x)
-             
+     
         foldr f x =
             let g nil: = x
                 | { head: y, tail: ys } = f y (g ys)
@@ -610,7 +610,7 @@ module prelude
 
         foldr1 _ nil: = error "Foldr1 called on empty list"
              | f x = foldr f (head x) (tail x)
-             
+        
         all? f = foldl1 (λx y = x && y) .: map f
         any? f = foldl1 (λx y = x || y) .: map f
 
@@ -719,6 +719,30 @@ module prelude
         fast_fib 15 == fibs |> take 15
                             |> to_list
                             |> last
+
+    -- String
+    -- -----
+    -- A simple implementation of a library for manipulating linked strings.
+
+    module string
+        
+        open list
+
+        lstrip: String -> String | x = do! `x.replace(/^\s+/, '')` 
+        rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
+        strip:  String -> String | x = lstrip (rstrip x)
+
+        join sep [:] = ""
+           | sep x when (tail x) == [:] = (head x)
+           | sep s = foldl1 (λx y = x +++ sep +++ y) s
+
+        lstrip "    test    " == "test    "
+        rstrip "    test    " == "    test"
+        strip  "    test    " == "test"
+
+        join "," [:] == ""
+        join "," [: "test"] == "test"
+        join "," [: "test1", "test2"] == "test1,test2"
 
     -- FormalZ
     -- -------
