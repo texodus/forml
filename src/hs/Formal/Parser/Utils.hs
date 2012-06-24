@@ -146,6 +146,7 @@ operator_dict = M.fromList [ ('!', "_bang"),
                              ('~', "_tild"),
                              ('+', "_plus"),
                              ('-', "_minu"),
+                             ('\'', "_tick"),
                              ('*', "_star"),
                              (',', "_comm"),
                              ('.', "_comp") ]

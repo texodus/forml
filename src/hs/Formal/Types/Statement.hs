@@ -186,7 +186,7 @@ empty_meta :: Target -> [Statement] -> Statement -> Meta
 empty_meta x = Meta x (Namespace []) . build_modules
 
     where build_modules (ModuleStatement n ns : xs) = Module n (build_modules ns) : build_modules xs
-          build_modules (DefinitionStatement (Definition n _): xs) = Var (to_name n) : build_modules xs
+          build_modules (DefinitionStatement (Definition _ _ n _): xs) = Var (to_name n) : build_modules xs
           build_modules (_ : xs) = build_modules xs
           build_modules [] = []
 
@@ -212,7 +212,7 @@ class Open a where open :: Namespace -> [a] -> JStat
 
 instance Open Statement where
     open _ [] = mempty
-    open ns (DefinitionStatement (Definition n _) : xs) =
+    open ns (DefinitionStatement (Definition _ _ n _) : xs) =
 
         let f = ref . show
             x = [jmacroE| `(f ns)`[`(n)`] |] in

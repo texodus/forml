@@ -3,49 +3,23 @@
 -- simplicity, Formal takes the pain out of ML, while simultaeniously bringing a
 -- little discipline to Javascript.
 
--- Philosophy
---
---   * Strong static typing and automated testing are compilimentary, equally
---     powerful tools for verifying program correctness, as well as designing
---     an application architecture and communicating this architecture effectively
---     to other programmers.
-
 -- Features:
 
 --   * Heavily inspired by Haskell, F#, Coffeescript, ML.  Type inferred, curried,
 --     strictly evaluated.
 
---   * Hybrid type system - Formal features a complete polymorphic type
---     inferrence engine w/structural types ala ML, with a twist.  The type of a
---     definition with an explicit type signature is verifed just like any other
---     ML, but for implicitly typed definitions, a failure to infer a principal
---     type only emits a warning by default, and the type of the definition is
---     assumed to be dynamic (ie unifies with all types).  If you don't like
---     spending time keeping your application's types consistent while working on an
---     experimental or rapidly changing codebase, Formal lets you code first, type
---     later.
+--   * Hybrid type system - complete polymorphic type system w/ stuctural records,
+--     plus a dynamic type for unrestricted Javascript.
     
---   * First class testing - In Formal, types and tests are equal first class
---     citizens of the language.  Formal allows you to write inline, definition
---     scope assertions about the expected behavior of your functions, which
---     compile to a seperate [Jasmine](http://pivotal.github.com/jasmine) test
---     suite.  Definitions not referenced in an assertion emit compiler warnings,
---     and the test suite is run by default (just like the type checker).  No more
---     excuses for not testing your code!
+--   * First class testing - types and tests are equal first class
+--     citizens of the language.
 
 --   * Inline Javascript - For bootstrapping, quickly importing a Javascript
 --     library, accessing un-formalized APIs or simply writing fast mutation
---     algorithms "natively", Formal allows quick and easy anti-quoting into
---     Javascript with backticks (`). Together with dynamic types, this allow
---     no-fuss interfacing with Javascript when you need it, but still allows you
---     to tell the type checker explicitly what types to expect when you get around
---     to it.
+--     algorithms "natively."
 
 --   * Simple data types - The basic data types in Formal are the exact same basic
---     data types of Javascript:  Num, String, Array, Object.  Despite this
---     simplicity, Formal supports many of the features of the fuly algebraic data
---     types of languages like ML and Haskell, including partial object types,
---     polymorphic type unions, synonyms, existential types and more.
+--     data types of Javascript:  Num, String, Array, Object, Function.
     
 --   * Advanced pattern matching - Traditional pattern matching goodness with a few
 --     extras: match on record partials & define your own matches with view
@@ -55,15 +29,10 @@
 --     the polymorphic type `JS a` by default, including any inline Javascript, and
 --     these types can be composed without evaluation via `do` sugar or any other
 --     combinator.  Unlike haskell, `JS a` types can be trivially unwrapped
---     anywhere via `do!` (type `JS a -> a`), even inside a pure function.  Formal
---     gives you the power of choice:  side effects are restricted by
---     default, but if you need to log a messages deep in a pure library or want a
---     function to mutate a variable for speed, just `do!` it.
+--     anywhere via `do!`
     
 --   * Targets Closure advanced mode - Formal does not aim to emit readable
 --     Javascript, instead opting to produce the most efficient output possible.
---     To this end, it currently relies heavily on Google Closure's advanced
---     optimizations mode for aggressive function inlining & dead code elimination.
 
 -- This document is a both the compiler's README, and the Formal language's
 -- standard library as literate code, which serves as a simple language feature
@@ -237,7 +206,7 @@ module prelude
 
     module speedtest
 
-        get_time = `new Date().getTime()`
+        private inline get_time = `new Date().getTime()`
 
         time js =
 
@@ -405,8 +374,7 @@ module prelude
                              reportRunnerResults: do `phantom.exit(1)` }
 
             do env <- `jasmine.getEnv()`
-               log <- `window.console.log`
-
+               
                `env.addReporter(reporter)`
                `env.execute()`
 
@@ -418,6 +386,8 @@ module prelude
 
         table_of_contents =
 
+            let jasmine: a
+
             on_load do "code"  $. "prettyprint"
                        "code"  $. "lang-hs"
 
@@ -428,10 +398,10 @@ module prelude
 
                        trivial <- `new jasmine.TrivialReporter()`
                        formal  <- `new jasmine.FormalReporter()`
-                       env     <- `jasmine.getEnv`
+                       env     <- jasmine.getEnv
 
-                       `env.addReporter trivial`
-                       `env.addReporter formal`
+                       env.addReporter trivial
+                       env.addReporter formal
 
                        `env.execute()`
 
@@ -550,8 +520,9 @@ module prelude
         nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
         [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]
 
-        -- Filter.  Note that you can prefix a function with `'` to create 
-        -- a flipped, infix version of said function
+        (') x y = y x
+                  
+        -- Filter.
 
         filter: (a -> Bool) -> List a -> List a
               | f nil: = nil:
@@ -774,4 +745,3 @@ module prelude
         let (>>>=) x g = concat_map g x
             z = 1..3 >>>= λx = [:x,x+1,x+2]
         z == [:1,2,3,2,3,4,3,4,5]
-

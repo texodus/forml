@@ -39,21 +39,27 @@ import Prelude hiding (curry, (++))
 -- Definition
 -- --------------------------------------------------------------------------------
 
-data Definition = Definition Symbol [Axiom (Expression Definition)]
+data Visibility = Public | Private
+
+
+data Definition = Definition Visibility Bool Symbol [Axiom (Expression Definition)]
 
 instance Show Definition where
-    show (Definition name ax) =[qq|$name {sep_with "\\n" ax}|]
+    show (Definition Public _ name ax) =[qq|$name {sep_with "\\n" ax}|]
+    show (Definition Private _ name ax) =[qq|private $name {sep_with "\\n" ax}|]
 
 instance Syntax Definition where
 
     syntax = do whitespace
+                vis <- option Public (try (string "private" >> whitespace >> return Private))
+                inl <- option False (try (string "inline" >> whitespace >> return True))
                 name <- try syntax <|> (Symbol <$> many1 (char '_'))
                 sig <- first
                 eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom)) <|> return []
                 whitespace
                 if length sig == 0 && length eqs == 0 
                     then parserFail "Definition Axioms"
-                    else return $ Definition name (sig ++ eqs)
+                    else return $ Definition vis inl name (sig ++ eqs)
 
         where first = try type_or_first
                       <|> ((:[]) <$> try naked_eq_axiom) 
@@ -82,10 +88,12 @@ instance Syntax Definition where
                               indented
                               TypeAxiom <$> withPos type_axiom_signature
 
+-- TODO Visibility should be more than skin deep?
+
 instance ToStat Definition where
-    toStat (Definition _ (TypeAxiom _: [])) = mempty
-    toStat (Definition name as) = declare_this (to_name name) $ toJExpr as
+    toStat (Definition _ _ _ (TypeAxiom _: [])) = mempty
+    toStat (Definition _ _ name as) = declare_this (to_name name) $ toJExpr as
 
 instance ToLocalStat Definition where
-    toLocal (Definition _ (TypeAxiom _: [])) = mempty
-    toLocal (Definition name as) = declare (to_name name) $ toJExpr as
+    toLocal (Definition _ _ _ (TypeAxiom _: [])) = mempty
+    toLocal (Definition _ _ name as) = declare (to_name name) $ toJExpr as

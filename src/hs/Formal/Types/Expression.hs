@@ -185,7 +185,7 @@ instance (Syntax d) => Syntax (Expression d) where
                                  , [ix "*", ix "/"]
                                  , [px "-" ]
                                  , [ix "+", ix "-"]
-                                 , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft, Infix prefix_infix AssocLeft ]
+                                 , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
                                  , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!="]
                                  , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
@@ -198,12 +198,6 @@ instance (Syntax d) => Syntax (Expression d) where
                                                 return (\x -> ApplyExpression op [x])
                                  
                         term   = try other
-
-                        prefix_infix = try $ do spaces
-                                                char '\''
-                                                op' <- not_reserved type_var
-                                                spaces
-                                                return$ \y x -> ApplyExpression (SymbolExpression (Symbol op')) [x, y]
                         
                         user_op_left = try $ do spaces
                                                 op' <- not_system $ not_reserved (many1 operator) 

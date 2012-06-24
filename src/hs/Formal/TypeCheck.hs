@@ -785,7 +785,7 @@ instance Infer (Expression Definition) Type where
 
         where ims as = 
 
-                  do infer [Definition (Symbol "") rs]
+                  do infer [Definition Public False (Symbol "") rs]
                      as'' <- get_assumptions
                      return$ as'' \\ as
 
@@ -934,12 +934,12 @@ instance Infer [Definition] () where
                      assume (zipWith (:>:) is scs')
                      return ()
 
-        where get_name (Definition (Symbol x) _) = x
-              get_name (Definition (Operator x) _) = x
-              get_axioms (Definition _ x) = x
+        where get_name (Definition _ _ (Symbol x) _) = x
+              get_name (Definition _ _ (Operator x) _) = x
+              get_axioms (Definition _ _ _ x) = x
 
               restricted = any simple bs
-              simple (Definition i axs) = any (null . f) axs
+              simple (Definition _ _ i axs) = any (null . f) axs
 
               f (EqualityAxiom (Match p _) _) = p
               f _ = error "Fatal error occurred while reticulating splines"
@@ -951,7 +951,7 @@ data BindGroup = Scope [Namespace] [Statement] [Definition] [[Definition]] [Addr
 
 instance Infer Definition () where
 
-    infer (Definition name axs) =
+    infer (Definition _ _ name axs) =
 
         do sc <- find$ f name 
            (qs :=> t)  <- freshInst sc
@@ -1020,20 +1020,21 @@ instance Infer BindGroup () where
 
               sigs :: [Definition] -> [Assumption]
               sigs [] = []
-              sigs (Definition name as:xs) =
+              sigs (Definition _ _ name as:xs) =
                   case L.find f as of
                     Nothing -> sigs xs
                     Just x -> g (h name) x ++ sigs xs
 
               import' (Namespace ns) =
-                           do z <- get_modules
-                              a <- get_assumptions
-                              (Namespace ns') <- get_namespace
-                              case Namespace ns `lookup` z of
-                                Just z' -> assume$ a ++ z'
-                                Nothing -> if length ns' > 0 && head ns' /= head ns
-                                           then import' (Namespace (head ns' : ns))
-                                           else add_error$ "Unknown namespace " ++ show (Namespace ns)
+
+                  do z <- get_modules
+                     a <- get_assumptions
+                     (Namespace ns') <- get_namespace
+                     case Namespace ns `lookup` z of
+                       Just z' -> assume$ a ++ z'
+                       Nothing -> if length ns' > 0 && head ns' /= head ns
+                                  then import' (Namespace (head ns' : ns))
+                                  else add_error$ "Unknown namespace " ++ show (Namespace ns)
               
               h (Symbol x) = x
               h (Operator x) = x
@@ -1158,7 +1159,7 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_free (_:xs) = False : get_free xs 
 
           get_names [] = []
-          get_names ([Definition n _]:xs) = show n : get_names xs
+          get_names ([Definition _ _ n _]:xs) = show n : get_names xs
 
           get_needed _ [] = []
           get_needed names ((n,x):xs) =
@@ -1166,7 +1167,7 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
 
           get_expressions :: [[Definition]] -> [[Expression Definition]]
           get_expressions [] = []
-          get_expressions ([Definition _ as]:xs) = get_expressions' as : get_expressions xs
+          get_expressions ([Definition _ _ _ as]:xs) = get_expressions' as : get_expressions xs
 
           get_expressions' [] = []
           get_expressions' (TypeAxiom _: xs) = get_expressions' xs
@@ -1220,9 +1221,9 @@ to_group xs = case takeWhile not_module xs of
           not_module (ModuleStatement _ _) = False
           not_module _ = True
 
-          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (EqualityAxiom _ _:_))) =
+          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ _ _ (EqualityAxiom _ _:_))) =
               Scope i t a (b ++ [[x]]) c
-          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ (TypeAxiom _:_))) =
+          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ _ _ (TypeAxiom _:_))) =
               Scope i t (a ++ [x]) b c
           f (Scope i t a b c) (ExpressionStatement x) =
               Scope i t a b (c ++ [x])
