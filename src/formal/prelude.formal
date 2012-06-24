@@ -732,7 +732,6 @@ module prelude
         rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
         strip:  String -> String | x = lstrip (rstrip x)
 
-        -- join: String -> List String -> String
         join sep [:] = ""
            | sep x when (tail x) == [:] = (head x)
            | sep s = foldl1 (λx y = x +++ sep +++ y) s
