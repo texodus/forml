@@ -239,6 +239,10 @@ module prelude
 
     (+++): String -> String -> String | x y = do! `x + y`
     
+    strip: String -> String | x = do! `x.replace(/^\s+|\s+$/, '').replace(/\s+$|^\s+/, '')`
+
+    strip "   test   " == "test"
+
     let x = "test"
     "hello `x`" == "hello test"
     
