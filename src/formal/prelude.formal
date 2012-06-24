@@ -238,10 +238,14 @@ module prelude
     -- -------
 
     (+++): String -> String -> String | x y = do! `x + y`
-    
-    strip: String -> String | x = do! `x.replace(/^\s+|\s+$/, '').replace(/\s+$|^\s+/, '')`
+   
+    lstrip: String -> String | x = do! `x.replace(/^\s+/, '')` 
+    rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
+    strip: String  -> String | x = lstrip (rstrip x)
 
-    strip "   test   " == "test"
+    lstrip "    test    " == "test    "
+    rstrip "    test    " == "    test"
+    strip  "    test    " == "test"
 
     let x = "test"
     "hello `x`" == "hello test"
