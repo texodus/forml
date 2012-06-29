@@ -51,13 +51,15 @@ instance (Show a, ToJExpr a) => ToStat (Curried a) where
     toStat (Curried []) = [jmacro| exhaust(); |]
     toStat (Curried (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss)) = 
 
-        [jmacro| `(declare_bindings var_names pss)`;
-                 if (`(pss)` && `(cond)`) {
-                     return `(ex)`;
-                 } else `(Curried xss)`; |]
+        [jmacro|    `(declare_bindings var_names pss)`;
+                    if (`(pss)` && `(cond)`) return `(ex)`;
+                    `(Curried xss)`; |]
 
 
-            where declare_bindings (name : names) (VarPattern x : zs) = declare x name ++ declare_bindings names zs
+            where declare_bindings (name : names) (VarPattern x : zs) =
+                      
+                      [jmacro| `(declare x name)`; |] ++ declare_bindings names zs
+
                   declare_bindings (name : names) (RecordPattern x _: zs) = 
                       let (ns, z) = unzip . M.toList $ x
                       in  declare_bindings (map (acc name) ns) z ++ declare_bindings names zs

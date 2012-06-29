@@ -154,8 +154,8 @@ module prelude
 
     (==): a -> a -> Bool
         | x y when object? x && object? y =
-            let result = true
-            do! `for (key in x) {
+            do! `var result = true;
+                 for (key in x) {
                     result = result && y.hasOwnProperty(key) && _eq_eq(x[key])(y[key]);
                  };
 
@@ -165,8 +165,8 @@ module prelude
                  result && z`
                  
         | x y when array? x && array? y =
-            let result = true
-            do! `for (z in x) {
+            do! `var result = true;
+                 for (z in x) {
                      result = result && _eq_eq(x[z])(y[z]);
                  };
 
@@ -344,7 +344,9 @@ module prelude
         --     text <- text.inner
         --     return (text == "I am a test!")
 
-                         
+        -- TODO canary for broken parse bug, please move to test suite
+        let x = do! `[ { x: 1}, {x: 2}, {x: 3} ]`
+        stringify (x !! 0).x == "1"
 
         -- This is the initializer for prelude's console test suite.  The javascript
         -- in this function is heavily sanitized against Closure, which 
@@ -367,8 +369,8 @@ module prelude
                                 log "Test failed: `desc`
                                          at line `line`
                                 
-                                         Expected `stringify ((items !! 0).expected)`
-                                         Actual   `stringify ((items !! 0).actual)`"
+                                         Expected `stringify (items !! 0).expected`
+                                         Actual   `stringify (items !! 0).actual`"
 
                 reporter = { reportSpecResults:   report 
                              reportRunnerResults: do `phantom.exit(1)` }
@@ -398,10 +400,10 @@ module prelude
 
                        trivial <- `new jasmine.TrivialReporter()`
                        formal  <- `new jasmine.FormalReporter()`
-                       env     <- jasmine.getEnv
+                       env     <- `jasmine.getEnv()`
 
-                       env.addReporter trivial
-                       env.addReporter formal
+                       `env.addReporter trivial`
+                       `env.addReporter formal`
 
                        `env.execute()`
 

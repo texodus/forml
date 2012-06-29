@@ -99,11 +99,11 @@ instance (Syntax d) => Syntax (Expression d) where
                       <|> try accessor
                       <|> inner
 
-              inner = indentPairs "(" syntax ")" 
+              inner = try accessor 
+                      <|> indentPairs "(" syntax ")" 
                       <|> js 
                       <|> record 
                       <|> literal
-                      <|> try accessor
                       <|> symbol
                       <|> try array
                       <|> list
@@ -242,14 +242,6 @@ instance (Syntax d) => Syntax (Expression d) where
                             z <- syntax `sepBy1` string "."
                             return $ acc_exp (Addr s f) x z
 
-              -- TODO this is nasty & may trip up closure, please fix
-              -- acc_exp f x z = ApplyExpression 
-              --                 (FunctionExpression 
-              --                  [ EqualityAxiom 
-              --                    (Match [RecordPattern (M.fromList [(z, VarPattern "__x__")]) Partial] Nothing)
-              --                    (f (SymbolExpression (Symbol "__x__"))) ] )
-              --                 [x]
-
               acc_exp f x z = AccessorExpression (f x) z
 
               apply = ApplyExpression <$> inner <*>  (try cont <|> halt)
@@ -262,19 +254,21 @@ instance (Syntax d) => Syntax (Expression d) where
                                           <|> try lazy
                                           <|> try yield
                                           <|> function))
-                                  
-
 
               withPosTemp p = do x <- get
-                                 try p <|> (put x >> parserFail ("Indented to exactly" ++ show x))
+                                 try p <|> (put x >> parserFail ("expression continuation indented to " ++ show x))
 
-              function = withPosTemp $ do try (char '\\') <|> char 'λ'
-                                          whitespace
-                                          t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
-                                          eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
-                                          return $ FunctionExpression (t ++ eqs)
+              function = withPosTemp$ do try (char '\\') <|> char 'λ'
+                                         whitespace
+                                         (try pat_fun <|> hole_fun)
 
-                  where type_axiom = do string ":"
+                  where pat_fun    = do t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
+                                        eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
+                                        return $ FunctionExpression (t ++ eqs)
+
+                        hole_fun   = do undefined
+
+                        type_axiom = do string ":"
                                         spaces
                                         indented
                                         TypeAxiom <$> withPos type_axiom_signature

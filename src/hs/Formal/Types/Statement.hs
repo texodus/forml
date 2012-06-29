@@ -64,11 +64,13 @@ instance Syntax Statement where
 
     syntax = whitespace >> withPos statement_types <* many newline
 
-        where statement_types = (type_statement <?> "Type Definition")
-                                <|> (try import_statement <?> "Import Statement")
-                                <|> (module_statement <?> "Module Declaration")
-                                <|> (try def_statement    <?> "Symbol Definition")
-                                <|> (expression_statement <?> "Assertion")
+        where statement_types =
+
+                  (type_statement <?> "Type Definition")
+                  <|> (try import_statement <?> "Import Statement")
+                  <|> (module_statement <?> "Module Declaration")
+                  <|> (try def_statement <?> "Symbol Definition")
+                  <|> (expression_statement <?> "Assertion")
 
               def_statement = DefinitionStatement <$> syntax
 
@@ -169,6 +171,7 @@ instance ToStat Meta where
         [jmacro| describe(`(show ns)`, function() {
                      `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) imports)`; 
                      `(open (namespace ++ ns) xs)`;
+
                      var x = new (function {
                          `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) rest)`; 
                      }());

@@ -115,7 +115,7 @@ parse_formal xs = foldM parse' ([], []) xs
 
 gen_js :: [(Program, String)] -> (String, [(String, String)])
 gen_js ps = let p = Program$ get_program ps
-            in  (compress (render p), [("", render_spec p)])
+            in  (compress (read (render p)), [("", read (render_spec p))])
 
     where get_program ((Program ss, _): ps) = ss ++ get_program ps
           get_program [] = []

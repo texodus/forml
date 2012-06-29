@@ -14,15 +14,14 @@ Executable formal
   main-is: Formal.hs
 
   Build-depends:
-    base >= 4,
-    haskell98,
+    base, 
     bytestring >= 0.9.1 && <0.10,
-    template-haskell == 2.5.0.0,
+    template-haskell == 2.7.0.0,
     parsec,
     indents,
     containers,
     pandoc,
-    jmacro,
+    jmacro == 0.6.1,
     MissingH,
     interpolatedstring-perl6,
     transformers,

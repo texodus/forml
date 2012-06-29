@@ -19,12 +19,12 @@
 module Formal.TypeCheck where
 import System.IO.Unsafe
 
-import List (nub, (\\), intersect, union, partition)
-import Monad (msum)
+import Data.List (nub, (\\), intersect, union, partition)
 
 import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Data.Set as S
+
 import Control.Monad
 import Data.Monoid
 import Data.Char

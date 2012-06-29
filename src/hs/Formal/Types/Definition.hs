@@ -92,8 +92,8 @@ instance Syntax Definition where
 
 instance ToStat Definition where
     toStat (Definition _ _ _ (TypeAxiom _: [])) = mempty
-    toStat (Definition _ _ name as) = declare_this (to_name name) $ toJExpr as
+    toStat (Definition _ _ name as) = [jmacro| `(declare_this (to_name name) $ toJExpr as)`; |]
 
 instance ToLocalStat Definition where
     toLocal (Definition _ _ _ (TypeAxiom _: [])) = mempty
-    toLocal (Definition _ _ name as) = declare (to_name name) $ toJExpr as
+    toLocal (Definition _ _ name as) = [jmacro| `(declare (to_name name) $ toJExpr as)`; |]
