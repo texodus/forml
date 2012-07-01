@@ -9,7 +9,7 @@
 
 -- Features:
 
---   * Heavily inspired by Haskell, F#, [Coffeescript](http://coffeescript.org/), (_)(S)([OCA](http://caml.inria.fr/))ML, [Clojure](http://clojure.org/).  Type inferred, curried,
+--   * Heavily inspired by [Haskell](http://www.haskell.org/haskellwiki/Haskell), [F#](http://msdn.microsoft.com/en-us/vstudio/hh388569.aspx), [Coffeescript](http://coffeescript.org/), ([_](http://en.wikipedia.org/wiki/Category:ML_programming_language_family))(S)([OCA](http://caml.inria.fr/))ML, [Clojure](http://clojure.org/).  Type inferred, curried,
 --     strictly evaluated.
 
 --   * Hybrid type system - complete polymorphic type system w/ stuctural records,
@@ -457,7 +457,7 @@ module prelude
                        `env.execute()`
 
                        reporter <- get ".jasmine_reporter"
-                       body     <- get "body div"
+                       body     <- get "#test_suite"
 
                        move reporter body
                        

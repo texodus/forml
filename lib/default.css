@@ -18,8 +18,25 @@ h1, h2, h3, h4 {
     font-variant: small-caps;
 }
 
+@media only screen and (max-width: 767px)  {
+    nav ul {
+        display: none;
+    }
+}
 
+@media only screen and  (min-width: 767px) {
+    nav { position: fixed; }
 
+}
+n
+nav { text-align: left; }
+h1 { font-size: 21px; }
+
+nav h1 { text-align: left; }
+
+.sidebar {
+    height: 200px;
+}
 h2 + p:first-line {
 }
 
@@ -47,13 +64,20 @@ pre {
     border-radius: 4px;
     white-space: pre-wrap;
     box-shadow: 3px 3px 15px #ddd;
+    overflow: auto;
 }
 code {
     font-family: "Courier New";
     font-size: 12px;
 }
+p { margin-top: 20px; }
 
-a {
+.jasmine_reporter label {
+    display: inline;
+    font-weight: normal;
+}
+
+a, a:visited {
     color: #333;
     color: #BA1820;
     text-decoration: none;
