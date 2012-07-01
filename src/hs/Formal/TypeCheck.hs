@@ -537,6 +537,9 @@ instance Monad TI where
                           (y, x) -> let TI gx = g x
                                    in  gx y)
 
+instance Functor TI where
+    fmap f y = y >>= (\x -> TI (\x' -> (x', f x)))
+
 instance Types [(Namespace, [Assumption])] where
     apply s v = map (\(x, y) -> (x, apply s y)) v
     tv = concat . map (\(_, y) -> tv y)
@@ -594,14 +597,14 @@ with_scope x = do as <- get_assumptions
                   set_predicates ps
                   return y
 
-with_module :: String -> TI () -> TI ()
-with_module name x = do as <- get_assumptions
+with_module :: String -> TI [Assumption] -> TI ()
+with_module name x = do --as <- get_assumptions
                         ns <- get_namespace
                         set_namespace (ns `mappend` Namespace [name])
-                        x
-                        as' <- get_assumptions
-                        set_assumptions as
-                        add_module (ns `mappend` Namespace [name], drop (length as) as')
+                        as' <- x
+                        --as' <- get_assumptions
+                        --set_assumptions as
+                        add_module (ns `mappend` Namespace [name], as')
                         set_namespace ns
 
     where add_module x = TI (\y -> (y { modules = modules y ++ [x] }, ()))
@@ -835,10 +838,18 @@ instance Infer (Expression Definition) Type where
                                                    
     infer (LetExpression xs x) =
 
-        with_scope$ do mapM infer defs 
+        with_scope$ do infer' defs 
                        infer x
 
         where defs = to_group (map DefinitionStatement xs)
+
+              infer' [] = return []
+              infer' (x:xs) =
+
+                 do a <- infer x
+                    assume a
+                    as <- infer' xs
+                    return$ a ++ as
 
     infer (ListExpression x) =
 
@@ -995,7 +1006,7 @@ instance Infer Test () where
                
 newtype Test = Test (Addr (Expression Definition))
 
-instance Infer BindGroup () where
+instance Infer BindGroup [Assumption] where
     infer (Scope imps tts es iss ts) =
 
         do as <- get_assumptions
@@ -1007,8 +1018,8 @@ instance Infer BindGroup () where
            with_scope$ mapM infer es
            mapM infer (map Test ts)
            as'' <- get_assumptions
-           set_assumptions$ as'' \\ (as' \\ as)
-           return ()
+           set_assumptions as'
+           return (as'' \\ as')
 
         where f (TypeAxiom t) = True
               f _ = False
@@ -1041,9 +1052,18 @@ instance Infer BindGroup () where
 
     infer (Module name bgs) = 
 
-        with_module name$ do mapM infer bgs
-                             return ()
-    
+        do as <- get_assumptions
+           with_module name$ infer' bgs
+           set_assumptions as
+           return []
+
+         where infer' [] = return []
+               infer' (x:xs) =
+
+                  do a <- infer x
+                     assume a
+                     as' <- infer' xs
+                     return$ a ++ as'
 
 class ToKey a where
     key :: a -> RecordId
@@ -1196,7 +1216,7 @@ tiProgram (Program bgs) env =
                assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
                assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
                assume$ "run"   :>: (Forall [Star] ([] :=> (TypeApplication js_type (TypeGen 0) -:> TypeGen 0)))
-               mapM infer$ to_group bgs
+               infer'$ to_group bgs
                s  <- get_substitution
                ce <- get_classenv
                ps <- get_predicates
@@ -1204,6 +1224,16 @@ tiProgram (Program bgs) env =
                rs <- reduce ce (apply s ps)
                e  <- get_errors
                return ((apply s ms), S.toList . S.fromList $ e)
+
+    where infer' [] = return ()
+          infer' (x:xs) =
+
+              do a <- infer x
+                 assume a
+                 infer' xs
+
+
+                             
 
 to_group :: [Statement] -> [BindGroup]
 to_group [] = []

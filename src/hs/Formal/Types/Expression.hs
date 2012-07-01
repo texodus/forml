@@ -169,15 +169,15 @@ instance (Syntax d) => Syntax (Expression d) where
 
               if' = withPos $ do string "if"
                                  whitespace1
-                                 e <- try infix' <|> other
+                                 e <- withPos$ try infix' <|> other
                                  spaces
                                  string "then"
                                  whitespace1
-                                 t <- try infix' <|> other
+                                 t <- withPos$ try infix' <|> other
                                  spaces
                                  string "else"
                                  whitespace1
-                                 IfExpression e t <$> (try infix' <|> other) 
+                                 IfExpression e t <$> withPos (try infix' <|> other) 
 
               infix' = buildExpressionParser table term 
 
@@ -463,17 +463,24 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (ApplyExpression f []) = [jmacroE| `(f)` |]
     toJExpr (ApplyExpression f (end -> x : xs)) = [jmacroE| `(ApplyExpression f xs)`(`(x)`) |]
 
-    toJExpr (AccessorExpression (Addr _ _ x) []) = toJExpr x
-    toJExpr (AccessorExpression x (reverse -> y:ys)) = [jmacroE| `(AccessorExpression x (reverse ys))`[`(to_name y)`] |]
+    toJExpr (AccessorExpression (Addr _ _ x) []) =
+
+        toJExpr x
+
+    toJExpr (AccessorExpression x (reverse -> y:ys)) =
+
+        [jmacroE| `(AccessorExpression x (reverse ys))`[`(to_name y)`] |]
 
     toJExpr (ListExpression x)      = toJExpr x
     toJExpr (LiteralExpression l)   = toJExpr l
     toJExpr (SymbolExpression x)    = ref (to_name x)
     toJExpr (FunctionExpression x)  = toJExpr x
-    toJExpr (LazyExpression x Every)      = toJExpr (FunctionExpression 
-                                                     [ EqualityAxiom 
-                                                       (Match [AnyPattern] Nothing)
-                                                       x ])
+    toJExpr (LazyExpression x Every) =
+
+        toJExpr (FunctionExpression 
+                 [ EqualityAxiom 
+                   (Match [AnyPattern] Nothing)
+                   x ])
 
     toJExpr (LazyExpression (Addr _ _ x) Once) =
 

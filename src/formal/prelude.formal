@@ -1,11 +1,15 @@
--- Formal is a functional programming language for the people, targetting
--- Javascript.  Designed around the principles of readability, verifiability and
+-- Formal is a general purpose programming language targetting Javascript, which aims to do for 
+-- [ML](http://en.wikipedia.org/wiki/ML_(programming_language)) what
+-- [Clojure](http://clojure.org/) does for [LISP](http://en.wikipedia.org/wiki/Lisp_(programming_language)) -
+-- refine & expand its strengths whilst shedding its weaknesses.
+
+-- Designed around the principles of readability, verifiability and
 -- simplicity, Formal takes the pain out of ML, while simultaeniously bringing a
 -- little discipline to Javascript.
 
 -- Features:
 
---   * Heavily inspired by Haskell, F#, Coffeescript, ML.  Type inferred, curried,
+--   * Heavily inspired by Haskell, F#, [Coffeescript](http://coffeescript.org/), (_)(S)([OCA](http://caml.inria.fr/))ML, [Clojure](http://clojure.org/).  Type inferred, curried,
 --     strictly evaluated.
 
 --   * Hybrid type system - complete polymorphic type system w/ stuctural records,
@@ -27,8 +31,8 @@
     
 --   * Pure by default - Like Haskell, any function which has a side effect returns
 --     the polymorphic type `JS a` by default, including any inline Javascript, and
---     these types can be composed without evaluation via `do` sugar or any other
---     combinator.  Unlike haskell, `JS a` types can be trivially unwrapped
+--     these types can be composed without evaluation via `do`, `yield`, `lazy` or simple
+--     combinators.  Unlike Haskell, `JS a` types can be trivially unwrapped
 --     anywhere via `do!`
     
 --   * Targets Closure advanced mode - Formal does not aim to emit readable
@@ -153,7 +157,7 @@ module prelude
     (/=) x y = not (x == y)
 
     (==): a -> a -> Bool
-        | x y when object? x && object? y =
+        | x y when object? x =
             do! `var result = true;
                  for (key in x) {
                     result = result && y.hasOwnProperty(key) && _eq_eq(x[key])(y[key]);
@@ -164,7 +168,7 @@ module prelude
 
                  result && z`
                  
-        | x y when array? x && array? y =
+        | x y when array? x =
             do! `var result = true;
                  for (z in x) {
                      result = result && _eq_eq(x[z])(y[z]);
@@ -191,7 +195,15 @@ module prelude
     -- Strings
     -- -------
 
-    (+++): String -> String -> String | x y = do! `x + y`
+    module string
+        
+        lstrip: String -> String | x = do! `x.replace(/^\s+/, '')` 
+        rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
+        strip:  String -> String | x = lstrip (rstrip x)
+
+        (+++): String -> String -> String | x y = do! `x + y`
+
+    open string
     
     let x = "test"
     "hello `x`" == "hello test"
@@ -307,23 +319,40 @@ module prelude
                  add_class: String -> JS e
                  add_style: String -> String -> JS f }
 
+        get:
+
+              String -> JS HTML
+            | x = do el <- `$(x).get(0)`
+
+                     return { element    = el
+                              inner      = `el.innerHTML`
+                              on_click y = `el.onclick = y`
+                              set y      = `el.innerHTML = y`
+
+                              add_class y =
+                                  `el.setAttribute("class", el.getAttribute("class") + " " + y)`
+
+                              add_style y z = `el.style[y] = z` }
+
         ($=): String -> a -> JS b
-            | x y = `if (typeof $ != "undefined") { $(x).get(0).innerHTML = y; }`
+            | x y = `if (typeof $ != "undefined") {
+                         var xx = $(x).get(0);
+                         if (typeof xx != "undefined") {
+                             xx.innerHTML = y;
+                         }
+                     }`
 
         ($|): String -> String -> String -> JS a
-            | x y = \z = `$(x)["css"](y, z)`
+            | x y = \z = `$(x).css(y, z)`
 
         ($.): String -> String -> JS a
-            | x y = `$(x)["addClass"](y)`
+            | x y = `$(x).addClass(y)`
 
-        get: String -> JS HTML
-            | x = do el <- `$(x).get(0)`
-                     return { element       = el
-                              inner         = `el.innerHTML`
-                              on_click y    = `el.onclick = y`
-                              set y         = `el.innerHTML = y`
-                              add_class y   = `el.setAttribute("class", el.getAttribute("class") + " " + y)`
-                              add_style y z = `el.style[y] = z` }
+        ($+): String -> String -> JS a
+            | x y = `$(x).append(y)`
+
+        div: String -> JS String
+        | x = yield "<div id='`x`'/>"
 
         move: HTML -> HTML -> JS a
             | x y = `$(y.element).append($(x.element).detach())`
@@ -339,41 +368,63 @@ module prelude
             | x = do old <- get "body"
                      `old.element.detach()`
 
-        -- do! "body" $= "I am a test!"
-        --     text <- get "body"
-        --     text <- text.inner
-        --     return (text == "I am a test!")
+        do! d <- div "test1"
+
+            "body"   $+ d
+            "#test1" $= "I am a test!"
+
+            text <- get "#test1"
+            text <- text.inner
+
+            "#test1" $= ""
+
+            return (text == "I am a test!")
 
         -- TODO canary for broken parse bug, please move to test suite
+
         let x = do! `[ { x: 1}, {x: 2}, {x: 3} ]`
         stringify (x !! 0).x == "1"
 
-        -- This is the initializer for prelude's console test suite.  The javascript
-        -- in this function is heavily sanitized against Closure, which 
-        -- should in the future be handled automagically [TODO]
+        split: String -> String -> Array String | y x = do! `x.split(y)`
+
+
+        -- This is the initializer for prelude's console test suite. 
 
         console =
 
-            let report spec = 
+            let is_error = 0
+
+                report spec = 
 
                     do! results <- `spec.results()`
                         passed  <- `results.passed()`
 
                         if   passed 
                         then return 0
-                        else do items <- `spec.results_.items_`
-                                desc  <- `spec.description.split("::")[1]`
-                                line  <- `parseInt(spec.description.split("::")[0].split("_")[0]) + 1`
-                                
-                                log ""
-                                log "Test failed: `desc`
-                                         at line `line`
-                                
-                                         Expected `stringify (items !! 0).expected`
-                                         Actual   `stringify (items !! 0).actual`"
+
+                        else let items = spec.results_.items_
+                                 desc  = spec.description.split "::" !! 1
+                                 exp   = stringify (items !! 0).expected
+                                 act   = stringify (items !! 0).actual
+
+                                 line  = spec.description |> split "::"
+                                                          |> (\x = x !! 0)
+                                                          |> split "_" 
+                                                          |> (\x = x !! 0)
+                                                          |> (\x = do! `parseInt x`)
+                                                          |> (\x = x + 1)
+                                                          |> stringify
+                                                          
+                             do  `is_error = 1`
+
+                                 log "Test failed: `desc`
+                                          at line `line`
+
+                                          Expected `exp`
+                                          Actual   `act`"
 
                 reporter = { reportSpecResults:   report 
-                             reportRunnerResults: do `phantom.exit(1)` }
+                             reportRunnerResults: `phantom.exit(is_error)` }
 
             do env <- `jasmine.getEnv()`
                
@@ -382,9 +433,7 @@ module prelude
 
 
 
-        -- This is the initializer for prelude's HTML test suite.  The javascript
-        -- in this function is heavily sanitized against Closure, which 
-        -- should in the future be handled automagically [TODO]
+        -- This is the initializer for prelude's HTML test suite. 
 
         table_of_contents =
 
@@ -412,8 +461,6 @@ module prelude
 
                        move reporter body
                        
-        
-
     -- Lists
     -- -----
     -- A simple implementation of a library for manipulating linked lists.
@@ -678,29 +725,6 @@ module prelude
                             |> to_list
                             |> last
 
-    -- String
-    -- -----
-    -- A simple implementation of a library for manipulating linked strings.
-
-    module string
-        
-        open list
-
-        lstrip: String -> String | x = do! `x.replace(/^\s+/, '')` 
-        rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
-        strip:  String -> String | x = lstrip (rstrip x)
-
-        join sep [:] = ""
-           | sep x when (tail x) == [:] = (head x)
-           | sep s = foldl1 (λx y = x +++ sep +++ y) s
-
-        lstrip "    test    " == "test    "
-        rstrip "    test    " == "    test"
-        strip  "    test    " == "test"
-
-        join "," [:] == ""
-        join "," [: "test"] == "test"
-        join "," [: "test1", "test2"] == "test1,test2"
 
     -- FormalZ
     -- -------
@@ -739,11 +763,12 @@ module prelude
             { (>>=) x g = concat_map g x
               return x = [:x] }
 
-        js_monad   =
+        js_monad =
 
             { (>>=) x f = x >>= f
               return x = return x }
 
         let (>>>=) x g = concat_map g x
             z = 1..3 >>>= λx = [:x,x+1,x+2]
+
         z == [:1,2,3,2,3,4,3,4,5]

@@ -145,7 +145,10 @@ instance ToStat Meta where
         let slice (Namespace ns) = Namespace . take (length ns - 1) $ ns
         in  toStat (meta { namespace = slice namespace })
 
+
+
     -- Modules in test mode must open the contents of the Library
+
     toStat meta @ (Meta { target = Library, namespace = Namespace [], expr = ModuleStatement ns xs, .. }) =
         
         let ex = [jmacroE| new (function() { 
@@ -169,21 +172,27 @@ instance ToStat Meta where
             f _ = False in
 
         [jmacro| describe(`(show ns)`, function() {
+                     `(open (namespace ++ ns) xs)`;
                      `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) imports)`; 
                      `(open (namespace ++ ns) xs)`;
+                     
 
                      var x = new (function {
                          `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) rest)`; 
                      }());
                  }); |]
 
+
+
     -- Definitions are ignored for the Test target
+
     toStat (Meta { target = Library, expr = DefinitionStatement d }) = toStat d
     toStat (Meta { target = Test,    expr = DefinitionStatement _ }) = mempty
 
     toStat (Meta { expr = TypeStatement _ _ }) = mempty
-
     toStat x = error $ "Unimplemented " ++ show x
+
+
 
 empty_meta :: Target -> [Statement] -> Statement -> Meta
 empty_meta x = Meta x (Namespace []) . build_modules
