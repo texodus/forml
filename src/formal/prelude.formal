@@ -113,12 +113,7 @@ module prelude
     5  == do! return 5
     10 == do! `5 + 5`
 
-    -- Purely side-effectful functions are not posible to annotate with an explicit
-    -- type currently.  This is due to a bug in the current compiler implementation,
-    -- that the Unit type is not expressable as a value in the type checker.  Once
-    -- resolved, `log: a -> JS {}`
-
-    log x = `console.log(x)`
+    log: a -> JS {} | x = `console.log(x)`
 
     -- Testing to verify that escaping Javascript & utilizing escaped
     -- Javascript with `do` sugar and composition in general works as
@@ -314,10 +309,10 @@ module prelude
 
         HTML = { element:   a
                  inner:     JS String
-                 on_click:  JS a -> JS b     -- TODO it is obnoxious that these must be unique
-                 set:       c -> JS d        --      type variables - need {} ...
-                 add_class: String -> JS e
-                 add_style: String -> String -> JS f }
+                 on_click:  JS {} -> JS {}
+                 set:       c -> JS {}
+                 add_class: String -> JS {}
+                 add_style: String -> String -> JS {} }
 
         get:
 
@@ -334,7 +329,7 @@ module prelude
 
                               add_style y z = `el.style[y] = z` }
 
-        ($=): String -> a -> JS b
+        ($=): String -> a -> JS {}
             | x y = `if (typeof $ != "undefined") {
                          var xx = $(x).get(0);
                          if (typeof xx != "undefined") {
@@ -342,13 +337,13 @@ module prelude
                          }
                      }`
 
-        ($|): String -> String -> String -> JS a
+        ($|): String -> String -> String -> JS {}
             | x y = \z = `$(x).css(y, z)`
 
-        ($.): String -> String -> JS a
+        ($.): String -> String -> JS {}
             | x y = `$(x).addClass(y)`
 
-        ($+): String -> String -> JS a
+        ($+): String -> String -> JS {}
             | x y = `$(x).append(y)`
 
         div: String -> JS String
@@ -357,7 +352,7 @@ module prelude
         move: HTML -> HTML -> JS a
             | x y = `$(y.element).append($(x.element).detach())`
                        
-        on_load: JS a -> JS b
+        on_load: JS {} -> JS {}
             | x = `window.addEventListener("load", x, false)`
 
         stringify: a -> String | x = do! `JSON.stringify(x)`
@@ -365,8 +360,15 @@ module prelude
         (!!): Array a -> Num -> a | x y = do! `x[y]`
 
         with_page: JS a -> JS a
-            | x = do old <- get "body"
-                     `old.element.detach()`
+            | x = do old <- `$("body").clone()`
+                     xx <- x
+                     `$("body").replaceWith(old)`
+                     return xx
+
+        do! with_page do "body" $= "Test"
+                         text <- get "body"
+                         text <- text.inner
+                         return (text == "Test")
 
         do! d <- div "test1"
 

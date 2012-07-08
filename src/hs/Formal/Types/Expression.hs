@@ -500,13 +500,15 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (JSExpression s)        = opt s
     toJExpr (LetExpression bs ex)   = [jmacroE| (function() { `(foldl1 mappend $ map toLocal bs)`; return `(ex)` })() |]
 
-    toJExpr (IfExpression x y z)    = [jmacroE| (function(){ 
-                                                    if (`(x)`) { 
-                                                        return `(y)`;
-                                                    } else { 
-                                                        return `(z)` 
-                                                    }
-                                                 })() |] 
+    toJExpr (IfExpression x y z) =
+
+        [jmacroE| (function(){ 
+                     if (`(x)`) { 
+                        return `(y)`;
+                     } else { 
+                        return `(z)` 
+                     }
+                   })() |] 
 
     toJExpr x = error $ "Unimplemented " ++ show x
 

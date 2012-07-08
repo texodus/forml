@@ -1116,7 +1116,7 @@ to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify (vars y) ([]:=> y), d
 -- | Computes all possible types from a type signature AST.
 
 enumerate_types :: UnionType -> [Type]
-enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ types
+enumerate_types (UnionType types) = to_unit . concat . map enumerate_type . S.toList $ types
 
     where term_type (VariableType x)      = [ TypeVar (TVar x Star) ]
           term_type (SymbolType x)        = [ Type (TypeConst (show x) Star) ]
@@ -1126,6 +1126,9 @@ enumerate_types (UnionType types) = concat . map enumerate_type . S.toList $ typ
 
           to_kind 0 = Star
           to_kind n = KindFunction Star (to_kind$ n - 1)
+
+          to_unit [] = [TypeRecord (TRecord M.empty TComplete Star)]
+          to_unit x = x
 
           to_kind' _ [] = []
           to_kind' n (TypeVar (TVar x _) : xs) = TypeVar (TVar x (to_kind n)) : to_kind' n xs

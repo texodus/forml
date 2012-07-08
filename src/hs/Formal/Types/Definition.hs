@@ -69,24 +69,32 @@ instance Syntax Definition where
 
               second = option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing)))
 
-              eq_axiom   = do try (spaces >> same) <|> (whitespace >> return ())
-                              string "|"
-                              naked_eq_axiom
+              eq_axiom =
 
-              naked_eq_axiom = do whitespace
-                                  patterns <- syntax
-                                  no_args_eq_axiom patterns
+                  do try (spaces >> same) <|> (whitespace >> return ())
+                     string "|"
+                     naked_eq_axiom
 
-              no_args_eq_axiom patterns = do whitespace *> string "=" *> spaces *> indented
-                                             ex <- withPos (addr syntax)
-                                             return $ EqualityAxiom patterns ex
+              naked_eq_axiom =
 
-              type_axiom = do spaces
-                              indented
-                              string ":"
-                              spaces
-                              indented
-                              TypeAxiom <$> withPos type_axiom_signature
+                  do whitespace
+                     patterns <- syntax
+                     no_args_eq_axiom patterns
+
+              no_args_eq_axiom patterns =
+
+                  do whitespace *> string "=" *> spaces *> indented
+                     ex <- withPos (addr syntax)
+                     return $ EqualityAxiom patterns ex
+
+              type_axiom =
+
+                  do spaces
+                     indented
+                     string ":"
+                     spaces
+                     indented
+                     TypeAxiom <$> withPos type_axiom_signature
 
 -- TODO Visibility should be more than skin deep?
 

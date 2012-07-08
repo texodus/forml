@@ -33,7 +33,8 @@ Executable formal
     network,
     urlencoded,
     file-embed,
-    process
+    process,
+    directory
  
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2

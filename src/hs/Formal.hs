@@ -21,9 +21,11 @@ import System.IO
 import System.Environment
 import System.Exit
 import System.Console.ANSI
+import System.Directory
 
 import Network.HTTP
 import Network.URI
+import Control.Concurrent
 
 import Data.Monoid
 
@@ -37,7 +39,7 @@ import Data.URLEncoded
 import Formal.Parser
 import Formal.Javascript
 import Formal.TypeCheck hiding (split)
-
+--import Formal.Optimize
 import Formal.Types.Namespace
 
 import qualified Data.ByteString.Char8 as B
@@ -122,59 +124,8 @@ gen_js ps = let p = Program$ get_program ps
 
 main :: IO ()
 main  = do rc <- parseArgs <$> getArgs
-           (as, src') <- parse_formal$ inputs rc
-           let (js, ((_, tests):_)) = gen_js src'
-   
-           js <- if optimize rc 
-                 then (monitor "Optimizing"$ closure js)
-                 else do warn "Optimizing" js
-   
-           writeFile (output rc ++ ".js") js
-           writeFile (output rc ++ ".spec.js") tests
-
-           let xxx = fst . head $ src'
-           let yyy = snd . head $ src'
-           let html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
-           let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
-           let hook = "<script>" ++ htmljs ++ "</script>"
-           writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
-
-           case run_tests rc of
-               Node ->
-                    monitor "Testing"$
-                    do (Just std_in, Just std_out, _, p) <-
-                           createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
-                       hPutStrLn std_in$ B.unpack jasmine
-                       hPutStrLn std_in$ js ++ "\n\n"
-                       hPutStrLn std_in$ tests
-                       hPutStrLn std_in$ console
-                       z <- waitForProcess p
-
-                       case z of 
-                         ExitFailure _ -> return$ Left []
-                         ExitSuccess -> if (show_types rc) 
-                                        then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
-                                        else return$ Right ()
-
-               Phantom -> 
-                    monitor "Testing"$
-                    do writeFile (output rc ++ ".phantom.js")
-                             (B.unpack jquery ++ B.unpack jasmine ++ js ++ tests ++ console)
-                      
-
-                       (z, msg, _) <- readProcessWithExitCode "phantomjs" [output rc ++ ".phantom.js"] ""
-                       system$ "rm " ++ output rc ++ ".phantom.js"
-
-                       case z of 
-                         ExitFailure _ -> return$ Left [msg]
-                         ExitSuccess -> if (show_types rc) 
-                                        then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
-                                        else return$ Right ()
-               NoTest ->
-                    do warn "Testing" ()
-                       if (show_types rc) 
-                         then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
-                         else return ()
+           if watch rc then watch' rc
+                       else compile rc
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
@@ -187,6 +138,78 @@ main  = do rc <- parseArgs <$> getArgs
           console = "prelude.html.console()"
           report  = $(embedFile "src/js/FormalReporter.js")
           htmljs  = "prelude.html.table_of_contents()"
+
+          watch' rc =
+
+              do x <- mapM getModificationTime . inputs $ rc
+                 compile rc
+                 putStr "Waiting ..."
+                 hFlush stdout
+                 wait rc x
+
+          wait rc x =
+
+              do threadDelay 1000
+                 x' <- mapM getModificationTime . inputs $ rc
+                 if x /= x' then do putStr "\r"
+                                    watch' rc
+                            else wait rc x
+
+          compile rc =
+
+              do (as, src') <- parse_formal$ inputs rc
+                 let (js, ((_, tests):_)) = gen_js src'
+   
+                 js <- if optimize rc 
+                       then (monitor "Optimizing"$ closure js)
+                       else do warn "Optimizing" js
+   
+                 writeFile (output rc ++ ".js") js
+                 writeFile (output rc ++ ".spec.js") tests
+
+                 let xxx = fst . head $ src'
+                 let yyy = snd . head $ src'
+                 let html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
+                 let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
+                 let hook = "<script>" ++ htmljs ++ "</script>"
+                 writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
+
+                 case run_tests rc of
+                     Node ->
+                          monitor "Testing"$
+                          do (Just std_in, Just std_out, _, p) <-
+                                 createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
+                             hPutStrLn std_in$ B.unpack jasmine
+                             hPutStrLn std_in$ js ++ "\n\n"
+                             hPutStrLn std_in$ tests
+                             hPutStrLn std_in$ console
+                             z <- waitForProcess p
+
+                             case z of 
+                               ExitFailure _ -> return$ Left []
+                               ExitSuccess -> if (show_types rc) 
+                                              then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
+                                              else return$ Right ()
+
+                     Phantom -> 
+                          monitor "Testing"$
+                          do writeFile (output rc ++ ".phantom.js")
+                                   (B.unpack jquery ++ B.unpack jasmine ++ js ++ tests ++ console)
+                            
+
+                             (z, msg, _) <- readProcessWithExitCode "phantomjs" [output rc ++ ".phantom.js"] ""
+                             system$ "rm " ++ output rc ++ ".phantom.js"
+
+                             case z of 
+                               ExitFailure _ -> return$ Left [msg]
+                               ExitSuccess -> if (show_types rc) 
+                                              then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
+                                              else return$ Right ()
+                     NoTest ->
+                          do warn "Testing" ()
+                             if (show_types rc) 
+                               then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
+                               else return ()
 
 
 closure :: String -> IO (Either a String)
@@ -212,16 +235,19 @@ data RunConfig = RunConfig { inputs :: [String]
                            , show_types :: Bool
                            , optimize :: Bool
                            , run_tests :: TestMode 
-                           , write_docs :: Bool }
+                           , write_docs :: Bool
+                           , watch :: Bool }
 
 parseArgs :: [String] -> RunConfig
 parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False True Phantom True
+                          []     -> return $ RunConfig [] "default" False True Phantom True False
                           (x:xs) -> do put xs
                                        case x of
+                                         "-w"    -> do x <- argsParser
+                                                       return $ x { watch = True }
                                          "-t"    -> do x <- argsParser
                                                        return $ x { show_types = True }
                                          "-no-opt" -> do x <- argsParser
@@ -232,11 +258,11 @@ parseArgs = fst . runState argsParser
                                                             return $ x { run_tests = Node }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
-                                                       RunConfig a _ c d e f <- argsParser
-                                                       return $ RunConfig (x:a) name c d e f
+                                                       RunConfig a _ c d e f g <- argsParser
+                                                       return $ RunConfig (x:a) name c d e f g
                                          ('-':_) -> error "Could not parse options"
-                                         z       -> do RunConfig a _ c d e f <- argsParser
+                                         z       -> do RunConfig a _ c d e f g <- argsParser
                                                        let b = last $ split "/" $ head $ split "." z
                                                        
-                                                       return $ RunConfig (x:a) b c d e f
+                                                       return $ RunConfig (x:a) b c d e f g
 
