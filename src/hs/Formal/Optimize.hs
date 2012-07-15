@@ -49,10 +49,13 @@ import Formal.TypeCheck hiding (get_namespace)
 import Formal.Parser.Utils
 import Formal.Parser
 
+type Inlines = [((Namespace, Symbol), (Match (Expression Definition), Expression Definition))]
+type Inline  = [(Symbol, (Match (Expression Definition), Expression Definition))]
 
 data OptimizeState = OptimizeState { ns :: Namespace
-                                   , assumptions :: M.Map Namespace [Assumption]
-                                   , inlines :: M.Map (Namespace, Symbol) (Expression Definition) }
+                                   , assumptions :: [(Namespace, [Assumption])]
+                                   , inlines :: Inlines
+                                   , env :: Inline }
 
 data Optimizer a = Optimizer (OptimizeState -> (OptimizeState, a))
 
@@ -68,6 +71,12 @@ instance Functor Optimizer where
 
     fmap f (Optimizer g) = Optimizer (\x -> case g x of (y, x) -> (y, f x))
 
+instance Applicative Optimizer where
+
+    pure = return
+    x <*> y = do f <- x
+                 f <$> y
+
 class Optimize a where
 
     optimize :: a -> Optimizer a
@@ -78,13 +87,93 @@ set_namespace ns' = Optimizer (\x -> (x { ns = ns' }, ()))
 get_namespace :: Optimizer Namespace
 get_namespace  = Optimizer (\x -> (x, ns x))
 
-instance Optimize Definition where
+set_inline :: Inlines -> Optimizer ()
+set_inline ns' = Optimizer (\x -> (x { inlines = ns' }, ()))
 
-    optimize (Definition _ True name [EqualityAxiom m ex]) = undefined
+get_inline :: Optimizer Inlines
+get_inline  = Optimizer (\x -> (x, inlines x))
+
+set_env :: Inline -> Optimizer ()
+set_env ns' = Optimizer (\x -> (x { env = ns' }, ()))
+
+get_env :: Optimizer Inline
+get_env  = Optimizer (\x -> (x, env x))
+
+with_env xs =
+
+    do e <- get_env
+       xs' <- xs
+       set_env e
+       return xs'
+
+get_addr :: Addr a -> a
+get_addr (Addr _ _ x) = x
+
+instance (Optimize a) => Optimize (Addr a) where
+
+    optimize (Addr s e a) = Addr s e <$> optimize a
 
 instance Optimize (Expression Definition) where
 
-    optimize x = undefined
+    optimize (ApplyExpression f' @ (SymbolExpression f) args) =
+
+        do is <- get_env
+           case f `lookup` is of
+             Nothing -> ApplyExpression <$> optimize f' <*> mapM optimize args
+             Just (m, ex) ->
+
+                 do args' <- mapM optimize args
+                    return $ ApplyExpression (FunctionExpression [EqualityAxiom m (Addr undefined undefined ex)]) args'
+
+    optimize (ApplyExpression f args) = ApplyExpression <$> optimize f <*> mapM optimize args
+    optimize (IfExpression a b c) = IfExpression <$> optimize a <*> optimize b <*> optimize c
+    optimize (LazyExpression x l) = flip LazyExpression l <$> optimize x
+    optimize (FunctionExpression xs) = FunctionExpression <$> mapM optimize xs
+    optimize (AccessorExpression x xs) = flip AccessorExpression xs <$> optimize x
+    optimize (ListExpression ex) = ListExpression <$> mapM optimize ex
+
+    optimize (LetExpression ds ex) =
+
+        do ds' <- mapM optimize ds
+           LetExpression ds' <$> optimize ex
+
+    optimize (RecordExpression (M.toList -> xs)) =
+
+        let (keys, vals) = unzip xs
+        in  RecordExpression . M.fromList . zip keys <$> mapM optimize vals
+
+    optimize x = return x
+
+
+-- TODO wrong
+instance Optimize (Match (Expression Definition)) where
+
+    optimize x = return x
+
+instance Optimize (Axiom (Expression Definition)) where
+
+    optimize t @ (TypeAxiom _) = return t
+    optimize (EqualityAxiom m ex) =
+
+        do m <- optimize m
+           ex <- optimize ex
+           return (EqualityAxiom m ex)
+
+instance Optimize Definition where
+
+    optimize (Definition a True name [eq @ (EqualityAxiom _ _)]) =
+
+        do (EqualityAxiom m ex) <- optimize eq
+           is  <- get_inline
+           e   <- get_env
+           ns  <- get_namespace
+           set_inline (((ns, name), (m, get_addr ex)) : is)
+           set_env    ((name, (m, get_addr ex)) : e)
+           return (Definition a True name [EqualityAxiom m ex])
+
+    optimize (Definition a True c (TypeAxiom _ : x)) = optimize (Definition a True c x)
+    optimize (Definition _ True name _) = fail$ "Illegal inline " ++ show name
+    optimize (Definition a b c xs) = Definition a b c <$> mapM optimize xs
 
 instance Optimize Statement where
 
@@ -94,7 +183,7 @@ instance Optimize Statement where
 
         do ns <- get_namespace
            set_namespace$ ns `mappend` x
-           xs' <- optimize xs
+           xs' <- with_env$ optimize xs
            set_namespace ns
            return$ ModuleStatement x xs'
                                          
@@ -102,14 +191,19 @@ instance Optimize Statement where
 
 instance Optimize [Statement] where
 
-    optimize (x:xs) = optimize x >> optimize xs
+    optimize [] = return []
+    optimize (x:xs) =
+
+        do x <- optimize x
+           xs <- optimize xs
+           return (x:xs)
 
 instance Optimize Program where
 
     optimize (Program xs) = Program <$> optimize xs
 
-run_optimizer :: Program -> M.Map Namespace [Assumption] -> Program
+run_optimizer :: Program -> [(Namespace, [Assumption])] -> Program
 run_optimizer (optimize -> Optimizer f) as = case f gen_state of (_, p) -> p
 
-    where gen_state = OptimizeState (Namespace []) as M.empty
+    where gen_state = OptimizeState (Namespace []) as [] []
                        

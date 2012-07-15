@@ -439,19 +439,7 @@ instance Opt JExpr where
 
 instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
-    -- These are inline cheats to improve performance
-    -- TODO wouldn't need this if there was an inline keyword ...
-
-    toJExpr (ApplyExpression (SymbolExpression (Operator "==")) [x, y]) = [jmacroE| _eq_eq(`(x)`)(`(y)`) |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "!=")) [x, y]) = [jmacroE| !_eq_eq(`(x)`)(`(y)`) |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "+")) [x, y])  = [jmacroE| `(x)` + `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "*")) [x, y])  = [jmacroE| `(x)` * `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x, y])  = [jmacroE| `(x)` - `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "-")) [x])     = [jmacroE| 0 - `(x)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "<=")) [x, y]) = [jmacroE| `(x)` <= `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator ">=")) [x, y]) = [jmacroE| `(x)` >= `(y)` |]
+--    toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
 
     toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y]) = 
         toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])

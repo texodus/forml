@@ -85,11 +85,11 @@ module prelude
     -- here, as the "==" operator defined in [Numbers](#numbers) is defined
     -- in terms of them.
 
-    object? x = do! `typeof x === "object"`
-    array? = do! `is_array`
-    type? x = do! `typeof x`
+    inline object? x = do! `typeof x === "object"`
+    inline array?    = do! `is_array`
+    inline type? x   = do! `typeof x`
     
-    not: Bool -> Bool | x = do! `!x`
+    inline not: Bool -> Bool | x = do! `!x`
 
     object? {}
     array? []
@@ -101,9 +101,10 @@ module prelude
     -- Side effects can only happen in Javascript, so we use a monadic container to
     -- compose these bits.
 
-    (>>=): JS a -> (a -> JS b) -> JS b | x y = `run (y (run x))`
-    (>>): JS a -> JS b -> JS b         | x y = `run x; return (run y)`
-    return: a -> JS a                  | x   = `x`
+    inline (>>=): JS a -> (a -> JS b) -> JS b | x y = y (run x)
+    inline (>>): JS a -> JS b -> JS b         | x y = `run x; return (run y)`
+
+    inline return: a -> JS a | x = `x`
     
     do! x <- `1 + 4`
         y <- `2 + 3`
@@ -113,7 +114,7 @@ module prelude
     5  == do! return 5
     10 == do! `5 + 5`
 
-    log: a -> JS {} | x = `console.log(x)`
+    inline log: a -> JS {} | x = `console.log(x)`
 
     -- Testing to verify that escaping Javascript & utilizing escaped
     -- Javascript with `do` sugar and composition in general works as
@@ -131,25 +132,25 @@ module prelude
     -- annotated to constrain inferrence - otherwise, these functions would all be
     -- inferred as `a -> b -> c`.
 
-    (&&): Bool -> Bool -> Bool | x y = do! `x && y`
-    (||): Bool -> Bool -> Bool | x y = do! `x || y`
-    (*):  Num -> Num -> Num    | x y = do! `x * y`
-    (/):  Num -> Num -> Num    | x y = do! `x / y`
-    (%):  Num -> Num -> Num    | x y = do! `x % y`
-    (+):  Num -> Num -> Num    | x y = do! `x + y`
-    (-):  Num -> Num -> Num    | x y = do! `x - y`
-    (<=): Num -> Num -> Bool   | x y = do! `x <= y`
-    (>=): Num -> Num -> Bool   | x y = do! `x >= y`
-    (<):  Num -> Num -> Bool   | x y = do! `x < y`
-    (>):  Num -> Num -> Bool   | x y = do! `x > y`
+    inline (&&): Bool -> Bool -> Bool | x y = do! `x && y`
+    inline (||): Bool -> Bool -> Bool | x y = do! `x || y`
+    inline (*):  Num -> Num -> Num    | x y = do! `x * y`
+    inline (/):  Num -> Num -> Num    | x y = do! `x / y`
+    inline (%):  Num -> Num -> Num    | x y = do! `x % y`
+    inline (+):  Num -> Num -> Num    | x y = do! `x + y`
+    inline (-):  Num -> Num -> Num    | x y = do! `x - y`
+    inline (<=): Num -> Num -> Bool   | x y = do! `x <= y`
+    inline (>=): Num -> Num -> Bool   | x y = do! `x >= y`
+    inline (<):  Num -> Num -> Bool   | x y = do! `x < y`
+    inline (>):  Num -> Num -> Bool   | x y = do! `x > y`
     
     -- Equality is overloaded to match records and arrays. By constraining the type of
     -- this operator, we need only dispatch on the type of the first element,
     -- constraining 
 
-    (!=) x y = not (x == y)
+    inline (!=) x y = not (x == y)
 
-    (/=) x y = not (x == y)
+    inline (/=) x y = not (x == y)
 
     (==): a -> a -> Bool
         | x y when object? x =
@@ -192,14 +193,16 @@ module prelude
 
     module string
         
-        lstrip: String -> String | x = do! `x.replace(/^\s+/, '')` 
-        rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
-        strip:  String -> String | x = lstrip (rstrip x)
+        inline lstrip: String -> String | x = do! `x.replace(/^\s+/, '')` 
+        inline rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
+        inline strip:  String -> String | x = lstrip (rstrip x)
 
-        (+++): String -> String -> String | x y = do! `x + y`
+        inline (+++): String -> String -> String | x y = do! `x + y`
 
     open string
     
+    -- interpolated strings
+
     let x = "test"
     "hello `x`" == "hello test"
     
@@ -244,8 +247,8 @@ module prelude
     -- --------------------
     -- Simple left & right pipes, ala F#.  
 
-    (<|) x y = x y
-    (|>) x y = y x
+    inline (<|) x y = x y
+    inline (|>) x y = y x
     
     3 |> (λy = y + 1) |> λy = y + 1 == 5
     (λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9
@@ -253,15 +256,15 @@ module prelude
     -- Alternatively, there is a right associative version of `<|`, ala
     -- haskell.  All operators which end with a `:` are right associative.
 
-    (<:) x y = x y
+    inline (<:) x y = x y
     
     (λx = x - 3) <: (λx = x - 3) <: 5 + 5 == 4
     
     -- Function composition
 
-    (.:) x y = λz = x (y z)
-    id x = x
-    flip f a b = f b a
+    inline (.:) x y = λz = x (y z)
+    inline id x = x
+    inline flip f a b = f b a
      
     ((λx = x + 1) .: (λx = x * 2) .: λx = x - 3) 4 == 3
     id [1, 2, 3] == [1, 2, 3]
@@ -355,9 +358,9 @@ module prelude
         on_load: JS {} -> JS {}
             | x = `window.addEventListener("load", x, false)`
 
-        stringify: a -> String | x = do! `JSON.stringify(x)`
+        inline stringify: a -> String | x = do! `JSON.stringify(x)`
 
-        (!!): Array a -> Num -> a | x y = do! `x[y]`
+        inline (!!): Array a -> Num -> a | x y = do! `x[y]`
 
         with_page: JS a -> JS a
             | x = do old <- `$("body").clone()`
@@ -365,10 +368,10 @@ module prelude
                      `$("body").replaceWith(old)`
                      return xx
 
-        do! with_page do "body" $= "Test"
-                         text <- get "body"
-                         text <- text.inner
-                         return (text == "Test")
+        -- do! with_page do "body" $= "Test"
+        --                  text <- get "body"
+        --                  text <- text.inner
+        --                  return (text == "Test")
 
         do! d <- div "test1"
 
@@ -402,7 +405,7 @@ module prelude
                         passed  <- `results.passed()`
 
                         if   passed 
-                        then return 0
+                        then return {}
 
                         else let items = spec.results_.items_
                                  desc  = spec.description.split "::" !! 1
@@ -429,11 +432,9 @@ module prelude
                              reportRunnerResults: `phantom.exit(is_error)` }
 
             do env <- `jasmine.getEnv()`
-               
+
                `env.addReporter(reporter)`
                `env.execute()`
-
-
 
         -- This is the initializer for prelude's HTML test suite. 
 

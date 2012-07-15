@@ -39,7 +39,7 @@ import Data.URLEncoded
 import Formal.Parser
 import Formal.Javascript
 import Formal.TypeCheck hiding (split)
---import Formal.Optimize
+import qualified Formal.Optimize as O
 import Formal.Types.Namespace
 
 import qualified Data.ByteString.Char8 as B
@@ -115,12 +115,11 @@ parse_formal xs = foldM parse' ([], []) xs
                                         (ts', as') <- monitor [qq|Loading $filename|] $ return$ to_parsed src' ts
                                         return (ts ++ ts', as ++ [as'])
 
-gen_js :: [(Program, String)] -> (String, [(String, String)])
-gen_js ps = let p = Program$ get_program ps
-            in  (compress (read (render p)), [("", read (render_spec p))])
+gen_js :: Program -> (String, [(String, String)])
+gen_js p = (compress (read (render p)), [("", read (render_spec p))])
 
-    where get_program ((Program ss, _): ps) = ss ++ get_program ps
-          get_program [] = []
+get_program ((Program ss, _): ps) = ss ++ get_program ps
+get_program [] = []
 
 main :: IO ()
 main  = do rc <- parseArgs <$> getArgs
@@ -158,11 +157,12 @@ main  = do rc <- parseArgs <$> getArgs
           compile rc =
 
               do (as, src') <- parse_formal$ inputs rc
-                 let (js, ((_, tests):_)) = gen_js src'
+                 let src'' = O.run_optimizer ( Program $ get_program src' ) as
+                 let (js, ((_, tests):_)) = gen_js src''
    
                  js <- if optimize rc 
-                       then (monitor "Optimizing"$ closure js)
-                       else do warn "Optimizing" js
+                       then (monitor "Closure"$ closure js)
+                       else do warn "Closure" js
    
                  writeFile (output rc ++ ".js") js
                  writeFile (output rc ++ ".spec.js") tests

@@ -19,6 +19,8 @@
 module Formal.TypeCheck where
 import System.IO.Unsafe
 
+import Text.InterpolatedString.Perl6
+
 import Data.List (nub, (\\), intersect, union, partition)
 
 import qualified Data.Map as M
@@ -197,12 +199,11 @@ instance Unify TypeRecord where
                     else return []
                return$ a @@ b
 
-        | otherwise = fail$ "Records do not unify: found " ++ show (TypeRecord t')
-                             ++ ", expecting " ++ show (TypeRecord u')
+        | otherwise = fail [qq|Records do not unify: found {TypeRecord t'}, expecting {TypeRecord u'}|]
                     
     t |=| u @ (TRecord _ (TPartial _) _) = u |=| t
 
-    t |=| u = fail$ "Unimplemented record unification " ++ show (TypeRecord t) ++ ", " ++ show (TypeRecord u)
+    t |=| u = fail [qq|Illegal record unification: {TypeRecord t} and {TypeRecord u}|]
 
 instance Unify Type where
 
