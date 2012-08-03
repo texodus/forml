@@ -486,7 +486,9 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
     toJExpr (JSExpression s)        = opt s
-    toJExpr (LetExpression bs ex)   = [jmacroE| (function() { `(foldl1 mappend $ map toLocal bs)`; return `(ex)` })() |]
+    toJExpr (LetExpression bs ex) =
+
+        [jmacroE| (function() { `(foldl1 mappend $ map toLocal bs)`; return `(ex)` })() |]
 
     toJExpr (IfExpression x y z) =
 

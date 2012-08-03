@@ -29,6 +29,8 @@ prelude = [jmacro| function !is_array(x) {
                        return `(InfixExpr "instanceof" x (ref "Array"))`;
                    }
 
+                   var !__undefined__ = "undefined";
+
                    function !run(x) { return x(); }
 
                    function !error(x) { throw x; }

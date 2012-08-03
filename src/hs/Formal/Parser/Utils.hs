@@ -38,6 +38,10 @@ import qualified Data.Text as T
 
 data Addr a = Addr SourcePos SourcePos a
 
+instance Functor Addr where
+
+    fmap f (Addr s e a) = Addr s e $ f a
+
 addr :: Parser a -> Parser (Addr a)
 addr p = do x <- getPosition
             y <- p

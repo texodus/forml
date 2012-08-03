@@ -94,7 +94,7 @@ instance (Show a) => ToJExpr (PatternMatch a) where
 
         [jmacroE| `(map g xs)` && `(map f xs)` |]
             where f (key, val) = PM (n ++ "[\"" ++ to_name key ++ "\"]") val
-                  g (key, _) = Condition [jmacroE| typeof `(ref n)`[`(to_name key)`] != "undefined" |]
+                  g (key, _) = Condition [jmacroE| typeof `(ref n)`[`(to_name key)`] != __undefined__ |]
 
     toJExpr (PM n (ListPattern [])) =
         [jmacroE| equals(`(n)`)([]) |]

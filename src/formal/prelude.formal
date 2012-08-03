@@ -332,7 +332,7 @@ module prelude
 
                               add_style y z = `el.style[y] = z` }
 
-        ($=): String -> a -> JS {}
+        inline ($=): String -> a -> JS {}
             | x y = `if (typeof $ != "undefined") {
                          var xx = $(x).get(0);
                          if (typeof xx != "undefined") {
@@ -340,17 +340,17 @@ module prelude
                          }
                      }`
 
-        ($|): String -> String -> String -> JS {}
+        inline ($|): String -> String -> String -> JS {}
             | x y = \z = `$(x).css(y, z)`
 
-        ($.): String -> String -> JS {}
+        inline ($.): String -> String -> JS {}
             | x y = `$(x).addClass(y)`
 
-        ($+): String -> String -> JS {}
+        inline ($+): String -> String -> JS {}
             | x y = `$(x).append(y)`
 
         div: String -> JS String
-        | x = yield "<div id='`x`'/>"
+            | x = yield "<div id='`x`'/>"
 
         move: HTML -> HTML -> JS a
             | x y = `$(y.element).append($(x.element).detach())`
@@ -390,7 +390,7 @@ module prelude
         let x = do! `[ { x: 1}, {x: 2}, {x: 3} ]`
         stringify (x !! 0).x == "1"
 
-        split: String -> String -> Array String | y x = do! `x.split(y)`
+        inline split: String -> String -> Array String | y x = do! `x.split(y)`
 
 
         -- This is the initializer for prelude's console test suite. 

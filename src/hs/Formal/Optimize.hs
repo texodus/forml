@@ -19,6 +19,8 @@
 module Formal.Optimize where
 import System.IO.Unsafe
 
+import Language.Javascript.JMacro
+
 import Data.List (nub, (\\), intersect, union, partition)
 
 import qualified Data.Map as M
@@ -48,6 +50,8 @@ import Formal.TypeCheck hiding (get_namespace)
 
 import Formal.Parser.Utils
 import Formal.Parser
+
+import qualified Formal.Javascript.Utils as J
 
 type Inlines = [((Namespace, Symbol), (Match (Expression Definition), Expression Definition))]
 type Inline  = [(Symbol, (Match (Expression Definition), Expression Definition))]
@@ -173,6 +177,62 @@ instance Optimize Definition where
 
     optimize (Definition a True c (TypeAxiom _ : x)) = optimize (Definition a True c x)
     optimize (Definition _ True name _) = fail$ "Illegal inline " ++ show name
+
+    optimize (Definition a b name xs) | is_recursive xs =
+
+       do xs' <- mapM optimize xs
+          return $ Definition a b name (to_trampoline xs')
+
+       where is_recursive (TypeAxiom _: xs) = is_recursive xs
+             is_recursive (EqualityAxiom _ x: xs) = is_recursive' (get_addr x) || is_recursive xs
+             is_recursive [] = False
+
+             is_recursive' (ApplyExpression (SymbolExpression x) args) | name == x = True
+             is_recursive' (LetExpression _ e) = is_recursive' e
+             is_recursive' (IfExpression _ a b) = is_recursive' a || is_recursive' b
+
+             is_recursive' _ = False
+
+             to_trampoline (t @ (TypeAxiom _): xs) = t : to_trampoline xs
+             to_trampoline xs' =
+                  [EqualityAxiom (Match [] Nothing) (Addr undefined undefined (JSExpression (g xs')))]
+
+             g xs' = [jmacroE| (function() {
+                                  var result = null;
+                                  var f = `(to_trampoline' xs')`;
+                                  return f;
+                                  // while (result === null) {
+                                  //     console.log("test");
+                                  // }
+                                })() |]
+
+
+             expr [] = expr . J.scope $ []
+             expr (TypeAxiom _:xs) = expr xs
+             expr xs @ (EqualityAxiom (Match ps _) _ : _) = J.scope . J.curry (length ps) . toStat $ xs
+
+--instance (Show a, ToJExpr a) => ToJExpr [Axiom a] where
+                        
+             to_trampoline' = id
+
+
+             -- to_trampoline' (EqualityAxiom a x: xs) =
+
+             --     (EqualityAxiom (fmap (to_trampoline'' a) x)) : to_trampoline' xs
+
+             -- to_trampoline' [] = []
+
+             -- to_trampoline'' (ApplyExpression (SymbolExpression x) args) | name == x = undefined
+
+             -- LiteralExpression Literal
+             -- SymbolExpression Symbol
+             -- JSExpression JExpr
+             -- LazyExpression (Addr (Expression d)) Lazy
+             -- FunctionExpression [Axiom (Expression d)]
+             -- RecordExpression (M.Map Symbol (Expression d))
+             -- ListExpression [Expression d]
+             -- AccessorExpression (Addr (Expression d)) [Symbol]
+
     optimize (Definition a b c xs) = Definition a b c <$> mapM optimize xs
 
 instance Optimize Statement where
@@ -186,6 +246,32 @@ instance Optimize Statement where
            xs' <- with_env$ optimize xs
            set_namespace ns
            return$ ModuleStatement x xs'
+
+    optimize ss @ (ImportStatement (Namespace x)) =
+
+        do is <- get_inline
+           e  <- get_env
+           n  <- get_namespace
+           rfind n is e
+
+        where rfind (Namespace n) is e =
+
+                     case lookup' (Namespace x) is of
+                       [] ->
+
+                           if length n > 0 && head n /= head x
+                           then do optimize (ImportStatement (Namespace (head n : x)))
+                                   return ss
+                           else return ss
+
+                       (((_, s), ex): zs) ->
+
+                           do set_env $ (s, ex) : e 
+                              return ss
+
+              lookup' x (((y, z), w):ys) | x == y = (((y, z), w) : lookup' x ys)
+                                         | otherwise = lookup' x ys
+              lookup' _ [] = []
                                          
     optimize x = return x
 
