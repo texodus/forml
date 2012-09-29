@@ -164,7 +164,7 @@ not_reserved x = do y <- x
                        then parserFail "non-reserved word"
                        else return y
 
-    where reserved_words = [ "if", "then", "else", "let", "when", "with", "and", "or", "do",
+    where reserved_words = [ "if", "then", "else", "let", "when", "with", "and", "or", "do", "var",
                              "module", "open", "yield", "lazy", "inline",
                              "|", "\\", "=", ":", ",", "->", "<-" ]
 

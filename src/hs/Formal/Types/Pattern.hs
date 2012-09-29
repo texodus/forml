@@ -128,13 +128,13 @@ instance (Show a, ToJExpr a) => ToJExpr [Pattern a] where
 instance (Syntax a) => Syntax (Pattern a) where
     
     syntax = try literal
-             <|> try naked_apply
              <|> try var
              <|> any'
-             <|> record
+             <|> try record
+             <|> naked_apply
              <|> array
              <|> list
-             <|> indentPairs "(" (try view <|> try apply <|> syntax) ")"
+             <|> indentPairs "(" (try view <|> syntax) ")"
 
         where view        = ViewPattern <$> syntax <* spaces <* string "->" <* whitespace <*> syntax 
               var         = VarPattern <$> type_var
@@ -142,15 +142,14 @@ instance (Syntax a) => Syntax (Pattern a) where
               any'        = many1 (string "_") *> return AnyPattern
               naked_apply = 
 
-                  do x <- many1 letter
-                     string ":"
+                  do x <- indentPairs "{" (many1 letter) "}"
                      return $ RecordPattern (M.fromList [(Symbol x, AnyPattern )]) Complete
 
-              apply = do x <- many1 letter 
-                         string ":" 
-                         whitespace
-                         y <- syntax
-                         return $ RecordPattern (M.fromList [(Symbol x, y)]) Complete
+              -- apply = do x <- many1 letter 
+              --            string ":" 
+              --            whitespace
+              --            y <- syntax
+              --            return $ RecordPattern (M.fromList [(Symbol x, y)]) Complete
 
               record  = indentPairs "{" qqq "}"
                                                    

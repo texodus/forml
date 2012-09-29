@@ -176,7 +176,7 @@ instance Optimize Definition where
            return (Definition a True name [EqualityAxiom m ex])
 
     optimize (Definition a True c (TypeAxiom _ : x)) = optimize (Definition a True c x)
-    optimize (Definition _ True name _) = fail$ "Illegal inline " ++ show name
+    optimize (Definition _ True name _) = fail$ "Illegal inline definition '" ++ show name ++ "'"
 
     optimize (Definition a b name xs) | is_recursive xs =
 
@@ -207,9 +207,9 @@ instance Optimize Definition where
                                 })() |]
 
 
-             expr [] = expr . J.scope $ []
-             expr (TypeAxiom _:xs) = expr xs
-             expr xs @ (EqualityAxiom (Match ps _) _ : _) = J.scope . J.curry (length ps) . toStat $ xs
+             -- expr [] = expr . J.scope $ []
+             -- expr (TypeAxiom _:xs) = expr xs
+             -- expr xs @ (EqualityAxiom (Match ps _) _ : _) = J.scope . J.curry (length ps) . toStat $ xs
 
 --instance (Show a, ToJExpr a) => ToJExpr [Axiom a] where
                         

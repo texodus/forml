@@ -93,7 +93,6 @@ instance (Syntax d) => Syntax (Expression d) where
                       <|> try do'
                       <|> try yield
                       <|> try lazy
-                      <|> try named
                       <|> try apply
                       <|> function
                       <|> try accessor
@@ -102,13 +101,14 @@ instance (Syntax d) => Syntax (Expression d) where
               inner = try accessor 
                       <|> indentPairs "(" syntax ")" 
                       <|> js 
-                      <|> record 
+                      <|> try record 
+                      <|> named_key
                       <|> literal
                       <|> symbol
                       <|> try array
                       <|> list
 
-              let' = withPosTemp $ do string "let"
+              let' = withPosTemp $ do string "var" <|> string "let"
                                       whitespace1
                                       defs <- withPos def
                                       spaces
@@ -221,14 +221,13 @@ instance (Syntax d) => Syntax (Expression d) where
                                           
                                     return (\x y -> ApplyExpression op' [x, y])
 
-              named_key = do x <- syntax
-                             char ':'
+              named_key = do x <- indentPairs "{" syntax "}"
                              return $ RecordExpression (M.fromList [(x, SymbolExpression (Symbol "true"))]) 
 
-              named = do x @ (RecordExpression (M.toList -> (k, _): _)) <- named_key
-                         option x $ try $ do whitespace
-                                             z <- other
-                                             return $ RecordExpression (M.fromList [(k, z)])
+              -- named = do x @ (RecordExpression (M.toList -> (k, _): _)) <- named_key
+              --            option x $ try $ do whitespace
+              --                                z <- other
+              --                                return $ RecordExpression (M.fromList [(k, z)])
 
               accessor = do s <- getPosition
                             x <- indentPairs "(" syntax ")" 
@@ -246,7 +245,7 @@ instance (Syntax d) => Syntax (Expression d) where
 
               apply = ApplyExpression <$> inner <*>  (try cont <|> halt)
 
-                  where cont = do x <- whitespace *> (try named_key <|> inner)
+                  where cont = do x <- whitespace *> inner
                                   option [x] ((x:) <$> try (whitespace *> (try cont <|> halt)))
 
                         halt = (:[]) <$> (whitespace *> (try let'

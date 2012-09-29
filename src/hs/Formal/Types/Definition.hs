@@ -51,11 +51,11 @@ instance Show Definition where
 instance Syntax Definition where
 
     syntax = do whitespace
-                vis <- option Public (try (string "private" >> whitespace >> return Private))
-                inl <- option False (try (string "inline" >> whitespace >> return True))
+                vis <- option Public (try (string "private" >> spaces >> return Private))
+                inl <- option False (try (string "inline" >> spaces >> return True))
                 name <- try syntax <|> (Symbol <$> many1 (char '_'))
                 sig <- first
-                eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom)) <|> return []
+                eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom name)) <|> return []
                 whitespace
                 if length sig == 0 && length eqs == 0 
                     then parserFail "Definition Axioms"
@@ -69,11 +69,15 @@ instance Syntax Definition where
 
               second = option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing)))
 
-              eq_axiom =
+              eq_axiom name' =
 
                   do try (spaces >> same) <|> (whitespace >> return ())
-                     string "|"
+                     string "|"  <|> try (string name <* notFollowedBy (digit <|> letter)) 
                      naked_eq_axiom
+
+                  where name = case name' of
+                                 (Symbol name)   -> name
+                                 (Operator name) -> "(" ++ name ++ ")"
 
               naked_eq_axiom =
 

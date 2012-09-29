@@ -967,7 +967,7 @@ instance Infer Definition () where
 
         do sc <- find$ f name 
            (qs :=> t)  <- freshInst sc
-           axiom_types <- with_scope$ mapM (with_scope . infer) axs
+           axiom_types <- with_scope$ mapM (with_scope . infer) (drop 1 axs)
 
            s <- get_substitution
            mapM (unify t) (apply s axiom_types)
@@ -1107,7 +1107,7 @@ to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify (vars y) ([]:=> y), d
                               then Star 
                               else if all (\x -> x == head ks) ks
                                    then head ks
-                                   else error "Kind mismatch in schemer"
+                                   else error "Kind mismatch in scheme"
 
           infer_kinds x (TypeApplication a b) = infer_kinds x a ++ infer_kinds x b
           infer_kinds x (TypeVar (TVar y k)) | x == y = [k]

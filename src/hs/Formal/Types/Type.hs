@@ -101,7 +101,7 @@ nested_function   :: Parser ComplexType
 nested_union_type :: Parser UnionType
 
 inner_type  = nested_function 
-              <|> record_type 
+              <|> try record_type 
               <|> try named_type 
               <|> try poly_type 
               <|> var_type 
@@ -150,11 +150,14 @@ record_type   = let key_value = (,) <$> syntax <* div' <*> type_definition_signa
 
                 in indentPairs "{" (try inherit <|> inner) "}"
 
-named_type = do x <- name
-                y <- option bool (try nested_union_type <|> unionize inner_type)
-                return $ RecordType (M.fromList [(Symbol x, y)])
+named_type = do x <- indentPairs "{" name "}"
 
-    where name = type_var <* string ":" <* whitespace
+-- named_type = do x <- name
+--                 y <- option bool (try nested_union_type <|> unionize inner_type)
+
+                return $ RecordType (M.fromList [(Symbol x, bool)])
+
+    where name = type_var
           bool = UnionType (S.fromList [(SimpleType (SymbolType (Symbol "Bool")))])
 
 symbol_type   = SimpleType . SymbolType <$> type_name

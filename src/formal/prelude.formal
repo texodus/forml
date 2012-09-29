@@ -88,39 +88,55 @@ module prelude
     inline object? x = do! `typeof x === "object"`
     inline array?    = do! `is_array`
     inline type? x   = do! `typeof x`
+
+    inline
+    not: Bool -> Bool 
+    not x = do! `!x`
+    not false
     
-    inline not: Bool -> Bool | x = do! `!x`
 
     object? {}
     array? []
-
-    not false
     not (array? {})
     not (object? 0)
+
+
 
     -- Side effects can only happen in Javascript, so we use a monadic container to
     -- compose these bits.
 
-    inline (>>=): JS a -> (a -> JS b) -> JS b | x y = y (run x)
-    inline (>>): JS a -> JS b -> JS b         | x y = `run x; return (run y)`
+    inline 
+    (>>=): JS a -> (a -> JS b) -> JS b
+    (>>=)     x              y  = y (run x)
 
-    inline return: a -> JS a | x = `x`
+    inline 
+    (>>): JS a -> JS b -> JS b
+    (>>)     x       y  = `run x; return (run y)`
+
+    inline return:
+
+             a -> JS a
+      return x  = `x`
+
     
     do! x <- `1 + 4`
         y <- `2 + 3`
         ans <- `x + y`
         return (10 == ans)
-              
+
     5  == do! return 5
     10 == do! `5 + 5`
 
-    inline log: a -> JS {} | x = `console.log(x)`
+
+
+    inline log: a -> JS {} 
+           log x = `console.log(x)`
 
     -- Testing to verify that escaping Javascript & utilizing escaped
     -- Javascript with `do` sugar and composition in general works as
     -- expected.
 
-    let x = 0
+    var x = 0
         y = do z <- `x = 1`
                return z
     x == 0
@@ -153,6 +169,7 @@ module prelude
     inline (/=) x y = not (x == y)
 
     (==): a -> a -> Bool
+
         | x y when object? x =
             do! `var result = true;
                  for (key in x) {
@@ -187,24 +204,6 @@ module prelude
     -- Fibonacci function
 
     fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
-
-    -- Strings
-    -- -------
-
-    module string
-        
-        inline lstrip: String -> String | x = do! `x.replace(/^\s+/, '')` 
-        inline rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
-        inline strip:  String -> String | x = lstrip (rstrip x)
-
-        inline (+++): String -> String -> String | x y = do! `x + y`
-
-    open string
-    
-    -- interpolated strings
-
-    let x = "test"
-    "hello `x`" == "hello test"
     
     -- Speed
     -- -----
@@ -273,17 +272,40 @@ module prelude
     -- Partial records tests - these need to be moved to some sort of test suite
     -- eventually, when I'm not using the prelude as a test suite [TODO].
     
-    let f {a: x, b: y, _ } = x + y
+    var f {a: x, b: y, _ } = x + y
     f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }
 
-    let f {a: 1, b: 1, _ } = 2
+    var f {a: 1, b: 1, _ } = 2
         | {b: 2, c: 2, _ } = 2
     f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4
-
-    let f {a: 1, b: 2, _ } = 1
-        g {b: 2, c: 3, _ } = 2
-        x = {a: 1, b: 2, c: 3, d: 4 }
+      
+    var f { a = 1, b = 2, _ } = 1
+        g { b = 2, c = 3, _ } = 2
+        x = { a = 1, b = 2, c = 3, d = 4 }
     f x + 1 == g x
+
+    -- Strings
+    -- -------
+
+    module string
+        
+        inline 
+        lstrip: String -> String
+        lstrip x = do! `x.replace(/^\s+/, '')` 
+ 
+        inline rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
+        inline strip:  String -> String | = lstrip .: rstrip
+
+        inline 
+        (+++): String -> String -> String
+        (+++) x y = do! `x + y`
+
+    open string
+    
+    -- interpolated strings
+
+    var x = "test"
+    "hello `x`" == "hello test"
 
     -- Tests
     -- -----
@@ -300,25 +322,24 @@ module prelude
     -- ------
 
     module option
-    
-        Option a = some: a | none:
         
-        option b none: = b
-             | _ (some: x) = x
+        Option a = {some: a} | {none}
+        
+        option b {none} = b
+             | _ {some: x} = x
              
-        option 3 (some: 2) == 2
+        option 3 {some: 2} == 2
 
     module html
 
         HTML = { element:   a
                  inner:     JS String
                  on_click:  JS {} -> JS {}
-                 set:       c -> JS {}
+                 set:       b -> JS {}
                  add_class: String -> JS {}
                  add_style: String -> String -> JS {} }
 
         get:
-
               String -> JS HTML
             | x = do el <- `$(x).get(0)`
 
@@ -332,7 +353,9 @@ module prelude
 
                               add_style y z = `el.style[y] = z` }
 
-        inline ($=): String -> a -> JS {}
+        inline ($=):
+
+              String -> a -> JS {}
             | x y = `if (typeof $ != "undefined") {
                          var xx = $(x).get(0);
                          if (typeof xx != "undefined") {
@@ -341,10 +364,11 @@ module prelude
                      }`
 
         inline ($|): String -> String -> String -> JS {}
-            | x y = \z = `$(x).css(y, z)`
+               ($|) x y = \z = `$(x).css(y, z)`
 
-        inline ($.): String -> String -> JS {}
-            | x y = `$(x).addClass(y)`
+        inline 
+        ($.) : String -> String -> JS {}
+        ($.) x y = `$(x).addClass(y)`
 
         inline ($+): String -> String -> JS {}
             | x y = `$(x).append(y)`
@@ -387,7 +411,7 @@ module prelude
 
         -- TODO canary for broken parse bug, please move to test suite
 
-        let x = do! `[ { x: 1}, {x: 2}, {x: 3} ]`
+        var x = do! `[ { x: 1}, {x: 2}, {x: 3} ]`
         stringify (x !! 0).x == "1"
 
         inline split: String -> String -> Array String | y x = do! `x.split(y)`
@@ -397,9 +421,9 @@ module prelude
 
         console =
 
-            let is_error = 0
+            var is_error = 0
 
-                report spec = 
+            var report spec = 
 
                     do! results <- `spec.results()`
                         passed  <- `results.passed()`
@@ -428,7 +452,7 @@ module prelude
                                           Expected `exp`
                                           Actual   `act`"
 
-                reporter = { reportSpecResults:   report 
+            var reporter = { reportSpecResults:   report 
                              reportRunnerResults: `phantom.exit(is_error)` }
 
             do env <- `jasmine.getEnv()`
@@ -440,7 +464,7 @@ module prelude
 
         table_of_contents =
 
-            let jasmine: a
+            var jasmine: a
 
             on_load do "code"  $. "prettyprint"
                        "code"  $. "lang-hs"
@@ -471,7 +495,7 @@ module prelude
     module list
     
         List a = { head: a, tail: List a } 
-               | nil:
+               | { nil }
                  
         -- This complex type can be hidden behind a constructor function which
         -- works more like a traditional cons.
@@ -482,13 +506,16 @@ module prelude
         -- `[: 1, 2, 3 :]`, if you prefer symmetry).  All of these lists are
         -- synonyms.
 
-        let xs = [: [: 1, 2, 3 ]
-                    [: 1, 2, 3 :]
-                    ( 1 :: 2 :: 3 :: nil: )
-                    { head: 1
-                      tail: { head: 2
-                              tail: { head: 3
-                                      tail: nil: }}} ]
+        var xs = [: [:1,2,3]
+
+                    [:1,2,3:]
+
+                    (1::2::3::{nil})
+
+                    { head = 1
+                      tail = { head = 2
+                               tail = { head = 3
+                                        tail = {nil} }}} ]
 
         all? (λy = [:1,2,3] == y) xs 
                            
@@ -496,23 +523,23 @@ module prelude
         -- Simple implementations of list accessors, which illustrate
         -- incomplete definition.
 
-        empty? nil: = true | _ = false
+        empty? { nil } = true | _ = false
 
         head { head: x, tail: _ } = x
-           | nil: = error "Head called on empty list"
+           | { nil } = error "Head called on empty list"
            
         tail { head: _, tail: x } = x 
-           | nil: = error "Tail called on empty list"
-           
-        last { head: x, tail: nil: } = x
-           | { head: _, tail: x } = last x
-           | nil: = error "Last called on empty list"
+           | { nil } = error "Tail called on empty list"
 
-        take 0 _ = nil: | n x = head x :: take (n - 1) (tail x)
+        last { head: x, tail: { nil } } = x
+        last { head: _, tail: x } = last x
+        last { nil } = error "Last called on empty list"
+
+        take 0 _ = { nil } | n x = head x :: take (n - 1) (tail x)
         drop 0 x = x | n x = drop (n - 1) (tail x)
 
         (..) x y when x < y = x :: (x + 1 .. y)
-           | x _ = [:x]
+        (..) x _ = [:x]
            
         1 .. 5 == [:1,2,3,4,5]
 
@@ -520,24 +547,24 @@ module prelude
 
         288045 == 1 .. 1111 |> filter (λx = x % 3 == 0 || x % 5 == 0) |> sum
 
-        take_while f nil: = nil:
+        take_while f { nil } = { nil }
                  | f x when f (head x) = head x :: filter f (tail x)
-                 | _ _ = nil:
+                 | _ _ = { nil }
 
-        drop_while f nil: = nil:
+        drop_while f { nil } = { nil }
                  | f x when f (head x) = drop_while f (tail x)
                  | _ x = x
 
-        not (empty? (1 :: nil:))
+        not (empty? (1 :: {nil}))
         empty? [:]
    
         head [: 1, 2 ] == 1
         tail [: 1, 2 ] == [:2]
         last [: 1, 2 ] == 2
 
-        err (lazy head nil:) == "Head called on empty list"
-        err (lazy tail nil:) == "Tail called on empty list"
-        err (lazy last nil:) == "Last called on empty list"
+        err (lazy head {nil}) == "Head called on empty list"
+        err (lazy tail {nil}) == "Tail called on empty list"
+        err (lazy last {nil}) == "Last called on empty list"
 
         take 2 [: 1, 2, 3 ]  == [: 1, 2 ]
         drop 2 [: 1, 2, 3 ]  == [: 3 ]
@@ -545,19 +572,21 @@ module prelude
         take_while (λx = x < 0) [:] == [:]
         take_while (λx = x > 0) [: 2, 1, 0 ] == [: 2, 1 ]
 
-        drop_while (λx = x < 0) nil: == nil:
+        drop_while (λx = x < 0) {nil} == {nil}
         drop_while (λx = x > 0) [: 2, 1, 0 ] == [: 0 ]
 
         -- Cardinality
         
-        length nil: = 0
-             | { head: _, tail: x } = 1 + length x
+        length 
+
+             | {nil}              = 0
+             | {head: _, tail: x} = 1 + length x
              
         length [: 1, 2, 3, 4 ] == 4
 
         -- Generators
 
-        init 0 _ = nil:
+        init 0 _ = {nil}
            | n x = x :: init (n - 1) x
            
         length (init 30 0) == 30
@@ -565,11 +594,12 @@ module prelude
 
         -- List concatenation
 
-        (++) nil: y = y
-           | { head: y, tail: ys } xs = 
-               y :: (ys ++ xs)
+        (++)
 
-        nil: ++ (1 :: 2 :: nil:) == 1 :: 2 :: nil:
+           | {nil} y                 = y
+           | {head: y, tail: ys} xs = y :: (ys ++ xs)
+
+        {nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}
         [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]
 
         (') x y = y x
@@ -577,7 +607,7 @@ module prelude
         -- Filter.
 
         filter: (a -> Bool) -> List a -> List a
-              | f nil: = nil:
+              | f {nil} = {nil}
               | f x when f (head x) = head x :: filter f (tail x)
               | f x = filter f <| tail x
                         
@@ -585,7 +615,7 @@ module prelude
 
         -- Map
 
-        map f nil: = nil:
+        map f {nil} = {nil}
           | f x = f (head x) :: map f (tail x)
           
         [: 2, 3, 4 ] == [: 1, 2, 3 ] 'map λx = x + 1
@@ -593,30 +623,30 @@ module prelude
         -- Reverse
 
         reverse = 
-            let r rest [:] = rest
+            var r rest [:] = rest
                 | rest { head: x, tail: xs } = 
                     r (x :: rest) xs
 
-            r nil:
+            r {nil}
         
         reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
 
         -- Folds
 
         foldl f x xs =
-            let g y nil: = y
+            var g y {nil} = y
                 | y { head: z, tail: zs } = g (f y z) zs
             g x xs
 
-        foldl1 _ nil: = error "Foldl1 called on empty list"
+        foldl1 _ {nil} = error "Foldl1 called on empty list"
              | f x = foldl f (head x) (tail x)
      
         foldr f x =
-            let g nil: = x
+            var g {nil} = x
                 | { head: y, tail: ys } = f y (g ys)
             g
 
-        foldr1 _ nil: = error "Foldr1 called on empty list"
+        foldr1 _ {nil} = error "Foldr1 called on empty list"
              | f x = foldr f (head x) (tail x)
         
         all? f = foldl1 (λx y = x && y) .: map f
@@ -663,23 +693,25 @@ module prelude
         open speedtest
         open html
     
-        Seq a = seq: JS { elem: a, next: Seq a}
-              | end:
-                   
-        iterate f x = seq: yield { elem: x, next: iterate f (f x) }
+        Seq a = { seq: JS { elem: a, next: Seq a}}
+              | { end }
 
-        from_list nil: = end:
+        seq x = {seq: x}
+                   
+        iterate f x = seq yield { elem: x, next: iterate f (f x) }
+
+        from_list {nil} = {end}
                 | { head: x, tail: xs } =
-                    seq: yield { elem: x, next: from_list xs }
+                    { seq: yield { elem: x, next: from_list xs }}
                     
-        to_list end: = nil:
+        to_list { end } = {nil}
               | { seq: x } = do! { elem: y, next: ys } <- x
                                  return (y :: to_list ys)
 
-        take _ end: = end:
-           | 0 _ = end:
-           | x { seq: y } = seq: do { elem: z, next: zs } <- y
-                                    return { elem: z, next: take (x - 1) zs }
+        take _ {end} = {end}
+           | 0 _ = {end}
+           | x { seq: y } = seq do { elem: z, next: zs } <- y
+                                   return { elem: z, next: take (x - 1) zs }
 
         to_list (from_list [:1,2]) == [:1,2]
         iterate (λx = x + 1) 0 |> take 100 |> to_list |> length == 100
@@ -687,25 +719,25 @@ module prelude
         zip_with:
         
               (a -> b -> c) -> Seq a -> Seq b -> Seq c
-            | _ end:     _        = end:
-            | _ _        end:     = end:
+            | _ {end}     _       = {end}
+            | _ _        {end}    = {end}
             | f {seq: a} {seq: b} =
 
-                seq: do { elem: xx, next: xs } <- a
-                        { elem: yy, next: ys } <- b
+                seq do { elem: xx, next: xs } <- a
+                       { elem: yy, next: ys } <- b
 
-                        return { elem: f xx yy, next: zip_with f xs ys }
+                       return { elem: f xx yy, next: zip_with f xs ys }
                                         
-        (:::) x y = seq: yield { elem: x, next: do! y }
+        (:::) x y = seq yield { elem: x, next: do! y }
         
         tail:
               Seq a   -> Seq a
-            | end:     = error "tail called on empty seq"
+            | {end}    = error "tail called on empty seq"
             | {seq: t} = do! t >>= λx = return x.next
  
-        to_lazy end: = end:
-              | {seq: y} = seq: lazy do! { elem: x, next: xs } <- y
-                                         return { elem: x, next: to_lazy xs }
+        to_lazy {end} = {end}
+              | {seq: y} = seq lazy do! { elem: x, next: xs } <- y
+                                        return { elem: x, next: to_lazy xs }
  
         -- Infinite sequence example
  
@@ -756,7 +788,7 @@ module prelude
 
         list_functor =
 
-            { map _ nil: = nil: 
+            { map _ {nil} = {nil} 
                 | f { head: x, tail: xs } =
                       { head: f x
                         tail: list_functor.map f xs }}

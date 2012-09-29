@@ -16,12 +16,11 @@ Executable formal
   Build-depends:
     base, 
     bytestring >= 0.9.1 && <0.10,
-    template-haskell == 2.7.0.0,
     parsec,
     indents,
     containers,
     pandoc,
-    jmacro == 0.6.1,
+    jmacro,
     MissingH,
     interpolatedstring-perl6,
     transformers,
