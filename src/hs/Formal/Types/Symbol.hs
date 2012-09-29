@@ -7,6 +7,7 @@ import Control.Applicative
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import qualified Data.Map as M
 import Formal.Parser.Utils
+import Data.String.Utils
 
 data Symbol = Symbol String
             | Operator String
@@ -27,6 +28,6 @@ instance ToJExpr Symbol where
 to_name :: Symbol -> String
 to_name (Symbol "return") = "_return_"
 to_name (Symbol "new") = "_new_"
-to_name (Symbol x) = x
+to_name (Symbol x) = replace " " "_" x
 to_name (Operator op) = concat . map (\x -> M.findWithDefault "_" x operator_dict) $ op
 

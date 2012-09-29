@@ -53,15 +53,18 @@ instance Syntax Definition where
     syntax = do whitespace
                 vis <- option Public (try (string "private" >> spaces >> return Private))
                 inl <- option False (try (string "inline" >> spaces >> return True))
-                name <- try syntax <|> (Symbol <$> many1 (char '_'))
-                sig <- first
-                eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom name)) <|> return []
-                whitespace
-                if length sig == 0 && length eqs == 0 
-                    then parserFail "Definition Axioms"
-                    else return $ Definition vis inl name (sig ++ eqs)
+                (x, y) <- prefix
+                return $ Definition vis inl x y
 
-        where first = try type_or_first
+        where prefix = do name <- try syntax <|> (Symbol <$> many1 (char '_'))
+                          sig <- first
+                          eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom name)) <|> return []
+                          whitespace
+                          if length sig == 0 && length eqs == 0 
+                              then parserFail "Definition Axioms"
+                              else return $ (name, (sig ++ eqs))
+
+              first = try type_or_first
                       <|> ((:[]) <$> try naked_eq_axiom) 
                       <|> return []
 
@@ -72,7 +75,7 @@ instance Syntax Definition where
               eq_axiom name' =
 
                   do try (spaces >> same) <|> (whitespace >> return ())
-                     string "|"  <|> try (string name <* notFollowedBy (digit <|> letter)) 
+                     string "|" <|> try (string name <* notFollowedBy (digit <|> letter)) 
                      naked_eq_axiom
 
                   where name = case name' of

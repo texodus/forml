@@ -80,7 +80,7 @@ instance Syntax Statement where
 
               module_statement = do try (string "module")
                                     whitespace1
-                                    name <- syntax
+                                    name <- try syntax <|> (char '"' *> (Namespace . (:[]) <$> (anyChar `manyTill` char '"')))
                                     whitespace *> newline
                                     spaces *> (indented <|> same)
                                     ModuleStatement name <$> withPos (many1 ((spaces >> same >> syntax)))
@@ -234,7 +234,7 @@ instance Open Statement where
 
     open nss (ModuleStatement ns @ (Namespace (n:_)) _:xs) =
 
-        [jmacro| `(declare n (ref . show $ nss ++ ns))`;
+        [jmacro| `(declare n (ref . replace " " "_" . show $ nss ++ ns))`;
                  `(open nss xs)`; |]
 
     open ns (_ : xs) = open ns xs

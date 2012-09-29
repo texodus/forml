@@ -93,7 +93,11 @@ instance (Syntax d) => Syntax (Expression d) where
                       <|> try do'
                       <|> try yield
                       <|> try lazy
-                      <|> try apply
+                      <|> other_next
+
+              other_next =
+
+                      try apply
                       <|> function
                       <|> try accessor
                       <|> inner
@@ -243,16 +247,22 @@ instance (Syntax d) => Syntax (Expression d) where
 
               acc_exp f x z = AccessorExpression (f x) z
 
-              apply = ApplyExpression <$> inner <*>  (try cont <|> halt)
+              apply = ApplyExpression <$> inner <*> arguments
 
-                  where cont = do x <- whitespace *> inner
-                                  option [x] ((x:) <$> try (whitespace *> (try cont <|> halt)))
+                  where arguments = try java <|> try cont <|> halt
+                            where cont = do x <- whitespace *> (try (ApplyExpression <$> inner <*> java) <|> inner)
+                                            option [x] ((x:) <$> try (whitespace *> (try cont <|> halt)))
 
-                        halt = (:[]) <$> (whitespace *> (try let'
-                                          <|> try do'
-                                          <|> try lazy
-                                          <|> try yield
-                                          <|> function))
+                                  halt = (:[]) <$> (whitespace *> (try let'
+                                                    <|> try do'
+                                                    <|> try lazy
+                                                    <|> try yield
+                                                    <|> function))
+
+                        java = indentPairs "(" java_args ")"
+                            where  java_args = do x <- other_next `sepEndBy1` comma
+                                                  option x ((x ++) <$> try arguments)
+
 
               withPosTemp p = do x <- get
                                  try p <|> (put x >> parserFail ("expression continuation indented to " ++ show x))

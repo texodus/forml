@@ -18,7 +18,8 @@ import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.State hiding (lift)
 
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
+import Text.Parsec hiding ((<|>), State, many, spaces, parse, label)
+import qualified Text.Parsec as P
 import Text.Parsec.Indent  hiding (same)
 
 import qualified Data.Map as M
@@ -186,6 +187,6 @@ type_sep          = try (spaces *> char '|' <* whitespace)
 not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}")
 comma             = spaces *> string "," *> spaces
 
-indentPairs a p b = string a *> spaces *> withPos p <* spaces <* string b
-indentAsymmetricPairs a p b = string a *> spaces *> withPos p <* spaces <* b
+indentPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* string b
+indentAsymmetricPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* b
 

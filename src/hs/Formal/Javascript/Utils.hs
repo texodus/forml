@@ -16,6 +16,7 @@ module Formal.Javascript.Utils where
 import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 import Data.Monoid
+import Data.String.Utils
 import qualified Data.Map as M
 import qualified Data.List as L
 import Formal.Parser.Utils
@@ -66,18 +67,18 @@ func var ex = ReturnStat (ValExpr (JFunc [StrI var] (BlockStat [ex])))
 
 declare_this name expr =
 
-    [jmacro| `(declare name expr)`;
-             this[`(name)`] = `(ref name)`; |]
+    [jmacro| `(declare (replace " " "_" name) expr)`;
+             this[`(replace " " "_" name)`] = `(ref (replace " " "_" name))`; |]
 
 declare_window name expr =
 
-    [jmacro| `(declare name expr)`;
-             (typeof global == "undefined" ? window : global)[`(name)`] = `(ref name)`; |]
+    [jmacro| `(declare (replace " " "_" name) expr)`;
+             (typeof global == "undefined" ? window : global)[`((replace " " "_" name))`] = `(ref (replace " " "_" name))`; |]
 
 declare name expr =
 
-    [jmacro| `(DeclStat (StrI name) Nothing)`;
-             `(ref name)` = `(expr)`; |]
+    [jmacro| `(DeclStat (StrI (replace " " "_" name)) Nothing)`;
+             `(ref (replace " " "_" name))` = `(expr)`; |]
 
 curry 0 jexpr = jexpr
 curry n jexpr = func (local_pool $ n - 1) (curry (n - 1) jexpr)

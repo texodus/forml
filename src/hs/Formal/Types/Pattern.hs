@@ -52,16 +52,23 @@ instance (Show a) => Show (Match a) where
 
 instance (Syntax a) => Syntax (Match a) where
 
-    syntax = try conditional <|> ((\x -> Match x Nothing) <$> (syntax `sepEndBy` whitespace1))
+    syntax = try conditional <|> ((\x -> Match x Nothing) <$> (try jStyle <|> hStyle))
 
-        where conditional = do x <- try syntax `sepEndBy` try whitespace1
-                               string "when"
-                               spaces
-                               indented
-                               ex <- withPos syntax
-                               spaces
-                               indented
-                               return $ Match x (Just ex)
+        where 
+
+          jStyle = do x <- indentPairs "(" (syntax `sepEndBy1` comma) ")"
+                      if length x > 1 then return x else fail "Java-style arguments"
+
+          hStyle = syntax `sepEndBy` whitespace1
+
+          conditional = do x <- try syntax `sepEndBy` try whitespace1
+                           string "when"
+                           spaces
+                           indented
+                           ex <- withPos syntax
+                           spaces
+                           indented
+                           return $ Match x (Just ex)
 
 newtype Condition = Condition JExpr
 
