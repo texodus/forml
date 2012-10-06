@@ -967,10 +967,10 @@ instance Infer Definition () where
 
         do sc <- find$ f name 
            (qs :=> t)  <- freshInst sc
-           axiom_types <- with_scope$ mapM (with_scope . infer) (drop 1 axs)
+           axiom_types <- with_scope$ mapM (with_scope . infer) axs
 
            s <- get_substitution
-           mapM (unify t) (apply s axiom_types)
+           mapM (flip unify t) axiom_types  -- TODO apply sub to axiom_types?
 
            as <- get_assumptions
            ce <- get_classenv

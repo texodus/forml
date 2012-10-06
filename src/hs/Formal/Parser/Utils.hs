@@ -72,7 +72,14 @@ instance Syntax Int where
 
 instance Syntax String where
     syntax = do char '"'
-                anyChar `manyTill` char '"'
+                (escaped_char <|> anyChar) `manyTill` char '"'
+
+        where escaped_char = do char '\\'
+                                x <- oneOf "tnr"
+                                case x of
+                                  'r' -> return '\r'
+                                  'n' -> return '\n'
+                                  't' -> return '\t'
 
 
 parse :: Parser a -> SourceName -> String -> Either ParseError a

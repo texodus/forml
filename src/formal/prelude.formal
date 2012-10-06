@@ -130,7 +130,7 @@ module prelude
 
 
     inline log: a -> JS {} 
-           log x = `console.log(x)`
+              | x  = `console.log(x)`
 
     -- Testing to verify that escaping Javascript & utilizing escaped
     -- Javascript with `do` sugar and composition in general works as
@@ -203,7 +203,7 @@ module prelude
 
     -- Fibonacci function
 
-    fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
+    fib 0 = 0 | 1 = 1 | n = fib(n - 1) + fib(n - 2)
     
     -- Speed
     -- -----
@@ -224,10 +224,12 @@ module prelude
                stop  <- get_time
                return (stop - start)
 
-        private fast_fib =
+        private inline
+        fast_fib =
+
             do! `var f = function(n) {
                      return 0 === n ? 0 : 1 === n ? 1 : f(n - 1) + f(n - 2)
-                 }; f`
+                }; f`
                 
         fast_fib 7 == fib 7
         
@@ -238,8 +240,8 @@ module prelude
 
         floor: Num -> Num = do! `Math.floor`
 
-        do! fast_time <- time `fast_fib 30`
-            slow_time <- time `fib 30`
+        do! fast_time <- time yield fast_fib 30
+            slow_time <- time yield fib 30
             return (floor (fast_time / slow_time * 100) >= 80)
 
     -- Function Combinators
@@ -261,9 +263,9 @@ module prelude
     
     -- Function composition
 
-    inline (.:) x y = λz = x (y z)
+    inline (.:) x y = λz = x y(z)
     inline id x = x
-    inline flip f a b = f b a
+    inline flip(f) x y = f(y, x)
      
     ((λx = x + 1) .: (λx = x * 2) .: λx = x - 3) 4 == 3
     id [1, 2, 3] == [1, 2, 3]
@@ -360,7 +362,9 @@ module prelude
         inline ($=):
 
               String -> a -> JS {}
-            | x y = `if (typeof $ != "undefined") {
+         ($=) x         y  =
+
+             `if (typeof $ != "undefined") {
                          var xx = $(x).get(0);
                          if (typeof xx != "undefined") {
                              xx.innerHTML = y;
@@ -423,7 +427,7 @@ module prelude
 
         -- This is the initializer for prelude's console test suite. 
 
-        console =
+        console_runner: JS {} =
 
             var is_error = 0
 
@@ -440,21 +444,28 @@ module prelude
                                  exp   = stringify (items !! 0).expected
                                  act   = stringify (items !! 0).actual
 
-                             let line  = spec.description |> split "::"
-                                                          |> (\x = x !! 0)
-                                                          |> split "_" 
-                                                          |> (\x = x !! 0)
-                                                          |> (\x = do! `parseInt x`)
-                                                          |> (\x = x + 1)
-                                                          |> stringify
-                                                          
-                             do  `is_error = 1`
+                             let line  = spec.description
+                                         |> split "::"
+                                         |> (\x = x !! 0)
+                                         |> split "_" 
+                                         |> (\x = x !! 0)
+                                         |> (\x = do! `parseInt x`)
+                                         |> (\x = x + 1)
+                                         |> stringify
+                                                         
+                             do  if is_error == 0
+                                     then log "\r           " 
+                                     else return {}
 
-                                 log "Test failed: `desc`
-                                          at line `line`
+                                 `is_error = 1`
 
+                                 log "Test failed at line `line`
+                                      `desc`
+                                      
                                           Expected `exp`
                                           Actual   `act`"
+
+                                 log ""
 
             var reporter = { reportSpecResults:   report 
                              reportRunnerResults: `phantom.exit(is_error)` }
@@ -467,8 +478,6 @@ module prelude
         -- This is the initializer for prelude's HTML test suite. 
 
         table_of_contents =
-
-            var jasmine: a
 
             on_load do "code"  $. "prettyprint"
                        "code"  $. "lang-hs"
@@ -562,6 +571,8 @@ module prelude
                  | f x when f (head x) = drop_while f (tail x)
                  | _ x = x
 
+
+
         not (empty? (1 :: {nil}))
         empty? [:]
    
@@ -603,7 +614,7 @@ module prelude
 
         (++)
 
-           | {nil} y                 = y
+           | {nil} y                = y
            | {head: y, tail: ys} xs = y :: (ys ++ xs)
 
         {nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}
@@ -623,7 +634,7 @@ module prelude
         -- Map
 
         map(f, {nil}) = {nil}
-        map(f, x) = f(head(x)) :: map(f, tail(x))
+        map(f, x)     = f(head(x)) :: map(f, tail(x))
           
         [: 2, 3, 4 ] == [: 1, 2, 3 ] 'map λx = x + 1
             
@@ -711,7 +722,7 @@ module prelude
                 | { head: x, tail: xs } =
                     { seq: yield { elem: x, next: from_list xs }}
                     
-        to_list { end } = {nil}
+        to_list { end }    = {nil}
               | { seq: x } = do! { elem: y, next: ys } <- x
                                  return (y :: to_list ys)
 
@@ -726,7 +737,7 @@ module prelude
         zip_with:
         
               (a -> b -> c) -> Seq a -> Seq b -> Seq c
-            | _ {end}     _       = {end}
+            | _ {end}    _        = {end}
             | _ _        {end}    = {end}
             | f {seq: a} {seq: b} =
 

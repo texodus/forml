@@ -134,7 +134,7 @@ main  = do rc <- parseArgs <$> getArgs
           jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
                       `mappend` $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
 
-          console = "prelude.html.console()"
+          console = "prelude.html.console_runner()"
           report  = $(embedFile "src/js/FormalReporter.js")
           htmljs  = "prelude.html.table_of_contents()"
 
@@ -179,6 +179,9 @@ main  = do rc <- parseArgs <$> getArgs
                           monitor "Testing"$
                           do (Just std_in, Just std_out, _, p) <-
                                  createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
+                             forkIO $ do errors <- hGetContents std_out
+                                         putStr errors
+                                         hFlush stdout
                              hPutStrLn std_in$ B.unpack jasmine
                              hPutStrLn std_in$ js ++ "\n\n"
                              hPutStrLn std_in$ tests
@@ -195,13 +198,17 @@ main  = do rc <- parseArgs <$> getArgs
                           monitor "Testing"$
                           do writeFile (output rc ++ ".phantom.js")
                                    (B.unpack jquery ++ B.unpack jasmine ++ js ++ tests ++ console)
-                            
 
-                             (z, msg, _) <- readProcessWithExitCode "phantomjs" [output rc ++ ".phantom.js"] ""
+                             (Just std_in, Just std_out, _, p) <-
+                                 createProcess (proc "phantomjs" [output rc ++ ".phantom.js"]) { std_in = CreatePipe, std_out = CreatePipe }
+                             forkIO $ do errors <- hGetContents std_out
+                                         putStr errors
+                                         hFlush stdout
+                             z <- waitForProcess p
                              system$ "rm " ++ output rc ++ ".phantom.js"
 
                              case z of 
-                               ExitFailure _ -> return$ Left [msg]
+                               ExitFailure _ -> return$ Left []
                                ExitSuccess -> if (show_types rc) 
                                               then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
                                               else return$ Right ()
