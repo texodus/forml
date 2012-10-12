@@ -161,22 +161,28 @@ main  = do rc <- parseArgs <$> getArgs
                  let (js, ((_, tests):_)) = gen_js src''
    
                  js <- if optimize rc 
-                       then (monitor "Closure"$ closure js)
-                       else do warn "Closure" js
+                       then (monitor "Closure [libs"$ closure_local js "ADVANCED_OPTIMIZATIONS")
+                       else do warn "Closure [libs]" js
+
+                 tests <- case rc of
+                              RunConfig { optimize = True, run_tests = Phantom } ->
+                                  monitor "Closure [tests"$ closure_local tests "SIMPLE_OPTIMIZATIONS"
+                              _ -> warn "Closure [tests]" tests
    
                  writeFile (output rc ++ ".js") js
                  writeFile (output rc ++ ".spec.js") tests
 
                  let xxx = fst . head $ src'
-                 let yyy = snd . head $ src'
-                 let html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
-                 let prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
-                 let hook = "<script>" ++ htmljs ++ "</script>"
+                     yyy = snd . head $ src'
+                     html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
+                     prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
+                     hook = "<script>" ++ htmljs ++ "</script>"
+
                  writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
 
                  case run_tests rc of
                      Node ->
-                          monitor "Testing"$
+                          monitor "Testing [Node.js]"$
                           do (Just std_in, Just std_out, _, p) <-
                                  createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
                              forkIO $ do errors <- hGetContents std_out
@@ -195,7 +201,7 @@ main  = do rc <- parseArgs <$> getArgs
                                               else return$ Right ()
 
                      Phantom -> 
-                          monitor "Testing"$
+                          monitor "Testing [Phantom.js]"$
                           do writeFile (output rc ++ ".phantom.js")
                                    (B.unpack jquery ++ B.unpack jasmine ++ js ++ tests ++ console)
 
@@ -218,22 +224,40 @@ main  = do rc <- parseArgs <$> getArgs
                                then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
                                else return ()
 
+closure_local :: String -> String -> IO (Either a String)
+closure_local x y = do env <- L.lookup "CLOSURE" <$> getEnvironment
+                       case env of
+                         Just env ->
+                             do exists' <- doesFileExist env
+                                if exists' 
+                                    then do putStr " local]"
+                                            hFlush stdout
+                                            writeFile "temp.js" x
+                                            system$ "java -jar $CLOSURE --compilation_level "
+                                                      ++ y 
+                                                      ++ " --js temp.js --warning_level QUIET > temp.compiled.js"
+                                            js <- readFile "temp.compiled.js"
+                                            system "rm temp.js"
+                                            system "rm temp.compiled.js"
+                                            return $ Right js
+                                    else putStr " remote]" >> hFlush stdout >> closure x y
+                         Nothing -> putStr " remote]" >> hFlush stdout >> closure x y
 
-closure :: String -> IO (Either a String)
-closure x = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
+closure :: String -> String -> IO (Either a String)
+closure x z = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
 
-                   y = export$ importList [ ("output_format",     "text")
-                                          , ("output_info",       "compiled_code")
-                                          , ("compilation_level", "ADVANCED_OPTIMIZATIONS")
-                                          , ("js_code",           x) ]
+                     y = export$ importList [ ("output_format",     "text")
+                                            , ("output_info",       "compiled_code")
+                                            , ("compilation_level", z)
+                                            , ("js_code",           x) ]
 
-                   args = [ mkHeader HdrContentLength (show$ length y)
-                          , mkHeader HdrContentType "application/x-www-form-urlencoded" ]
+                     args = [ mkHeader HdrContentLength (show$ length y)
+                            , mkHeader HdrContentType "application/x-www-form-urlencoded" ]
 
-               rsp <- simpleHTTP (Request uri POST args y)
-               txt <- getResponseBody rsp
+                 rsp <- simpleHTTP (Request uri POST args y)
+                 txt <- getResponseBody rsp
 
-               return$ Right txt
+                 return$ Right txt
 
 data TestMode = NoTest | Node | Phantom
                                          

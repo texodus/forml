@@ -38,5 +38,7 @@ Executable formal
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
                  -fno-warn-unused-do-bind -cpp -threaded
+                 -funfolding-use-threshold=16 -fexcess-precision
+                 -optc-O3 -optc-ffast-math
   else
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2

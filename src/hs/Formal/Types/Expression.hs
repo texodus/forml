@@ -271,11 +271,11 @@ instance (Syntax d) => Syntax (Expression d) where
                                          whitespace
                                          (try pat_fun <|> hole_fun)
 
-                  where pat_fun    = do t <- option [] (try $ ((:[]) <$> type_axiom <* spaces))
+                  where pat_fun    = do t <- option [] ( ((:[]) <$> type_axiom <* spaces))
                                         eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
                                         return $ FunctionExpression (t ++ eqs)
 
-                        hole_fun   = do undefined
+                        hole_fun   = do error "not implemented"
 
                         type_axiom = do string ":"
                                         spaces

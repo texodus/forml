@@ -57,11 +57,12 @@ instance (Syntax a) => Syntax (Match a) where
         where 
 
           jStyle = do x <- indentPairs "(" (syntax `sepEndBy1` comma) ")"
+                      spaces
                       if length x > 1 then return x else fail "Java-style arguments"
 
           hStyle = syntax `sepEndBy` whitespace1
 
-          conditional = do x <- try syntax `sepEndBy` try whitespace1
+          conditional = do x <- try jStyle <|> try hStyle
                            string "when"
                            spaces
                            indented

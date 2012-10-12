@@ -454,7 +454,7 @@ module prelude
                                          |> stringify
                                                          
                              do  if is_error == 0
-                                     then log "\r           " 
+                                     then log "\r                        " 
                                      else return {}
 
                                  `is_error = 1`
@@ -670,14 +670,14 @@ module prelude
         all? f = foldl1 (λx y = x && y) .: map f
         any? f = foldl1 (λx y = x || y) .: map f
 
-        sum     = foldl1 (λx y = x + y)
-        product = foldl1 (λx y = x * y)
+        sum     = foldl1 λ(x, y) = x + y
+        product = foldl1 λ(x, y) = x * y
         
-        concat = foldl1 (λx y = x ++ y)
+        concat = foldl1 λx y = x ++ y
         concat_map f xs = concat (map f xs)
         
-        maximum = foldl1 (λx y when x > y = x | _ y = y)
-        minimum = foldl1 (λx y = if x > y then y else x)
+        maximum = foldl1 λ(x, y) when x > y = x | _ y = y
+        minimum = foldl1 λx y = if x > y then y else x
 
         foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
         foldr (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
