@@ -79,8 +79,9 @@ instance Compress JExpr where
     comp (IfExpr a b c)        = IfExpr (comp a) (comp b) (comp c)
     comp (NewExpr a)           = NewExpr (comp a)
 
+   -- comp (ApplExpr (ValExpr (UnsatVal (JFunc [z] y))) [x])
+    
     comp (ApplExpr a b)        = ApplExpr (comp a) (map comp b)
-
     comp (TypeExpr a b c)      = TypeExpr a (comp b) c
     comp (ValExpr a)           = ValExpr (comp a)
     comp (UnsatExpr a)         = UnsatExpr (comp a)

@@ -169,6 +169,7 @@ module prelude
     inline (/=) x y = not (x == y)
 
     (==): a -> a -> Bool
+        | x y when do! `x === y` = true
 
         | x y when object? x =
             do! `var result = true;
@@ -189,7 +190,7 @@ module prelude
 
                  result && x.length == y.length`
 
-        | x y = do! `x === y`
+        | x y = false
 
     -- And a few simple tests to verify the correctness of these
     -- implementations.  This is not meant to be exhaustive, only a smoke
@@ -204,7 +205,7 @@ module prelude
     -- Fibonacci function
 
     fib 0 = 0 | 1 = 1 | n = fib(n - 1) + fib(n - 2)
-    
+
     -- Speed
     -- -----
 
@@ -551,7 +552,7 @@ module prelude
         last { head: _, tail: x } = last x
         last { nil } = error "Last called on empty list"
 
-        take 0 _ = { nil } | n x = head x :: take (n - 1) (tail x)
+        take 0 x = { nil } | n x = head x :: take (n - 1) (tail x)
         drop 0 x = x | n x = drop (n - 1) (tail x)
 
         (..) x y when x < y = x :: (x + 1 .. y)
@@ -560,8 +561,35 @@ module prelude
         1 .. 5 == [:1,2,3,4,5]
 
         -- Project Euler problem 1, modified to protect the innocent:
+        open speedtest
 
         288045 == 1 .. 1111 |> filter (λx = x % 3 == 0 || x % 5 == 0) |> sum
+
+        euler_1 = `var sum = 0;
+                   for (var i = 1; i < 11111; i++) {
+                       if(i % 3 == 0 || i % 5 == 0) sum += i;
+                   }`
+
+        euler_2 x when x < 3 = 0
+        euler_2 x = if x % 3 == 0 || x % 5 == 0
+                    then 1 + euler_2 (x - 1)
+                    else euler_2 (x - 1)
+
+        euler_3 x y when x < 3 = y    -- TODO doesnt inline
+        euler_3 x y = if x % 3 == 0 || x % 5 == 0
+                      then euler_3 (x - 1) (y + 1)
+                      else euler_3 (x - 1) y
+
+        euler_4 = yield 1 .. 11111 
+                        |> filter (λx = x % 3 == 0 || x % 5 == 0)
+                        |> sum
+
+        do! time euler_1 >>= log
+            time (yield euler_2 11111) >>= log
+            time (yield euler_3 11111 0) >>= log
+            time euler_4 >>= log
+            return true
+    
 
         take_while f { nil } = { nil }
                  | f x when f (head x) = head x :: filter f (tail x)
@@ -649,6 +677,12 @@ module prelude
         
         reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
 
+        take2 x y =
+            var t(0, _, acc) = reverse acc
+                t(n, x, acc) = t (n - 1) (tail x) (head x :: acc)
+
+            t x y {nil}
+
         -- Folds
 
         foldl f x xs =
@@ -676,7 +710,7 @@ module prelude
         concat = foldl1 λx y = x ++ y
         concat_map f xs = concat (map f xs)
         
-        maximum = foldl1 λ(x, y) when x > y = x | _ y = y
+        maximum = foldl1 λ(x, y) when x > y = x | (_, y) = y
         minimum = foldl1 λx y = if x > y then y else x
 
         foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
@@ -714,7 +748,7 @@ module prelude
         Seq a = { seq: JS { elem: a, next: Seq a}}
               | { end }
 
-        seq x = {seq: x}
+        inline seq x = {seq: x}
                    
         iterate f x = seq yield { elem: x, next: iterate f (f x) }
 
@@ -746,7 +780,7 @@ module prelude
 
                        return { elem: f xx yy, next: zip_with f xs ys }
                                         
-        (:::) x y = seq yield { elem: x, next: do! y }
+        inline (:::) x y = seq yield { elem: x, next: do! y }
         
         tail:
               Seq a   -> Seq a

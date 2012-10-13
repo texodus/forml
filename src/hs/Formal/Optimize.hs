@@ -53,12 +53,18 @@ import Formal.Parser
 
 import qualified Formal.Javascript.Utils as J
 
+import Prelude hiding (curry)
+
+
+
+
 type Inlines = [((Namespace, Symbol), (Match (Expression Definition), Expression Definition))]
 type Inline  = [(Symbol, (Match (Expression Definition), Expression Definition))]
 
 data OptimizeState = OptimizeState { ns :: Namespace
                                    , assumptions :: [(Namespace, [Assumption])]
                                    , inlines :: Inlines
+                                   , tco :: [String]
                                    , env :: Inline }
 
 data Optimizer a = Optimizer (OptimizeState -> (OptimizeState, a))
@@ -103,6 +109,9 @@ set_env ns' = Optimizer (\x -> (x { env = ns' }, ()))
 get_env :: Optimizer Inline
 get_env  = Optimizer (\x -> (x, env x))
 
+add_tco :: String -> Optimizer ()
+add_tco x = Optimizer (\y -> (y { tco = x : tco y }, ()))
+
 with_env xs =
 
     do e <- get_env
@@ -123,11 +132,44 @@ instance Optimize (Expression Definition) where
 
         do is <- get_env
            case f `lookup` is of
-             Nothing -> ApplyExpression <$> optimize f' <*> mapM optimize args
-             Just (m, ex) ->
+             Just (m @ (Match pss cond), ex) | length pss == length args ->
 
                  do args' <- mapM optimize args
+                    ex <- optimize ex
+                    cond <- case cond of Just x -> Just <$> optimize x
+                                         _ -> return Nothing
+                    m <- optimize m
                     return $ ApplyExpression (FunctionExpression [EqualityAxiom m (Addr undefined undefined ex)]) args'
+                    -- return $ JSExpression [jmacroE| (function() {
+                    --                                    `(declare_bindings args pss)`;
+                    --                                    if (`(pss)` && `(cond)`) {
+                    --                                        return `(ex)`;
+                    --                                    } else exhaust();
+                    --                                 })() |]
+
+                 where var_names = map J.ref . take (length args) .  map J.local_pool $ [0 .. 26]
+
+                       declare_bindings :: (ToJExpr a) => [a] -> [Pattern (Expression Definition)] -> JStat
+                       declare_bindings (name : names) (VarPattern x : zs) =
+                           
+                           [jmacro| `(J.declare x $ toJExpr name)`; |] `mappend` declare_bindings names zs
+
+                       declare_bindings (name : names) (RecordPattern x _: zs) = 
+                           let (ns, z) = unzip . M.toList $ x
+                           in  declare_bindings (map (acc $ toJExpr name) ns) z `mappend` declare_bindings names zs
+
+                       declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
+                       declare_bindings [] [] = mempty
+                  
+                       acc n ns = [jmacroE| `(n)`[`(ns)`] |]
+
+                       --bind_local (x:xs) (y:ys) = [jmacro| `(J.declare x y)`; |] `mappend` bind_local xs ys
+                       --bind_local [] [] = mempty
+
+             _ -> ApplyExpression <$> optimize f' <*> mapM optimize args
+             
+
+
 
     optimize (ApplyExpression f args) = ApplyExpression <$> optimize f <*> mapM optimize args
     optimize (IfExpression a b c) = IfExpression <$> optimize a <*> optimize b <*> optimize c
@@ -152,6 +194,7 @@ instance Optimize (Expression Definition) where
 -- TODO wrong
 instance Optimize (Match (Expression Definition)) where
 
+    optimize (Match ms (Just ex)) = Match ms . Just <$> optimize ex
     optimize x = return x
 
 instance Optimize (Axiom (Expression Definition)) where
@@ -165,7 +208,7 @@ instance Optimize (Axiom (Expression Definition)) where
 
 instance Optimize Definition where
 
-    optimize (Definition a True name [eq @ (EqualityAxiom _ _)]) =
+    optimize (Definition a _ name [eq @ (EqualityAxiom _ _)]) =
 
         do (EqualityAxiom m ex) <- optimize eq
            is  <- get_inline
@@ -181,7 +224,9 @@ instance Optimize Definition where
     optimize (Definition a b name xs) | is_recursive xs =
 
        do xs' <- mapM optimize xs
-          return $ Definition a b name (to_trampoline xs')
+          add_tco $ show name
+          return $ Definition a b name (axioms xs')
+
 
        where is_recursive (TypeAxiom _: xs) = is_recursive xs
              is_recursive (EqualityAxiom _ x: xs) = is_recursive' (get_addr x) || is_recursive xs
@@ -190,48 +235,70 @@ instance Optimize Definition where
              is_recursive' (ApplyExpression (SymbolExpression x) args) | name == x = True
              is_recursive' (LetExpression _ e) = is_recursive' e
              is_recursive' (IfExpression _ a b) = is_recursive' a || is_recursive' b
-
              is_recursive' _ = False
 
-             to_trampoline (t @ (TypeAxiom _): xs) = t : to_trampoline xs
-             to_trampoline xs' =
-                  [EqualityAxiom (Match [] Nothing) (Addr undefined undefined (JSExpression (g xs')))]
+             axioms (t @ (TypeAxiom _): xs) = t : axioms xs
+             axioms xs' =
+                  [EqualityAxiom (Match [] Nothing) (Addr undefined undefined (JSExpression (to_trampoline xs')))]
 
-             g xs' = [jmacroE| (function() {
-                                  var result = null;
-                                  var f = `(to_trampoline' xs')`;
-                                  return f;
-                                  // while (result === null) {
-                                  //     console.log("test");
-                                  // }
-                                })() |]
+             to_trampoline xs @ (EqualityAxiom (Match ps _) _ : _) =
+                 J.scope . J.curry (length ps) . to_trampoline' $ xs
+
+             to_trampoline' xs =
+
+                 [jmacro| var !__result = undefined;
+                          while (typeof __result == "undefined") {
+                              `(to_trampoline'' xs)`;
+                          }
+                          return __result; |]
+                            
+
+                 where to_trampoline'' [] = [jmacro| exhaust(); |]
+                       to_trampoline'' (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss) =
+
+                           [jmacro| `(declare_bindings var_names pss)`;
+                                    if (`(pss)`) {
+                                        var x = `(cond)`;
+                                        console.log();
+                                        if (x) {
+                                            __result = `(toJExpr $ replace pss ex)`;
+                                            continue;
+                                        }
+                                    }
+                                    `(to_trampoline'' xss)`; |]
+
+                            where var_names = map J.ref . reverse . take (length pss) . map J.local_pool $ [0 .. 26]
+
+                       declare_bindings (name : names) (VarPattern x : zs) =
+                           
+                           [jmacro| `(J.declare x name)`; |] `mappend` declare_bindings names zs
+
+                       declare_bindings (name : names) (RecordPattern x _: zs) = 
+                           let (ns, z) = unzip . M.toList $ x
+                           in  declare_bindings (map (acc name) ns) z `mappend` declare_bindings names zs
+
+                       declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
+                       declare_bindings [] [] = mempty
+                  
+                       acc n ns = [jmacroE| `(n)`[`(ns)`] |]
+
+                       replace pss (ApplyExpression (SymbolExpression x) args) | name == x =
+             
+                           JSExpression [jmacroE| (function() {
+                                                     `(bind_local (reverse . take (length pss) . map J.local_pool $ [0 .. 26]) args)`;
+                                                     return undefined;
+                                                  })() |]
+
+                       replace pss (LetExpression x e) = LetExpression x (replace pss e)
+                       replace pss (IfExpression x a b) = IfExpression x (replace pss a) (replace pss b)
+                       replace _ x = x
+
+                       bind_local (x:xs) (y:ys) = [jmacro|  `(J.ref x)` = `(y)`; |] `mappend` bind_local xs ys
+                       bind_local [] [] = mempty
 
 
-             -- expr [] = expr . J.scope $ []
-             -- expr (TypeAxiom _:xs) = expr xs
-             -- expr xs @ (EqualityAxiom (Match ps _) _ : _) = J.scope . J.curry (length ps) . toStat $ xs
-
---instance (Show a, ToJExpr a) => ToJExpr [Axiom a] where
-                        
-             to_trampoline' = id
 
 
-             -- to_trampoline' (EqualityAxiom a x: xs) =
-
-             --     (EqualityAxiom (fmap (to_trampoline'' a) x)) : to_trampoline' xs
-
-             -- to_trampoline' [] = []
-
-             -- to_trampoline'' (ApplyExpression (SymbolExpression x) args) | name == x = undefined
-
-             -- LiteralExpression Literal
-             -- SymbolExpression Symbol
-             -- JSExpression JExpr
-             -- LazyExpression (Addr (Expression d)) Lazy
-             -- FunctionExpression [Axiom (Expression d)]
-             -- RecordExpression (M.Map Symbol (Expression d))
-             -- ListExpression [Expression d]
-             -- AccessorExpression (Addr (Expression d)) [Symbol]
 
     optimize (Definition a b c xs) = Definition a b c <$> mapM optimize xs
 
@@ -289,7 +356,7 @@ instance Optimize Program where
     optimize (Program xs) = Program <$> optimize xs
 
 run_optimizer :: Program -> [(Namespace, [Assumption])] -> Program
-run_optimizer (optimize -> Optimizer f) as = case f gen_state of (_, p) -> p
+run_optimizer (optimize -> Optimizer f) as = case f gen_state of ((tco -> s), p) -> p --error $ show s
 
-    where gen_state = OptimizeState (Namespace []) as [] []
+    where gen_state = OptimizeState (Namespace []) as [] [] []
                        
