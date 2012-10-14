@@ -11,6 +11,7 @@ module "Speed tests for the prelude"
     open prelude.list
     open prelude.string
 
+    inline
     euler_1 = `var sum = 0;
                for (var i = 1; i < 11111; i++) {
                    if (i % 3 == 0 || i % 5 == 0) sum += i;
@@ -83,7 +84,10 @@ module "Tests for TCO bugs"
     rev_2 [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
 
     test_x  = [: 1, 2, 3, 4 ]
+
     rev_2 test_x == rev_1 test_x
+    length (rev_2 test_x) == length (rev_1 test_x)
+    length (rev_2 test_x) == length test_x
 
 
 module "Tests for parser bugs"

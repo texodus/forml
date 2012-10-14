@@ -309,10 +309,13 @@ instance Optimize Statement where
                                    return ss
                            else return ss
 
-                       (((_, s), ex): zs) ->
+                       zs ->
 
-                           do set_env $ (s, ex) : e 
+                           do set_env $ cc zs ++ e 
                               return ss
+
+              cc (((_, s), ex): zs) = (s, ex) : cc zs
+              cc [] = []
 
               lookup' x (((y, z), w):ys) | x == y = (((y, z), w) : lookup' x ys)
                                          | otherwise = lookup' x ys
