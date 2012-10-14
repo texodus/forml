@@ -567,18 +567,19 @@ module prelude
 
         euler_1 = `var sum = 0;
                    for (var i = 1; i < 11111; i++) {
-                       if(i % 3 == 0 || i % 5 == 0) sum += i;
-                   }`
+                       if (i % 3 == 0 || i % 5 == 0) sum += i;
+                   };
+                   return sum;`
 
         euler_2 x when x < 3 = 0
         euler_2 x = if x % 3 == 0 || x % 5 == 0
                     then 1 + euler_2 (x - 1)
                     else euler_2 (x - 1)
 
-        euler_3 x y when x < 3 = y    -- TODO doesnt inline
-        euler_3 x y = if x % 3 == 0 || x % 5 == 0
-                      then euler_3 (x - 1) (y + 1)
-                      else euler_3 (x - 1) y
+        euler_3 x y when x < 3 = y
+              | x y when x % 3 == 0 || x % 5 == 0 =
+                    euler_3 (x - 1) (y + 1)
+              | x y = euler_3 (x - 1) y
 
         euler_4 = yield 1 .. 11111 
                         |> filter (λx = x % 3 == 0 || x % 5 == 0)

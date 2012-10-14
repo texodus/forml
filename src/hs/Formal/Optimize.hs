@@ -141,15 +141,13 @@ instance Optimize (Expression Definition) where
                     m <- optimize m
                     return $ ApplyExpression (FunctionExpression [EqualityAxiom m (Addr undefined undefined ex)]) args'
                     -- return $ JSExpression [jmacroE| (function() {
-                    --                                    `(declare_bindings args pss)`;
+                    --                                    `(declare_bindings args' pss)`;
                     --                                    if (`(pss)` && `(cond)`) {
                     --                                        return `(ex)`;
                     --                                    } else exhaust();
                     --                                 })() |]
 
-                 where var_names = map J.ref . take (length args) .  map J.local_pool $ [0 .. 26]
-
-                       declare_bindings :: (ToJExpr a) => [a] -> [Pattern (Expression Definition)] -> JStat
+                 where declare_bindings :: (ToJExpr a) => [a] -> [Pattern (Expression Definition)] -> JStat
                        declare_bindings (name : names) (VarPattern x : zs) =
                            
                            [jmacro| `(J.declare x $ toJExpr name)`; |] `mappend` declare_bindings names zs
@@ -162,9 +160,6 @@ instance Optimize (Expression Definition) where
                        declare_bindings [] [] = mempty
                   
                        acc n ns = [jmacroE| `(n)`[`(ns)`] |]
-
-                       --bind_local (x:xs) (y:ys) = [jmacro| `(J.declare x y)`; |] `mappend` bind_local xs ys
-                       --bind_local [] [] = mempty
 
              _ -> ApplyExpression <$> optimize f' <*> mapM optimize args
              
@@ -208,7 +203,7 @@ instance Optimize (Axiom (Expression Definition)) where
 
 instance Optimize Definition where
 
-    optimize (Definition a _ name [eq @ (EqualityAxiom _ _)]) =
+    optimize (Definition a True name [eq @ (EqualityAxiom _ _)]) =
 
         do (EqualityAxiom m ex) <- optimize eq
            is  <- get_inline
@@ -248,26 +243,23 @@ instance Optimize Definition where
 
                  [jmacro| var !__result = undefined;
                           while (typeof __result == "undefined") {
-                              `(to_trampoline'' xs)`;
+                              (function() {
+                                 `(to_trampoline'' xs)`;
+                              })();
                           }
                           return __result; |]
-                            
 
                  where to_trampoline'' [] = [jmacro| exhaust(); |]
                        to_trampoline'' (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss) =
 
                            [jmacro| `(declare_bindings var_names pss)`;
-                                    if (`(pss)`) {
-                                        var x = `(cond)`;
-                                        console.log();
-                                        if (x) {
-                                            __result = `(toJExpr $ replace pss ex)`;
-                                            continue;
-                                        }
-                                    }
-                                    `(to_trampoline'' xss)`; |]
+                                    if (`(pss)` && `(cond)`) {
+                                        __result = `(toJExpr $ replace pss ex)`;
+                                    } else `(to_trampoline'' xss)`; |]
 
                             where var_names = map J.ref . reverse . take (length pss) . map J.local_pool $ [0 .. 26]
+
+                       --to_expr ps = toJExpr$ zipWith PM (reverse . take (length ps) . map ("r"++) . map J.local_pool $ [0 .. 26]) ps
 
                        declare_bindings (name : names) (VarPattern x : zs) =
                            
