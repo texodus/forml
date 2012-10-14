@@ -160,7 +160,7 @@ operator_dict = M.fromList [ ('!', "_bang"),
                              ('-', "_minu"),
                              ('\'', "_tick"),
                              ('*', "_star"),
-                             (',', "_comm"),
+                            -- (',', "_comm"),
                              ('.', "_comp") ]
 
 operator :: Parser Char
@@ -177,12 +177,12 @@ not_reserved x = do y <- x
                              "|", "\\", "=", ":", ",", "->", "<-" ]
 
 not_system :: Parser String -> Parser String
-not_system x = do y <- x
-                  if y `elem` reserved_words
-                     then parserFail "non-reserved word"
-                     else return y
+not_system x = not_reserved$ do y <- x
+                                if y `elem` reserved_words
+                                    then parserFail "non-reserved word"
+                                    else return y
 
-    where reserved_words = [ "==", "<=", ">=", "!=", "<", ">", "||", "&&", "."  ]
+    where reserved_words = [ "==", "<=", ">=", "!=", "<", ">", "||", "&&", ".", ","  ]
 
 
 type_sep    :: Parser Char

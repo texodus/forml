@@ -226,10 +226,10 @@ instance Open Statement where
     open _ [] = mempty
     open ns (DefinitionStatement (Definition _ _ n _) : xs) =
 
-        let f = ref . show
+        let f = ref . replace " " "_" . show
             x = [jmacroE| `(f ns)`[`(n)`] |] in
 
-        [jmacro| `(declare (to_name n) x)`;
+        [jmacro| `(declare (replace " " "_" $ to_name n) x)`;
                  `(open ns xs)`; |]
 
     open nss (ModuleStatement ns @ (Namespace (n:_)) _:xs) =
@@ -241,7 +241,7 @@ instance Open Statement where
 
 instance Open String where
     open _ [] = mempty
-    open (Namespace ns) (x:xs) =
+    open (Namespace (map (replace " " "_") -> ns)) (x:xs) =
 
         let print' []     = error "Empty Namespace"
             print' (y:[]) = [jmacroE| `(ref y)` |]

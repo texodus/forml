@@ -204,7 +204,7 @@ instance (Syntax d) => Syntax (Expression d) where
                         term   = try other
                         
                         user_op_left = try $ do spaces
-                                                op' <- not_system $ not_reserved (many1 operator) 
+                                                op' <- not_system (many1 operator) 
                                                 spaces
                                                 return $ f op'
 
@@ -217,7 +217,7 @@ instance (Syntax d) => Syntax (Expression d) where
 
                         f op' x y = ApplyExpression (SymbolExpression (Operator op')) [x, y]
 
-                        g = not_system . not_reserved . many1
+                        g = not_system . many1
 
                         op p   = do spaces
                                     op' <- SymbolExpression <$> p
@@ -250,6 +250,7 @@ instance (Syntax d) => Syntax (Expression d) where
               apply = ApplyExpression <$> inner <*> arguments
 
                   where arguments = try java <|> try cont <|> halt
+
                             where cont = do x <- whitespace *> (try (ApplyExpression <$> inner <*> java) <|> inner)
                                             option [x] ((x:) <$> try (whitespace *> (try cont <|> halt)))
 
@@ -260,7 +261,7 @@ instance (Syntax d) => Syntax (Expression d) where
                                                     <|> function))
 
                         java = indentPairs "(" java_args ")"
-                            where  java_args = do x <- other_next `sepEndBy1` comma
+                            where  java_args = do x <- syntax `sepEndBy1` comma
                                                   option x ((x ++) <$> try arguments)
 
 

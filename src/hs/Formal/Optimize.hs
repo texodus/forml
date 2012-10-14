@@ -132,34 +132,13 @@ instance Optimize (Expression Definition) where
 
         do is <- get_env
            case f `lookup` is of
-             Just (m @ (Match pss cond), ex) | length pss == length args ->
+             Just (m @ (Match pss _), ex) | length pss == length args ->
 
                  do args' <- mapM optimize args
-                    ex <- optimize ex
-                    cond <- case cond of Just x -> Just <$> optimize x
-                                         _ -> return Nothing
-                    m <- optimize m
-                    return $ ApplyExpression (FunctionExpression [EqualityAxiom m (Addr undefined undefined ex)]) args'
-                    -- return $ JSExpression [jmacroE| (function() {
-                    --                                    `(declare_bindings args' pss)`;
-                    --                                    if (`(pss)` && `(cond)`) {
-                    --                                        return `(ex)`;
-                    --                                    } else exhaust();
-                    --                                 })() |]
+                    ex'   <- optimize ex
+                    m'    <- optimize m
+                    return $ ApplyExpression (FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]) args'
 
-                 where declare_bindings :: (ToJExpr a) => [a] -> [Pattern (Expression Definition)] -> JStat
-                       declare_bindings (name : names) (VarPattern x : zs) =
-                           
-                           [jmacro| `(J.declare x $ toJExpr name)`; |] `mappend` declare_bindings names zs
-
-                       declare_bindings (name : names) (RecordPattern x _: zs) = 
-                           let (ns, z) = unzip . M.toList $ x
-                           in  declare_bindings (map (acc $ toJExpr name) ns) z `mappend` declare_bindings names zs
-
-                       declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
-                       declare_bindings [] [] = mempty
-                  
-                       acc n ns = [jmacroE| `(n)`[`(ns)`] |]
 
              _ -> ApplyExpression <$> optimize f' <*> mapM optimize args
              
