@@ -43,7 +43,7 @@ instance (Show a) => Show (Axiom a) where
 instance (Show a, ToJExpr a) => ToJExpr [Axiom a] where
     toJExpr [] = toJExpr . scope $ (Curried [] :: Curried a)
     toJExpr (TypeAxiom _:xs) = toJExpr xs
-    toJExpr xs @ (EqualityAxiom (Match ps _) _ : _) = scope . curry (length ps) . toStat . Curried $ xs
+    toJExpr xs @ (EqualityAxiom (Match ps _) _ : _) = scope . curry (length ps) id . toStat . Curried $ xs
 
 newtype Curried a = Curried [Axiom a]
 

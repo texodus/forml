@@ -53,55 +53,92 @@ instance Syntax Definition where
     syntax = do whitespace
                 vis <- option Public (try (string "private" >> spaces >> return Private))
                 inl <- option False (try (string "inline" >> spaces >> return True))
-                (x, y) <- prefix
+                (x, y) <- try prefix <|> try infix''
                 return $ Definition vis inl x y
 
-        where prefix = do name <- try syntax <|> (Symbol <$> many1 (char '_'))
-                          sig <- first
-                          eqs <- (try $ spaces *> (withPos . many . try $ eq_axiom name)) <|> return []
+        where infix'' =
+
+                  do whitespace
+                     first_arg <- try syntax
+                     whitespace
+                     op <- not_reserved $ many1 operator
+                     whitespace
+                     Match pss cond <- syntax
+                     ax <- no_args_eq_axiom $ Match (first_arg:pss) cond
+                     axs <- try (prefix' $ Operator op) <|> return []
+                     return (Operator op, ax:axs)
+
+                  where no_args_eq_axiom patterns =
+
+                          do whitespace *> string "=" *> spaces *> indented
+                             ex <- withPos (addr syntax)
+                             return $ EqualityAxiom patterns ex
+
+              prefix = 
+
+                  do name <- try syntax <|> (Symbol <$> many1 (char '_'))
+                     y <- prefix' name
+                     return (name, y)
+          
+              prefix' name =
+
+                       do sig <- first
+                          eqs <- (try $ spaces *> (withPos . many . try $ try infix_axiom <|> eq_axiom)) <|> return []
                           whitespace
                           if length sig == 0 && length eqs == 0 
                               then parserFail "Definition Axioms"
-                              else return $ (name, (sig ++ eqs))
+                              else return (sig ++ eqs)
 
-              first = try type_or_first
-                      <|> ((:[]) <$> try naked_eq_axiom) 
-                      <|> return []
+                where first = try type_or_first
+                              <|> ((:[]) <$> try naked_eq_axiom)
+                              <|> ((:[]) <$> (whitespace *> infix_axiom))
+                              <|> return []
 
-              type_or_first = (:) <$> type_axiom <*> second
+                      type_or_first = (:) <$> type_axiom <*> second
 
-              second = option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing)))
+                      second = option [] ((:[]) <$> try (no_args_eq_axiom (Match [] Nothing)))
 
-              eq_axiom name' =
+                      eq_axiom =
 
-                  do try (spaces >> same) <|> (whitespace >> return ())
-                     string "|" <|> try (string name <* notFollowedBy (digit <|> letter)) 
-                     naked_eq_axiom
+                          do try (spaces >> same) <|> (whitespace >> return ())
+                             string "|" <|> try (string name' <* notFollowedBy (digit <|> letter)) 
+                             naked_eq_axiom
 
-                  where name = case name' of
-                                 (Symbol name)   -> name
-                                 (Operator name) -> "(" ++ name ++ ")"
+                          where name' = case name of
+                                         (Symbol name'')   -> name''
+                                         (Operator name'') -> "(" ++ name'' ++ ")"
 
-              naked_eq_axiom =
+                      naked_eq_axiom =
 
-                  do whitespace
-                     patterns <- syntax
-                     no_args_eq_axiom patterns
+                          do whitespace
+                             patterns <- syntax
+                             no_args_eq_axiom patterns
 
-              no_args_eq_axiom patterns =
+                      no_args_eq_axiom patterns =
 
-                  do whitespace *> string "=" *> spaces *> indented
-                     ex <- withPos (addr syntax)
-                     return $ EqualityAxiom patterns ex
+                          do whitespace *> string "=" *> spaces *> indented
+                             ex <- withPos (addr syntax)
+                             return $ EqualityAxiom patterns ex
 
-              type_axiom =
+                      infix_axiom =
+                          
+                          case name of
+                             (Symbol _)   -> parserFail "Infix Definition"
+                             (Operator name'') -> do first_arg <- syntax
+                                                     whitespace
+                                                     string name''
+                                                     whitespace
+                                                     Match pss cond <- syntax
+                                                     no_args_eq_axiom $ Match (first_arg:pss) cond 
 
-                  do spaces
-                     indented
-                     string ":"
-                     spaces
-                     indented
-                     TypeAxiom <$> withPos type_axiom_signature
+                      type_axiom =
+
+                          do spaces
+                             indented
+                             string ":"
+                             spaces
+                             indented
+                             TypeAxiom <$> withPos type_axiom_signature
 
 -- TODO Visibility should be more than skin deep?
 

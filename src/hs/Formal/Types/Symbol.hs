@@ -28,6 +28,6 @@ instance ToJExpr Symbol where
 to_name :: Symbol -> String
 to_name (Symbol "return") = "_return_"
 to_name (Symbol "new") = "_new_"
-to_name (Symbol x) = replace " " "_" x
+to_name (Symbol x) = replace " " "_" $ replace "'" "_apos" x
 to_name (Operator op) = concat . map (\x -> M.findWithDefault "_" x operator_dict) $ op
 

@@ -288,7 +288,7 @@ module prelude
 
         inline 
         (+++): a -> b -> String
-        (+++) x y = do! `"" + x + y`
+        x +++ y = do! `"" + x + y`
 
         -- interpolated strings
 
@@ -355,8 +355,10 @@ module prelude
                   }
               }`
 
-        inline ($|): String -> String -> String -> JS {}
-               ($|) x y = \z = `$(x).css(y, z)`
+        inline ($|): 
+
+             String   -> String -> String -> JS {}
+             selector $| rule      value   = `$(selector).css(rule, value)`
 
         inline 
         ($.): String -> String -> JS {}
@@ -494,7 +496,8 @@ module prelude
         -- This complex type can be hidden behind a constructor function which
         -- works more like a traditional cons.
 
-        (::) x y = { head = x, tail = y }
+        inline 
+        x :: y = { head = x, tail = y }
 
         -- The compiler itself also supports the list sugar `[: 1, 2, 3 ]` (or
         -- `[: 1, 2, 3 :]`, if you prefer symmetry).  All of these lists are
@@ -535,8 +538,8 @@ module prelude
         take 0 x = { nil } | n x = head x :: take (n - 1) (tail x)
         drop 0 x = x | n x = drop (n - 1) (tail x)
 
-        (..) x y when x < y = x :: (x + 1 .. y)
-        (..) x _ = [:x]
+        x .. y when x < y = x :: (x + 1 .. y)
+        x .. _ = [:x]
            
         1 .. 5 == [:1,2,3,4,5]
 
@@ -620,20 +623,26 @@ module prelude
             
         -- Reverse
 
-        reverse = 
+        reverse y = 
             var r rest [:] = rest
-                r rest { head: x, tail: xs } = 
+                | rest { head: x, tail: xs } = 
                     r (x :: rest) xs
 
-            r {nil}
-        
+            r {nil} y
+
         reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
 
-        take2 x y =
-            var t(0, _, acc) = reverse acc
+        var test_x = [: 1, 2, 3, 4 ]
+        test_x == reverse <| reverse test_x
+
+        take' x y =
+            var t(0, _, acc) = acc
                 t(n, x, acc) = t(n - 1, tail x, head x :: acc)
 
-            t(x, y, {nil})
+            reverse t(x, y, {nil})
+
+        var x = [: 1, 2, 3, 4, 5, 6, 7, 8 ]
+        take 5 x == take' 5 x
 
         -- Folds
 
@@ -732,7 +741,7 @@ module prelude
 
                        return { elem: f xx yy, next: zip_with f xs ys }
                                         
-        inline (:::) x y = seq yield { elem: x, next: do! y }
+        inline x ::: y = seq yield { elem: x, next: do! y }
         
         tail:
               Seq a   -> Seq a
@@ -773,7 +782,7 @@ module prelude
     -- instance to a symbol (as opposed to it being referenced by the type variable's
     -- instantiation).
 
-    module formalz
+    module "Formal Z"
 
         open list
 

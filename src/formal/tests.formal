@@ -61,6 +61,29 @@ module "Tests for partial records"
         x = { a = 1, b = 2, c = 3, d = 4 }
     f x + 1 == g x
 
+module "Tests for TCO bugs"
+    
+    open prelude
+    open prelude.list
+
+    rev_1 y = 
+        var r rest [:] = rest
+            | rest { head: x, tail: xs } = 
+                r (x :: rest) xs
+
+        r {nil} y
+
+    rev_2 = 
+        var rrr rest [:] = rest
+            rrr rest { head: x, tail: xs } = 
+                rrr (x :: rest) xs
+
+        rrr {nil}
+     
+    rev_2 [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
+
+    test_x  = [: 1, 2, 3, 4 ]
+    rev_2 test_x == rev_1 test_x
 
 
 module "Tests for parser bugs"

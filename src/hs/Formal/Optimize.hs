@@ -216,29 +216,32 @@ instance Optimize Definition where
                   [EqualityAxiom (Match [] Nothing) (Addr undefined undefined (JSExpression (to_trampoline xs')))]
 
              to_trampoline xs @ (EqualityAxiom (Match ps _) _ : _) =
-                 J.scope . J.curry (length ps) . to_trampoline' $ xs
+                 J.scope . J.curry (length ps) ("_V"++) . to_trampoline' ps $ xs
 
-             to_trampoline' xs =
+             to_trampoline' ps xs =
 
-                 [jmacro| var !__result = undefined;
+                 [jmacro| var __result = undefined;
+                          `(def_local (reverse . take (length ps) . map J.local_pool $ [0 .. 26]) local_var_names)`;
                           while (typeof __result == "undefined") {
                               (function() {
-                                 `(to_trampoline'' xs)`;
+                                 `(to_trampoline'' xs __result)`;
                               })();
                           }
                           return __result; |]
 
-                 where to_trampoline'' [] = [jmacro| exhaust(); |]
-                       to_trampoline'' (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss) =
+                 where to_trampoline'' [] _ = [jmacro| exhaust(); |]
+                       to_trampoline'' (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss) result =
 
                            [jmacro| `(declare_bindings var_names pss)`;
                                     if (`(pss)` && `(cond)`) {
-                                        __result = `(toJExpr $ replace pss ex)`;
-                                    } else `(to_trampoline'' xss)`; |]
+                                        `(result)` = `(replace pss ex)`;
+                                    } else `(to_trampoline'' xss result)`; |]
 
-                            where var_names = map J.ref . reverse . take (length pss) . map J.local_pool $ [0 .. 26]
+                       var_names = map J.ref . reverse . take (length ps) . map J.local_pool $ [0 .. 26]
 
                        --to_expr ps = toJExpr$ zipWith PM (reverse . take (length ps) . map ("r"++) . map J.local_pool $ [0 .. 26]) ps
+
+                       local_var_names = map J.ref . map ("_V"++) . reverse . take (length ps) . map J.local_pool $ [0 .. 26]
 
                        declare_bindings (name : names) (VarPattern x : zs) =
                            
@@ -249,14 +252,14 @@ instance Optimize Definition where
                            in  declare_bindings (map (acc name) ns) z `mappend` declare_bindings names zs
 
                        declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
-                       declare_bindings [] [] = mempty
+                       declare_bindings _ _ = mempty
                   
                        acc n ns = [jmacroE| `(n)`[`(ns)`] |]
 
                        replace pss (ApplyExpression (SymbolExpression x) args) | name == x =
              
                            JSExpression [jmacroE| (function() {
-                                                     `(bind_local (reverse . take (length pss) . map J.local_pool $ [0 .. 26]) args)`;
+                                                     `(bind_local (reverse . take (length ps) . map J.local_pool $ [0 .. 26]) args)`;
                                                      return undefined;
                                                   })() |]
 
@@ -264,9 +267,13 @@ instance Optimize Definition where
                        replace pss (IfExpression x a b) = IfExpression x (replace pss a) (replace pss b)
                        replace _ x = x
 
+                       bind_local :: ToJExpr a => [String] -> [a] -> JStat
                        bind_local (x:xs) (y:ys) = [jmacro|  `(J.ref x)` = `(y)`; |] `mappend` bind_local xs ys
-                       bind_local [] [] = mempty
+                       bind_local _ _ = mempty
 
+                       def_local :: [String] -> [JExpr] -> JStat
+                       def_local (x:xs) (y:ys) = [jmacro| `(J.declare x y)`; |] `mappend` def_local xs ys
+                       def_local _ _ = mempty
 
 
 

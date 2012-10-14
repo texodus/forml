@@ -160,7 +160,8 @@ operator_dict = M.fromList [ ('!', "_bang"),
                              ('-', "_minu"),
                              ('\'', "_tick"),
                              ('*', "_star"),
-                            -- (',', "_comm"),
+                             (',', "_comm"),
+                             ('\'', "_apos"),
                              ('.', "_comp") ]
 
 operator :: Parser Char

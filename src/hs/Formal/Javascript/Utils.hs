@@ -80,8 +80,8 @@ declare name expr =
     [jmacro| `(DeclStat (StrI (replace " " "_" name)) Nothing)`;
              `(ref (replace " " "_" name))` = `(expr)`; |]
 
-curry 0 jexpr = jexpr
-curry n jexpr = func (local_pool $ n - 1) (curry (n - 1) jexpr)
+curry 0 f jexpr = jexpr
+curry n f jexpr = func (f $ local_pool $ n - 1) (curry (n - 1) f jexpr)
 
 local_pool n = [qq|__{ "abcdefghijklmnopqrstuvqxyz" !! n }__|]
 
