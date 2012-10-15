@@ -2,21 +2,22 @@
 
 
 module "Speed tests for the prelude"
-
-    do! log "\r                                  "
-        return true
+    
+    title x = 
+        do log "\r                                  "
+           log x
+           return true
 
     open prelude
     open prelude.speedtest
     open prelude.list
     open prelude.string
 
-    inline
-    euler_1 = `var sum = 0;
-               for (var i = 1; i < 11111; i++) {
-                   if (i % 3 == 0 || i % 5 == 0) sum += i;
-               };
-               return sum;`
+    euler_1 x = `var sum = 0;
+                 for (var i = 1; i < x; i++) {
+                     if (i % 3 == 0 || i % 5 == 0) sum += i;
+                 };
+                 return sum;`
 
     euler_2 x y when x < 3 = y
           | x y when x % 3 == 0 || x % 5 == 0 =
@@ -28,22 +29,48 @@ module "Speed tests for the prelude"
                 then 1 + euler_3 (x - 1)
                 else euler_3 (x - 1)
 
-    euler_4 = yield 1 .. 11111 
-                    |> filter (λx = x % 3 == 0 || x % 5 == 0)
-                    |> sum
+    euler_4 z = yield 1 .. z 
+                      |> filter (λx = x % 3 == 0 || x % 5 == 0)
+                      |> sum
 
-    do! w <- time euler_1
-        x <- time yield euler_2 11111 0
-        y <- time yield euler_3 11111
-        z <- time euler_4
+    euler_5 x y when x < 3 = y
+          | x y when do! `x % 3 == 0 || x % 5 == 0` =
+                euler_5 (x - 1) (y + 1)
+          | x y = euler_5 (x - 1) y
 
-        log "Native JS:   `w / 1000`s"
-        log "Formal TCO:  `x / 1000`s"
-        log "Formal Rec:  `y / 1000`s"
-        log "Formal list: `z / 1000`s"
+    do! title "Relative Speeds (10k)"
+
+        w <- time (euler_1 10000)
+        x <- time yield euler_2 10000 0
+        y <- time yield euler_3 10000
+        z <- time (euler_4 10000)
+        q <- time yield euler_5 10000 0
+
+        log "  Native JS:          `w / 1000`s"
+        log "  Formal TCO Unboxed: `q / 1000`s"
+        log "  Formal TCO:         `x / 1000`s"
+        log "  Formal Recursive:   `y / 1000`s"
+        log "  Formal list:        `z / 1000`s"
         
-        return <| (x < y && y < z)
+        return <| (x <= y && y < z)
 
+    "Maximum call stack size exceeded." == (err yield euler_3(250000)).message
+
+    do! title "Relative Speeds (2.5M)"
+
+        w <- time (euler_1 2500000)
+        x <- time yield euler_2 2500000 0
+        y <- time yield euler_5 2500000 0
+        
+        log "  Native JS:          `w / 1000`s"
+        log "  Formal TCO Unboxed: `y / 1000`s"
+        log "  Formal TCO:         `x / 1000`s"
+        log "  Formal Recursive:   `err yield euler_3(250000)`"
+        log "  Formal list:        `err (euler_4 250000)`"
+
+        log ""
+        
+        return <| (w < x)
 
 
 module "Tests for partial records"
@@ -83,11 +110,13 @@ module "Tests for TCO bugs"
      
     rev_2 [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]
 
-    test_x  = [: 1, 2, 3, 4 ]
+    test_x = [: 1, 2, 3, 4, 5, 6, 7 ]
 
     rev_2 test_x == rev_1 test_x
+    rev_1 test_x == reverse test_x
     length (rev_2 test_x) == length (rev_1 test_x)
     length (rev_2 test_x) == length test_x
+    length (rev_1 test_x) == length (reverse test_x)
 
 
 module "Tests for parser bugs"

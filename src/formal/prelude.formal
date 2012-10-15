@@ -249,8 +249,8 @@ module prelude
     -- --------------------
     -- Simple left & right pipes, ala F#.  
 
-    inline (<|) x y = x y
-    inline (|>) x y = y x
+    inline x <| y = x y
+    inline x |> y = y x
     
     3 |> (λy = y + 1) |> λy = y + 1 == 5
     (λy x z = x + y + z + 1) 1 <| 3 <| 4 == 9
@@ -258,7 +258,7 @@ module prelude
     -- Alternatively, there is a right associative version of `<|`, ala
     -- haskell.  All operators which end with a `:` are right associative.
 
-    inline (<:) x y = x y
+    inline x <: y = x y
     
     (λx = x - 3) <: (λx = x - 3) <: 5 + 5 == 4
     
@@ -456,6 +456,37 @@ module prelude
                `env.addReporter(reporter)`
                `env.execute()`
 
+
+        push : a -> Array a -> JS (Array a)
+        push xs x = `xs.push(x)` 
+
+        private console_reporter = {
+
+            total    = 0
+            failed   = 0
+            messages = []
+
+            reportSpecResults spec =
+
+                do! results <- `spec.results()`
+                    passed  <- `results.passed()`
+                    `console_reporter.total++`
+
+                    if not passed
+                        then do `console_reporter.failed++`
+                                push console_reporter.messages spec.description
+                                return {}
+                        else return {}
+
+            reportRunnerResults =
+
+                do if console_reporter.failed > 0
+                       then log console_reporter.messages
+                       else return {}
+                         
+                   log "`console_reporter.total - console_reporter.failed`/`console_reporter.total` tests passed"
+        }
+
         -- This is the initializer for prelude's HTML test suite. 
 
         table_of_contents =
@@ -474,6 +505,7 @@ module prelude
 
                        `env.addReporter trivial`
                        `env.addReporter formal`
+                       `env.addReporter console_reporter`
 
                        `env.execute()`
 
@@ -538,8 +570,11 @@ module prelude
         take 0 x = { nil } | n x = head x :: take (n - 1) (tail x)
         drop 0 x = x | n x = drop (n - 1) (tail x)
 
-        x .. y when x < y = x :: (x + 1 .. y)
-        x .. _ = [:x]
+        x .. y = 
+            let f xx z when xx >= x = f (xx - 1) (xx :: z)
+                f _ z = z 
+
+            f y {nil}
            
         1 .. 5 == [:1,2,3,4,5]
 
@@ -656,7 +691,7 @@ module prelude
      
         foldr f x =
             var g {nil} = x
-                | { head: y, tail: ys } = f y (g ys)
+                g { head: y, tail: ys } = f y (g ys)
             g
 
         foldr1 _ {nil} = error "Foldr1 called on empty list"
@@ -671,7 +706,9 @@ module prelude
         concat = foldl1 λx y = x ++ y
         concat_map f xs = concat (map f xs)
         
-        maximum = foldl1 λ(x, y) when x > y = x | (_, y) = y
+        maximum = foldl1 λ(x, y) when x > y = x
+                         |(_, y) = y
+
         minimum = foldl1 λx y = if x > y then y else x
 
         foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
