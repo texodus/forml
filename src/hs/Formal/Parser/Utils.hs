@@ -28,9 +28,6 @@ import qualified Data.List as L
 import Data.String.Utils
 
 
--- {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
--- {-# OPTIONS_GHC -fno-warn-orphans #-}
-
 import Text.Parsec.Prim hiding ((<|>), State, many, parse, label)
 import qualified Data.Text as T
 
@@ -174,7 +171,7 @@ not_reserved x = do y <- x
                        else return y
 
     where reserved_words = [ "if", "then", "else", "let", "when", "with", "and", "or", "do", "var",
-                             "module", "open", "yield", "lazy", "inline",
+                             "module", "open", "yield", "lazy", "inline", "in",
                              "|", "\\", "=", ":", ",", "->", "<-" ]
 
 not_system :: Parser String -> Parser String

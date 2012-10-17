@@ -24,6 +24,7 @@ import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Text.Parsec.Indent  hiding (same)
 import Text.Parsec.Expr
 
+import qualified Text.Parsec as P
 import qualified Data.Map as M
 import qualified Data.List as L
 
@@ -116,15 +117,18 @@ instance (Syntax d) => Syntax (Expression d) where
                                       whitespace1
                                       defs <- withPos def
                                       spaces
-                                      same
-                                      LetExpression <$> return defs <*> syntax
+                                      try (do string "in"
+                                              spaces
+                                              LetExpression <$> return defs <*> syntax)
+                                         <|> do same
+                                                LetExpression <$> return defs <*> syntax
 
-                  where def = try syntax `sepBy1` try (spaces *> same)
+                  where def = try syntax `sepBy1` (try comma <|> try (spaces *> same))
 
               do'  = do s <- getPosition
                         string "do"
                         i <- try (string "!") <|> return ""
-                        whitespace1
+                        P.spaces
                         l <- withPos line
                         if i == "!" 
                            then return$ ApplyExpression (SymbolExpression (Symbol "run")) [wrap s l]
@@ -170,18 +174,24 @@ instance (Syntax d) => Syntax (Expression d) where
                          whitespace1
                          LazyExpression <$> withPos (addr$ try syntax) <*> return Every
 
-
               if' = withPos $ do string "if"
                                  whitespace1
                                  e <- withPos$ try infix' <|> other
                                  spaces
-                                 string "then"
-                                 whitespace1
-                                 t <- withPos$ try infix' <|> other
-                                 spaces
-                                 string "else"
-                                 whitespace1
-                                 IfExpression e t <$> withPos (try infix' <|> other) 
+                                 try (jStyle e) <|> hStyle e
+
+                    where jStyle e = do indented
+                                        cont e
+
+                          hStyle e = do string "then" 
+                                        whitespace1
+                                        cont e
+
+                          cont e   = do t <- withPos$ try infix' <|> other
+                                        P.spaces
+                                        string "else"
+                                        whitespace1
+                                        IfExpression e t <$> withPos (try infix' <|> other) 
 
               infix' = buildExpressionParser table term 
 
