@@ -28,6 +28,7 @@ import qualified Data.List as L
 import Formal.Parser.Utils
 
 import Formal.Types.Type
+import Formal.Types.Axiom
 import Formal.Types.TypeDefinition
 import Formal.Types.Symbol
 import Formal.Types.Definition
@@ -85,7 +86,8 @@ instance Syntax Statement where
                                     spaces *> (indented <|> same)
                                     ModuleStatement name <$> withPos (many1 ((spaces >> same >> syntax)))
 
-              type_statement  = do def <- syntax
+              type_statement  = do try (string "type" >> spaces) <|> return ()
+                                   def <- syntax
                                    set_indentation (+1)
                                    whitespace
                                    sig <- try (string "=" >> spaces >> (string "|" >> type_definition_signature))
@@ -224,6 +226,7 @@ class Open a where open :: Namespace -> [a] -> JStat
 
 instance Open Statement where
     open _ [] = mempty
+    open ns (DefinitionStatement (Definition _ _ n (TypeAxiom _: [])) : xs) = open ns xs
     open ns (DefinitionStatement (Definition _ _ n _) : xs) =
 
         let f = ref . replace " " "_" . show
@@ -247,7 +250,7 @@ instance Open String where
             print' (y:[]) = [jmacroE| `(ref y)` |]
             print' (y:ys) = [jmacroE| `(print' ys)`[`(y)`] |]
 
-        in  declare x [jmacroE| `(print' $ reverse ns)`[`(x)`] |] ++ open (Namespace ns) xs
+        in  declare x [jmacroE| `(print' $ reverse ns)`[`(x)`] || window[`(x)`] |] ++ open (Namespace ns) xs
 
 
 

@@ -85,8 +85,12 @@ module prelude
     -- here, as the "==" operator defined in [Numbers](#numbers) is defined
     -- in terms of them.
 
+    type
+    JS a = {} -> a
+
     inline object? x = do! `typeof x === "object"`
     inline array?    = do! `is_array`
+    inline string? x = do! `typeof x === "string"`
     inline type? x   = do! `typeof x`
 
     inline

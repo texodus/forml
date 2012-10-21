@@ -172,13 +172,15 @@ main  = do rc <- parseArgs <$> getArgs
                  writeFile (output rc ++ ".js") js
                  writeFile (output rc ++ ".spec.js") tests
 
-                 let xxx = fst . head $ src'
-                     yyy = snd . head $ src'
-                     html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
-                     prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
-                     hook = "<script>" ++ htmljs ++ "</script>"
+                 if write_docs rc
+                     then let xxx = fst . head $ src'
+                              yyy = snd . head $ src'
+                              html = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
+                              prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
+                              hook = "<script>" ++ htmljs ++ "</script>"
 
-                 writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
+                          in writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
+                     else return ()
 
                  case run_tests rc of
                      Node ->
@@ -224,8 +226,12 @@ main  = do rc <- parseArgs <$> getArgs
                                then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
                                else return ()
 
-closure_local :: String -> String -> IO (Either a String)
-closure_local x y = do env <- L.lookup "CLOSURE" <$> getEnvironment
+closure_local ::
+
+              String -> String -> IO (Either a String)
+closure_local x         y       =
+
+                    do env <- L.lookup "CLOSURE" <$> getEnvironment
                        case env of
                          Just env ->
                              do exists' <- doesFileExist env
@@ -233,7 +239,7 @@ closure_local x y = do env <- L.lookup "CLOSURE" <$> getEnvironment
                                     then do putStr " local]"
                                             hFlush stdout
                                             writeFile "temp.js" x
-                                            system$ "java -jar $CLOSURE --compilation_level "
+                                            system$ "java -jar $CLOSURE --formatting=pretty_print --compilation_level "
                                                       ++ y 
                                                       ++ " --js temp.js --warning_level QUIET > temp.compiled.js"
                                             js <- readFile "temp.compiled.js"

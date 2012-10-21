@@ -54,7 +54,7 @@ module "Speed tests for the prelude"
         
         return <| (x <= y && y < z)
 
-    "Maximum call stack size exceeded." == (err yield euler_3(250000)).message
+    string? (err yield euler_3(250000)).message
 
     do! title "Relative Speeds (2.5M)"
 

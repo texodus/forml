@@ -228,8 +228,14 @@ instance Monad Z where
     fail x = Error x
 
 mgu :: Type -> Type -> TI Substitution
-mgu x y = case x |=| y of
-             Z z -> return z
+mgu x y = do z <- mgu' x y
+             case z of
+               Left e  -> add_error e >> return []
+               Right e -> return e
+
+mgu' :: Type -> Type -> TI (Either String Substitution)
+mgu' x y = case x |=| y of
+             Z z -> return $ Right z
              Error e -> second_chance e x y
 
     where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
@@ -238,24 +244,28 @@ mgu x y = case x |=| y of
                  g  <- find''' as x
 
                  case g of
-                   Nothing -> add_error e >> return []
+                   Nothing -> return $ Left e --add_error e >> return []
                    Just (x, sct) ->
                        do (qs' :=> t'') <- freshInst sct
-                          return x
+                          return $ Right x
 
           second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
           second_chance e (TypeApplication a b) (TypeApplication c d) =
               do xss <- second_chance e a c
                  yss <- second_chance e b d
-                 return$ xss @@ yss
+                 case (xss, yss) of
+                   (Right xss, Right yss) -> return$ Right$ xss @@ yss
+                   (Left e, _) -> return $ Left e
+                   (_, Left e) -> return $ Left e
+                   
 
           second_chance e x y = case x |=| y of
-                                  Error _ -> add_error e >> return []
-                                  Z x -> return x
+                                  Error _ -> return $ Left e --add_error e >> return []
+                                  Z x -> return $ Right x
  
           find''' [] _ = return Nothing
           find''' (_:>:_:xs) t = find''' xs t
-          find''' (_:>>:(Forall _ x, y):xs) t =
+          find''' ((Forall _ x :>>: y):xs) t =
 
               do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
                  case t |=| t' of
@@ -455,36 +465,20 @@ toScheme t     = Forall [] ([] :=> t)
 -- Assumptions
 -- --------------------------------------------------------------------------------
 
-data RecordId = RecordId (M.Map String RecordId)
-              | RecordPartial (M.Map String RecordId)
-              | RecordKey
-
-
-data Assumption = Id :>: Scheme | RecordId :>>: (Scheme, Scheme) deriving (Eq)
+data Assumption = Id :>: Scheme | Scheme :>>: Scheme deriving (Eq)
 
 newtype A = A [Assumption]
 
-instance Eq RecordId where
-    (RecordId m) == (RecordId n) = m == n
-    RecordKey == RecordKey = True
-    (RecordPartial m) == (RecordId n) = m == ((M.\\) n ((M.\\) n  m))
-    n == m @ (RecordPartial _) = m == n
-    _ == _ = False
-
-instance Show RecordId where
-    show (RecordId m) = "{" ++ (concat$ L.intersperse ", "$ M.keys m) ++ "}"
-    show (RecordPartial m) = "{" ++ (concat$ L.intersperse ", "$ M.keys m) ++ ", _}"
-
 instance Show Assumption where
     show (i :>: s)  = i ++ ": " ++ show s
-    show (i :>>: (_,s)) = show i ++ ": " ++ show s
+    show (i :>>: s) = show i ++ ": " ++ show s
 
 instance Types Assumption where
     apply s (i :>: sc)  = i :>: (apply s sc)
-    apply s (i :>>: (sc, sd)) = i :>>: (apply s sc, apply s sd)
+    apply s (sc :>>: sd) = apply s sc :>>: apply s sd
 
     tv (_ :>: sc)       = tv sc
-    tv (_ :>>: (sc, _)) = tv sc
+    tv (sc :>>: _) = tv sc
 
 class Find a b | a -> b where
     find :: a -> TI b
@@ -500,17 +494,16 @@ instance Find Id Scheme where
                                         return$ toScheme$ TypeVar (TVar "a" Star)
               
 
-subkey :: RecordId -> RecordId -> Bool
-subkey (RecordId m) (RecordId n) = M.keys m == M.keys n && all id (zipWith subkey (M.elems m) (M.elems n))
-subkey _ _ = True
-
-instance Find RecordId (Maybe (Scheme, Scheme)) where
+instance Find Scheme (Maybe (Scheme, Scheme)) where
 
     find i = do (reverse -> x) <- get_assumptions
-                return$ find' x 
+                find' x 
 
-        where find' []              = Nothing
-              find' ((i':>>:sc):as) = if i `subkey` i' then Just sc else find' as
+        where find' []              = return Nothing
+              find' ((i':>>:sc):as) = do (_ :=> i'') <- freshInst i
+                                         (_ :=> i''') <- freshInst i'
+                                         x <- i'' `can_unify` i'''
+                                         if x then return $ Just (i', sc) else find' as
               find' (_:as)          = find' as
 
 
@@ -625,6 +618,14 @@ unify t1 t2 = do s <- get_substitution
     where extSubst   :: Substitution -> TI ()
           extSubst s' = TI (\x -> (x { substitution = s' }, ()))
 
+can_unify :: Type -> Type -> TI Bool
+can_unify t1 t2 = with_scope $ 
+              do s <- get_substitution
+                 u <- apply s t1 `mgu'` apply s t2
+                 case u of
+                   Left x  -> return False
+                   Right x -> return True
+
 newTVar :: Kind -> TI Type
 newTVar k   = TI (\x -> let v = TVar (enumId (seed x)) k
                        in  (x { seed = seed x + 1}, TypeVar v))
@@ -685,7 +686,7 @@ instance Infer (Pattern b) Type where
     infer m @ (RecordPattern (unzip . M.toList -> (names, patterns)) p) =
         
         do ts <- mapM infer patterns
-           sc <- find$ key m
+           --sc <- find$ key m
            p' <- case p of
                    Complete -> return TComplete
                    Partial  -> do t <-  newTVar Star
@@ -693,6 +694,7 @@ instance Infer (Pattern b) Type where
 
            let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) p' Star)
            t' <- newTVar Star
+           sc <- find $ quantify (tv r) ([] :=> r)
            case sc of
              Nothing ->
                  do unify t' r
@@ -808,9 +810,9 @@ instance Infer (Expression Definition) Type where
     infer m @ (RecordExpression (unzip . M.toList -> (names, xs))) =
 
         do ts <- mapM infer xs
-           sc <- find$ key m
            let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) TComplete Star)
            t' <- newTVar Star
+           sc <- find $ quantify (tv r) ([] :=> r)
            case sc of
              Nothing ->
                  do unify t' r
@@ -1066,26 +1068,10 @@ instance Infer BindGroup [Assumption] where
                      as' <- infer' xs
                      return$ a ++ as'
 
-class ToKey a where
-    key :: a -> RecordId
 
-instance ToKey (Pattern a) where
-    key (RecordPattern m Complete) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
-    key (RecordPattern m Partial)  = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
-    key _ = RecordKey
-
-instance ToKey (Expression a) where
-    key (RecordExpression m) = RecordId . M.mapKeys show . M.map (\x -> key x) $ m
-    key _ = RecordKey
-
-instance ToKey Type where
-    key (TypeRecord (TRecord m TComplete _)) = RecordId . M.map (\x -> key x) $ m
-    key (TypeRecord (TRecord m (TPartial _) _)) = error "Unimplemented" --RecordId . M.map (\x -> key x) $ m
-    key _ = RecordKey
-    
 
 to_scheme :: TypeDefinition -> UnionType -> [Assumption]
-to_scheme (TypeDefinition n vs) t = [ key y :>>: (quantify (vars y) ([]:=> y), def_type y)
+to_scheme (TypeDefinition n vs) t = [ quantify (vars y) ([]:=> y) :>>: def_type y
                                           | y <- enumerate_types t ] 
 
     where vars y = map (\x -> TVar x (infer_kind x y)) vs
