@@ -9,50 +9,124 @@ module parsec
 
 
 
-    Parser a = {parser: String -> Option {rest: String, parsed: a}}
+    Parser a = {parser: String -> {rest: String, parsed: Option a}}
+
+
    
     (<$>):
-
+    --  Applies a function to the parse result, only if the parse was
+    --  successful.
+    
         (a -> b) -> Parser a    -> Parser b
         f       <$> {parser = z} =
 
             { parser s =
-                  z s |>  \ {none} = {none}
-                          | {some: { rest: ss
-                                     parsed: x }} =
-                               {some: { rest: ss
-                                        parsed: f x }} }
+                  z s |>  \ {parsed = {some: x}, rest = ss} =
+                               {parsed = {some = f x}, rest = ss}
+                          | {parsed = {none}, rest = x} =
+                               {parsed = {none}, rest = x} }
 
-    (<*>): Parser (a -> b) -> Parser a -> Parser b
-    (<*>) {parser = fp} {parser = p} =
 
-        { parser s = 
-              fp s |> \ {none} = {none}
-                      | {some: zz} =
-                            p zz.rest |> \ {none} = {none}
-                                         | {some: z} = {some: {rest: z.rest, parsed: zz.parsed z.parsed }} } 
 
-	string: String -> Parser String              
-    string x = { parser y = 
-                      let sub = do! `y.substring(0, x.length)`
-                      if (sub == x) 
-                          {some = { rest = do! `y.substring(x.length)` 
-                                    parsed = x }}
-                      else {none} }
+    (<*>):
+    --  Allows functions that take multiple arguments to be applied
+    --  sequentially to a sequence of parsed values.
     
-    run_parser : Parser p -> String -> Option p	                    
-    run_parser {parser = p} x = p x |> \ {some = y} = {some = y.parsed} 
-                                       | _  = {none}
+        Parser (a -> b) -> Parser a    -> Parser b
+        {parser = fp}  <*> {parser = p} =
+
+            { parser s = 
+                  fp s |> \ {parsed = {some: f}, rest = rr} =
+                                p rr |> \ {parsed = {some = x}, rest = z} =
+                                              {parsed = {some = f x}, rest = z}
+                                        | {parsed = {none}, rest = x} =
+                                              {parsed = {none}, rest = x}
+                          | {parsed = {none}, rest = x} =
+                               {parsed = {none}, rest = x} }
+
+    (*>):
+    --  Applies two parsers in sequence, throwing out the result
+    --  of the first.
+        
+        Parser a -> Parser b -> Parser b
+        {parser = f} *> {parser = g} =
+            { parser s =
+                  f s |> \ {parsed = {some = x}, rest = zz} = g zz
+                         | {parsed = {none}, rest = x} =
+                               {parsed = {none}, rest = x}}
+        
+
+
+    (<|>):
+    --  Alternative will try the first parser, and applies the second only if
+    --  the first fails *and* consumes no input from the text.
+    
+        Parser a      -> Parser a    -> Parser a
+        {parser = f} <|> {parser = g} =
+
+            { parser text =
+                  f text |> \ {parsed = {none}, rest = textt} when text == textt =
+                                  g text
+                            | x = x }
+
+
+    try': Parser a -> Parser a
+
+        | {parser = f} =
+              { parser s =
+                    f s |> \ {parsed = {none}, rest = z} =
+                                 {parsed = {none}, rest = s}
+                           | x = x }
+
+    string:
+    --  A parser that matches a string.  Unlike Haskell's Parsec library,
+    --  parsec.formal will not consume any input if the entire string
+    --  doesn't match.  This is for efficiency reasons currently, but
+    --  may change in the future.
+	
+	      String -> Parser String              
+        | x = { parser y = 
+                      let sub = do! `y.substring(0, x.length)`
+                      if (sub == x)    
+                          { rest   = do! `y.substring(x.length)`
+                            parsed = {some = x} }
+                      else {rest = y, parsed = {none} } }
+                      
+                      
+    
+    run_parser:
+    --  Runs a parser over a text argument and throws away the leftover text.
+    
+          Parser p  -> String -> Option p	                    
+        | {parser = p} x = p x |> \ {parsed = {some = y}, _} = {some = y} 
+                                  | _  = {none}
+                                       
+                    
     
     module "Testing"
 
         {some = "ten"} == run_parser (string "ten") "tens"
         {some = "tenten"} == run_parser ((\x = x +++ x) <$> string "ten") "tenfingers"
 
-        {some = {parsed = "tenten", rest = "fingers"}} == ((\x = x +++ x) <$> string "ten").parser "tenfingers"
+        {parsed = {some = "tenten"}, rest = "fingers"} == ((\x = x +++ x) <$> string "ten").parser "tenfingers"
 
         var result = run_parser ((\x y = y +++ x) <$> string "ten" <*> string "fingers") "tenfingers"
-        result == {some: "fingersten"}	                    
+        result == {some: "fingersten"}
+        
+        var result = run_parser (string "ten" <|> string "eleven") "eleven"
+        result == {some: "eleven"}
+
+        var result = run_parser (string "ten" *> string "fingers") "tenfingers"
+        result == {some: "fingers"}
+
+        var parser = (string "ten" *> string "fingers") <|> string "tentoes"
+            result = run_parser parser "tentoes"
+        result == {none}
+               
+        var parser = try' (string "ten" *> string "fingers") <|> string "tentoes"
+            result = run_parser parser "tentoes"
+        result == {some: "tentoes"}
+                            
     	                
     	                    	         
         
