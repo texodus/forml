@@ -14,7 +14,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances, KindSignatures #-}
 
 module Formal.TypeCheck where
 import System.IO.Unsafe
@@ -29,7 +29,6 @@ import qualified Data.Set as S
 
 import Control.Monad
 import Data.Monoid
-import Data.Char
 
 import Text.ParserCombinators.Parsec
 
@@ -91,6 +90,8 @@ instance Show Type where
         "{" ++ (concat$ L.intersperse ", "$ map (\(x, y) -> x ++ " = " ++ show y) . M.toList $ m) ++ ", _ }"
 
 
+num_type :: Type
+fun_type :: Type
 num_type  = Type (TypeConst "Num" Star)
 fun_type  = Type (TypeConst "->" (KindFunction Star (KindFunction Star Star)))
 
@@ -254,9 +255,9 @@ mgu' x y = case x |=| y of
               do xss <- second_chance e a c
                  yss <- second_chance e b d
                  case (xss, yss) of
-                   (Right xss, Right yss) -> return$ Right$ xss @@ yss
-                   (Left e, _) -> return $ Left e
-                   (_, Left e) -> return $ Left e
+                   (Right xss', Right yss') -> return$ Right$ xss' @@ yss'
+                   (Left e', _) -> return $ Left e'
+                   (_, Left e') -> return $ Left e'
                    
 
           second_chance e x y = case x |=| y of
@@ -316,6 +317,9 @@ instance Types Pred where
 
 mguPred, matchPred :: Pred -> Pred -> Maybe Substitution
 mguPred   = lift (|=|)
+lift :: forall (m :: * -> *) a.
+                       Monad m =>
+                       (Type -> Type -> m a) -> Pred -> Pred -> m a
 matchPred = lift match
 
 lift m (IsIn i t) (IsIn i' t')
@@ -407,7 +411,7 @@ entail ce ps p = any (p `elem`) (map (bySuper ce) ps) ||
                    Just qs -> all (entail ce ps) qs
 
 inHnf       :: Pred -> Bool
-inHnf (IsIn c t) = hnf t
+inHnf (IsIn _ t) = hnf t
    where hnf (TypeVar v)  = True
          hnf (Type tc) = False
          hnf (TypeApplication t _) = hnf t
@@ -559,9 +563,13 @@ set_predicates x = TI (\y -> (y { predicates = x }, ()))
 get_substitution = TI (\x -> (x, substitution x))
 get_classenv     = TI (\x -> (x, class_env x))
 add_error y      = TI (\x -> (x { errors = errors x ++ [y ++ "\n" ++ msg x] }, ()))
+set_assumptions :: [Assumption] -> TI ()
+get_errors :: TI [String]
 get_errors       = TI (\x -> (x, errors x))
+get_modules :: TI [(Namespace, [Assumption])]
 get_modules      = TI (\x -> (x, modules x))
 set_assumptions x = TI (\y -> (y { assumptions = x }, ()))
+get_namespace :: TI Namespace
 get_namespace = TI (\y -> (y, namespace y))
           
 class Assume a where
@@ -664,7 +672,6 @@ class Infer e t | e -> t where infer :: e -> TI t
 
 instance Infer Literal Type where
     infer (StringLiteral _) = return (Type (TypeConst "String" Star))
-    infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
 
 instance Infer (Pattern b) Type where
@@ -807,7 +814,7 @@ instance Infer (Expression Definition) Type where
                      (Addr s f (SymbolExpression (Symbol "__x__"))) ] )
                   [acc ys]
  
-    infer m @ (RecordExpression (unzip . M.toList -> (names, xs))) =
+    infer (RecordExpression (unzip . M.toList -> (names, xs))) =
 
         do ts <- mapM infer xs
            let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) TComplete Star)
@@ -819,8 +826,8 @@ instance Infer (Expression Definition) Type where
                     return t'
              Just (Forall _ scr, sct) ->
                  do (qs' :=> (t'')) <- freshInst sct
-                    (qs :=> t) <- return$ inst (map TypeVar$ tv t'') (scr)
-                    (qs :=> t) <- freshInst (quantify (tv t \\ tv t'') (qs :=> t))
+                    (qs :=> t''') <- return$ inst (map TypeVar$ tv t'') (scr)
+                    (_ :=> t) <- freshInst (quantify (tv t''' \\ tv t'') (qs :=> t'''))
                     unify t r
                     unify t' t''
                     s <- get_substitution
@@ -1012,7 +1019,7 @@ newtype Test = Test (Addr (Expression Definition))
 instance Infer BindGroup [Assumption] where
     infer (Scope imps tts es iss ts) =
 
-        do as <- get_assumptions
+        do --as <- get_assumptions
            mapM import' imps
            as' <- get_assumptions
            infer tts
@@ -1195,6 +1202,7 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
           get_symbols (LetExpression _ x)     = get_symbols x
           get_symbols (ListExpression x)      = concat (map get_symbols x)
+js_type :: Type
 
 js_type = Type (TypeConst "JS" (KindFunction Star Star))
 

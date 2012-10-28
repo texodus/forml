@@ -17,24 +17,17 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Formal.Optimize where
-import System.IO.Unsafe
+import System.IO.Unsafe()
 
 import Language.Javascript.JMacro
 
-import Data.List (nub, (\\), intersect, union, partition)
-
 import qualified Data.Map as M
-import qualified Data.List as L
-import qualified Data.Set as S
 
 import Control.Monad
 import Control.Applicative
 import Data.Monoid
 import Data.Char
 
-import Text.ParserCombinators.Parsec
-
-import Formal.Types.Literal
 import Formal.Types.Pattern
 import Formal.Types.Symbol
 import Formal.Types.Expression
@@ -42,9 +35,6 @@ import Formal.Types.Definition
 import Formal.Types.Axiom
 import Formal.Types.Statement hiding (find, namespace, modules, Test)
 import Formal.Types.Namespace hiding (Module)
-
-import Formal.Types.TypeDefinition
-import Formal.Types.Type
 
 import Formal.TypeCheck hiding (get_namespace)
 
@@ -112,6 +102,7 @@ get_env  = Optimizer (\x -> (x, env x))
 add_tco :: String -> Optimizer ()
 add_tco x = Optimizer (\y -> (y { tco = x : tco y }, ()))
 
+with_env :: forall b. Optimizer b -> Optimizer b
 with_env xs =
 
     do e <- get_env
@@ -206,7 +197,7 @@ instance Optimize Definition where
              is_recursive (EqualityAxiom _ x: xs) = is_recursive' (get_addr x) || is_recursive xs
              is_recursive [] = False
 
-             is_recursive' (ApplyExpression (SymbolExpression x) args) | name == x = True
+             is_recursive' (ApplyExpression (SymbolExpression x) _) | name == x = True
              is_recursive' (LetExpression _ e) = is_recursive' e
              is_recursive' (IfExpression _ a b) = is_recursive' a || is_recursive' b
              is_recursive' _ = False

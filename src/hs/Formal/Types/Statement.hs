@@ -96,7 +96,8 @@ instance Syntax Statement where
                                    set_indentation (+(-1))
                                    return $ TypeStatement def sig
 
-              expression_statement = do whitespace
+              expression_statement = do try (string "test" >> spaces) <|> return ()
+                                        whitespace
                                         x <- getPosition 
                                         y <- withPos$ addr syntax
                                         z <- getPosition
@@ -117,6 +118,7 @@ data Meta = Meta { target    :: Target,
 data Target = Test | Library
             deriving (Show)
 
+serial :: SourcePos -> SourcePos -> String
 serial a b = show (sourceLine a - 1) ++ "_" ++ show (sourceLine b - 1) ++ (if sourceLine a /= sourceLine b then "multi" else "")
 
 instance ToStat Meta where

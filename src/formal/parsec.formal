@@ -1,0 +1,58 @@
+
+
+module parsec
+
+    open prelude
+    open prelude.option
+    open prelude.string
+    open prelude.html
+
+
+
+    Parser a = {parser: String -> Option {rest: String, parsed: a}}
+   
+    (<$>):
+
+        (a -> b) -> Parser a    -> Parser b
+        f       <$> {parser = z} =
+
+            { parser s =
+                  z s |>  \ {none} = {none}
+                          | {some: { rest: ss
+                                     parsed: x }} =
+                               {some: { rest: ss
+                                        parsed: f x }} }
+
+    (<*>): Parser (a -> b) -> Parser a -> Parser b
+    (<*>) {parser = fp} {parser = p} =
+
+        { parser s = 
+              fp s |> \ {none} = {none}
+                      | {some: zz} =
+                            p zz.rest |> \ {none} = {none}
+                                         | {some: z} = {some: {rest: z.rest, parsed: zz.parsed z.parsed }} } 
+
+	string: String -> Parser String              
+    string x = { parser y = 
+                      let sub = do! `y.substring(0, x.length)`
+                      if (sub == x) 
+                          {some = { rest = do! `y.substring(x.length)` 
+                                    parsed = x }}
+                      else {none} }
+    
+    run_parser : Parser p -> String -> Option p	                    
+    run_parser {parser = p} x = p x |> \ {some = y} = {some = y.parsed} 
+                                       | _  = {none}
+    
+    module "Testing"
+
+        {some = "ten"} == run_parser (string "ten") "tens"
+        {some = "tenten"} == run_parser ((\x = x +++ x) <$> string "ten") "tenfingers"
+
+        {some = {parsed = "tenten", rest = "fingers"}} == ((\x = x +++ x) <$> string "ten").parser "tenfingers"
+
+        var result = run_parser ((\x y = y +++ x) <$> string "ten" <*> string "fingers") "tenfingers"
+        result == {some: "fingersten"}	                    
+    	                
+    	                    	         
+        

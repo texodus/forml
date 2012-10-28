@@ -45,7 +45,7 @@ addr p = do x <- getPosition
             y <- p
             z <- getPosition
             return$ Addr x z y
-            
+
 
 instance (Show a) => Show (Addr a) where
     show (Addr _ _ x) = show x
@@ -59,7 +59,7 @@ class Syntax a where
     syntax :: Parser a
 
 instance Syntax Double where
-    syntax = read <$> do x <- many1 digit 
+    syntax = read <$> do x <- many1 digit
                          string "."
                          y <- many1 digit
                          return $ x ++ "." ++ y
@@ -91,8 +91,8 @@ whitespace1 = space >> whitespace
 same :: Parser ()
 same = spaces >> do pos <- getPosition
                     s <- get
-                    if (sourceColumn pos) /= (sourceColumn s) 
-                       then parserFail $ "not indented to exactly " ++ show (sourceColumn s)  
+                    if (sourceColumn pos) /= (sourceColumn s)
+                       then parserFail $ "not indented to exactly " ++ show (sourceColumn s)
                        else do put $ setSourceLine s (sourceLine pos)
                                return ()
 
@@ -108,7 +108,7 @@ spaces = try emptyline `manyTill` try line_start >> return ()
 
           in_block = do pos <- getPosition
                         s <- get
-                        if (sourceColumn pos) < (sourceColumn s) 
+                        if (sourceColumn pos) < (sourceColumn s)
                            then parserFail $ "not indented to at least " ++ show (sourceColumn s)
                            else do put $ setSourceLine s (sourceLine pos)
                                    return ()
@@ -123,8 +123,8 @@ comment = try empty_line <|> try commented_code <|> try code <|> markdown_commen
           commented_code = do string "    "
                               x <- noneOf "\n" `manyTill` try (string "--")
                               anyChar `manyTill` newline
-                              return $ if length (strip x) > 0 
-                                           then "    " ++ rstrip x ++ "\n" 
+                              return $ if length (strip x) > 0
+                                           then "    " ++ rstrip x ++ "\n"
                                            else "\n"
 
 sep_with :: Show a => String -> [a] -> String
@@ -137,21 +137,21 @@ unsep_with z = concat . L.intersperse ", " . fmap (\(x, y) -> concat [show x, z,
 (<:>) x y = (:) <$> x <*> y
 
 operator_dict :: M.Map Char String
-operator_dict = M.fromList [ ('!', "_bang"), 
+operator_dict = M.fromList [ ('!', "_bang"),
                              ('@', "_at"),
                              ('#', "_hash"),
-                             ('$', "$"), 
-                             ('%', "_perc"), 
+                             ('$', "$"),
+                             ('%', "_perc"),
                              ('^', "_exp"),
                              ('&', "_and"),
                              ('|', "_or"),
                              ('<', "_less"),
-                             ('>', "_grea"), 
-                             ('?', "_ques"), 
+                             ('>', "_grea"),
+                             ('?', "_ques"),
                              ('/', "_forw"),
                              ('=', "_eq"),
                              (':', "_col"),
-                             ('\\', "_back"), 
+                             ('\\', "_back"),
                              ('~', "_tild"),
                              ('+', "_plus"),
                              ('-', "_minu"),
@@ -171,7 +171,7 @@ not_reserved x = do y <- x
                        else return y
 
     where reserved_words = [ "if", "then", "else", "let", "when", "with", "and", "or", "do", "var",
-                             "module", "open", "yield", "lazy", "inline", "in",
+                             "module", "open", "yield", "lazy", "inline", "in", "is", "isnt",
                              "|", "\\", "=", ":", ",", "->", "<-" ]
 
 not_system :: Parser String -> Parser String
@@ -193,5 +193,11 @@ not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}"
 comma             = spaces *> string "," *> spaces
 
 indentPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* string b
+indentAsymmetricPairs :: forall a b s u.
+                                        Stream s (State SourcePos) Char =>
+                                        String
+                                        -> IndentParser s u a
+                                        -> ParsecT s u (State SourcePos) b
+                                        -> ParsecT s u (State SourcePos) a
 indentAsymmetricPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* b
 

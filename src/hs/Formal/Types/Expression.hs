@@ -197,13 +197,19 @@ instance (Syntax d) => Syntax (Expression d) where
 
                   where table  = [ [ix "^"]
                                  , [ix "*", ix "/"]
-                                 , [px "-" ]
+                                 , [px "-", px "!" ]
                                  , [ix "+", ix "-"]
                                  , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
-                                 , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!="]
+                                 , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!=", ix "is", ix "isnt"]
                                  , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
-                        ix s   = Infix (try . op $ (Operator <$> string s) <* notFollowedBy operator) AssocLeft
+                        ix s   = Infix (try . op $ (unwind <$> string s) <* notFollowedBy operator) AssocLeft
+                        
+                        unwind "and" = Operator "&&"
+                        unwind "or" = Operator "||"
+                        unwind "is" = Operator "=="
+                        unwind "isnt" = Operator "!="
+                        unwind x = Operator x
 
                         px s   = Prefix (try neg)
                                  where neg = do spaces
