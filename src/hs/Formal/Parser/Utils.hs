@@ -191,13 +191,10 @@ comma       :: Parser ()
 type_sep          = try (spaces *> char '|' <* whitespace)
 not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}")
 comma             = spaces *> string "," *> spaces
+optional_sep      = try (try comma <|> not_comma)
 
 indentPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* string b
-indentAsymmetricPairs :: forall a b s u.
-                                        Stream s (State SourcePos) Char =>
-                                        String
-                                        -> IndentParser s u a
-                                        -> ParsecT s u (State SourcePos) b
-                                        -> ParsecT s u (State SourcePos) a
+
+indentAsymmetricPairs :: String -> Parser a -> Parser b -> Parser a
 indentAsymmetricPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* b
 

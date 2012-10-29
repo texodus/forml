@@ -13,6 +13,7 @@
 module Formal.Types.Pattern where
 
 import Text.InterpolatedString.Perl6
+import Data.Maybe
 import Language.Javascript.JMacro
 
 import Control.Applicative
@@ -148,26 +149,20 @@ instance (Syntax a) => Syntax (Pattern a) where
                   do x <- indentPairs "{" (many1 letter) "}"
                      return $ RecordPattern (M.fromList [(Symbol x, AnyPattern )]) Complete
 
-              -- apply = do x <- many1 letter 
-              --            string ":" 
-              --            whitespace
-              --            y <- syntax
-              --            return $ RecordPattern (M.fromList [(Symbol x, y)]) Complete
-
-              record  = indentPairs "{" qqq "}"
+              record  = indentPairs "{" any_record "}"
                                                    
 
-                  where pairs' = (try key_eq_val <|> (many1 (char '_') >> return Nothing)) `sepEndBy` try (try comma <|> not_comma)
-                        qqq = do ps <- pairs'
-                                 let ps' = z ps
-                                 case (length ps, last ps) of
-                                   (0, _) -> return$ RecordPattern M.empty Complete
-                                   (_, Nothing) -> return$ RecordPattern (M.fromList ps') Partial
-                                   (_, Just _)  -> return$ RecordPattern (M.fromList ps') Complete
-                        z (Just x:xs) = x : z xs
-                        z (Nothing:[]) = []
-                        z [] = []
-                        z _ = error "Bad Record Pattern"
+                  where pairs = (try key_eq_val <|> (many1 (char '_') >> return Nothing)) `sepEndBy` optional_sep
+
+                        any_record =
+                        
+                              do ps <- pairs
+                                 let ps' = catMaybes ps
+                                 return $
+                                   case (length ps, (not . isJust) `filter` ps) of
+                                     (0, _)           -> RecordPattern M.empty Complete
+                                     (_, (Nothing:_)) -> RecordPattern (M.fromList ps') Partial
+                                     _                -> RecordPattern (M.fromList ps') Complete
 
                         key_eq_val = do key <- syntax
                                         spaces
@@ -176,12 +171,12 @@ instance (Syntax a) => Syntax (Pattern a) where
                                         value <- syntax
                                         return$ Just (key, value)
 
-              list = ListPattern <$> indentPairs "[" (syntax `sepBy` try (try comma <|> not_comma)) "]"
+              list = ListPattern <$> indentPairs "[" (syntax `sepBy` optional_sep) "]"
 
               array = f <$> indentAsymmetricPairs "[:" v (try (string ":]") <|> string "]")
 
                   where v = do whitespace
-                               withPos (syntax `sepBy` try (try comma <|> not_comma))
+                               withPos (syntax `sepBy` optional_sep)
 
                         f []     = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)]) Complete
                         f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)]) Complete

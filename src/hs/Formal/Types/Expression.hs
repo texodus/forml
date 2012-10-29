@@ -335,7 +335,7 @@ instance (Syntax d) => Syntax (Expression d) where
               record = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
         
                   where pairs' = withPos $ (try key_eq_val <|> try function') 
-                                         `sepBy` try (try comma <|> not_comma)
+                                         `sepBy` optional_sep
 
                         function' = do n <- syntax 
                                        whitespace
@@ -393,12 +393,12 @@ instance (Syntax d) => Syntax (Expression d) where
 
               list    = ListExpression <$> indentPairs "[" v "]"
                   where v = do whitespace
-                               withPos (syntax `sepBy` try (try comma <|> not_comma))
+                               withPos (syntax `sepBy` optional_sep)
 
               array   = f <$> indentAsymmetricPairs "[:" v (try (string ":]") <|> string "]")
 
                   where v = do whitespace
-                               withPos (syntax `sepBy` try (try comma <|> not_comma))
+                               withPos (syntax `sepBy` optional_sep)
 
                         f [] = RecordExpression (M.fromList [(Symbol "nil", SymbolExpression (Symbol "true"))])
                         f (x:xs) = RecordExpression (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
@@ -510,7 +510,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
                       }
                   })() |]
 
-    toJExpr (RecordExpression m)    = toJExpr (M.mapKeys show m)
+    toJExpr (RecordExpression m)    = toJExpr (M.mapKeys to_name m)
     toJExpr (JSExpression s)        = opt s
     toJExpr (LetExpression bs ex) =
 

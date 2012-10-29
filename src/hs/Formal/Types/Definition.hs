@@ -20,7 +20,8 @@ import Control.Applicative
 import Control.Monad
 import Data.Monoid
 
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
+import Text.Parsec hiding ((<|>), State, many, spaces, parse, label)
+import qualified Text.Parsec as P
 import Text.Parsec.Indent  hiding (same)
 
 import Formal.Parser.Utils
@@ -116,7 +117,7 @@ instance Syntax Definition where
 
                       no_args_eq_axiom patterns =
 
-                          do whitespace *> string "=" *> spaces *> indented
+                          do P.spaces *> string "=" *> spaces *> indented
                              ex <- withPos (addr syntax)
                              return $ EqualityAxiom patterns ex
 
