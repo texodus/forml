@@ -76,7 +76,7 @@ module parsec
             { parser s =
                   f s |> λ {parsed = {some = x}, rest = zz} = g zz
                          | {parsed = {none}, rest = x} =
-                               {parsed = {none}, rest = x}}
+                               {parsed = {none}, rest = x} }
        
 
 

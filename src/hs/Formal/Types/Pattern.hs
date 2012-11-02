@@ -95,25 +95,17 @@ instance (Show a) => ToJExpr [PatternMatch a] where
 
 instance (Show a) => ToJExpr (PatternMatch a) where
 
-    toJExpr (PM n (AliasPattern xs)) = toJExpr $ map (PM n) xs
-
-    toJExpr (PM _ AnyPattern) = toJExpr True
-
-    toJExpr (PM _ (VarPattern x)) = toJExpr True
+    toJExpr (PM n (AliasPattern xs)) = toJExpr $ filter fil $ map (PM n) xs
 
     toJExpr (PM n (LiteralPattern x)) =
 
         [jmacroE| `(ref n)` === `(x)` |]
 
-    toJExpr (PM _ (RecordPattern (M.toList -> []) Complete)) =
-
-        [jmacroE| true |]
-
     toJExpr (PM n (RecordPattern (M.toList -> xs) _)) =
 
-        [jmacroE| `(map g xs)` && `(map f xs)` |]
+        [jmacroE| `(map g xs)` && `(filter fil $ map f xs)` |]
             where f (key, val) = PM (n ++ "[\"" ++ to_name key ++ "\"]") val
-                  g (key, _) = Condition [jmacroE| typeof `(ref n)`[`(to_name key)`] != __undefined__ |]
+                  g (key, _) = Condition [jmacroE| __check(`(ref n)`, `(to_name key)`) |]
 
     toJExpr (PM n (ListPattern [])) =
         [jmacroE| equals(`(n)`)([]) |]
@@ -140,7 +132,13 @@ db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
                             return x
 
 instance (Show a, ToJExpr a) => ToJExpr [Pattern a] where
-    toJExpr ps = toJExpr$ zipWith PM (reverse . take (length ps) . map local_pool $ [0 .. 26]) ps
+
+    toJExpr ps = toJExpr$ filter fil $ zipWith PM (reverse . take (length ps) . map local_pool $ [0 .. 26]) ps
+    
+fil (PM _ (VarPattern _)) = False
+fil (PM _ AnyPattern) = False
+fil (PM _ (RecordPattern (M.toList -> []) Complete)) = False
+fil _ = True
 
 instance (Syntax a, Show a) => Syntax (Pattern a) where
     

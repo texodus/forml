@@ -19,6 +19,7 @@ import Data.Monoid
 import Data.String.Utils
 
 import Prelude hiding (curry, (++), error)
+import qualified Prelude as P
 
 
 prelude :: JStat
@@ -34,9 +35,8 @@ prelude = [jmacro| function !is_array(x) {
 
                    function !exhaust() { error("Pattern Match Exhausted"); }
 
-                   function !check(x) {
-                       result = (typeof x != "undefined");
-                       return result;
+                   function !__check(x, y) {
+                       return x.hasOwnProperty(y);
                    } |]
 
 instance (ToStat a) => ToStat [a] where
@@ -79,10 +79,14 @@ declare_window name expr =
              (typeof global == "undefined" ? window : global)[`((replace " " "_" name))`] = `(ref (replace " " "_" name))`; |]
 declare :: forall a. ToJExpr a => [Char] -> a -> JStat
 
-declare name expr =
+declare name expr = 
+     [jmacro| `(DeclStat (StrI (replace " " "_" name)) Nothing)`;
+              `(ref (replace " " "_" name))` = `(expr)`; |]
+             
+declare_scope :: String -> JExpr -> JStat -> JStat
+declare_scope name expr stat =
 
-    [jmacro| `(DeclStat (StrI (replace " " "_" name)) Nothing)`;
-             `(ref (replace " " "_" name))` = `(expr)`; |]
+    BlockStat [ReturnStat (ApplExpr (ValExpr (JFunc [StrI name] stat)) [expr])]
 
 curry :: Int -> (String -> String) -> JStat -> JStat
 curry 0 _ jexpr = jexpr

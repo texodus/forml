@@ -12,8 +12,8 @@ module Formal.Parser where
 
 import Control.Applicative
 import Data.String.Utils
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import Formal.Parser.Utils
+import Text.Parsec         hiding ((<|>), State, many, parse, label)
+import Formal.Parser.Utils hiding (spaces)
 
 import Formal.Types.Statement
 
@@ -79,6 +79,11 @@ get_tests [] = []
 get_tests (ExpressionStatement (Addr x y _): xs) = (x,y) : get_tests xs
 get_tests (ModuleStatement _ x: xs) = get_tests x ++ get_tests xs
 get_tests (_: xs) = get_tests xs
+
+get_error :: Addr a -> String -> String
+get_error (Addr (sourceLine -> x) (sourceLine -> y) _) =
+
+    unlines . take (y - x) . drop (x + 1) . lines
 
 annotate_tests :: String -> Program -> String
 annotate_tests zz (Program xs) = annotate_tests' zz (get_tests xs)

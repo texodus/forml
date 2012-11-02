@@ -476,7 +476,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (AccessorExpression x (reverse -> y:ys)) =
 
-        [jmacroE| `(AccessorExpression x (reverse ys))`[`(db $ to_name y)`] |]
+        [jmacroE| `(AccessorExpression x (reverse ys))`[`(to_name y)`] |]
 
     toJExpr (ListExpression x)      = toJExpr x
     toJExpr (LiteralExpression l)   = toJExpr l

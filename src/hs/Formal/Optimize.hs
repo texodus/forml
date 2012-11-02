@@ -192,7 +192,6 @@ instance Optimize Definition where
           add_tco $ show name
           return $ Definition a b name (axioms xs')
 
-
        where is_recursive (TypeAxiom _: xs) = is_recursive xs
              is_recursive (EqualityAxiom _ x: xs) = is_recursive' (get_addr x) || is_recursive xs
              is_recursive [] = False
