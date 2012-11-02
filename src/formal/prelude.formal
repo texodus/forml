@@ -123,8 +123,8 @@ module prelude
       return x  = `x`
 
     
-    do! x <- `1 + 4`
-        y <- `2 + 3`
+    do! x   <- `1 + 4`
+        y   <- `2 + 3`
         ans <- `x + y`
         return (10 == ans)
 
@@ -163,12 +163,12 @@ module prelude
     inline (>=): Num -> Num -> Bool   | x y = do! `x >= y`
     inline (<):  Num -> Num -> Bool   | x y = do! `x < y`
     inline (>):  Num -> Num -> Bool   | x y = do! `x > y`
-    
+
     -- Equality is overloaded to match records and arrays. By constraining the type of
     -- this operator, we need only dispatch on the type of the first element,
     -- constraining 
 
-    inline x != y = not (x == y)
+    inline x != y = not (x is y)
 
     inline x /= y = not (x == y)
 
@@ -268,9 +268,12 @@ module prelude
     
     -- Function composition
 
-    inline (.:) x y = λz = x y(z)
+    inline x .: y = λz = x y(z)
     inline id x = x
     inline flip(f) x y = f(y, x)
+
+    inline x ' y = y x
+
      
     ((λx = x + 1) .: (λx = x * 2) .: λx = x - 3) 4 == 3
     id [1, 2, 3] == [1, 2, 3]
@@ -294,10 +297,12 @@ module prelude
         (+++): a -> b -> String
         x +++ y = do! `"" + x + y`
 
+        strip "    test    " is "test"
+
         -- interpolated strings
 
-        var x = "test"
-        "hello `x`" == "hello test"
+        let x = "test"
+        in "hello `x`" is "hello test"
 
     open string
 
@@ -600,13 +605,13 @@ module prelude
         not (empty? (1 :: {nil}))
         empty? [:]
    
-        head [: 1, 2 ] == 1
-        tail [: 1, 2 ] == [:2]
-        last [: 1, 2 ] == 2
+        head [: 1, 2 ] is 1
+        tail [: 1, 2 ] is [:2]
+        last [: 1, 2 ] is 2
 
-        err (lazy head {nil}) == "Head called on empty list"
-        err (lazy tail {nil}) == "Tail called on empty list"
-        err (lazy last {nil}) == "Last called on empty list"
+        err (lazy head {nil}) is "Head called on empty list"
+        err (lazy tail {nil}) is "Tail called on empty list"
+        err (lazy last {nil}) is "Last called on empty list"
 
         take(2, [: 1, 2, 3 ]) == [: 1, 2 ]
         drop(2, [: 1, 2, 3 ]) == [: 3 ]
@@ -643,8 +648,6 @@ module prelude
 
         {nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}
         [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]
-
-        (') x y = y x
                   
         -- Filter.
 
@@ -790,9 +793,11 @@ module prelude
             | {end}    = error "tail called on empty seq"
             | {seq: t} = do! t >>= λx = return x.next
  
-        to_lazy {end} = {end}
-              | {seq: y} = seq lazy do! { elem: x, next: xs } <- y
-                                        return { elem: x, next: to_lazy xs }
+        to_lazy
+              | {end} = {end}
+              | {seq: y} = seq lazy do!
+                    {elem: x, next: xs} <- y
+                    return {elem: x, next: to_lazy xs}
  
         -- Infinite sequence example
  

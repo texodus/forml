@@ -674,7 +674,16 @@ instance Infer Literal Type where
     infer (StringLiteral _) = return (Type (TypeConst "String" Star))
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
 
-instance Infer (Pattern b) Type where
+instance (Show b) => Infer (Pattern b) Type where
+
+    infer (AliasPattern (x:[])) = infer x
+           
+    infer (AliasPattern (x:xs)) = 
+        do z <- infer x
+           z' <- infer (AliasPattern xs)
+           unify z z'
+           return z'
+
     infer (VarPattern i) = do v <- newTVar Star
                               assume (i :>: toScheme v)
                               return v
@@ -1146,9 +1155,7 @@ enumerate_types (UnionType types) = to_unit . concat . map enumerate_type . S.to
 
 
 
-db :: Show a => a -> a
-db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
-                            return x
+
 
 instance Infer [Statement] () where
 

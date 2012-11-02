@@ -7,7 +7,7 @@ module parsec
     open prelude.string
     open prelude.html
 
-
+    
 
     Parser a = {parser: String -> {rest: String, parsed: Option a}}
 
@@ -70,7 +70,7 @@ module parsec
     --  Applies two parsers in sequence, throwing out the result
     --  of the first.
         
-        Parser a -> Parser b -> Parser b =
+        Parser a -> Parser b -> Parser b
         {parser = f} *> {parser = g} =
 
             { parser s =
@@ -91,7 +91,7 @@ module parsec
                     g text
                 | _ x = x
 
-            in { parser text = h text (f text) }
+            in {parser text = h text (f text)}
 
 
 
@@ -101,9 +101,9 @@ module parsec
     --  state of the consumed text, like `<|>`
 
           Parser a    -> Parser a
-        = lift λ {_, parsed: {none}, rest: z, text: s} =
-                     {parsed: {none}, rest: s}
-               | {_, f': x} = x
+        = lift λ (x & {_, parsed: {none}}) =
+                     {parsed: {none}, rest: x.text}
+               | x = x.f'
 
 
 
@@ -123,18 +123,17 @@ module parsec
                       
                       
     
-    inline push : x -> Array x -> Array x
+    inline push! : x -> Array x -> Array x
          | x xs = do! `xs.unshift(x); xs`
-        
 
     many:
     --  Applies a parser repeatedly, until parsing fails. 
 
           Parser a -> Parser (Array a)
-        = lift λ {_, parsed: {none}, rest: x} =
-                     {parsed: {some: []}, rest = x}
-               | {_, parsed: {some: x}, rest: z, f: f} =
-                     (push x <$> many {parser: f}).parser z
+        = lift λ (x & {_, parsed: {none}}) =
+                     {parsed: {some: []}, rest = x.rest}
+               | (y & {_, parsed: {some: x}}) =
+                     (push! x <$> many {parser: y.f}).parser y.rest
                                   
               
 
@@ -158,7 +157,7 @@ module parsec
         var parser = (string "ten" *> string "fingers") <|> string "tentoes"
             result = run_parser parser "tentoes"
         result == {none}
-               
+
         var parser = try' (string "ten" *> string "fingers") <|> string "tentoes"
             result = run_parser parser "tentoes"
         result == {some: "tentoes"}

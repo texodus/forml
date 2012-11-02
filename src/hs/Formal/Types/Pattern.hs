@@ -9,6 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Formal.Types.Pattern where
 
@@ -20,6 +21,7 @@ import Control.Applicative
 import Control.Monad
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
+import qualified Text.Parsec as P
 import Text.Parsec.Indent  hiding (same)
 
 import qualified Data.Map as M
@@ -32,6 +34,8 @@ import Formal.Types.Type
 import Formal.Types.Symbol
 
 import Prelude hiding (curry, (++))
+import System.IO.Unsafe (unsafePerformIO)
+import Data.Monoid (mappend)
 
 
 
@@ -41,18 +45,26 @@ import Prelude hiding (curry, (++))
 -- --------------------------------------------------------------------------------
 
 data Match a = Match [Pattern a] (Maybe a)
+data Pattern a = VarPattern String
+               | AnyPattern
+               | LiteralPattern Literal
+               | RecordPattern (M.Map Symbol (Pattern a)) Partial
+               | ListPattern [Pattern a]
+               | ViewPattern a (Pattern a)
+               | AliasPattern [Pattern a]
+
 
 instance (Show a) => Show (Match a) where
     show (Match p Nothing)  = sep_with " " p
     show (Match p (Just x)) = [qq|{sep_with " " p} when $x|]
 
-instance (Syntax a) => Syntax (Match a) where
+instance (Syntax a, Show a) => Syntax (Match a) where
 
     syntax = try conditional <|> ((\x -> Match x Nothing) <$> (try jStyle <|> hStyle))
 
         where 
 
-          jStyle = do x <- indentPairs "(" (syntax `sepEndBy1` comma) ")"
+          jStyle = do x <- indentPairs "(" (syntax `sepBy1` comma) ")"
                       spaces
                       if length x > 1 then return x else fail "Java-style arguments"
 
@@ -82,9 +94,12 @@ instance (Show a) => ToJExpr [PatternMatch a] where
     toJExpr (x:xs) = [jmacroE| `(x)` && `(xs)` |]
 
 instance (Show a) => ToJExpr (PatternMatch a) where
+
+    toJExpr (PM n (AliasPattern xs)) = toJExpr $ map (PM n) xs
+
     toJExpr (PM _ AnyPattern) = toJExpr True
 
-    toJExpr (PM n (VarPattern x)) = toJExpr True
+    toJExpr (PM _ (VarPattern x)) = toJExpr True
 
     toJExpr (PM n (LiteralPattern x)) =
 
@@ -110,13 +125,6 @@ instance (Show a) => ToJExpr (PatternMatch a) where
 
 data Partial = Partial | Complete deriving (Eq, Show)
 
-data Pattern a = VarPattern String
-               | AnyPattern
-               | LiteralPattern Literal
-               | RecordPattern (M.Map Symbol (Pattern a)) Partial
-               | ListPattern [Pattern a]
-               | ViewPattern a (Pattern a)
-
 instance (Show a) => Show (Pattern a) where
     show (VarPattern x)     = x
     show AnyPattern         = "_"
@@ -124,12 +132,17 @@ instance (Show a) => Show (Pattern a) where
     show (ListPattern x)    = [qq|[ {sep_with ", " x} ]|]
     show (ViewPattern x y)  = [qq|($x -> $y)|]
     show (RecordPattern m Complete)  = [qq|\{ {unsep_with " = " m} \}|] 
-    show (RecordPattern m Partial)   = [qq|\{ {unsep_with " = " m}, _ \}|] 
+    show (RecordPattern m Partial)   = [qq|\{ {unsep_with " = " m}, _ \}|]
+    show (AliasPattern a) = sep_with " & " a
+
+db :: Show a => a -> a
+db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
+                            return x
 
 instance (Show a, ToJExpr a) => ToJExpr [Pattern a] where
     toJExpr ps = toJExpr$ zipWith PM (reverse . take (length ps) . map local_pool $ [0 .. 26]) ps
 
-instance (Syntax a) => Syntax (Pattern a) where
+instance (Syntax a, Show a) => Syntax (Pattern a) where
     
     syntax = try literal
              <|> try var
@@ -138,13 +151,15 @@ instance (Syntax a) => Syntax (Pattern a) where
              <|> naked_apply
              <|> array
              <|> list
-             <|> indentPairs "(" (try view <|> syntax) ")"
+             <|> indentPairs "(" (try alias <|> syntax) ")"
+                     
+        where alias = let sep = P.spaces <* string "&" <* P.spaces
+                      in  AliasPattern <$> ((:) <$> syntax <* sep <*> sepBy1 syntax sep) 
 
-        where view        = ViewPattern <$> syntax <* spaces <* string "->" <* whitespace <*> syntax 
               var         = VarPattern <$> type_var
-              literal     = LiteralPattern <$> syntax          
+              literal     = LiteralPattern <$> syntax
               any'        = many1 (string "_") *> return AnyPattern
-              naked_apply = 
+              naked_apply =
 
                   do x <- indentPairs "{" (many1 letter) "}"
                      return $ RecordPattern (M.fromList [(Symbol x, AnyPattern )]) Complete

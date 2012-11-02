@@ -86,7 +86,7 @@ instance (Show d) => Show (Expression d) where
     show (AccessorExpression x m) = [qq|$x.{sep_with "." m}|] 
 
 
-instance (Syntax d) => Syntax (Expression d) where
+instance (Syntax d, Show d) => Syntax (Expression d) where
 
     syntax = try if' <|> try infix' <|> other
 
@@ -244,11 +244,6 @@ instance (Syntax d) => Syntax (Expression d) where
               named_key = do x <- indentPairs "{" syntax "}"
                              return $ RecordExpression (M.fromList [(x, SymbolExpression (Symbol "true"))]) 
 
-              -- named = do x @ (RecordExpression (M.toList -> (k, _): _)) <- named_key
-              --            option x $ try $ do whitespace
-              --                                z <- other
-              --                                return $ RecordExpression (M.fromList [(k, z)])
-
               accessor = do s <- getPosition
                             x <- indentPairs "(" syntax ")" 
                                  <|> js 
@@ -286,13 +281,11 @@ instance (Syntax d) => Syntax (Expression d) where
 
               function = withPosTemp$ do try (char '\\') <|> char 'λ'
                                          whitespace
-                                         (try pat_fun <|> hole_fun)
+                                         pat_fun
 
                   where pat_fun    = do t <- option [] ( ((:[]) <$> type_axiom <* spaces))
                                         eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
                                         return $ FunctionExpression (t ++ eqs)
-
-                        hole_fun   = do error "not implemented"
 
                         type_axiom = do string ":"
                                         spaces
@@ -483,7 +476,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (AccessorExpression x (reverse -> y:ys)) =
 
-        [jmacroE| `(AccessorExpression x (reverse ys))`[`(to_name y)`] |]
+        [jmacroE| `(AccessorExpression x (reverse ys))`[`(db $ to_name y)`] |]
 
     toJExpr (ListExpression x)      = toJExpr x
     toJExpr (LiteralExpression l)   = toJExpr l

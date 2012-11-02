@@ -193,8 +193,12 @@ not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}"
 comma             = spaces *> string "," *> spaces
 optional_sep      = try (try comma <|> not_comma)
 
-indentPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* string b
+indentPairs a p b = string a *> P.spaces *> withPosTemp (withPos p) <* P.spaces <* string b
 
 indentAsymmetricPairs :: String -> Parser a -> Parser b -> Parser a
 indentAsymmetricPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* b
+
+withPosTemp p = do x <- get
+                   try p <|> (put x >> parserFail ("expression continuation indented to " ++ show x))
+
 

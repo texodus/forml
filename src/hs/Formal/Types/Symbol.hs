@@ -18,7 +18,7 @@ instance Show Symbol where
     show (Operator x) = x
 
 instance Syntax Symbol where
-    syntax =  (Symbol <$> not_reserved (oneOf "abscdefghijklmnopqrstuvwxyz" <:> many (alphaNum <|> oneOf "_'$" <|> (string "?" >> return '_'))))
+    syntax =  (Symbol <$> not_reserved (oneOf "abscdefghijklmnopqrstuvwxyz" <:> many (alphaNum <|> oneOf "_'!$" <|> (string "?" >> return '_'))))
               <|> (Operator <$> not_reserved imp_infix)
         where imp_infix = string "(" *> many1 operator <* option "" (try (string ":")) <* string ")"
 
@@ -28,6 +28,6 @@ instance ToJExpr Symbol where
 to_name :: Symbol -> String
 to_name (Symbol "return") = "_return_"
 to_name (Symbol "new") = "_new_"
-to_name (Symbol x) = replace " " "_" $ replace "'" "_apos" x
+to_name (Symbol x) = replace "!" "_excl" $ replace " " "_" $ replace "'" "_apos" x
 to_name (Operator op) = concat . map (\x -> M.findWithDefault "_" x operator_dict) $ op
 

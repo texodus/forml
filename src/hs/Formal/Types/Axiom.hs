@@ -56,7 +56,11 @@ instance (Show a, ToJExpr a) => ToStat (Curried a) where
                     `(Curried xss)`; |]
 
 
-            where declare_bindings (name : names) (VarPattern x : zs) =
+            where declare_bindings (name : names) (AliasPattern x : zs) =
+
+                      declare_bindings (take (length x) (repeat name)) x ++ declare_bindings names zs
+
+                  declare_bindings (name : names) (VarPattern x : zs) =
                       
                       [jmacro| `(declare x name)`; |] ++ declare_bindings names zs
 
