@@ -7,8 +7,13 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances, KindSignatures #-}
 
 module Formal.Types.Statement where
 
@@ -36,8 +41,10 @@ import Formal.Types.Expression
 import Formal.Types.Namespace
 
 import Formal.Javascript.Utils
+import Formal.Javascript.Backend
 
 import Prelude hiding (curry, (++))
+import System.IO.Unsafe (unsafePerformIO)
 
 
 
@@ -121,80 +128,87 @@ data Target = Test | Library
 serial :: SourcePos -> SourcePos -> String
 serial a b = show (sourceLine a - 1) ++ "_" ++ show (sourceLine b - 1) ++ (if sourceLine a /= sourceLine b then "multi" else "")
 
-instance ToStat Meta where
+get_code a = do src <- JS (\s @ JSState {src = src} -> (s, src))
+                return $ get_error a src
+
+instance Javascript Meta JStat where
 
     -- Expressions are ignored for Libraries, and rendered as tests for Test
-    toStat (Meta { target = Library, expr = ExpressionStatement _ }) = mempty
-    toStat (Meta { target = Test,    expr = ExpressionStatement (Addr a b e) }) = 
+    toJS (Meta { target = Library, expr = ExpressionStatement _ }) = return mempty
+    toJS (Meta { target = Test,    expr = ExpressionStatement a' @ (Addr a b e) }) = 
 
-        [jmacro| it(`(serial a b ++ "::" ++ show e)`, function() {
-                     `(Jasmine e)`;
-                 }); |]
+        do message <- get_code a'
+           return [jmacro| it(`(serial a b ++ "__::__" ++ message)`, function() {
+                               `(Jasmine e)`;
+                           }); |]
 
     -- Imports work identically for both targets
-    toStat (Meta { modules, 
-                   namespace = Namespace [], 
-                   expr      = ImportStatement target_namespace @ (find modules -> Nothing) }) = 
+    toJS (Meta { modules, 
+                 namespace = Namespace [], 
+                 expr      = ImportStatement target_namespace @ (find modules -> Nothing) }) = 
 
-        error $ [qq| Could not resolve namespace $target_namespace |]  
+        fail [qq| Could not resolve namespace $target_namespace |]  
 
-    toStat (Meta { modules, 
-                   expr      = ImportStatement target_namespace, 
-                   namespace = (find modules . (++ target_namespace) -> Just y) }) =
+    toJS (Meta { modules, 
+                 expr      = ImportStatement target_namespace, 
+                 namespace = (find modules . (++ target_namespace) -> Just y) }) =
 
-        open target_namespace y
+        return $ open target_namespace y
 
-    toStat meta @ (Meta { expr = ImportStatement _, .. }) = 
+    toJS meta @ (Meta { expr = ImportStatement _, .. }) = 
 
         let slice (Namespace ns) = Namespace . take (length ns - 1) $ ns
-        in  toStat (meta { namespace = slice namespace })
+        in  toJS (meta { namespace = slice namespace })
 
 
 
     -- Modules in test mode must open the contents of the Library
 
-    toStat meta @ (Meta { target = Library, namespace = Namespace [], expr = ModuleStatement ns xs, .. }) =
+    toJS meta @ (Meta { target = Library, namespace = Namespace [], expr = ModuleStatement ns xs, .. }) =
         
-        let ex = [jmacroE| new (function() { 
-                               `(fmap (\z -> meta { namespace =  ns, expr = z }) xs)`;
+        do xs' <- toJS $ fmap (\z -> meta { namespace =  ns, expr = z }) xs
+           return $ declare_window (show ns)
+                 [jmacroE| new (function() { 
+                               `(xs')`;
                            }) |]
 
-        in declare_window (show ns) ex
-
-    toStat meta @ (Meta { target = Library, expr = ModuleStatement ns xs, .. }) =
+    toJS meta @ (Meta { target = Library, expr = ModuleStatement ns xs, .. }) =
         
-        let ex = [jmacroE| new (function() { 
-                               `(fmap (\z -> meta { namespace = namespace ++ ns, expr = z }) xs)`;
+        do xs' <- toJS $ fmap (\z -> meta { namespace = namespace ++ ns, expr = z }) xs
+           return $ declare_this (show ns)
+                 [jmacroE| new (function() { 
+                               `(xs')`;
                            }) |]
 
-        in declare_this (show ns) ex
 
-    toStat meta @ (Meta { target = Test, expr = ModuleStatement ns xs, .. }) =
+    toJS meta @ (Meta { target = Test, expr = ModuleStatement ns xs, .. }) =
 
         let (imports, rest) = L.partition f xs
             f (ImportStatement _) = True
             f _ = False in
 
-        [jmacro| describe(`(show ns)`, function() {
-                     `(open (namespace ++ ns) xs)`;
-                     `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) imports)`; 
-                     `(open (namespace ++ ns) xs)`;
-                     
+        do imports' <- toJS $ map (\z -> meta { namespace = namespace ++ ns, expr = z }) imports
+           rest'    <- toJS $ map (\z -> meta { namespace = namespace ++ ns, expr = z }) rest
 
-                     var x = new (function {
-                         `(map (\z -> meta { namespace = namespace ++ ns, expr = z }) rest)`; 
-                     }());
-                 }); |]
+           return [jmacro| describe(`(show ns)`, function() {
+                             `(open (namespace ++ ns) xs)`;
+                             `(imports')`; 
+                             `(open (namespace ++ ns) xs)`;
+        
+                             var x = new (function {
+                                 `(rest')`; 
+                             }());
+                         }); |]
 
 
 
     -- Definitions are ignored for the Test target
 
-    toStat (Meta { target = Library, expr = DefinitionStatement d }) = toStat d
-    toStat (Meta { target = Test,    expr = DefinitionStatement _ }) = mempty
+    toJS (Meta { target = Library, expr = DefinitionStatement d }) = toJS d
+    toJS (Meta { target = Test,    expr = DefinitionStatement _ }) = return mempty
 
-    toStat (Meta { expr = TypeStatement _ _ }) = mempty
-    toStat x = error $ "Unimplemented " ++ show x
+    toJS (Meta { expr = TypeStatement _ _ }) = return mempty
+    toJS x = fail $ "Unimplemented " ++ show x
 
 
 

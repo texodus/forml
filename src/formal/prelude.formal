@@ -430,12 +430,12 @@ module prelude
                         then return {}
 
                         else let items = spec.results_.items_
-                                 desc  = spec.description.split "::" !! 1
+                                 desc  = spec.description.split "__::__" !! 1
                                  exp   = stringify (items !! 0).expected
                                  act   = stringify (items !! 0).actual
 
                              let line  = spec.description
-                                         |> split "::"
+                                         |> split "__::__"
                                          |> (\x = x !! 0)
                                          |> split "_" 
                                          |> (\x = x !! 0)
@@ -450,6 +450,7 @@ module prelude
                                  `is_error = 1`
 
                                  log "Test failed at line `line`
+
                                       `desc`
                                       
                                           Expected `exp`

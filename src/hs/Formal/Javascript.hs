@@ -18,11 +18,14 @@ import Language.Javascript.JMacro
 import Prelude hiding (curry, (++))
 
 import Formal.Types.Statement
+import Formal.Types.Namespace
+import Formal.TypeCheck hiding (Test)
 
 import qualified Data.Map as M
 
 import Formal.Parser
 import Formal.Javascript.Utils
+import Formal.Javascript.Backend
 
 class Compress a where
     comp :: a -> a
@@ -86,10 +89,12 @@ instance Compress JExpr where
     comp (ValExpr a)           = ValExpr (comp a)
     comp (UnsatExpr a)         = UnsatExpr (comp a)
 
-render :: Program -> String
-render (Program xs) = show . renderJs $ (comp . (prelude ++) . toStat . map (empty_meta Library xs) $ xs)
+render :: Program -> String -> Program -> String
+render (Program ys) src (Program xs) = show . renderJs $ (comp . runJS src . toJS . map (empty_meta Library ys) $ xs)
 
-render_spec :: Program -> String
-render_spec (Program xs) = show . renderJs . (prelude ++) . wrap . toStat . map (empty_meta Test xs) $ xs
+render_spec :: Program -> String -> Program -> String
+render_spec (Program ys) src (Program xs) = show . renderJs . wrap . runJS src . toJS . map (empty_meta Test ys) $ xs
     where wrap x = [jmacro| describe("", function() { `(x)`; }); |]
+
+    
 

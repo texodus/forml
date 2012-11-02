@@ -36,7 +36,7 @@ import Formal.Types.Axiom
 import Formal.Types.Statement hiding (find, namespace, modules, Test)
 import Formal.Types.Namespace hiding (Module)
 
-import Formal.TypeCheck hiding (get_namespace)
+import Formal.TypeCheck.Types hiding (get_namespace)
 
 import Formal.Parser.Utils
 import Formal.Parser
@@ -266,8 +266,6 @@ instance Optimize Definition where
                        def_local _ _ = mempty
 
 
-
-
     optimize (Definition a b c xs) = Definition a b c <$> mapM optimize xs
 
 instance Optimize Statement where
@@ -326,8 +324,10 @@ instance Optimize Program where
 
     optimize (Program xs) = Program <$> optimize xs
 
-run_optimizer :: Program -> [(Namespace, [Assumption])] -> Program
-run_optimizer (optimize -> Optimizer f) as = case f gen_state of ((tco -> s), p) -> p --error $ show s
+run_optimizer :: [Program] -> [(Namespace, [Assumption])] -> [Program]
+run_optimizer ps as = g ps as gen_state
 
-    where gen_state = OptimizeState (Namespace []) as [] [] []
+    where g ps @ (optimize . head -> Optimizer f) as st = case f st of (st', p) -> p : g (tail ps) as st'
+
+          gen_state = OptimizeState (Namespace []) as [] [] []
                        

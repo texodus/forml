@@ -127,10 +127,6 @@ instance (Show a) => Show (Pattern a) where
     show (RecordPattern m Partial)   = [qq|\{ {unsep_with " = " m}, _ \}|]
     show (AliasPattern a) = sep_with " & " a
 
-db :: Show a => a -> a
-db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
-                            return x
-
 instance (Show a, ToJExpr a) => ToJExpr [Pattern a] where
 
     toJExpr ps = toJExpr$ filter fil $ zipWith PM (reverse . take (length ps) . map local_pool $ [0 .. 26]) ps

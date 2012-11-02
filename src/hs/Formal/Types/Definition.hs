@@ -9,7 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, MultiParamTypeClasses #-}
 
 module Formal.Types.Definition where
 
@@ -26,6 +26,7 @@ import Text.Parsec.Indent  hiding (same)
 
 import Formal.Parser.Utils
 import Formal.Javascript.Utils
+import Formal.Javascript.Backend
 
 import Formal.Types.Type
 import Formal.Types.Symbol
@@ -143,9 +144,9 @@ instance Syntax Definition where
 
 -- TODO Visibility should be more than skin deep?
 
-instance ToStat Definition where
-    toStat (Definition _ _ _ (TypeAxiom _: [])) = mempty
-    toStat (Definition _ _ name as) = [jmacro| `(declare_this (to_name name) $ toJExpr as)`; |]
+instance Javascript Definition JStat where
+    toJS (Definition _ _ _ (TypeAxiom _: [])) = return mempty
+    toJS (Definition _ _ name as) = return [jmacro| `(declare_this (to_name name) $ toJExpr as)`; |]
 
 instance ToLocalStat Definition where
     toLocal (Definition _ _ _ (TypeAxiom _: [])) = mempty

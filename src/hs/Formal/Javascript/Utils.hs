@@ -13,6 +13,7 @@
 
 module Formal.Javascript.Utils where
 
+
 import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 import Data.Monoid
@@ -22,8 +23,9 @@ import Prelude hiding (curry, (++), error)
 import qualified Prelude as P
 
 
-prelude :: JStat
-prelude = [jmacro| function !is_array(x) { 
+prelude :: String
+prelude = show $ renderJs 
+          [jmacro| function !is_array(x) { 
                        return `(InfixExpr "instanceof" x (ref "Array"))`;
                    }
 
@@ -46,7 +48,6 @@ instance (ToStat a) => ToStat [a] where
 --------------------------------------------------------------------------------
 ----
 ---- Metadata
-
 
 
 --------------------------------------------------------------------------------

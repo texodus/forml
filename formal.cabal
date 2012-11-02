@@ -42,3 +42,6 @@ Executable formal
                  -optc-O3 -optc-ffast-math
   else
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
+  other-modules:  
+                  Formal.Javascript.Backend,
+                  Formal.TypeCheck.Types

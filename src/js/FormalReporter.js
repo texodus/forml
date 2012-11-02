@@ -35,10 +35,10 @@ jasmine.FormalReporter = function(doc) {
    var results = spec.results();
    var status = results.passed() ? 'passed' : 'failed';
  
-     var k = "#test_" + spec.description.split("::")[0]
+     var k = "#test_" + spec.description.split("__::__")[0]
      var el = $(k)
 
-     spec.description = spec.description.split("::")[1]
+     spec.description = spec.description.split("__::__")[1]
 
      if (status == "passed") {
          if (k.indexOf("multi") >= 0) {

@@ -30,6 +30,7 @@ import Data.String.Utils
 
 import Text.Parsec.Prim hiding ((<|>), State, many, parse, label)
 import qualified Data.Text as T
+import System.IO.Unsafe (unsafePerformIO)
 
 
 
@@ -201,4 +202,8 @@ indentAsymmetricPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* b
 withPosTemp p = do x <- get
                    try p <|> (put x >> parserFail ("expression continuation indented to " ++ show x))
 
+
+db :: Show a => a -> a
+db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
+                            return x
 
