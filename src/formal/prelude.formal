@@ -436,11 +436,11 @@ module prelude
 
                              let line  = spec.description
                                          |> split "__::__"
-                                         |> (\x = x !! 0)
+                                         |> \x = x !! 0
                                          |> split "_" 
-                                         |> (\x = x !! 0)
-                                         |> (\x = do! `parseInt x`)
-                                         |> (\x = x + 1)
+                                         |> \x = x !! 0
+                                         |> \x = do! `parseInt x`
+                                         |> \x = x + 1
                                          |> stringify
                                                          
                              do  if is_error == 0
@@ -664,7 +664,7 @@ module prelude
         map(f, {nil}) = {nil}
         map(f, x)     = f(head(x)) :: map(f, tail(x))
           
-        [: 2, 3, 4 ] == [: 1, 2, 3 ] 'map λx = x + 1
+        [: 2, 3, 4 ] == [: 1, 2, 3 ] |> map λx = x + 1
             
         -- Reverse
 
