@@ -1,7 +1,14 @@
 
+-- Tests
+-- -----
+-- A collection of tests for compiler bugs, benchmarking, etc.
 
+-- Benchmarks
+-- ----------
+-- A collection of simple benchmarks.  You can view the results
+-- by opening your browser's terminal.
 
-module "Speed tests for the prelude"
+module "Benchmarks for the prelude"
     
     title x = 
         do log "\r                                  "
@@ -13,11 +20,20 @@ module "Speed tests for the prelude"
     open prelude.list
     open prelude.string
 
+    -- Here we have 5 implementations of 
+    -- (Project Euler problem #1)[http://projecteuler.net/problem=1].
+    -- The first is simply a native JS implementation.
+
     euler_1 x = `var sum = 0;
                  for (var i = 1; i < x; i++) {
                      if (i % 3 == 0 || i % 5 == 0) sum += i;
                  };
                  return sum;`
+
+    -- The second is a tail recursive.  The formal compiler will 
+    -- optimize simple functions which are tail recursive into 
+    -- javascript `for` loops automatically, making them
+    -- much faster.
 
     euler_2 x y when x < 3 = y
           | x y when x % 3 == 0 || x % 5 == 0 =
