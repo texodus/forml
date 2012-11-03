@@ -144,7 +144,10 @@ parse_formal xs = foldM parse' (xs, [], []) xs
                                             return (tail xs, ts ++ ts', as ++ [as'])
 
 gen_js :: [String] -> [Program] -> (String, [(String, String)])
-gen_js src p = (compress (read prelude ++ "\n" ++ (unlines $ map read $ zipWith (render (Program $ get_program p)) src p)), [("",  read prelude ++ "\n" ++ (unlines $ map read $ zipWith (render_spec (Program $ get_program p)) src p))])
+gen_js src p = (compress (read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render (Program $ get_program p)) src p)), [("",  read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render_spec (Program $ get_program p)) src p))])
+
+read' xs @ ('"':_) = read xs
+read' x = x
 
 get_program :: [Program] -> [Statement]
 get_program (Program ss: ps) = ss ++ get_program ps
