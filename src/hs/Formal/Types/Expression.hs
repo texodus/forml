@@ -37,6 +37,8 @@ import Formal.Types.Symbol
 import Formal.Types.Pattern
 import Formal.Types.Axiom
 
+import Formal.TypeCheck.Types
+
 import Data.String.Utils hiding (join)
 import Data.Monoid
 
@@ -517,4 +519,5 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
                    })() |] 
 
     toJExpr x = error $ "Unimplemented " ++ show x
+
 

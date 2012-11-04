@@ -137,15 +137,16 @@ parse_formal :: [String] -> IO ([String], TypeSystem, [(Program, String)])
 parse_formal xs = foldM parse' (xs, [], []) xs
 
     where parse' :: ([String], TypeSystem, [(Program, String)]) -> String -> IO ([String], TypeSystem, [(Program, String)])
-          parse' (xs, ts, as) filename = do hFile <- openFile filename ReadMode
+          parse' (zs, ts, as) filename = do hFile <- openFile filename ReadMode
                                             src <-   hGetContents hFile
                                             let src' = to_literate filename . (++ "\n") $ src
-                                            (ts', as') <- monitor [qq|Loading $filename|] $ return$ to_parsed (head xs) src' ts
-                                            return (tail xs, ts ++ ts', as ++ [as'])
+                                            (ts', as') <- monitor [qq|Loading $filename|] $ return$ to_parsed (head zs) src' ts
+                                            return (tail zs, ts ++ ts', as ++ [as'])
 
 gen_js :: [String] -> [Program] -> (String, [(String, String)])
 gen_js src p = (compress (read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render (Program $ get_program p)) src p)), [("",  read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render_spec (Program $ get_program p)) src p))])
 
+read' :: [Char] -> [Char]
 read' xs @ ('"':_) = read xs
 read' x = x
 

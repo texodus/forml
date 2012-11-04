@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Formal.Types.Literal where
 
@@ -7,6 +8,7 @@ import Control.Applicative
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 
 import Formal.Parser.Utils
+import Formal.TypeCheck.Types
 
 data Literal = StringLiteral String | IntLiteral Int | DoubleLiteral Double
 
@@ -27,3 +29,9 @@ instance ToJExpr Literal where
     toJExpr (StringLiteral s) = toJExpr s
     toJExpr (IntLiteral s)    = toJExpr s
     toJExpr (DoubleLiteral s) = toJExpr s
+
+instance Infer Literal Type where
+    infer (StringLiteral _) = return (Type (TypeConst "String" Star))
+    infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
+    infer (DoubleLiteral _)    = return (Type (TypeConst "Double" Star))
+    

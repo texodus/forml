@@ -9,7 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, MultiParamTypeClasses #-}
 
 module Formal.Types.Pattern where
 
@@ -22,6 +22,7 @@ import Control.Monad
 
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import qualified Text.Parsec as P
+import qualified Data.List as L
 import Text.Parsec.Indent  hiding (same)
 
 import qualified Data.Map as M
@@ -32,6 +33,7 @@ import Formal.Javascript.Utils
 import Formal.Types.Literal
 import Formal.Types.Type
 import Formal.Types.Symbol
+import Formal.TypeCheck.Types
 
 import Prelude hiding (curry, (++))
 import System.IO.Unsafe (unsafePerformIO)
@@ -192,3 +194,64 @@ instance (Syntax a, Show a) => Syntax (Pattern a) where
 
 
 
+instance (Show b) => Infer (Pattern b) Type where
+
+    infer (AliasPattern (x:[])) = infer x
+           
+    infer (AliasPattern (x:xs)) = 
+        do z <- infer x
+           z' <- infer (AliasPattern xs)
+           unify z z'
+           return z'
+
+    infer (VarPattern i) = do v <- newTVar Star
+                              assume (i :>: toScheme v)
+                              return v
+
+    infer AnyPattern = newTVar Star
+
+    infer (LiteralPattern x) = infer x
+
+    infer (ListPattern xs) = do ts <- mapM infer xs
+                                t' <- newTVar Star
+                                (qs :=> t) <- freshInst list_scheme
+                                mapM_ (unify t') ts
+                                predicate qs
+                                return t
+
+    infer m @ (RecordPattern (unzip . M.toList -> (names, patterns)) p) =
+        
+        do ts <- mapM infer patterns
+           --sc <- find$ key m
+           p' <- case p of
+                   Complete -> return TComplete
+                   Partial  -> do t <-  newTVar Star
+                                  return$ TPartial t
+
+           let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) p' Star)
+           t' <- newTVar Star
+           sc <- find $ quantify (tv r) ([] :=> r)
+           case sc of
+             Nothing ->
+                 do unify t' r
+                    return t'
+             Just (Forall _ scr, sct) ->
+                 do (qs' :=> t'') <- freshInst sct
+                    (qs :=> t) <- return$ inst (map TypeVar$ tv t'') scr
+                    (qs :=> t) <- freshInst (quantify (tv t L.\\ tv t'') (qs :=> t))
+                    unify t r
+                    unify t' t''
+                    s <- get_substitution
+                    let t''' = apply s t
+                        r''' = apply s r
+                        qt = quantify (tv t''') $ [] :=> t'''
+                        rt = quantify (tv r''') $ [] :=> r'''
+                    if qt /= rt
+                        then do add_error$ "Object constructor does not match signature\n" 
+                                             ++ "  Expected: " ++ show qt ++ "\n" 
+                                             ++ "  Actual:   " ++ show rt
+                                return t'
+                        else return t'
+
+        where f (Symbol x) = x
+              f (Operator x) = x

@@ -130,9 +130,7 @@ instance Optimize (Expression Definition) where
                     m'    <- optimize m
                     return $ ApplyExpression (FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]) args'
 
-
              _ -> ApplyExpression <$> optimize f' <*> mapM optimize args
-             
 
 
 

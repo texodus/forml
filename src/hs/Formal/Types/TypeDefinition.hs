@@ -1,23 +1,22 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE NamedFieldPuns       #-}
 {-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleContexts #-} 
+{-# LANGUAGE QuasiQuotes          #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE TemplateHaskell      #-}
 
 module Formal.Types.TypeDefinition where
 
 
 
-import Control.Applicative
+import           Control.Applicative
 
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import qualified Data.List as L
+import qualified Data.List           as L
+import           Text.Parsec         hiding (State, label, many, parse, spaces,
+                                      (<|>))
 
-import Formal.Parser.Utils
+import           Formal.Parser.Utils
 
 
 data TypeDefinition = TypeDefinition String [String]

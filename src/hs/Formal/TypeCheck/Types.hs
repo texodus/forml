@@ -655,3 +655,17 @@ instance Instantiate Pred where
 
 class Infer e t | e -> t where infer :: e -> TI t
 
+
+list_scheme :: Scheme
+list_scheme = Forall [Star] qual_list
+    where qual_list = [] :=> TypeApplication (Type (TypeConst "List" (KindFunction Star Star))) (TypeGen 0)
+
+bool_type :: Type
+bool_type = Type (TypeConst "Bool" Star)
+
+-- Expressions
+
+
+infixr      4 `fn`
+fn         :: Type -> Type -> Type
+a `fn` b    = TypeApplication (TypeApplication fun_type a) b

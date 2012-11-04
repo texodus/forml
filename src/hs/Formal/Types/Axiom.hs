@@ -48,32 +48,49 @@ instance (Show a, ToJExpr a) => ToJExpr [Axiom a] where
 newtype Curried a = Curried [Axiom a]
 
 instance (Show a, ToJExpr a) => ToStat (Curried a) where
+
     toStat (Curried []) = [jmacro| exhaust(); |]
+
+    toStat (Curried (EqualityAxiom (Match [] Nothing) (Addr _ _ ex) : xss)) = 
+
+        [jmacro|    return `(ex)`; |]
+
+    toStat (Curried (EqualityAxiom (Match pss Nothing) (Addr _ _ ex) : xss)) = 
+
+        [jmacro|    `(declare_bindings (var_names pss) pss)`;
+                    if (`(pss)`) return `(ex)`;
+                    `(Curried xss)`; |]
+                    
+    toStat (Curried (EqualityAxiom (Match [] cond) (Addr _ _ ex) : xss)) = 
+
+        [jmacro|    if (`(cond)`) return `(ex)`; |]
+                    
+
     toStat (Curried (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss)) = 
 
-        [jmacro|    `(declare_bindings var_names pss)`;
+        [jmacro|    `(declare_bindings (var_names pss) pss)`;
                     if (`(pss)` && `(cond)`) return `(ex)`;
                     `(Curried xss)`; |]
 
 
-            where declare_bindings (name : names) (AliasPattern x : zs) =
+declare_bindings (name : names) (AliasPattern x : zs) =
 
-                      declare_bindings (take (length x) (repeat name)) x ++ declare_bindings names zs
+    declare_bindings (take (length x) (repeat name)) x ++ declare_bindings names zs
 
-                  declare_bindings (name : names) (VarPattern x : zs) =
-                      
-                      [jmacro| `(declare x name)`; |] ++ declare_bindings names zs
+declare_bindings (name : names) (VarPattern x : zs) =
+    
+    [jmacro| `(declare x name)`; |] ++ declare_bindings names zs
 
-                  declare_bindings (name : names) (RecordPattern x _: zs) = 
-                      let (ns, z) = unzip . M.toList $ x
-                      in  declare_bindings (map (acc name) ns) z ++ declare_bindings names zs
+declare_bindings (name : names) (RecordPattern x _: zs) = 
+    let (ns, z) = unzip . M.toList $ x
+    in  declare_bindings (map (acc name) ns) z ++ declare_bindings names zs
 
-                  declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
-                  declare_bindings [] [] = mempty
-                  
-                  var_names = map ref . reverse . take (length pss) . map local_pool $ [0 .. 26]
+declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
+declare_bindings [] [] = mempty
 
-                  acc n ns = [jmacroE| `(n)`[`(ns)`] |]
+var_names pss = map ref . reverse . take (length pss) . map local_pool $ [0 .. 26]
+
+acc n ns = [jmacroE| `(n)`[`(ns)`] |]
 
 
 instance (ToJExpr a) => ToJExpr (Maybe a) where
