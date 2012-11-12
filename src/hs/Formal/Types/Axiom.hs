@@ -88,6 +88,7 @@ declare_bindings (name : names) (RecordPattern x _: zs) =
 declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
 declare_bindings [] [] = mempty
 
+var_names :: forall a. [a] -> [JExpr]
 var_names pss = map ref . reverse . take (length pss) . map local_pool $ [0 .. 26]
 
 acc n ns = [jmacroE| `(n)`[`(ns)`] |]

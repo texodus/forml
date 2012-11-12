@@ -78,6 +78,7 @@ instance Syntax String where
                                   'r' -> return '\r'
                                   'n' -> return '\n'
                                   't' -> return '\t'
+                                  _   -> error "Unimplemented"
 
 
 parse :: Parser a -> SourceName -> String -> Either ParseError a

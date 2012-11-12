@@ -1,96 +1,24 @@
--- Formal is a general purpose programming language targetting Javascript, which aims to do for 
--- [ML](http://en.wikipedia.org/wiki/ML_(programming_language)) what
--- [Clojure](http://clojure.org/) does for [LISP](http://en.wikipedia.org/wiki/Lisp_(programming_language)) -
--- refine & expand its strengths whilst shedding its weaknesses.
 
--- Designed around the principles of readability, verifiability and
--- simplicity, Formal takes the pain out of ML, while simultaeniously bringing a
--- little discipline to Javascript.
+-- If you are familiar with Haskell or ML, the prelude may serve as a 
+-- good introduction to formal.
+-- Formal's syntax is quite liberal;  to illustrate, the prelude will 
+-- maintain an intentionally inconsistent style throughout.
 
--- Features:
-
---   * Heavily inspired by [Haskell](http://www.haskell.org/haskellwiki/Haskell), [F#](http://msdn.microsoft.com/en-us/vstudio/hh388569.aspx), [Coffeescript](http://coffeescript.org/), ([_](http://en.wikipedia.org/wiki/Category:ML_programming_language_family))(S)([OCA](http://caml.inria.fr/))ML, [Clojure](http://clojure.org/).  Type inferred, curried,
---     strictly evaluated.
-
---   * Hybrid type system - complete polymorphic type system w/ stuctural records,
---     plus a dynamic type for unrestricted Javascript.
-    
---   * First class testing - types and tests are equal first class
---     citizens of the language.
-
---   * Inline Javascript - For bootstrapping, quickly importing a Javascript
---     library, accessing un-formalized APIs or simply writing fast mutation
---     algorithms "natively."
-
---   * Simple data types - The basic data types in Formal are the exact same basic
---     data types of Javascript:  Num, String, Array, Object, Function.
-    
---   * Advanced pattern matching - Traditional pattern matching goodness with a few
---     extras: match on record partials & define your own matches with view
---     patterns.
-    
---   * Pure by default - Like Haskell, any function which has a side effect returns
---     the polymorphic type `JS a` by default, including any inline Javascript, and
---     these types can be composed without evaluation via `do`, `yield`, `lazy` or simple
---     combinators.  Unlike Haskell, `JS a` types can be trivially unwrapped
---     anywhere via `do!`
-    
---   * Targets Closure advanced mode - Formal does not aim to emit readable
---     Javascript, instead opting to produce the most efficient output possible.
-
--- This document is a both the compiler's README, and the Formal language's
--- standard library as literate code, which serves as a simple language feature
--- spec/tutorial
-
--- Installation
--- ------------
-
--- Mac OSX (tested on Snow Leopard & Lion)
-
--- Install the
--- [Haskell Platform](http://hackage.haskell.org/platform/index.html), then
-
---        <pre><code>--$ cabal install formal</pre></code>
-
--- To compile some formal files:
-   
---        <pre><code>--$ formal -o app test.formal test2.formal</pre></code>
-
--- will create an app.js, app.spec.js and app.html file with the compiled code,
--- test suite and annotated documentation respectively.  To compile literate
--- formal (eg, Formal code embedded in Markdown, ala this file):
-   
---        <pre><code>--$ formal test.lformal</pre></code>
-   
--- To see the inferred types:
-   
---        <pre><code>--$ formal -t test.formal</pre></code>
-   
--- To turn off optimizing (eg, Closure) or testing:
-   
---        <pre><code>--$ formal -no-test -no-opt test.formal</pre></code>
-
--- Formal is a literate language embedded in
--- [Markdown](http://daringfireball.net/projects/markdown/syntax), so any
--- line not indented at least 4 spaces is considered a comment.  The
--- primary unit of code organization is the `module`, a named collection
--- of functions and values.
+-- First, we need to create a namespace with the `module` keyword.
 
 module prelude
 
-    -- Bootstrap
-    -- ---------
-    -- Some simple reflection by lifting from Javascript.  The definitions of
-    -- `object?` and `array?` must use Javascript's `===` operator directly
-    -- here, as the "==" operator defined in [Numbers](#numbers) is defined
-    -- in terms of them.
 
-    type
     JS a = {} -> a
 
     inline object? x = do! `typeof x === "object"`
     inline array?    = do! `is_array`
     inline string? x = do! `typeof x === "string"`
+
+    inline
+    num? x = do! `typeof x == "number"`
+
+
     inline type? x   = do! `typeof x`
 
     inline
@@ -111,11 +39,11 @@ module prelude
 
     inline 
     (>>=): JS a -> (a -> JS b) -> JS b
-    (>>=)     x              y  = y (run x)
+    (>>=)  x       y            = y (run x)
 
     inline 
     (>>): JS a -> JS b -> JS b
-    (>>)     x       y  = `run x; return (run y)`
+    (>>)  x       y     = `run x; return (run y)`
 
     inline return:
 
@@ -174,7 +102,6 @@ module prelude
 
     (==): a -> a -> Bool
         | x y when do! `x === y` = true
-
         | x y when object? x =
             do! `var result = true;
                  for (key in x) {
@@ -293,6 +220,8 @@ module prelude
         inline rstrip: String -> String | x = do! `x.replace(/\s+$/, '')` 
         inline strip:  String -> String | = lstrip .: rstrip
 
+        length: String -> Num | n = do! `n.length`
+
         inline 
         (+++): a -> b -> String
         x +++ y = do! `"" + x + y`
@@ -389,7 +318,7 @@ module prelude
 
         inline (!!): Array a -> Num -> a | x y = do! `x[y]`
 
-        with_page: JS a -> JS a
+        with_page: JS<a> -> JS<a>
             | x = do old <- `$("body").clone()`
                      xx <- x
                      `$("body").replaceWith(old)`
@@ -421,6 +350,37 @@ module prelude
 
             var is_error = 0
 
+            var get_line x =  x |> split "__::__"
+                                |> \x = x !! 0
+                                |> split "_" 
+                                |> \x = x !! 0
+                                |> \x = do! `parseInt x`
+                                |> \x = x + 1
+                                |> stringify
+
+            var report_failed spec results =
+
+                    let items = spec.results_.items_
+                        desc  = spec.description.split "__::__" !! 1
+                        exp   = stringify (items !! 0).expected
+                        act   = stringify (items !! 0).actual
+                        line  = get_line spec.description
+                    
+                    do  if is_error == 0
+                            then log "\r                        " 
+                            else return {}
+
+                        `is_error = 1`
+
+                        log "Test failed at line `line`
+
+                             `desc`
+                             
+                                 Expected `exp`
+                                 Actual   `act`"
+
+                        log ""
+
             var report spec = 
 
                     do! results <- `spec.results()`
@@ -428,35 +388,7 @@ module prelude
 
                         if   passed 
                         then return {}
-
-                        else let items = spec.results_.items_
-                                 desc  = spec.description.split "__::__" !! 1
-                                 exp   = stringify (items !! 0).expected
-                                 act   = stringify (items !! 0).actual
-
-                             let line  = spec.description
-                                         |> split "__::__"
-                                         |> \x = x !! 0
-                                         |> split "_" 
-                                         |> \x = x !! 0
-                                         |> \x = do! `parseInt x`
-                                         |> \x = x + 1
-                                         |> stringify
-                                                         
-                             do  if is_error == 0
-                                     then log "\r                        " 
-                                     else return {}
-
-                                 `is_error = 1`
-
-                                 log "Test failed at line `line`
-
-                                      `desc`
-                                      
-                                          Expected `exp`
-                                          Actual   `act`"
-
-                                 log ""
+                        else report_failed spec results
 
             var reporter = { reportSpecResults:   report 
                              reportRunnerResults: `phantom.exit(is_error)` }
@@ -503,28 +435,28 @@ module prelude
 
         table_of_contents =
 
-            on_load do "code"  $. "prettyprint"
-                       "code"  $. "lang-hs"
+            do "code"  $. "prettyprint"
+               "code"  $. "lang-hs"
 
-                       ".test" $| "position" <| "relative"
-                       ".test" $| "left"     <| "50px"
+               ".test" $| "position" <| "relative"
+               ".test" $| "left"     <| "50px"
 
-                       `prettyPrint()`
+               `prettyPrint()`
 
-                       trivial <- `new jasmine.TrivialReporter()`
-                       formal  <- `new jasmine.FormalReporter()`
-                       env     <- `jasmine.getEnv()`
+               trivial <- `new jasmine.TrivialReporter()`
+               formal  <- `new jasmine.FormalReporter()`
+               env     <- `jasmine.getEnv()`
 
-                       `env.addReporter trivial`
-                       `env.addReporter formal`
-                       `env.addReporter console_reporter`
+               `env.addReporter trivial`
+               `env.addReporter formal`
+               `env.addReporter console_reporter`
 
-                       `env.execute()`
+               `env.execute()`
 
-                       reporter <- get ".jasmine_reporter"
-                       body     <- get "#test_suite"
+               reporter <- get ".jasmine_reporter"
+               body     <- get "#test_suite"
 
-                       move reporter body
+               move reporter body
 
 
                        
@@ -865,6 +797,6 @@ module prelude
               return x = return x }
 
         let (>>>=) x g = concat_map g x
-            z = 1..3 >>>= λx = [:x,x+1,x+2]
+            z = 1 .. 3 >>>= λx = [:x, x + 1, x + 2]
 
         z == [:1,2,3,2,3,4,3,4,5]

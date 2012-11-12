@@ -63,6 +63,7 @@ pre {
     border: 1px solid #ccc;
     white-space: pre-wrap;
     overflow: auto;
+    line-height: 14px;
 }
 code {
     font-family: "Courier New";

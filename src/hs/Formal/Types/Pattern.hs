@@ -219,10 +219,9 @@ instance (Show b) => Infer (Pattern b) Type where
                                 predicate qs
                                 return t
 
-    infer m @ (RecordPattern (unzip . M.toList -> (names, patterns)) p) =
+    infer (RecordPattern (unzip . M.toList -> (names, patterns)) p) =
         
         do ts <- mapM infer patterns
-           --sc <- find$ key m
            p' <- case p of
                    Complete -> return TComplete
                    Partial  -> do t <-  newTVar Star
@@ -236,9 +235,9 @@ instance (Show b) => Infer (Pattern b) Type where
                  do unify t' r
                     return t'
              Just (Forall _ scr, sct) ->
-                 do (qs' :=> t'') <- freshInst sct
-                    (qs :=> t) <- return$ inst (map TypeVar$ tv t'') scr
-                    (qs :=> t) <- freshInst (quantify (tv t L.\\ tv t'') (qs :=> t))
+                 do (_ :=> t'') <- freshInst sct
+                    (qs :=> t''') <- return$ inst (map TypeVar$ tv t'') scr
+                    (_ :=> t) <- freshInst (quantify (tv t''' L.\\ tv t'') (qs :=> t'''))
                     unify t r
                     unify t' t''
                     s <- get_substitution

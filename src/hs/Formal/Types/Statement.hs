@@ -128,6 +128,7 @@ data Target = Test | Library
 serial :: SourcePos -> SourcePos -> String
 serial a b = show (sourceLine a - 1) ++ "_" ++ show (sourceLine b - 1) ++ (if sourceLine a /= sourceLine b then "multi" else "")
 
+get_code :: forall a. Addr a -> JS String
 get_code a = do src <- JS (\s @ JSState {src = src} -> (s, src))
                 return $ get_error a src
 
@@ -208,7 +209,7 @@ instance Javascript Meta JStat where
     toJS (Meta { target = Test,    expr = DefinitionStatement _ }) = return mempty
 
     toJS (Meta { expr = TypeStatement _ _ }) = return mempty
-    toJS x = fail $ "Unimplemented " ++ show x
+  --  toJS x = fail $ "Unimplemented " ++ show x
 
 
 
@@ -242,7 +243,7 @@ class Open a where open :: Namespace -> [a] -> JStat
 
 instance Open Statement where
     open _ [] = mempty
-    open ns (DefinitionStatement (Definition _ _ n (TypeAxiom _: [])) : xs) = open ns xs
+    open ns (DefinitionStatement (Definition _ _ _ (TypeAxiom _: [])) : xs) = open ns xs
     open ns (DefinitionStatement (Definition _ _ n _) : xs) =
 
         let f = ref . replace " " "_" . show

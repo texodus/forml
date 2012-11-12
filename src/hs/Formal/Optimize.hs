@@ -1,45 +1,44 @@
 
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE NamedFieldPuns         #-}
+{-# LANGUAGE OverlappingInstances   #-}
+{-# LANGUAGE QuasiQuotes            #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE RecordWildCards        #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE ViewPatterns           #-}
 
 module Formal.Optimize where
-import System.IO.Unsafe()
+import System.IO.Unsafe ()
 
 import Language.Javascript.JMacro
 
 import qualified Data.Map as M
 
-import Control.Monad
 import Control.Applicative
-import Data.Monoid
+import Control.Monad
 import Data.Char
+import Data.Monoid
 
-import Formal.Types.Pattern
-import Formal.Types.Symbol
-import Formal.Types.Expression
-import Formal.Types.Definition
 import Formal.Types.Axiom
-import Formal.Types.Statement hiding (find, namespace, modules, Test)
-import Formal.Types.Namespace hiding (Module)
+import Formal.Types.Definition
+import Formal.Types.Expression
+import Formal.Types.Namespace  hiding (Module)
+import Formal.Types.Pattern
+import Formal.Types.Statement  hiding (Test, find, modules, namespace)
+import Formal.Types.Symbol
 
 import Formal.TypeCheck.Types hiding (get_namespace)
 
-import Formal.Parser.Utils
 import Formal.Parser
+import Formal.Parser.Utils
 
 import qualified Formal.Javascript.Utils as J
 
@@ -165,9 +164,9 @@ instance Optimize (Axiom (Expression Definition)) where
     optimize t @ (TypeAxiom _) = return t
     optimize (EqualityAxiom m ex) =
 
-        do m <- optimize m
-           ex <- optimize ex
-           return (EqualityAxiom m ex)
+        do m' <- optimize m
+           ex' <- optimize ex
+           return (EqualityAxiom m' ex')
 
 instance Optimize Definition where
 
@@ -190,8 +189,8 @@ instance Optimize Definition where
           add_tco $ show name
           return $ Definition a b name (axioms xs')
 
-       where is_recursive (TypeAxiom _: xs) = is_recursive xs
-             is_recursive (EqualityAxiom _ x: xs) = is_recursive' (get_addr x) || is_recursive xs
+       where is_recursive (TypeAxiom _: xs') = is_recursive xs'
+             is_recursive (EqualityAxiom _ x: xs') = is_recursive' (get_addr x) || is_recursive xs'
              is_recursive [] = False
 
              is_recursive' (ApplyExpression (SymbolExpression x) _) | name == x = True
@@ -232,20 +231,20 @@ instance Optimize Definition where
                        local_var_names = map J.ref . map ("_V"++) . reverse . take (length ps) . map J.local_pool $ [0 .. 26]
 
                        declare_bindings (name : names) (VarPattern x : zs) =
-                           
+
                            [jmacro| `(J.declare x name)`; |] `mappend` declare_bindings names zs
 
-                       declare_bindings (name : names) (RecordPattern x _: zs) = 
+                       declare_bindings (name : names) (RecordPattern x _: zs) =
                            let (ns, z) = unzip . M.toList $ x
                            in  declare_bindings (map (acc name) ns) z `mappend` declare_bindings names zs
 
                        declare_bindings (_ : names) (_ : zs) = declare_bindings names zs
                        declare_bindings _ _ = mempty
-                  
+
                        acc n ns = [jmacroE| `(n)`[`(ns)`] |]
 
-                       replace pss (ApplyExpression (SymbolExpression x) args) | name == x =
-             
+                       replace _ (ApplyExpression (SymbolExpression x) args) | name == x =
+
                            JSExpression [jmacroE| (function() {
                                                      `(bind_local (reverse . take (length ps) . map J.local_pool $ [0 .. 26]) args)`;
                                                      return undefined;
@@ -297,7 +296,7 @@ instance Optimize Statement where
 
                        zs ->
 
-                           do set_env $ cc zs ++ e 
+                           do set_env $ cc zs ++ e
                               return ss
 
               cc (((_, s), ex): zs) = (s, ex) : cc zs
@@ -306,7 +305,7 @@ instance Optimize Statement where
               lookup' x (((y, z), w):ys) | x == y = (((y, z), w) : lookup' x ys)
                                          | otherwise = lookup' x ys
               lookup' _ [] = []
-                                         
+
     optimize x = return x
 
 instance Optimize [Statement] where
@@ -328,4 +327,4 @@ run_optimizer ps as = g ps as gen_state
     where g ps @ (optimize . head -> Optimizer f) as st = case f st of (st', p) -> p : g (tail ps) as st'
 
           gen_state = OptimizeState (Namespace []) as [] [] []
-                       
+

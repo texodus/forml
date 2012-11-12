@@ -1,60 +1,45 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE FlexibleContexts, NamedFieldPuns, OverlappingInstances,
+             QuasiQuotes, RankNTypes, RecordWildCards, TemplateHaskell,
+             TupleSections, ViewPatterns #-}
 
 
-module Main where
+module Main(main) where
 
 import Text.InterpolatedString.Perl6
 
 import Control.Applicative
 import Control.Monad.State hiding (lift)
 
-import System.IO
+import System.Directory
 import System.Environment
 import System.Exit
-import System.Console.ANSI
-import System.Directory
+import System.IO
+import System.Process
 
-import Network.HTTP
-import Network.URI
 import Control.Concurrent
-
-import Data.Monoid
 
 import Text.Pandoc
 
-import Data.Char (ord, isAscii)
-import Data.List as L
+import Data.Char         (isAscii, ord)
+import Data.List         as L
+import Data.Monoid
 import Data.String.Utils
-import Data.URLEncoded
 
-import Formal.Parser
+import Formal.Closure
 import Formal.Javascript
-import Formal.Javascript.Utils (prelude)
 import Formal.Javascript.Backend
-import Formal.TypeCheck hiding (split)
-import Formal.TypeCheck.Types
+import Formal.Javascript.Utils   (prelude)
+import Formal.Parser
+import Formal.TypeCheck          hiding (split)
+import Formal.Types.Statement
+import Formal.CLI
 
 import qualified Formal.Optimize as O
 
-import Formal.Types.Namespace
-import Formal.Types.Statement
-
 import qualified Data.ByteString.Char8 as B
+import           Data.FileEmbed
 
-import Data.FileEmbed
-import System.Process
 
--- Main
--- ----
 
 toEntities :: String -> String
 toEntities [] = ""
@@ -63,59 +48,6 @@ toEntities (c:cs) | isAscii c = c : toEntities cs
 
 toHTML :: String -> String
 toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
-
-warn :: String -> a -> IO a
-warn x js = colors ((putStr $ "[-] " ++ x) >> return js) $
-            do putStr "\r["
-               setSGR [SetColor Foreground Dull Yellow]
-               putStr "-"
-               setSGR []
-               putStrLn$ "] " ++ x
-               return js
-                
-colors :: IO a -> IO a -> IO a
-colors failure success =
-
-          do (_, Just std_out, _, p) <-
-                 createProcess (shell "tput colors 2> /dev/null") { std_out = CreatePipe }
-             waitForProcess p
-             c <- hGetContents std_out
-             case reads (strip c) of
-                [(x, "")] | x > 2 -> success
-                _ -> failure
-             
-
-
-monitor :: String -> IO (Either [String] a) -> IO a
-monitor x d = do colors (return ()) $ putStr $ "[ ] " ++ x
-                 hFlush stdout
-                 d' <- d
-                 case d' of
-                   Right y -> colors ((putStrLn $ "[*] " ++ x) >> return y) $
-                              do putStr "\r["
-                                 setSGR [SetColor Foreground Dull Green]
-                                 putStr "*"
-                                 setSGR []
-                                 putStrLn$ "] " ++ x
-                                 return y
-                   Left y  -> colors (errors y) $
-                              do putStr "\r["
-                                 setSGR [SetColor Foreground Dull Red]
-                                 putStr "X"
-                                 setSGR []
-                                 putStrLn$ "] " ++ x
-                                 putStrLn ""
-                                 if length y <= 5
-                                    then mapM putStrLn y >> return ()
-                                    else mapM putStrLn (take 5 y) >> putStrLn ("\n" ++ show (length y - 5) ++ " additional errors")
-                                 exitFailure
-                                 
-     where errors y =
-                  do putStrLn ("[X] " ++ x)
-                     if length y <= 5
-                        then mapM putStrLn y >> return ()
-                        else mapM putStrLn (take 5 y) >> putStrLn ("\n" ++ show (length y - 5) ++ " additional errors")
-                     exitFailure 
 
 
 to_literate :: String -> String -> String
@@ -157,7 +89,7 @@ get_program [] = []
 main :: IO ()
 main  = do args <- getArgs
            main' args
-           
+
 main' :: [String] -> IO ()
 main' (parseArgs -> rc') =
          if watch rc'
@@ -174,7 +106,7 @@ main' (parseArgs -> rc') =
 
           console = "prelude.html.console_runner()"
           report  = $(embedFile "src/js/FormalReporter.js")
-          htmljs  = "prelude.html.table_of_contents()"
+          htmljs  = "$('#run_tests').click(prelude.html.table_of_contents)"
 
           watch' rc =
 
@@ -197,8 +129,8 @@ main' (parseArgs -> rc') =
               do (_, as, src') <- parse_formal$ inputs rc
                  let src'' = O.run_optimizer (fmap fst src') as
                  let (js', ((_, tests'):_)) = gen_js (fmap snd src') src''
-   
-                 js <- if optimize rc 
+
+                 js <- if optimize rc
                        then (monitor "Closure [libs"$ closure_local (js') "ADVANCED_OPTIMIZATIONS")
                        else do warn "Closure [libs]" js'
 
@@ -206,20 +138,22 @@ main' (parseArgs -> rc') =
                               RunConfig { optimize = True, run_tests = Phantom } ->
                                   monitor "Closure [tests"$ closure_local (tests') "SIMPLE_OPTIMIZATIONS"
                               _ -> warn "Closure [tests]" tests'
-   
+
                  writeFile (output rc ++ ".js") js
                  writeFile (output rc ++ ".spec.js") tests
 
-                 if write_docs rc
+                 monitor "Docs" $
+                     if write_docs rc
                      then let xxx = map fst src'
                               yyy = map snd src'
-                              html' xxx yyy = highlight (case xxx of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy xxx)
+                              html' xxx' yyy' = highlight (case xxx' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy' xxx')
                               html = concat $ zipWith html' xxx yyy
-                              prelude = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
+                              prelude' = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
                               hook = "<script>" ++ htmljs ++ "</script>"
 
-                          in writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude ++ html ++ hook ++ B.unpack footer)
-                     else return ()
+                          in do writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude' ++ html ++ hook ++ B.unpack footer)
+                                return $ Right ()
+                     else return $ Right ()
 
                  case run_tests rc of
                      Node ->
@@ -235,13 +169,13 @@ main' (parseArgs -> rc') =
                              hPutStrLn std_in$ console
                              z <- waitForProcess p
 
-                             case z of 
+                             case z of
                                ExitFailure _ -> return$ Left []
-                               ExitSuccess -> if (show_types rc) 
+                               ExitSuccess -> if (show_types rc)
                                               then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
                                               else return$ Right ()
 
-                     Phantom -> 
+                     Phantom ->
                           monitor "Testing [Phantom.js]"$
                           do writeFile (output rc ++ ".phantom.js")
                                    (B.unpack jquery ++ B.unpack jasmine ++ js ++ tests ++ console)
@@ -254,93 +188,13 @@ main' (parseArgs -> rc') =
                              z <- waitForProcess p
                              system$ "rm " ++ output rc ++ ".phantom.js"
 
-                             case z of 
+                             case z of
                                ExitFailure _ -> return$ Left []
-                               ExitSuccess -> if (show_types rc) 
+                               ExitSuccess -> if (show_types rc)
                                               then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
                                               else return$ Right ()
                      NoTest ->
                           do warn "Testing" ()
-                             if (show_types rc) 
+                             if (show_types rc)
                                then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
                                else return ()
-
-closure_local ::
-
-              String -> String -> IO (Either a String)
-closure_local x         y       =
-
-                    do env <- L.lookup "CLOSURE" <$> getEnvironment
-                       case env of
-                         Just env ->
-                             do exists' <- doesFileExist env
-                                if exists' 
-                                    then do putStr " local]"
-                                            hFlush stdout
-                                            writeFile "temp.js" x
-                                            system$ "java -jar $CLOSURE --compilation_level "
-                                                      ++ y 
-                                                      ++ " --formatting=pretty_print --formatting=print_input_delimiter "
-                                                      ++ " --js temp.js --warning_level QUIET > temp.compiled.js"
-                                            js <- readFile "temp.compiled.js"
-                                            system "rm temp.js"
-                                            system "rm temp.compiled.js"
-                                            return $ Right js
-                                    else putStr " remote]" >> hFlush stdout >> closure x y
-                         Nothing -> putStr " remote]" >> hFlush stdout >> closure x y
-
-closure :: String -> String -> IO (Either a String)
-closure x z = do let uri = case parseURI "http://closure-compiler.appspot.com/compile" of Just x -> x
-
-                     y = export$ importList [ ("output_format",     "text")
-                                            , ("output_info",       "compiled_code")
-                                            , ("compilation_level", z)
-                                            , ("js_code",           x) ]
-
-                     args = [ mkHeader HdrContentLength (show$ length y)
-                            , mkHeader HdrContentType "application/x-www-form-urlencoded" ]
-
-                 rsp <- simpleHTTP (Request uri POST args y)
-                 txt <- getResponseBody rsp
-
-                 return$ Right txt
-
-data TestMode = NoTest | Node | Phantom
-                                         
-data RunConfig = RunConfig { inputs :: [String]
-                           , output :: String
-                           , show_types :: Bool
-                           , optimize :: Bool
-                           , run_tests :: TestMode 
-                           , write_docs :: Bool
-                           , watch :: Bool }
-
-parseArgs :: [String] -> RunConfig
-parseArgs = fst . runState argsParser
-
-  where argsParser = do args <- get
-                        case args of
-                          []     -> return $ RunConfig [] "default" False True Phantom True False
-                          (x:xs) -> do put xs
-                                       case x of
-                                         "-w"    -> do x <- argsParser
-                                                       return $ x { watch = True }
-                                         "-t"    -> do x <- argsParser
-                                                       return $ x { show_types = True }
-                                         "-no-opt" -> do x <- argsParser
-                                                         return $ x { optimize = False }
-                                         "-no-test" -> do x <- argsParser
-                                                          return $ x { run_tests = NoTest }
-                                         "-node-test" -> do x <- argsParser
-                                                            return $ x { run_tests = Node }
-                                         "-o"    -> do (name:ys) <- get
-                                                       put ys
-                                                       RunConfig a _ c d e f g <- argsParser
-                                                       return $ RunConfig (x:a) name c d e f g
-                                         ('-':_) -> error "Could not parse options"
-                                         z       -> do RunConfig a _ c d e f g <- argsParser
-                                                       let b = last $ split "/" $ head $ split "." z
-                                                       
-                                                       return $ RunConfig (x:a) b c d e f g
-
-test = main' ["src/formal/bug.formal"]

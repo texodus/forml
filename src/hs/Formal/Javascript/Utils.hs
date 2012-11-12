@@ -20,7 +20,6 @@ import Data.Monoid
 import Data.String.Utils
 
 import Prelude hiding (curry, (++), error)
-import qualified Prelude as P
 
 
 prelude :: String

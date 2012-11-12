@@ -37,8 +37,6 @@ import Formal.Types.Symbol
 import Formal.Types.Pattern
 import Formal.Types.Axiom
 
-import Formal.TypeCheck.Types
-
 import Data.String.Utils hiding (join)
 import Data.Monoid
 
@@ -105,8 +103,10 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                       <|> try accessor
                       <|> inner
 
-              inner = try accessor 
-                      <|> indentPairs "(" syntax ")" 
+              inner = try accessor <|> inner_no_accessor
+              
+              inner_no_accessor =
+                      indentPairs "(" syntax ")" 
                       <|> js 
                       <|> try record 
                       <|> named_key
@@ -247,18 +247,26 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                              return $ RecordExpression (M.fromList [(x, SymbolExpression (Symbol "true"))]) 
 
               accessor = do s <- getPosition
-                            x <- indentPairs "(" syntax ")" 
+                            x <- indentPairs "(" syntax ")"
                                  <|> js 
                                  <|> record 
                                  <|> literal
-                                 <|> symbol
+                                 <|> try java_apply
+                                 <|> try symbol
                                  <|> list
+                                 
                             f <- getPosition
                             string "."
                             z <- syntax `sepBy1` string "."
                             return $ acc_exp (Addr s f) x z
 
               acc_exp f x z = AccessorExpression (f x) z
+
+              java_apply = ApplyExpression <$> inner_no_accessor <*> try java
+
+                  where java = indentPairs "(" java_args ")"
+                            where  java_args = do x <- syntax `sepEndBy1` comma
+                                                  option x ((x ++) <$> try java)
 
               apply = ApplyExpression <$> inner <*> arguments
 

@@ -24,7 +24,6 @@ module Formal.Javascript.Backend where
         import Data.Monoid      
         import Data.String.Utils
         import Text.Parsec (sourceLine)
-        import System.IO.Unsafe (unsafePerformIO)
             
         type TypeSystem = [(Namespace, [Assumption])]
         
@@ -34,12 +33,12 @@ module Formal.Javascript.Backend where
         newtype JS a = JS (JSState -> (JSState, a))
         
         instance Monad JS where
-          fail x     = JS (\y -> error$ x) 
+          fail x     = JS (\_ -> error$ x) 
           return x   = JS (\y -> (y, x))
           JS f >>= g = JS (\x -> case f x of
-                                  (y, x) -> let JS gx = g x
-                                           in  gx y)
-        
+                                  (y, x') -> let JS gx = g x'
+                                             in  gx y)
+         
         instance Functor JS where
             fmap f y = y >>= (\x -> JS (\x' -> (x', f x)))
         
@@ -50,14 +49,13 @@ module Formal.Javascript.Backend where
         
         instance (Javascript a b, Monoid b) => Javascript [a] b where
         
-                toJS [] = return mempty
-                toJS (x:xs) = do x' <- toJS x
+                toJS []     = return mempty
+                toJS (x:xs) = do x'  <- toJS x
                                  xs' <- toJS xs
                                  return $ mappend x' xs'
-
+                                 
         get_error :: Addr a -> String -> String
         get_error (Addr (sourceLine -> x) (sourceLine -> y) _) =
         
-             rstrip . unlines . fmap f . zip [x .. y] . lines . rstrip . unlines . take ((y - x) + 1) . drop (x - 1) . lines
-             where f (x, y) = y -- " " ++ show x ++ " " ++ y
+             rstrip . unlines . lines . rstrip . unlines . take ((y - x) + 1) . drop (x - 1) . lines
      

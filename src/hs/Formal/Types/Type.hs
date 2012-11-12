@@ -1,20 +1,14 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, NamedFieldPuns, OverlappingInstances,
+             QuasiQuotes, RankNTypes, RecordWildCards, TemplateHaskell,
+             ViewPatterns #-}
 
 module Formal.Types.Type where
 
-import Text.InterpolatedString.Perl6
 import Control.Applicative
+import Text.InterpolatedString.Perl6
 
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import Text.Parsec.Indent  hiding (same)
+import Text.Parsec        hiding (State, label, many, parse, spaces, (<|>))
+import Text.Parsec.Indent hiding (same)
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -34,17 +28,17 @@ data ComplexType = RecordType (M.Map Symbol UnionType)
                  deriving (Eq, Ord)
 
 data SimpleType = PolymorphicType SimpleType [UnionType]
-                | SymbolType Symbol 
+                | SymbolType Symbol
                 | VariableType String
                 deriving (Ord, Eq)
 
-instance Show UnionType where 
+instance Show UnionType where
     show (UnionType xs)         = [qq|{sep_with " | " $ S.toList xs}|]
-   
+
 instance Show ComplexType where
     show (SimpleType y)         = [qq|$y|]
     show (InheritType n m)      = [qq|\{ $n with {unsep_with ": " m} \}|]
-    show (RecordType m)         = [qq|\{ {unsep_with ": " m} \}|] 
+    show (RecordType m)         = [qq|\{ {unsep_with ": " m} \}|]
 
     show (FunctionType g @ (UnionType (S.toList -> ((FunctionType _ _):[]))) h) =
         [qq|($g -> $h)|]
@@ -64,7 +58,7 @@ instance Show SimpleType where
 -- TODO type axioms need nominative types?
 -- ? TODO List, Map, Set shorthand?
 
--- The type algebra of Sonnet is broken into 3 types to preserve the 
+-- The type algebra of Sonnet is broken into 3 types to preserve the
 -- associativity of UnionTypes: (x | y) | z == x | y | z
 
 
@@ -94,17 +88,17 @@ type_definition_signature = UnionType . S.fromList <$> types <* whitespace
 
 -- Through various complexities of the recursive structure of these types, we will
 -- need a few mutually recursive parsers to express these slightly different
--- signature parsers.  
+-- signature parsers.
 
 inner_type        :: Parser ComplexType
 nested_function   :: Parser ComplexType
 nested_union_type :: Parser UnionType
 
-inner_type  = nested_function 
-              <|> try record_type 
-              <|> try named_type 
-              <|> try poly_type 
-              <|> var_type 
+inner_type  = nested_function
+              <|> try record_type
+              <|> try named_type
+              <|> try poly_type
+              <|> var_type
               <|> symbol_type
 
 nested_function   = indentPairs "(" (try function_type <|> inner_type) ")"
@@ -132,15 +126,16 @@ function_type = do x <- try nested_union_type <|> unionize inner_type
 
 poly_type = do name <- (SymbolType <$> type_name) <|> (VariableType <$> try type_var)
                whitespace
-               let type_vars = try nested_union_type <|> unionize (try rvs)
-               SimpleType . PolymorphicType name <$> type_vars `sepEndBy1` whitespace
+               SimpleType . PolymorphicType name <$> (j_style <|> h_style)
 
      where rvs = record_type <|> var_type <|> symbol_type
+           h_style = (try nested_union_type <|> unionize (try rvs)) `sepEndBy1` whitespace
+           j_style = indentPairs "<" ((try nested_union_type <|> unionize (try rvs)) `sepBy1` optional_sep) ">"
 
 record_type   = let key_value = (,) <$> syntax <* div' <*> type_definition_signature
                     div'      = spaces <* string ":" <* spaces
                     pairs     = key_value `sepEndBy` optional_sep
-                    inner     = RecordType . M.fromList <$> pairs 
+                    inner     = RecordType . M.fromList <$> pairs
                     inherit   = do SimpleType n <- try poly_type <|> try symbol_type <|> var_type
                                    spaces
                                    indented

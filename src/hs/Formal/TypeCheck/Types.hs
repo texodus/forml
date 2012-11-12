@@ -259,7 +259,7 @@ mgu' x y = case x |=| y of
           find''' ((Forall _ x :>>: y):xs) t =
 
               do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
-                 case t |=| t' of
+                 case t' |=| t of
                    Error _ -> find''' xs t
 
                    -- TODO Only allow this shorthand if the match is unique - true?
@@ -303,7 +303,7 @@ instance Types t => Types (Qual t) where
 
 instance Types Pred where
   apply s (IsIn i t) = IsIn i (apply s t)
-  tv (IsIn i t)      = tv t
+  tv (IsIn _ t)      = tv t
 
 mguPred, matchPred :: Pred -> Pred -> Maybe Substitution
 mguPred   = lift (|=|)
@@ -328,10 +328,10 @@ data ClassEnv = ClassEnv { classes  :: Id -> Maybe Class,
                            defaults :: [Type] }
 
 super :: ClassEnv -> Id -> [Id]
-super ce i = case classes ce i of Just (is, its) -> is
+super ce i = case classes ce i of Just (is, _) -> is
 
 insts :: ClassEnv -> Id -> [Inst]
-insts ce i = case classes ce i of Just (is, its) -> its
+insts ce i = case classes ce i of Just (_, its) -> its
 
 defined :: Maybe a -> Bool
 defined (Just x) = True

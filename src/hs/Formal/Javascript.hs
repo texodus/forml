@@ -1,31 +1,21 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies,
+             MultiParamTypeClasses, NamedFieldPuns, OverlappingInstances,
+             QuasiQuotes, RankNTypes, RecordWildCards, TypeSynonymInstances,
+             UndecidableInstances #-}
 
 module Formal.Javascript (render, render_spec) where
 
 import Language.Javascript.JMacro
-import Prelude hiding (curry, (++))
+import Prelude                    hiding (curry, (++))
 
 import Formal.Types.Statement
-import Formal.Types.Namespace
-import Formal.TypeCheck hiding (Test)
 
 import qualified Data.Map as M
 
-import Formal.Parser
-import Formal.Javascript.Utils
 import Formal.Javascript.Backend
+import Formal.Parser
+
+
 
 class Compress a where
     comp :: a -> a
@@ -83,11 +73,12 @@ instance Compress JExpr where
     comp (NewExpr a)           = NewExpr (comp a)
 
    -- comp (ApplExpr (ValExpr (UnsatVal (JFunc [z] y))) [x])
-    
+
     comp (ApplExpr a b)        = ApplExpr (comp a) (map comp b)
     comp (TypeExpr a b c)      = TypeExpr a (comp b) c
     comp (ValExpr a)           = ValExpr (comp a)
     comp (UnsatExpr a)         = UnsatExpr (comp a)
+    comp _ = error "Compression"
 
 render :: Program -> String -> Program -> String
 render (Program ys) src (Program xs) = show . renderJs $ (comp . runJS src . toJS . map (empty_meta Library ys) $ xs)
@@ -96,5 +87,5 @@ render_spec :: Program -> String -> Program -> String
 render_spec (Program ys) src (Program xs) = show . renderJs . wrap . runJS src . toJS . map (empty_meta Test ys) $ xs
     where wrap x = [jmacro| describe("", function() { `(x)`; }); |]
 
-    
+
 

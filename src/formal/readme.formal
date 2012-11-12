@@ -1,0 +1,298 @@
+
+-- Formal is an modern programming language for the discriminating
+-- programmer.  More importantly, formal is my vanity project, an
+-- attempt to learn ML by writing one.  
+
+-- Philosophy
+-- ----------
+
+--     1) Writing software is unnecessarily hard, because the language's
+--        syntax treats the programmer like a machine.  A modern programming
+--        language should be read and written for programmers - a philosophy
+--        lifted unapologetically from [Ruby](http://www.artima.com/intv/ruby4.html).
+
+--     2) Writing software is unnecessarily hard, because the language
+--        lets the programmer make mistakes.  A modern programming language
+--        should prevent the programmer from writing incorrect code, in so far
+--        as it never conflicts with #1.
+
+-- Features
+-- --------
+
+--   * Buzzwords:  functional, strict, expressive, pure(ish), static(y), inferred, fast, fun.
+--     Strong like a gorilla, yet soft and yielding like a Nerf ball.
+
+--   * Targets Javascript, but please regard this as an implementation detail -
+--     formal is not intended as an answer to "the Javascript problem."  Simple
+--     foreign function interface, which allows the
+--     introduction of untyped values for quick & dirty
+--     code integration, which can later be restricted via explicit typing.
+
+--   * Type system which is designed to be simple and catch obvious errors,
+--     not entirely exhaustive, dictatorial and somewhat combative (I'm looking
+--     at you, Haskell).   Strucural types, partials records, arbitrary unions, 
+--     ability to introduce unrestricted types via FFI.
+
+--   * Sugary, flexible syntax.
+
+--   * Inline testing, compiles to a separate suite.
+
+--   * Fast.  Automatic tail call optimization,
+--     inline functions, designed for use with [Google Closure Compiler](https://developers.google.com/closure/)
+--     advanced optimizations mode.
+
+--   * Heavily inspired by 
+--          [Haskell](http://www.haskell.org/haskellwiki/Haskell)
+--        , [F#](http://msdn.microsoft.com/en-us/vstudio/hh388569.aspx)
+--        , [Coffeescript](http://coffeescript.org/).
+--        , ([_](http://en.wikipedia.org/wiki/Category:ML_programming_language_family))([S](http://www.smlnj.org/))([OCA](http://caml.inria.fr/))ML
+--        , [Clojure](http://clojure.org/)
+--        , [JMacro](http://www.haskell.org/haskellwiki/Jmacro)
+--        , [Ruby](http://www.ruby-lang.org/en/)
+
+-- Installation
+-- ------------
+
+-- Mac OSX (tested on Snow Leopard & Lion).  Note that Formal also requires
+-- [Closure](https://developers.google.com/closure/)for optimizations and
+-- either [Phantom.js](http://phantomjs.org) or [Node.js](http://nodejs.org)
+
+-- Install the
+-- [Haskell Platform](http://hackage.haskell.org/platform/index.html), then
+
+--        <pre><code>--$ cabal install formal</pre></code>
+
+-- To compile some formal files:
+   
+--        <pre><code>--$ formal -o app test.formal test2.formal</pre></code>
+
+-- will create an app.js and app.spec.js with the compiled code and
+-- test suite respectively.
+
+-- Formal will by default try to minify/optimize your code with Closure, via the
+-- $CLOSURE environment variable, which should point to the closure jar.  Failing this,
+-- formal will attempt to post your code to the Closure web service.
+
+-- Additionally, formal will attempt to run the test suite with the phantomjs binary,
+-- which it expects to find on your PATH.  You may optionally specifiy to run your suite
+-- via node.js with
+
+--        <pre><code>--$ formal -node-test test.formal</pre></code>
+
+-- To compile literate
+-- formal (eg, Formal code embedded in Markdown):
+   
+--        <pre><code>--$ formal test.lformal</pre></code>
+   
+-- To see the inferred types:
+   
+--        <pre><code>--$ formal -t test.formal</pre></code>
+   
+-- To turn off optimizing (eg, Closure) or testing:
+   
+--        <pre><code>--$ formal -no-test -no-opt test.formal</pre></code>
+
+-- To watch a file for changes and incrementally compile:
+   
+--        <pre><code>--$ formal -w test.formal</pre></code>
+
+-- To generate an HTML (like this one!) and test suite:
+   
+--        <pre><code>--$ formal -docs test.formal</pre></code>
+
+
+-- Tutorial
+-- --------
+-- This is unfortunately not comprehensive, and presumes some working knowledge of 
+-- ML or Haskell.  For more examples, see the annotated 
+-- [prelude](http://texodus.github.com/formal/prelude)
+-- and [parsec](http://texodus.github.com/formal.parsec.html).  
+
+-- Formal supports a flexible, forgiving syntax that supports many synonymous forms.
+-- This will be illustrated by adherring to an entirely random, arbitrary style throughout.
+
+-- All formal programs must reside in a module.
+-- Within a module, the compiler recognizes logical sections divided by 
+-- `open` statements and sub modules.  Within a section, declarations
+-- can be in any order.
+
+module readme
+
+    open prelude
+    open prelude.string
+
+    -- Simple function.  Formal allows functions to be written in ML style, or
+    -- in more traditional java style.
+
+    square x = x * x
+
+    add(x, y) = x + y
+
+    -- With pattern matching
+
+    fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
+
+    -- Patterns can be separated with `|`, or by repeating the definition's
+    -- name ala Haskell.  Definitions can have optional type annotations and
+    -- assertions (which are compiled separately from your application code).
+
+    private
+
+    fib' : Num -> Num
+
+    fib' 0 = 0
+    fib' 1 = 1
+    fib' n = fib' (n - 1) + fib' (n - 2)
+
+    fib' 7 == 13
+    fib' 0 == 0
+
+    -- Formal has the basic primative types from Javascript:  Num, String, Bool;  plus
+    -- a record, which is structurally typed and implemented as a simple Javascript object.
+    
+    person name address = { 
+        name    = name
+        address = address
+        message = "`name` lives at `address`"
+    }
+
+    person("Andrew", "123 Fake St.").message is "Andrew lives at 123 Fake St."
+
+    point = {x: 10, y: 10}
+    
+    20 == point.x + point.y
+   
+    -- Also supports partial records.
+
+    magnitude {x: x, y: y, _} = sqrt (square x + square y)
+
+    magnitude {x: 3, y: 4, other: "test"} == 5
+    magnitude {x: 4, y: 3, test: "other"} == 5
+
+    -- Operators can be defined much like in Haskell.  Precedence is currently fixed,
+    -- though you can declare right associative operators by ending them with a `:`.
+    -- For performance, you can declare functions to be `inline`.  This example
+    -- will compile to a loop, as it is tail recursive.
+
+    inline (**): 
+
+         String -> Num -> String
+         text   ** n    =
+
+             var f(_, 0, acc) = acc       -- `let` and `var` are synonyms
+                 f(text, n, acc) =
+                     f(text, n - 1, acc +++ text)
+             
+             in f(text, n, "")            -- `in` is optional
+
+
+    "hello" ** 3 == "hellohellohello"
+    length ("a" ** 10000) == 10000
+
+    -- Anonymous functions also follow Haskell, can be written with `\` or `λ`, and
+    -- allows pattern seperation via `|`
+
+    -- Note this function mutates its argument, so we name it with an exclamation.
+
+    map!: (a -> b) -> Array a -> Array b
+    map! f xs = do! `xs.map(f)`
+
+    let fil = λ x when x > 5 = x
+              | x            = 5
+
+    map! fil [2, 6, 3, 7] is [5, 6, 5, 7]
+
+    -- Interop / Side Effects
+    -- ----------------------
+    -- Formal technically allows unrestricted side effects, but by default
+    -- wraps them in a `JS a` type, which can be composed with the
+    -- `>>=` and `>>` operators, or a variation of Haskell's `do` notation.
+
+    hello_world = do
+
+        `console.log("Hello World")` -- Calls to Javascript always return type `JS a`
+
+        x <- `Math.sqrt(9)`          -- `x` is inferred to be the unrestricted type `a`
+
+        let z = x + 1                -- `x` is now restricted to type `Num`
+
+        return (z + 1)               -- type of `hello_world` is inferred to be `JS Num`
+
+    8 == do! hello_world >>= λx = `x + 3`
+
+    -- Though this function is inferred to be `a -> b`, you can restrict it with
+    -- a signature.  
+
+    inline
+    sqrt: Num -> Num                 
+    sqrt x = do! `Math.sqrt(x)`      -- `do!` realizes its argument immediately
+
+    -- Formal also supports additional keywords `lazy` and `yield`.  Both take
+    -- expressions as arguments (as opposed to `do` syntax), but return an
+    -- unrealized type `JS a`, the difference being that `lazy` will only
+    -- evaluate it's arguments once, then cache the result.
+
+    let x = 0
+        test = lazy do! `x = x + 1; x`
+
+    in  1 == do! test >> test >> test >> test
+
+    -- Types, Aliases & Unions
+    -- -----------------------
+
+    -- Formal lacks algebraic data types in the ML sense, instead opting for
+    -- only structural typing of records.  However, you can add explicit type
+    -- signatures to tell the Formal compiler it is OK to overload the types
+    -- of specific symbols.
+
+    num_or_string:
+
+          (Num | String) -> String
+        | x when num? x   = "Num"
+        | _               = "String"
+
+    -- You can also gives union types such as these an alias, effectively allowing
+    -- algebraic data types to be declared in a local scope, for all
+    -- records which are structurally equivalent to those declared.  For instance,
+    -- we could declare a `Maybe a` ADT in formal via
+  
+    Maybe a = {just: a} | {nothing}
+
+    -- ... where `{nothing}` is shorthand for the strucural type `{nothing: {}}`.
+    -- Any scope which imports the alias `Maybe a` will now allow values which
+    -- can be typed both a `{just: a}` or `{nothing}` record
+
+    maybe x {just: y} = y
+    maybe x {nothing} = x
+
+    maybe 3 {just: 4} == 4
+    maybe 3 {nothing} == 3
+
+    -- In case this sort of things floats your boat, you can also declare
+    -- polymorphic types in "java" style, with `< >`.
+
+    has_value: Maybe<a> -> Bool
+    has_value {just: _} = true
+    has_value _ = false
+
+    has_value {just: 4}
+    not (has_value {nothing})
+
+
+
+    
+
+    
+
+
+
+    
+
+
+
+
+    
+
+    
+
+    
