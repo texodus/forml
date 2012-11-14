@@ -28,7 +28,7 @@
           <li><a href="https://github.com/texodus/formal/zipball/master">Download <strong>ZIP File</strong></a></li>
           <li><a href="https://github.com/texodus/formal/tarball/master">Download <strong>TAR Ball</strong></a></li>
           <li><a href="https://github.com/texodus/formal">View On <strong>GitHub</strong></a></li>
-          <li><a href="#" id="run_tests">Run<strong>Tests</strong></a></li>
+          <li><a style="cursor: pointer" id="run_tests">Run<strong>Tests</strong></a></li>
 
         </ul>
       </header>
@@ -142,12 +142,15 @@ jasmine.FormalReporter = function(doc) {
    }
  
    this.startedAt = new Date();
+   this.passed = true;
  
    var self = this;
  };
  
  jasmine.FormalReporter.prototype.reportRunnerResults = function(runner) {
- };
+      $("#run_tests").unbind();
+       $("header ul li + li + li + li").css({"background-color":"lightgreen"})
+};
  
  jasmine.FormalReporter.prototype.reportSuiteResults = function(suite) {
  };
@@ -171,6 +174,7 @@ jasmine.FormalReporter = function(doc) {
              $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:rgba(32,186,24,0.5)' title='" + spec.results_.items_[0].actual+ "'> <span style='color:rgb(255,255,255);font-weight:bold'>PASS</span> </span> ")
          }
      } else {
+          this.passed = false;
          if (k.indexOf("multi") >= 0) {
              $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:rgba(182,24,32,0.5)' title='" + JSON.stringify(spec.results_.items_[0].actual)+ "'> <span style='color:rgb(255,255,255);font-weight:bold'>FAIL</span> </span> ")
          } else {
@@ -282,18 +286,18 @@ b=e;var d;d=f;a=h;e=b;f=run(function(){return run(function(){return d-1})});var 
 function(){expect(8).toEqual(run(function(){var a=run,b=run(r);return a(function(){return b+3})}))});it("234_237multi__::__        let x = 0\n            test = lazy do! `x = x + 1; x`\n    \n        in  1 == do! test >> test >> test >> test",function(){expect(function(){try{var a;a=0;var c,e;e=void 0;c=function(){e||(e=run(function(){return run(function(){return a+=1})}));return e};return b(1)(run(function(){var a=run,b;b=function(){run(c);return run(c)};var d;d=function(){run(b);return run(c)};
 return a(function(){run(d);return run(c)})}))}catch(f){return{error:f}}}()).toEqual(!0)});it("267_267__::__        maybe 3 {just: 4} == 4",function(){expect(h(3)({just:4})).toEqual(4)});it("268_268__::__        maybe 3 {nothing} == 3",function(){expect(h(3)({nothing:!0})).toEqual(3)});it("277_277__::__        has_value {just: 4}",function(){expect(function(){try{return a({just:4})}catch(b){return{error:b}}}()).toEqual(!0)});it("278_278__::__        not (has_value {nothing})",function(){expect(function(){try{var b;
 var c=a({nothing:!0});b=run(function(){return run(function(){return!c})});return b}catch(e){return{error:e}}}()).toEqual(!0)})}})});
-</script><p>Formal is an modern programming language for the discriminating programmer. More importantly, formal is my vanity project, an attempt to learn ML by writing one.</p>
+</script><p>Formal is a modern programming language, intended to fill a niche somewhere between <a href="http://www.haskell.org">Haskell</a> and <a href="http://www.ruby.org">Ruby</a>, should such a niche turn out to exist.</p>
 <h2 id="philosophy">Philosophy</h2>
 <ol style="list-style-type: decimal">
-<li><p>Writing software is unnecessarily hard, because the language's syntax treats the programmer like a machine. A modern programming language should be read and written for programmers - a philosophy lifted unapologetically from <a href="http://www.artima.com/intv/ruby4.html">Ruby</a>.</p></li>
-<li><p>Writing software is unnecessarily hard, because the language lets the programmer make mistakes. A modern programming language should prevent the programmer from writing incorrect code, in so far as it never conflicts with #1.</p></li>
+<li><p>Writing software is unnecessarily hard, because syntax is sufficiently abstracted from thought process to lose something in the translation. A modern programming language should be designed for reading - an API exposing the programmer - a philosophy lifted unapologetically from <a href="http://www.artima.com/intv/ruby4.html">Ruby</a>.</p></li>
+<li><p>Writing software is unnecessarily hard, because making mistakes is too easy. A modern programming language should prevent the programmer from writing incorrect code, in so far as it doesn't conflict with #1.</p></li>
 </ol>
 <h2 id="features">Features</h2>
 <ul>
 <li><p>Buzzwords: functional, strict, expressive, pure(ish), static(y), inferred, fast, fun. Strong like a gorilla, yet soft and yielding like a Nerf ball.</p></li>
-<li><p>Targets Javascript, but please regard this as an implementation detail - formal is not intended as an answer to &quot;the Javascript problem.&quot; Simple foreign function interface, which allows the introduction of untyped values for quick &amp; dirty code integration, which can later be restricted via explicit typing.</p></li>
-<li><p>Type system which is designed to be simple and catch obvious errors, not entirely exhaustive, dictatorial and somewhat combative (I'm looking at you, Haskell). Strucural types, partials records, arbitrary unions, ability to introduce unrestricted types via FFI.</p></li>
-<li><p>Sugary, flexible syntax.</p></li>
+<li><p>Targets Javascript, but please regard this as an implementation detail - formal is not intended as an answer to the <a href="http://www.haskell.org/haskellwiki/The_JavaScript_Problem">Javascript problem.</a> Simple foreign function interface, which allows the introduction of untyped values for quick &amp; dirty code integration, which can later be restricted via explicit typing.</p></li>
+<li><p>Type system which is designed to be simple and catch enough errors to be useful, without forcing exhaustiveness.  DHM style inferrence, Strucural types, type unions & partials, and the ability to introduce unrestricted types via FFI.</p></li>
+<li><p>Sugary, flexible syntax.  Given two ways to express something, Formal strives to allow both.</p></li>
 <li><p>Inline testing, compiles to a separate suite.</p></li>
 <li><p>Fast. Automatic tail call optimization, inline functions, designed for use with <a href="https://developers.google.com/closure/">Google Closure Compiler</a> advanced optimizations mode.</p></li>
 <li><p>Heavily inspired by <a href="http://www.haskell.org/haskellwiki/Haskell">Haskell</a> , <a href="http://msdn.microsoft.com/en-us/vstudio/hh388569.aspx">F#</a> , <a href="http://coffeescript.org/">Coffeescript</a>. , (<a href="http://en.wikipedia.org/wiki/Category:ML_programming_language_family">_</a>)(<a href="http://www.smlnj.org/">S</a>)(<a href="http://caml.inria.fr/">OCA</a>)ML , <a href="http://clojure.org/">Clojure</a> , <a href="http://www.haskell.org/haskellwiki/Jmacro">JMacro</a> , <a href="http://www.ruby-lang.org/en/">Ruby</a></p></li>
@@ -327,7 +331,7 @@ var c=a({nothing:!0});b=run(function(){return run(function(){return!c})});return
 <pre><code>--$ formal -docs test.formal</pre>
 </code>
 <h2 id="tutorial">Tutorial</h2>
-<p>This is unfortunately not comprehensive, and presumes some working knowledge of ML or Haskell. For more examples, see the annotated <a href="http://texodus.github.com/formal/prelude">prelude</a> and <a href="http://texodus.github.com/formal.parsec.html">parsec</a>.</p>
+<p>This is unfortunately not comprehensive, and presumes some working knowledge of ML or Haskell. For more examples, see the annotated <a href="http://texodus.github.com/formal/prelude">prelude</a> and <a href="http://texodus.github.com/formal/parsec.html">parsec</a>.</p>
 <p>Formal supports a flexible, forgiving syntax that supports many synonymous forms. This will be illustrated by adherring to an entirely random, arbitrary style throughout.</p>
 <p>All formal programs must reside in a module. Within a module, the compiler recognizes logical sections divided by <code>open</code> statements and sub modules. Within a section, declarations can be in any order.</p>
 <pre><code>module readme

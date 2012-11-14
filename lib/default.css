@@ -1,0 +1,83 @@
+body {
+    text-align: center; 
+    margin: 5em 0 0 0; 
+    vertical-align: middle;
+    font-family: "Times New Roman", Times;
+    font-size: 14px;
+    line-height: 19px;
+    color: #333;
+} 
+
+h1, h2, h3, h4 {
+    display: block;
+    text-align: center;
+    padding: 20px 0px 10px 0;
+    font-size: 14px;
+    letter-spacing: 1px;
+    font-variant: small-caps;
+}
+
+@media only screen and (max-width: 767px)  {
+    nav ul {
+        display: none;
+    }
+}
+
+@media only screen and  (min-width: 767px) {
+    nav { position: fixed; }
+
+}
+n
+nav { text-align: left; }
+h1 { font-size: 21px; }
+
+nav h1 { text-align: left; }
+
+.sidebar {
+    height: 200px;
+}
+h2 + p:first-line {
+}
+
+p {
+    hyphens: auto;
+    text-align: justify;
+}
+
+
+h2 + p:first-letter, body > div > :nth-child(2):first-letter {
+    font-size: 24px;
+    margin-top: -4px;
+    margin-right: 2px;
+    float: left;
+}
+body > div { 
+    width: 760px; 
+    text-align: left; 
+    margin: 0 auto;
+ }
+
+pre { 
+    padding: 15px 0 15px 25px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    white-space: pre-wrap;
+    overflow: auto;
+    line-height: 14px;
+}
+code {
+    font-family: "Courier New";
+    font-size: 12px;
+}
+p { margin-top: 20px; }
+
+.jasmine_reporter label {
+    display: inline;
+    font-weight: normal;
+}
+
+a, a:visited {
+    color: #333;
+    color: #BA1820;
+    text-decoration: none;
+}

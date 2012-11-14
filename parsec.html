@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"> <!--<![endif]-->
+  <head>
+
+    <!-- Basic Page Needs
+         ================================================== -->
+    <meta charset="utf-8">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Mobile Specific Metas
+         ================================================== -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <!-- CSS
+         ================================================== -->
+    <link rel="stylesheet" href="lib/base.css">
+    <link rel="stylesheet" href="lib/skeleton.css">
+    <link rel="stylesheet" href="lib/layout.css">
+
+    <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
+    <link href='lib/default.css' type='text/css' rel='stylesheet' />
+    <link href='lib/js/jasmine-1.0.1/jasmine.css' type='text/css' rel='stylesheet' />
+
+    <script type='text/javascript' src='lib/js/prettify.js'></script>
+    <script type='text/javascript' src='lib/js/lang-hs.js'></script>
+    <script type='text/javascript' src='lib/js/jquery.js'></script>
+
+
+    <!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+    <!-- Favicons
+	 ================================================== -->
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+
+  </head>
+  <body>
+    <div class="container">
+      <div class="three columns sidebar">
+        <nav>
+          <h1 id="title">Formal</h1>
+          <div>A Programming Language</div>
+          <br/>
+          <div id="run_tests">Test</div>
+        </nav>
+      </div>
+      <div class="twelve columns offset-by-one content">
+<script>var jasmine={unimplementedMethod_:function(){throw Error("unimplemented method");}};jasmine.undefined=jasmine.___undefined___;jasmine.DEFAULT_UPDATE_INTERVAL=250;jasmine.DEFAULT_TIMEOUT_INTERVAL=5E3;jasmine.getGlobal=function(){return function(){return this}()};jasmine.bindOriginal_=function(a,b){var c=a[b];return c.apply?function(){return c.apply(a,arguments)}:jasmine.getGlobal()[b]};jasmine.setTimeout=jasmine.bindOriginal_(jasmine.getGlobal(),"setTimeout");
+jasmine.clearTimeout=jasmine.bindOriginal_(jasmine.getGlobal(),"clearTimeout");jasmine.setInterval=jasmine.bindOriginal_(jasmine.getGlobal(),"setInterval");jasmine.clearInterval=jasmine.bindOriginal_(jasmine.getGlobal(),"clearInterval");jasmine.MessageResult=function(a){this.type="log";this.values=a;this.trace=Error()};
+jasmine.MessageResult.prototype.toString=function(){for(var a="",b=0;b<this.values.length;b++)0<b&&(a+=" "),a=jasmine.isString_(this.values[b])?a+this.values[b]:a+jasmine.pp(this.values[b]);return a};jasmine.ExpectationResult=function(a){this.type="expect";this.matcherName=a.matcherName;this.passed_=a.passed;this.expected=a.expected;this.actual=a.actual;this.message=this.passed_?"Passed.":a.message;this.trace=this.passed_?"":Error(this.message)};jasmine.ExpectationResult.prototype.toString=function(){return this.message};
+jasmine.ExpectationResult.prototype.passed=function(){return this.passed_};jasmine.getEnv=function(){return jasmine.currentEnv_=jasmine.currentEnv_||new jasmine.Env};jasmine.isArray_=function(a){return jasmine.isA_("Array",a)};jasmine.isString_=function(a){return jasmine.isA_("String",a)};jasmine.isNumber_=function(a){return jasmine.isA_("Number",a)};jasmine.isA_=function(a,b){return Object.prototype.toString.apply(b)==="[object "+a+"]"};
+jasmine.pp=function(a){var b=new jasmine.StringPrettyPrinter;b.format(a);return b.string};jasmine.isDomNode=function(a){return 0<a.nodeType};jasmine.any=function(a){return new jasmine.Matchers.Any(a)};jasmine.Spy=function(a){this.identity=a||"unknown";this.isSpy=!0;this.plan=function(){};this.mostRecentCall={};this.argsForCall=[];this.calls=[]};jasmine.Spy.prototype.andCallThrough=function(){this.plan=this.originalValue;return this};
+jasmine.Spy.prototype.andReturn=function(a){this.plan=function(){return a};return this};jasmine.Spy.prototype.andThrow=function(a){this.plan=function(){throw a;};return this};jasmine.Spy.prototype.andCallFake=function(a){this.plan=a;return this};jasmine.Spy.prototype.reset=function(){this.wasCalled=!1;this.callCount=0;this.argsForCall=[];this.calls=[];this.mostRecentCall={}};
+jasmine.createSpy=function(a){var b=function(){b.wasCalled=!0;b.callCount++;var a=jasmine.util.argsToArray(arguments);b.mostRecentCall.object=this;b.mostRecentCall.args=a;b.argsForCall.push(a);b.calls.push({object:this,args:a});return b.plan.apply(this,arguments)},a=new jasmine.Spy(a),c;for(c in a)b[c]=a[c];b.reset();return b};jasmine.isSpy=function(a){return a&&a.isSpy};
+jasmine.createSpyObj=function(a,b){if(!jasmine.isArray_(b)||0==b.length)throw Error("createSpyObj requires a non-empty array of method names to create spies for");for(var c={},d=0;d<b.length;d++)c[b[d]]=jasmine.createSpy(a+"."+b[d]);return c};jasmine.log=function(){var a=jasmine.getEnv().currentSpec;a.log.apply(a,arguments)};
+var spyOn=function(a,b){return jasmine.getEnv().currentSpec.spyOn(a,b)},it=function(a,b){return jasmine.getEnv().it(a,b)},xit=function(a,b){return jasmine.getEnv().xit(a,b)},expect=function(a){return jasmine.getEnv().currentSpec.expect(a)},runs=function(a){jasmine.getEnv().currentSpec.runs(a)},waits=function(a){jasmine.getEnv().currentSpec.waits(a)},waitsFor=function(a,b,c){jasmine.getEnv().currentSpec.waitsFor.apply(jasmine.getEnv().currentSpec,arguments)},beforeEach=function(a){jasmine.getEnv().beforeEach(a)},
+afterEach=function(a){jasmine.getEnv().afterEach(a)},describe=function(a,b){return jasmine.getEnv().describe(a,b)},xdescribe=function(a,b){return jasmine.getEnv().xdescribe(a,b)};
+jasmine.XmlHttpRequest="undefined"==typeof XMLHttpRequest?function(){try{return new ActiveXObject("Msxml2.XMLHTTP.6.0")}catch(a){}try{return new ActiveXObject("Msxml2.XMLHTTP.3.0")}catch(b){}try{return new ActiveXObject("Msxml2.XMLHTTP")}catch(c){}try{return new ActiveXObject("Microsoft.XMLHTTP")}catch(d){}throw Error("This browser does not support XMLHttpRequest.");}:XMLHttpRequest;jasmine.util={};jasmine.util.inherit=function(a,b){var c=function(){};c.prototype=b.prototype;a.prototype=new c};
+jasmine.util.formatException=function(a){var b;a.line?b=a.line:a.lineNumber&&(b=a.lineNumber);var c;a.sourceURL?c=a.sourceURL:a.fileName&&(c=a.fileName);a=a.name&&a.message?a.name+": "+a.message:a.toString();c&&b&&(a+=" in "+c+" (line "+b+")");return a};jasmine.util.htmlEscape=function(a){return!a?a:a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")};jasmine.util.argsToArray=function(a){for(var b=[],c=0;c<a.length;c++)b.push(a[c]);return b};
+jasmine.util.extend=function(a,b){for(var c in b)a[c]=b[c];return a};
+jasmine.Env=function(){this.currentSuite=this.currentSpec=null;this.currentRunner_=new jasmine.Runner(this);this.reporter=new jasmine.MultiReporter;this.updateInterval=jasmine.DEFAULT_UPDATE_INTERVAL;this.defaultTimeoutInterval=jasmine.DEFAULT_TIMEOUT_INTERVAL;this.lastUpdate=0;this.specFilter=function(){return!0};this.nextSuiteId_=this.nextSpecId_=0;this.equalityTesters_=[];this.matchersClass=function(){jasmine.Matchers.apply(this,arguments)};jasmine.util.inherit(this.matchersClass,jasmine.Matchers);
+jasmine.Matchers.wrapInto_(jasmine.Matchers.prototype,this.matchersClass)};jasmine.Env.prototype.setTimeout=jasmine.setTimeout;jasmine.Env.prototype.clearTimeout=jasmine.clearTimeout;jasmine.Env.prototype.setInterval=jasmine.setInterval;jasmine.Env.prototype.clearInterval=jasmine.clearInterval;jasmine.Env.prototype.version=function(){if(jasmine.version_)return jasmine.version_;throw Error("Version not set");};
+jasmine.Env.prototype.versionString=function(){if(jasmine.version_){var a=this.version();return a.major+"."+a.minor+"."+a.build+" revision "+a.revision}return"version unknown"};jasmine.Env.prototype.nextSpecId=function(){return this.nextSpecId_++};jasmine.Env.prototype.nextSuiteId=function(){return this.nextSuiteId_++};jasmine.Env.prototype.addReporter=function(a){this.reporter.addReporter(a)};jasmine.Env.prototype.execute=function(){this.currentRunner_.execute()};
+jasmine.Env.prototype.describe=function(a,b){var c=new jasmine.Suite(this,a,b,this.currentSuite),d=this.currentSuite;d?d.add(c):this.currentRunner_.add(c);this.currentSuite=c;var e=null;try{b.call(c)}catch(f){e=f}this.currentSuite=d;e&&this.it("encountered a declaration exception",function(){throw e;});return c};jasmine.Env.prototype.beforeEach=function(a){this.currentSuite?this.currentSuite.beforeEach(a):this.currentRunner_.beforeEach(a)};jasmine.Env.prototype.currentRunner=function(){return this.currentRunner_};
+jasmine.Env.prototype.afterEach=function(a){this.currentSuite?this.currentSuite.afterEach(a):this.currentRunner_.afterEach(a)};jasmine.Env.prototype.xdescribe=function(){return{execute:function(){}}};jasmine.Env.prototype.it=function(a,b){var c=new jasmine.Spec(this,this.currentSuite,a);this.currentSuite.add(c);this.currentSpec=c;b&&c.runs(b);return c};jasmine.Env.prototype.xit=function(){return{id:this.nextSpecId(),runs:function(){}}};
+jasmine.Env.prototype.compareObjects_=function(a,b,c,d){if(a.__Jasmine_been_here_before__===b&&b.__Jasmine_been_here_before__===a)return!0;a.__Jasmine_been_here_before__=b;b.__Jasmine_been_here_before__=a;var e=function(a,b){return null!=a&&a[b]!==jasmine.undefined},f;for(f in b)!e(a,f)&&e(b,f)&&c.push("expected has key '"+f+"', but missing from actual.");for(f in a)!e(b,f)&&e(a,f)&&c.push("expected missing key '"+f+"', but present in actual.");for(f in b)"__Jasmine_been_here_before__"!=f&&(this.equals_(a[f],
+b[f],c,d)||d.push("'"+f+"' was '"+(b[f]?jasmine.util.htmlEscape(b[f].toString()):b[f])+"' in expected, but was '"+(a[f]?jasmine.util.htmlEscape(a[f].toString()):a[f])+"' in actual."));jasmine.isArray_(a)&&(jasmine.isArray_(b)&&a.length!=b.length)&&d.push("arrays were not the same length");delete a.__Jasmine_been_here_before__;delete b.__Jasmine_been_here_before__;return 0==c.length&&0==d.length};
+jasmine.Env.prototype.equals_=function(a,b,c,d){for(var c=c||[],d=d||[],e=0;e<this.equalityTesters_.length;e++){var f=(0,this.equalityTesters_[e])(a,b,this,c,d);if(f!==jasmine.undefined)return f}return a===b?!0:a===jasmine.undefined||null===a||b===jasmine.undefined||null===b?a==jasmine.undefined&&b==jasmine.undefined:jasmine.isDomNode(a)&&jasmine.isDomNode(b)?a===b:a instanceof Date&&b instanceof Date?a.getTime()==b.getTime():a instanceof jasmine.Matchers.Any?a.matches(b):b instanceof jasmine.Matchers.Any?
+b.matches(a):jasmine.isString_(a)&&jasmine.isString_(b)||jasmine.isNumber_(a)&&jasmine.isNumber_(b)?a==b:"object"===typeof a&&"object"===typeof b?this.compareObjects_(a,b,c,d):a===b};jasmine.Env.prototype.contains_=function(a,b){if(jasmine.isArray_(a)){for(var c=0;c<a.length;c++)if(this.equals_(a[c],b))return!0;return!1}return 0<=a.indexOf(b)};jasmine.Env.prototype.addEqualityTester=function(a){this.equalityTesters_.push(a)};jasmine.Reporter=function(){};
+jasmine.Reporter.prototype.reportRunnerStarting=function(){};jasmine.Reporter.prototype.reportRunnerResults=function(){};jasmine.Reporter.prototype.reportSuiteResults=function(){};jasmine.Reporter.prototype.reportSpecStarting=function(){};jasmine.Reporter.prototype.reportSpecResults=function(){};jasmine.Reporter.prototype.log=function(){};jasmine.Block=function(a,b,c){this.env=a;this.func=b;this.spec=c};jasmine.Block.prototype.execute=function(a){try{this.func.apply(this.spec)}catch(b){this.spec.fail(b)}a()};
+jasmine.JsApiReporter=function(){this.finished=this.started=!1;this.suites_=[];this.results_={}};jasmine.JsApiReporter.prototype.reportRunnerStarting=function(a){this.started=!0;for(var a=a.topLevelSuites(),b=0;b<a.length;b++)this.suites_.push(this.summarize_(a[b]))};jasmine.JsApiReporter.prototype.suites=function(){return this.suites_};
+jasmine.JsApiReporter.prototype.summarize_=function(a){var b=a instanceof jasmine.Suite,c={id:a.id,name:a.description,type:b?"suite":"spec",children:[]};if(b){a=a.children();for(b=0;b<a.length;b++)c.children.push(this.summarize_(a[b]))}return c};jasmine.JsApiReporter.prototype.results=function(){return this.results_};jasmine.JsApiReporter.prototype.resultsForSpec=function(a){return this.results_[a]};jasmine.JsApiReporter.prototype.reportRunnerResults=function(){this.finished=!0};
+jasmine.JsApiReporter.prototype.reportSuiteResults=function(){};jasmine.JsApiReporter.prototype.reportSpecResults=function(a){this.results_[a.id]={messages:a.results().getItems(),result:0<a.results().failedCount?"failed":"passed"}};jasmine.JsApiReporter.prototype.log=function(){};jasmine.JsApiReporter.prototype.resultsForSpecs=function(a){for(var b={},c=0;c<a.length;c++){var d=a[c];b[d]=this.summarizeResult_(this.results_[d])}return b};
+jasmine.JsApiReporter.prototype.summarizeResult_=function(a){for(var b=[],c=a.messages.length,d=0;d<c;d++){var e=a.messages[d];b.push({text:"log"==e.type?e.toString():jasmine.undefined,passed:e.passed?e.passed():!0,type:e.type,message:e.message,trace:{stack:e.passed&&!e.passed()?e.trace.stack:jasmine.undefined}})}return{result:a.result,messages:b}};jasmine.Matchers=function(a,b,c,d){this.env=a;this.actual=b;this.spec=c;this.isNot=d||!1;this.reportWasCalled_=!1};
+jasmine.Matchers.pp=function(){throw Error("jasmine.Matchers.pp() is no longer supported, please use jasmine.pp() instead!");};jasmine.Matchers.prototype.report=function(){throw Error("As of jasmine 0.11, custom matchers must be implemented differently -- please see jasmine docs");};jasmine.Matchers.wrapInto_=function(a,b){for(var c in a)"report"!=c&&(b.prototype[c]=jasmine.Matchers.matcherFn_(c,a[c]))};
+jasmine.Matchers.matcherFn_=function(a,b){return function(){var c=jasmine.util.argsToArray(arguments),d=b.apply(this,arguments);this.isNot&&(d=!d);if(this.reportWasCalled_)return d;var e;if(!d)if(this.message)e=this.message.apply(this,arguments),jasmine.isArray_(e)&&(e=e[this.isNot?1:0]);else{e=a.replace(/[A-Z]/g,function(a){return" "+a.toLowerCase()});e="Expected "+jasmine.pp(this.actual)+(this.isNot?" not ":" ")+e;if(0<c.length)for(var f=0;f<c.length;f++)0<f&&(e+=","),e+=" "+jasmine.pp(c[f]);e+=
+"."}this.spec.addMatcherResult(new jasmine.ExpectationResult({matcherName:a,passed:d,expected:1<c.length?c:c[0],actual:this.actual,message:e}));return jasmine.undefined}};jasmine.Matchers.prototype.toBe=function(a){return this.actual===a};jasmine.Matchers.prototype.toNotBe=function(a){return this.actual!==a};jasmine.Matchers.prototype.toEqual=function(a){return this.env.equals_(this.actual,a)};jasmine.Matchers.prototype.toNotEqual=function(a){return!this.env.equals_(this.actual,a)};
+jasmine.Matchers.prototype.toMatch=function(a){return RegExp(a).test(this.actual)};jasmine.Matchers.prototype.toNotMatch=function(a){return!RegExp(a).test(this.actual)};jasmine.Matchers.prototype.toBeDefined=function(){return this.actual!==jasmine.undefined};jasmine.Matchers.prototype.toBeUndefined=function(){return this.actual===jasmine.undefined};jasmine.Matchers.prototype.toBeNull=function(){return null===this.actual};jasmine.Matchers.prototype.toBeTruthy=function(){return!!this.actual};
+jasmine.Matchers.prototype.toBeFalsy=function(){return!this.actual};jasmine.Matchers.prototype.toHaveBeenCalled=function(){if(0<arguments.length)throw Error("toHaveBeenCalled does not take arguments, use toHaveBeenCalledWith");if(!jasmine.isSpy(this.actual))throw Error("Expected a spy, but got "+jasmine.pp(this.actual)+".");this.message=function(){return["Expected spy "+this.actual.identity+" to have been called.","Expected spy "+this.actual.identity+" not to have been called."]};return this.actual.wasCalled};
+jasmine.Matchers.prototype.wasCalled=jasmine.Matchers.prototype.toHaveBeenCalled;jasmine.Matchers.prototype.wasNotCalled=function(){if(0<arguments.length)throw Error("wasNotCalled does not take arguments");if(!jasmine.isSpy(this.actual))throw Error("Expected a spy, but got "+jasmine.pp(this.actual)+".");this.message=function(){return["Expected spy "+this.actual.identity+" to not have been called.","Expected spy "+this.actual.identity+" to have been called."]};return!this.actual.wasCalled};
+jasmine.Matchers.prototype.toHaveBeenCalledWith=function(){var a=jasmine.util.argsToArray(arguments);if(!jasmine.isSpy(this.actual))throw Error("Expected a spy, but got "+jasmine.pp(this.actual)+".");this.message=function(){return 0==this.actual.callCount?["Expected spy to have been called with "+jasmine.pp(a)+" but it was never called.","Expected spy not to have been called with "+jasmine.pp(a)+" but it was."]:["Expected spy to have been called with "+jasmine.pp(a)+" but was called with "+jasmine.pp(this.actual.argsForCall),
+"Expected spy not to have been called with "+jasmine.pp(a)+" but was called with "+jasmine.pp(this.actual.argsForCall)]};return this.env.contains_(this.actual.argsForCall,a)};jasmine.Matchers.prototype.wasCalledWith=jasmine.Matchers.prototype.toHaveBeenCalledWith;
+jasmine.Matchers.prototype.wasNotCalledWith=function(){var a=jasmine.util.argsToArray(arguments);if(!jasmine.isSpy(this.actual))throw Error("Expected a spy, but got "+jasmine.pp(this.actual)+".");this.message=function(){return["Expected spy not to have been called with "+jasmine.pp(a)+" but it was","Expected spy to have been called with "+jasmine.pp(a)+" but it was"]};return!this.env.contains_(this.actual.argsForCall,a)};
+jasmine.Matchers.prototype.toContain=function(a){return this.env.contains_(this.actual,a)};jasmine.Matchers.prototype.toNotContain=function(a){return!this.env.contains_(this.actual,a)};jasmine.Matchers.prototype.toBeLessThan=function(a){return this.actual<a};jasmine.Matchers.prototype.toBeGreaterThan=function(a){return this.actual>a};
+jasmine.Matchers.prototype.toThrow=function(a){var b=!1,c;if("function"!=typeof this.actual)throw Error("Actual is not a function");try{this.actual()}catch(d){c=d}c&&(b=a===jasmine.undefined||this.env.equals_(c.message||c,a.message||a));var e=this.isNot?"not ":"";this.message=function(){return c&&(a===jasmine.undefined||!this.env.equals_(c.message||c,a.message||a))?["Expected function "+e+"to throw",a?a.message||a:" an exception",", but it threw",c.message||c].join(" "):"Expected function to throw an exception."};
+return b};jasmine.Matchers.Any=function(a){this.expectedClass=a};jasmine.Matchers.Any.prototype.matches=function(a){return this.expectedClass==String?"string"==typeof a||a instanceof String:this.expectedClass==Number?"number"==typeof a||a instanceof Number:this.expectedClass==Function?"function"==typeof a||a instanceof Function:this.expectedClass==Object?"object"==typeof a:a instanceof this.expectedClass};
+jasmine.Matchers.Any.prototype.toString=function(){return"<jasmine.any("+this.expectedClass+")>"};jasmine.MultiReporter=function(){this.subReporters_=[]};jasmine.util.inherit(jasmine.MultiReporter,jasmine.Reporter);jasmine.MultiReporter.prototype.addReporter=function(a){this.subReporters_.push(a)};
+(function(){for(var a="reportRunnerStarting reportRunnerResults reportSuiteResults reportSpecStarting reportSpecResults log".split(" "),b=0;b<a.length;b++){var c=a[b];jasmine.MultiReporter.prototype[c]=function(a){return function(){for(var b=0;b<this.subReporters_.length;b++){var c=this.subReporters_[b];c[a]&&c[a].apply(c,arguments)}}}(c)}})();jasmine.NestedResults=function(){this.failedCount=this.passedCount=this.totalCount=0;this.skipped=!1;this.items_=[]};
+jasmine.NestedResults.prototype.rollupCounts=function(a){this.totalCount+=a.totalCount;this.passedCount+=a.passedCount;this.failedCount+=a.failedCount};jasmine.NestedResults.prototype.log=function(a){this.items_.push(new jasmine.MessageResult(a))};jasmine.NestedResults.prototype.getItems=function(){return this.items_};jasmine.NestedResults.prototype.addResult=function(a){"log"!=a.type&&(a.items_?this.rollupCounts(a):(this.totalCount++,a.passed()?this.passedCount++:this.failedCount++));this.items_.push(a)};
+jasmine.NestedResults.prototype.passed=function(){return this.passedCount===this.totalCount};jasmine.PrettyPrinter=function(){this.ppNestLevel_=0};
+jasmine.PrettyPrinter.prototype.format=function(a){if(40<this.ppNestLevel_)throw Error("jasmine.PrettyPrinter: format() nested too deeply!");this.ppNestLevel_++;try{a===jasmine.undefined?this.emitScalar("undefined"):null===a?this.emitScalar("null"):a===jasmine.getGlobal()?this.emitScalar("<global>"):a instanceof jasmine.Matchers.Any?this.emitScalar(a.toString()):"string"===typeof a?this.emitString(a):jasmine.isSpy(a)?this.emitScalar("spy on "+a.identity):a instanceof RegExp?this.emitScalar(a.toString()):
+"function"===typeof a?this.emitScalar("Function"):"number"===typeof a.nodeType?this.emitScalar("HTMLNode"):a instanceof Date?this.emitScalar("Date("+a+")"):a.__Jasmine_been_here_before__?this.emitScalar("<circular reference: "+(jasmine.isArray_(a)?"Array":"Object")+">"):jasmine.isArray_(a)||"object"==typeof a?(a.__Jasmine_been_here_before__=!0,jasmine.isArray_(a)?this.emitArray(a):this.emitObject(a),delete a.__Jasmine_been_here_before__):this.emitScalar(a.toString())}finally{this.ppNestLevel_--}};
+jasmine.PrettyPrinter.prototype.iterateObject=function(a,b){for(var c in a)"__Jasmine_been_here_before__"!=c&&b(c,a.__lookupGetter__?null!=a.__lookupGetter__(c):!1)};jasmine.PrettyPrinter.prototype.emitArray=jasmine.unimplementedMethod_;jasmine.PrettyPrinter.prototype.emitObject=jasmine.unimplementedMethod_;jasmine.PrettyPrinter.prototype.emitScalar=jasmine.unimplementedMethod_;jasmine.PrettyPrinter.prototype.emitString=jasmine.unimplementedMethod_;
+jasmine.StringPrettyPrinter=function(){jasmine.PrettyPrinter.call(this);this.string=""};jasmine.util.inherit(jasmine.StringPrettyPrinter,jasmine.PrettyPrinter);jasmine.StringPrettyPrinter.prototype.emitScalar=function(a){this.append(a)};jasmine.StringPrettyPrinter.prototype.emitString=function(a){this.append("'"+a+"'")};jasmine.StringPrettyPrinter.prototype.emitArray=function(a){this.append("[ ");for(var b=0;b<a.length;b++)0<b&&this.append(", "),this.format(a[b]);this.append(" ]")};
+jasmine.StringPrettyPrinter.prototype.emitObject=function(a){var b=this;this.append("{ ");var c=!0;this.iterateObject(a,function(d,e){c?c=!1:b.append(", ");b.append(d);b.append(" : ");e?b.append("<getter>"):b.format(a[d])});this.append(" }")};jasmine.StringPrettyPrinter.prototype.append=function(a){this.string+=a};jasmine.Queue=function(a){this.env=a;this.blocks=[];this.running=!1;this.offset=this.index=0;this.abort=!1};jasmine.Queue.prototype.addBefore=function(a){this.blocks.unshift(a)};
+jasmine.Queue.prototype.add=function(a){this.blocks.push(a)};jasmine.Queue.prototype.insertNext=function(a){this.blocks.splice(this.index+this.offset+1,0,a);this.offset++};jasmine.Queue.prototype.start=function(a){this.running=!0;this.onComplete=a;this.next_()};jasmine.Queue.prototype.isRunning=function(){return this.running};jasmine.Queue.LOOP_DONT_RECURSE=!0;
+jasmine.Queue.prototype.next_=function(){for(var a=this,b=!0;b;)if(b=!1,a.index<a.blocks.length&&!this.abort){var c=!0,d=!1,e=function(){if(jasmine.Queue.LOOP_DONT_RECURSE&&c)d=!0;else{a.blocks[a.index].abort&&(a.abort=!0);a.offset=0;a.index++;var e=(new Date).getTime();a.env.updateInterval&&e-a.env.lastUpdate>a.env.updateInterval?(a.env.lastUpdate=e,a.env.setTimeout(function(){a.next_()},0)):jasmine.Queue.LOOP_DONT_RECURSE&&d?b=!0:a.next_()}};a.blocks[a.index].execute(e);c=!1;d&&e()}else if(a.running=
+!1,a.onComplete)a.onComplete()};jasmine.Queue.prototype.results=function(){for(var a=new jasmine.NestedResults,b=0;b<this.blocks.length;b++)this.blocks[b].results&&a.addResult(this.blocks[b].results());return a};jasmine.Runner=function(a){this.env=a;this.queue=new jasmine.Queue(a);this.before_=[];this.after_=[];this.suites_=[]};jasmine.Runner.prototype.execute=function(){var a=this;a.env.reporter.reportRunnerStarting&&a.env.reporter.reportRunnerStarting(this);a.queue.start(function(){a.finishCallback()})};
+jasmine.Runner.prototype.beforeEach=function(a){a.typeName="beforeEach";this.before_.splice(0,0,a)};jasmine.Runner.prototype.afterEach=function(a){a.typeName="afterEach";this.after_.splice(0,0,a)};jasmine.Runner.prototype.finishCallback=function(){this.env.reporter.reportRunnerResults(this)};jasmine.Runner.prototype.addSuite=function(a){this.suites_.push(a)};jasmine.Runner.prototype.add=function(a){a instanceof jasmine.Suite&&this.addSuite(a);this.queue.add(a)};
+jasmine.Runner.prototype.specs=function(){for(var a=this.suites(),b=[],c=0;c<a.length;c++)b=b.concat(a[c].specs());return b};jasmine.Runner.prototype.suites=function(){return this.suites_};jasmine.Runner.prototype.topLevelSuites=function(){for(var a=[],b=0;b<this.suites_.length;b++)this.suites_[b].parentSuite||a.push(this.suites_[b]);return a};jasmine.Runner.prototype.results=function(){return this.queue.results()};
+jasmine.Spec=function(a,b,c){if(!a)throw Error("jasmine.Env() required");if(!b)throw Error("jasmine.Suite() required");this.id=a.nextSpecId?a.nextSpecId():null;this.env=a;this.suite=b;this.description=c;this.queue=new jasmine.Queue(a);this.afterCallbacks=[];this.spies_=[];this.results_=new jasmine.NestedResults;this.results_.description=c;this.matchersClass=null};jasmine.Spec.prototype.getFullName=function(){return this.suite.getFullName()+" "+this.description+"."};
+jasmine.Spec.prototype.results=function(){return this.results_};jasmine.Spec.prototype.log=function(){return this.results_.log(arguments)};jasmine.Spec.prototype.runs=function(a){this.addToQueue(new jasmine.Block(this.env,a,this));return this};jasmine.Spec.prototype.addToQueue=function(a){this.queue.isRunning()?this.queue.insertNext(a):this.queue.add(a)};jasmine.Spec.prototype.addMatcherResult=function(a){this.results_.addResult(a)};
+jasmine.Spec.prototype.expect=function(a){var b=new (this.getMatchersClass_())(this.env,a,this);b.not=new (this.getMatchersClass_())(this.env,a,this,!0);return b};jasmine.Spec.prototype.waits=function(a){this.addToQueue(new jasmine.WaitsBlock(this.env,a,this));return this};
+jasmine.Spec.prototype.waitsFor=function(a,b,c){for(var d=null,e=null,f=null,g=0;g<arguments.length;g++){var h=arguments[g];switch(typeof h){case "function":d=h;break;case "string":e=h;break;case "number":f=h}}this.addToQueue(new jasmine.WaitsForBlock(this.env,f,d,e,this));return this};jasmine.Spec.prototype.fail=function(a){this.results_.addResult(new jasmine.ExpectationResult({passed:!1,message:a?jasmine.util.formatException(a):"Exception"}))};
+jasmine.Spec.prototype.getMatchersClass_=function(){return this.matchersClass||this.env.matchersClass};jasmine.Spec.prototype.addMatchers=function(a){var b=this.getMatchersClass_(),c=function(){b.apply(this,arguments)};jasmine.util.inherit(c,b);jasmine.Matchers.wrapInto_(a,c);this.matchersClass=c};jasmine.Spec.prototype.finishCallback=function(){this.env.reporter.reportSpecResults(this)};jasmine.Spec.prototype.finish=function(a){this.removeAllSpies();this.finishCallback();a&&a()};
+jasmine.Spec.prototype.after=function(a){this.queue.isRunning()?this.queue.add(new jasmine.Block(this.env,a,this)):this.afterCallbacks.unshift(a)};jasmine.Spec.prototype.execute=function(a){var b=this;b.env.specFilter(b)?(this.env.reporter.reportSpecStarting(this),b.env.currentSpec=b,b.addBeforesAndAftersToQueue(),b.queue.start(function(){b.finish(a)})):(b.results_.skipped=!0,b.finish(a))};
+jasmine.Spec.prototype.addBeforesAndAftersToQueue=function(){for(var a=this.env.currentRunner(),b,c=this.suite;c;c=c.parentSuite)for(b=0;b<c.before_.length;b++)this.queue.addBefore(new jasmine.Block(this.env,c.before_[b],this));for(b=0;b<a.before_.length;b++)this.queue.addBefore(new jasmine.Block(this.env,a.before_[b],this));for(b=0;b<this.afterCallbacks.length;b++)this.queue.add(new jasmine.Block(this.env,this.afterCallbacks[b],this));for(c=this.suite;c;c=c.parentSuite)for(b=0;b<c.after_.length;b++)this.queue.add(new jasmine.Block(this.env,
+c.after_[b],this));for(b=0;b<a.after_.length;b++)this.queue.add(new jasmine.Block(this.env,a.after_[b],this))};jasmine.Spec.prototype.explodes=function(){throw"explodes function should not have been called";};
+jasmine.Spec.prototype.spyOn=function(a,b,c){if(a==jasmine.undefined)throw"spyOn could not find an object to spy upon for "+b+"()";if(!c&&a[b]===jasmine.undefined)throw b+"() method does not exist";if(!c&&a[b]&&a[b].isSpy)throw Error(b+" has already been spied upon");c=jasmine.createSpy(b);this.spies_.push(c);c.baseObj=a;c.methodName=b;c.originalValue=a[b];return a[b]=c};
+jasmine.Spec.prototype.removeAllSpies=function(){for(var a=0;a<this.spies_.length;a++){var b=this.spies_[a];b.baseObj[b.methodName]=b.originalValue}this.spies_=[]};jasmine.Suite=function(a,b,c,d){this.id=a.nextSuiteId?a.nextSuiteId():null;this.description=b;this.queue=new jasmine.Queue(a);this.parentSuite=d;this.env=a;this.before_=[];this.after_=[];this.children_=[];this.suites_=[];this.specs_=[]};
+jasmine.Suite.prototype.getFullName=function(){for(var a=this.description,b=this.parentSuite;b;b=b.parentSuite)a=b.description+" "+a;return a};jasmine.Suite.prototype.finish=function(a){this.env.reporter.reportSuiteResults(this);this.finished=!0;"function"==typeof a&&a()};jasmine.Suite.prototype.beforeEach=function(a){a.typeName="beforeEach";this.before_.unshift(a)};jasmine.Suite.prototype.afterEach=function(a){a.typeName="afterEach";this.after_.unshift(a)};jasmine.Suite.prototype.results=function(){return this.queue.results()};
+jasmine.Suite.prototype.add=function(a){this.children_.push(a);a instanceof jasmine.Suite?(this.suites_.push(a),this.env.currentRunner().addSuite(a)):this.specs_.push(a);this.queue.add(a)};jasmine.Suite.prototype.specs=function(){return this.specs_};jasmine.Suite.prototype.suites=function(){return this.suites_};jasmine.Suite.prototype.children=function(){return this.children_};jasmine.Suite.prototype.execute=function(a){var b=this;this.queue.start(function(){b.finish(a)})};
+jasmine.WaitsBlock=function(a,b,c){this.timeout=b;jasmine.Block.call(this,a,null,c)};jasmine.util.inherit(jasmine.WaitsBlock,jasmine.Block);jasmine.WaitsBlock.prototype.execute=function(a){this.env.reporter.log(">> Jasmine waiting for "+this.timeout+" ms...");this.env.setTimeout(function(){a()},this.timeout)};jasmine.WaitsForBlock=function(a,b,c,d,e){this.timeout=b||a.defaultTimeoutInterval;this.latchFunction=c;this.message=d;this.totalTimeSpentWaitingForLatch=0;jasmine.Block.call(this,a,null,e)};
+jasmine.util.inherit(jasmine.WaitsForBlock,jasmine.Block);jasmine.WaitsForBlock.TIMEOUT_INCREMENT=10;
+jasmine.WaitsForBlock.prototype.execute=function(a){this.env.reporter.log(">> Jasmine waiting for "+(this.message||"something to happen"));var b;try{b=this.latchFunction.apply(this.spec)}catch(c){this.spec.fail(c);a();return}if(b)a();else if(this.totalTimeSpentWaitingForLatch>=this.timeout)this.spec.fail({name:"timeout",message:"timed out after "+this.timeout+" msec waiting for "+(this.message||"something to happen")}),this.abort=!0,a();else{this.totalTimeSpentWaitingForLatch+=jasmine.WaitsForBlock.TIMEOUT_INCREMENT;
+var d=this;this.env.setTimeout(function(){d.execute(a)},jasmine.WaitsForBlock.TIMEOUT_INCREMENT)}};jasmine.FakeTimer=function(){this.reset();var a=this;a.setTimeout=function(b,c){a.timeoutsMade++;a.scheduleFunction(a.timeoutsMade,b,c,!1);return a.timeoutsMade};a.setInterval=function(b,c){a.timeoutsMade++;a.scheduleFunction(a.timeoutsMade,b,c,!0);return a.timeoutsMade};a.clearTimeout=function(b){a.scheduledFunctions[b]=jasmine.undefined};a.clearInterval=function(b){a.scheduledFunctions[b]=jasmine.undefined}};
+jasmine.FakeTimer.prototype.reset=function(){this.timeoutsMade=0;this.scheduledFunctions={};this.nowMillis=0};jasmine.FakeTimer.prototype.tick=function(a){var b=this.nowMillis,a=b+a;this.runFunctionsWithinRange(b,a);this.nowMillis=a};
+jasmine.FakeTimer.prototype.runFunctionsWithinRange=function(a,b){var c,d=[],e;for(e in this.scheduledFunctions)c=this.scheduledFunctions[e],c!=jasmine.undefined&&(c.runAtMillis>=a&&c.runAtMillis<=b)&&(d.push(c),this.scheduledFunctions[e]=jasmine.undefined);if(0<d.length){d.sort(function(a,b){return a.runAtMillis-b.runAtMillis});for(c=0;c<d.length;++c)try{var f=d[c];this.nowMillis=f.runAtMillis;f.funcToCall();f.recurring&&this.scheduleFunction(f.timeoutKey,f.funcToCall,f.millis,!0)}catch(g){}this.runFunctionsWithinRange(a,
+b)}};jasmine.FakeTimer.prototype.scheduleFunction=function(a,b,c,d){this.scheduledFunctions[a]={runAtMillis:this.nowMillis+c,funcToCall:b,recurring:d,timeoutKey:a,millis:c}};
+jasmine.Clock={defaultFakeTimer:new jasmine.FakeTimer,reset:function(){jasmine.Clock.assertInstalled();jasmine.Clock.defaultFakeTimer.reset()},tick:function(a){jasmine.Clock.assertInstalled();jasmine.Clock.defaultFakeTimer.tick(a)},runFunctionsWithinRange:function(a,b){jasmine.Clock.defaultFakeTimer.runFunctionsWithinRange(a,b)},scheduleFunction:function(a,b,c,d){jasmine.Clock.defaultFakeTimer.scheduleFunction(a,b,c,d)},useMock:function(){jasmine.Clock.isInstalled()||(jasmine.getEnv().currentSpec.after(jasmine.Clock.uninstallMock),
+jasmine.Clock.installMock())},installMock:function(){jasmine.Clock.installed=jasmine.Clock.defaultFakeTimer},uninstallMock:function(){jasmine.Clock.assertInstalled();jasmine.Clock.installed=jasmine.Clock.real},real:{setTimeout:jasmine.getGlobal().setTimeout,clearTimeout:jasmine.getGlobal().clearTimeout,setInterval:jasmine.getGlobal().setInterval,clearInterval:jasmine.getGlobal().clearInterval},assertInstalled:function(){if(!jasmine.Clock.isInstalled())throw Error("Mock clock is not installed, use jasmine.Clock.useMock()");
+},isInstalled:function(){return jasmine.Clock.installed==jasmine.Clock.defaultFakeTimer},installed:null};jasmine.Clock.installed=jasmine.Clock.real;jasmine.getGlobal().setTimeout=function(a,b){return jasmine.Clock.installed.setTimeout.apply?jasmine.Clock.installed.setTimeout.apply(this,arguments):jasmine.Clock.installed.setTimeout(a,b)};
+jasmine.getGlobal().setInterval=function(a,b){return jasmine.Clock.installed.setInterval.apply?jasmine.Clock.installed.setInterval.apply(this,arguments):jasmine.Clock.installed.setInterval(a,b)};jasmine.getGlobal().clearTimeout=function(a){return jasmine.Clock.installed.clearTimeout.apply?jasmine.Clock.installed.clearTimeout.apply(this,arguments):jasmine.Clock.installed.clearTimeout(a)};
+jasmine.getGlobal().clearInterval=function(a){return jasmine.Clock.installed.clearTimeout.apply?jasmine.Clock.installed.clearInterval.apply(this,arguments):jasmine.Clock.installed.clearInterval(a)};jasmine.version_={major:1,minor:0,build:1,revision:1286311016};
+jasmine.TrivialReporter=function(a){this.document=a||document;this.suiteDivs={};this.logRunningSpecs=!1};jasmine.TrivialReporter.prototype.createDom=function(a,b,c){for(var d=document.createElement(a),e=2;e<arguments.length;e++){var f=arguments[e];"string"===typeof f?d.appendChild(document.createTextNode(f)):f&&d.appendChild(f)}for(var g in b)"className"==g?d[g]=b[g]:d.setAttribute(g,b[g]);return d};
+jasmine.TrivialReporter.prototype.reportRunnerStarting=function(a){var b,c;this.outerDiv=this.createDom("div",{className:"jasmine_reporter"},this.createDom("div",{className:"banner"},this.createDom("div",{className:"logo"},this.createDom("a",{href:"http://pivotal.github.com/jasmine/",target:"_blank"},"Jasmine"),this.createDom("span",{className:"version"},a.env.versionString())),this.createDom("div",{className:"options"},"Show ",b=this.createDom("input",{id:"__jasmine_TrivialReporter_showPassed__",
+type:"checkbox"}),this.createDom("label",{"for":"__jasmine_TrivialReporter_showPassed__"}," passed "),c=this.createDom("input",{id:"__jasmine_TrivialReporter_showSkipped__",type:"checkbox"}),this.createDom("label",{"for":"__jasmine_TrivialReporter_showSkipped__"}," skipped"))),this.runnerDiv=this.createDom("div",{className:"runner running"},this.createDom("a",{className:"run_spec",href:"?"},"run all"),this.runnerMessageSpan=this.createDom("span",{},"Running..."),this.finishedAtSpan=this.createDom("span",
+{className:"finished-at"},"")));this.document.body.appendChild(this.outerDiv);for(var a=a.suites(),d=0;d<a.length;d++){var e=a[d],f=this.createDom("div",{className:"suite"},this.createDom("a",{className:"run_spec",href:"?spec="+encodeURIComponent(e.getFullName())},"run"),this.createDom("a",{className:"description",href:"?spec="+encodeURIComponent(e.getFullName())},e.description));this.suiteDivs[e.id]=f;var g=this.outerDiv;e.parentSuite&&(g=this.suiteDivs[e.parentSuite.id]);g.appendChild(f)}this.startedAt=
+new Date;var h=this;b.onclick=function(){h.outerDiv.className=b.checked?h.outerDiv.className+" show-passed":h.outerDiv.className.replace(/ show-passed/,"")};c.onclick=function(){h.outerDiv.className=c.checked?h.outerDiv.className+" show-skipped":h.outerDiv.className.replace(/ show-skipped/,"")}};
+jasmine.TrivialReporter.prototype.reportRunnerResults=function(a){var b=a.results(),c=0<b.failedCount?"runner failed":"runner passed";this.runnerDiv.setAttribute("class",c);this.runnerDiv.setAttribute("className",c);for(var a=a.specs(),d=c=0;d<a.length;d++)this.specFilter(a[d])&&c++;b=""+c+" spec"+(1==c?"":"s")+", "+b.failedCount+" failure"+(1==b.failedCount?"":"s");b+=" in "+((new Date).getTime()-this.startedAt.getTime())/1E3+"s";this.runnerMessageSpan.replaceChild(this.createDom("a",{className:"description",
+href:"?"},b),this.runnerMessageSpan.firstChild);this.finishedAtSpan.appendChild(document.createTextNode("Finished at "+(new Date).toString()))};jasmine.TrivialReporter.prototype.reportSuiteResults=function(a){var b=a.results(),c=b.passed()?"passed":"failed";0==b.totalCount&&(c="skipped");this.suiteDivs[a.id].className+=" "+c};jasmine.TrivialReporter.prototype.reportSpecStarting=function(a){this.logRunningSpecs&&this.log(">> Jasmine Running "+a.suite.description+" "+a.description+"...")};
+jasmine.TrivialReporter.prototype.reportSpecResults=function(a){var b=a.results(),c=b.passed()?"passed":"failed";b.skipped&&(c="skipped");for(var c=this.createDom("div",{className:"spec "+c},this.createDom("a",{className:"run_spec",href:"?spec="+encodeURIComponent(a.getFullName())},"run"),this.createDom("a",{className:"description",href:"?spec="+encodeURIComponent(a.getFullName()),title:a.getFullName()},a.description.split("__::__")[1])),b=b.getItems(),d=this.createDom("div",{className:"messages"}),
+e=0;e<b.length;e++){var f=b[e];"log"==f.type?d.appendChild(this.createDom("div",{className:"resultMessage log"},f.toString())):"expect"==f.type&&f.passed&&!f.passed()&&(d.appendChild(this.createDom("div",{className:"resultMessage fail"},f.message)),f.trace.stack&&d.appendChild(this.createDom("div",{className:"stackTrace"},f.trace.stack)))}0<d.childNodes.length&&c.appendChild(d);this.suiteDivs[a.suite.id].appendChild(c)};
+jasmine.TrivialReporter.prototype.log=function(){var a=jasmine.getGlobal().console;a&&a.log&&(a.log.apply?a.log.apply(a,arguments):a.log(arguments))};jasmine.TrivialReporter.prototype.getLocation=function(){return this.document.location};jasmine.TrivialReporter.prototype.specFilter=function(a){for(var b={},c=this.getLocation().search.substring(1).split("&"),d=0;d<c.length;d++){var e=c[d].split("=");b[decodeURIComponent(e[0])]=decodeURIComponent(e[1])}return!b.spec?!0:0==a.getFullName().indexOf(b.spec)};
+(function() {
+jasmine.FormalReporter = function(doc) {
+   this.document = doc || document;
+   this.suiteDivs = {};
+   this.logRunningSpecs = false;
+ };
+ 
+ jasmine.FormalReporter.prototype.createDom = function(type, attrs, childrenVarArgs) {
+ };
+ 
+ jasmine.FormalReporter.prototype.reportRunnerStarting = function(runner) {
+   var showPassed, showSkipped;
+ 
+   var suites = runner.suites();
+   for (var i = 0; i < suites.length; i++) {
+     var suite = suites[i];
+   }
+ 
+   this.startedAt = new Date();
+ 
+   var self = this;
+ };
+ 
+ jasmine.FormalReporter.prototype.reportRunnerResults = function(runner) {
+ };
+ 
+ jasmine.FormalReporter.prototype.reportSuiteResults = function(suite) {
+ };
+ 
+ jasmine.FormalReporter.prototype.reportSpecStarting = function(spec) {
+ };
+ 
+ jasmine.FormalReporter.prototype.reportSpecResults = function(spec) {
+   var results = spec.results();
+   var status = results.passed() ? 'passed' : 'failed';
+ 
+     var k = "#test_" + spec.description.split("__::__")[0]
+     var el = $(k)
+
+     spec.description = spec.description.split("__::__")[1]
+
+     if (status == "passed") {
+         if (k.indexOf("multi") >= 0) {
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:rgba(32,186,24,0.5)' title='" + JSON.stringify(spec.results_.items_[0].actual)+ "'> <span style='color:rgb(255,255,255);font-weight:bold'>PASS</span> </span> ")
+         } else {
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:rgba(32,186,24,0.5)' title='" + spec.results_.items_[0].actual+ "'> <span style='color:rgb(255,255,255);font-weight:bold'>PASS</span> </span> ")
+         }
+     } else {
+         if (k.indexOf("multi") >= 0) {
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:rgba(182,24,32,0.5)' title='" + JSON.stringify(spec.results_.items_[0].actual)+ "'> <span style='color:rgb(255,255,255);font-weight:bold'>FAIL</span> </span> ")
+         } else {
+             $(k).before("<span style='border-radius:3;margin-right:-50px;background-color:rgba(182,24,32,0.5)' title='" + JSON.stringify(spec.results_.items_[0].actual)+ "'> <span style='color:rgb(255,255,255);font-weight:bold'>FAIL</span> </span> ")
+         }
+     }
+ };
+ 
+ jasmine.FormalReporter.prototype.log = function() {
+ };
+ 
+ jasmine.FormalReporter.prototype.getLocation = function() {
+   return this.document.location;
+ };
+ 
+ jasmine.FormalReporter.prototype.specFilter = function(spec) {
+   var paramMap = {};
+   var params = this.getLocation().search.substring(1).split('&');
+   for (var i = 0; i < params.length; i++) {
+     var p = params[i].split('=');
+     paramMap[decodeURIComponent(p[0])] = decodeURIComponent(p[1]);
+   }
+ 
+   if (!paramMap.spec) {
+     return true;
+   }
+   return spec.getFullName().indexOf(paramMap.spec) === 0;
+ };
+ 
+})();var h=void 0,i=!0;function j(l){return l instanceof Array}function s(){throw"Pattern Match Exhausted";}
+var u=new function(){function l(a){var b;0===a?b=0:1===a?b=1:(b=l(a-1),a=l(a-2),b+=a);return b}function g(a){return function(b){var e=a,f;if(e===b)return i;e=a;f=b;if("object"===typeof e){var c=i,d;for(d in e)c=c&&f.hasOwnProperty(d)&&g(e[d])(f[d]);e=Object.keys(e).length===Object.keys(f).length;return c&&e}e=a;f=b;if(j(e)){d=i;for(c in e)d=d&&g(e[c])(f[c]);return d&&e.length==f.length}return!1}}function q(a){return function(){return a}}this.object_=function(a){return"object"===typeof a};this.array_=
+j;this.string_=function(a){return"string"===typeof a};this.num_=function(a){return"number"==typeof a};this.type_=function(a){return typeof a};this.not=function(a){return!a};this._grea_grea_eq=function(a){return function(b){return b(a())}};this._grea_grea=function(a){return function(b){return function(){a();return b()}}};this._return_=q;this.log=function(a){return function(){return console.log(a)}};this._and_and=function(a){return function(b){return a&&b}};this._or_or=function(a){return function(b){return a||
+b}};this._star=function(a){return function(b){return a*b}};this._forw=function(a){return function(b){return a/b}};this._perc=function(a){return function(b){return a%b}};this._plus=function(a){return function(b){return a+b}};this._minu=function(a){return function(b){return a-b}};this._less_eq=function(a){return function(b){return a<=b}};this._grea_eq=function(a){return function(b){return a>=b}};this._less=function(a){return function(b){return a<b}};this._grea=function(a){return function(b){return a>
+b}};this._bang_eq=function(a){return function(b){return!g(a)(b)}};this._forw_eq=function(a){return function(b){return!g(a)(b)}};this._eq_eq=g;this.fib=l;this.speedtest=new function(){function a(b){return 0===b?0:1===b?1:a(b-1)+a(b-2)}function b(){return(new Date).getTime()}this.get_time=b;this.time=function(a){return function(){var f=b();a();return b()-f}};this.fast_fib=a;this.floor=Math.floor};this._less_or=function(a){return function(b){return a(b)}};this._or_grea=function(a){return function(b){return b(a)}};
+this._less_col=function(a){return function(b){return a(b)}};this._comp_col=function(a){return function(b){return function(e){return a(b(e))}}};this.id=function(a){return a};this.flip=function(a){return function(b){return function(e){return a(e)(b)}}};this._apos=function(a){return function(b){return b(a)}};this.string=new function(){function a(a){return a.replace(/\s+$/,"")}function b(a){return a.replace(/^\s+/,"")}this.lstrip=b;this.rstrip=a;this.strip=function(e){return b(a(e))};this.length=function(a){return a.length};
+this._plus_plus_plus=function(a){return function(b){return""+a+b}}};this.err=function(a){var b;try{a(),b=!1}catch(e){b=e}return b};this.option=new function(){this.option=function(a){return function(b){if(b.hasOwnProperty("none"))return a;var e=b.some;if(b.hasOwnProperty("some"))return e;s()}}};this.html=new function(){function a(a){return function(b){return function(){return a.push(b)}}}function b(a){return function(b){return b.split(a)}}function e(a){return JSON.stringify(a)}function f(a){return function(b){return function(){return $(b.element).append($(a.element).detach())}}}
+function c(a){return function(){var b=$(a).get(0);return{add_class:function(a){return function(){return b.setAttribute("class",b.getAttribute("class")+" "+a)}},add_style:function(a){return function(c){return function(){b.style[a]=c}}},element:b,inner:function(){return b.innerHTML},on_click:function(a){return function(){b.onclick=a}},set:function(a){return function(){b.innerHTML=a}}}}}this.get=c;this.$_eq=function(a){return function(b){return function(){if("undefined"!=typeof $){var c=$(a).get(0);
+"undefined"!=typeof c&&(c.innerHTML=b)}}}};var d;this.$_or=d=function(a){return function(b){return function(c){return function(){return $(a).css(b,c)}}}};this.$_comp=function(a){return function(b){return function(){return $(a).addClass(b)}}};this.$_plus=function(a){return function(b){return function(){return $(a).append(b)}}};this.div=function(a){return function(){return"<div id='"+a+"'/>"}};this.move=f;this.on_load=function(a){return function(){return window.addEventListener("load",a,!1)}};this.stringify=
+e;this._bang_bang=function(a){return function(b){return a[b]}};this.with_page=function(a){return function(){var b=$("body").clone(),c=a();$("body").replaceWith(b);return c}};this.split=b;var k=0,t={reportRunnerResults:function(){return phantom.exit(k)},reportSpecResults:function(a){if(a.results().passed())var c={},a=function(){return c};else{var d=a.results_.items_,f;f=a.description.split("__::__")[1];var w;w=JSON.stringify(d[0].expected);var x;x=JSON.stringify(d[0].actual);var y,a=b("__::__")(a.description),
+a=b("_")(a[0])[0];y=e(parseInt(a)+1);a=function(){var a;if(g(k)(0))a=function(){return console.log("\r                        ")};else{var b={};a=function(){return b}}a();k=1;console.log("Test failed at line "+y+("\n\n"+f+("\n\n    Expected "+w+("\n    Actual   "+x+""))));return console.log("")}}return a()}};this.console_runner=function(){var a=jasmine.getEnv();a.addReporter(t);return a.execute()};this.push=a;var r={failed:0,messages:[],reportRunnerResults:function(){var a;if(0<r.failed){var b=r.messages;
+a=function(){return console.log(b)}}else{var c={};a=function(){return c}}a();return console.log(""+(r.total-r.failed)+("/"+r.total+" tests passed"))},reportSpecResults:function(b){var c=b.results().passed();r.total++;if(c)var d={},c=function(){return d};else c=function(){r.failed++;a(r.messages)(b.description)();return{}};return c()},total:0};this.console_reporter=r;this.table_of_contents=function(){$("code").addClass("prettyprint");$("code").addClass("lang-hs");d(".test")("position")("relative")();
+d(".test")("left")("50px")();prettyPrint();var a=new jasmine.TrivialReporter,b=new jasmine.FormalReporter,e=jasmine.getEnv();e.addReporter(a);e.addReporter(b);e.addReporter(r);e.execute();a=c(".jasmine_reporter")();b=c("#test_suite")();return f(a)(b)()}};var m=new function(){function a(a){return function(b){function c(d){if(d.hasOwnProperty("nil"))return b;var f=d.head,e=d.tail;if(d.hasOwnProperty("head")&&d.hasOwnProperty("tail"))return a(f)(c(e));s()}return c}}function b(a){return function(b){if(b.hasOwnProperty("nil"))throw"Foldl1 called on empty list";
+return e(a)(p(b))(n(b))}}function e(a){return function(b){return function(c){for(var d=h,f=b;"undefined"==typeof d;){var e=f;if(c.hasOwnProperty("nil"))d=e;else{var e=f,k=c.head,n=c.tail;c.hasOwnProperty("head")&&c.hasOwnProperty("tail")?(f=a(e)(k),c=n,d=h):s()}}return d}}}function f(a){for(var b=h,c={nil:i};"undefined"==typeof b;){var d=c;if(a.hasOwnProperty("nil"))b=d;else{var d=c,f=a.head,e=a.tail;a.hasOwnProperty("head")&&a.hasOwnProperty("tail")?(c={head:f,tail:d},a=e,b=h):s()}}return b}function c(a){return function(b){var d=
+a;if(b.hasOwnProperty("nil"))return{nil:i};var d=a,f=d(p(b)),b=c(d)(n(b));return{head:f,tail:b}}}function d(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:i};var c=a,f=b;if(c(p(f)))return b=p(f),c=d(c)(n(f)),{head:b,tail:c};c=a;c=d(c);b=n(b);return c(b)}}function k(a){return function(b){var c=b;if(a.hasOwnProperty("nil"))return c;var c=a.head,d=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b=k(d)(b),{head:c,tail:b};s()}}function t(a){return function(b){if(0===
+a)b={nil:i};else var c=t(a-1)(b),b={head:b,tail:c};return b}}function g(a){if(a.hasOwnProperty("nil"))return 0;var b=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return 1+g(b);s()}function m(a){return function(b){var c=b;if(0===a)return{nil:i};c=b;b=p(c);c=m(a-1)(n(c));return{head:b,tail:c}}}function n(a){var b=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))throw"Tail called on empty list";s()}function p(a){var b=a.head;if(a.hasOwnProperty("head")&&
+a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))throw"Head called on empty list";s()}this._col_col=function(a){return function(b){return{head:a,tail:b}}};this.empty_=function(a){return a.hasOwnProperty("nil")?i:!1};this.head=p;this.tail=n;this.last=function(a){for(var b=h;"undefined"==typeof b;){var c=a.head;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail")&&a.tail.hasOwnProperty("nil"))b=c;else if(c=a.tail,a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))a=c,b=h;else{if(a.hasOwnProperty("nil"))throw"Last called on empty list";
+s()}}return b};this.take=m;this.drop=function(a){return function(b){for(var c=h,d=a;"undefined"==typeof c;)c=b,0!==d&&(c=b,d-=1,b=n(c),c=h);return c}};this._comp_comp=function(a){return function(b){for(var c=h,d={nil:i};"undefined"==typeof c;){var c=b,f=d;c>=a?(b=c-1,d={head:c,tail:f},c=h):c=f=d}return c}};this.take_while=function(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:i};var c=a,f;c(p(b))?(f=p(b),b=d(c)(n(b)),f={head:f,tail:b}):f={nil:i};return f}};this.drop_while=function(a){return function(b){for(var c=
+h,d=a;"undefined"==typeof c;)if(c=d,b.hasOwnProperty("nil"))c={nil:i};else{var c=d,f=b;c(p(f))?(d=c,b=n(f),c=h):c=f=b}return c}};this.length=g;this.init=t;this._plus_plus=k;this.filter=d;this.map=c;this.reverse=f;this.take_apos=function(a){return function(b){for(var c=h,d=a,e={nil:i};"undefined"==typeof c;)if(c=e,0!==d)var k=b,c=e,d=d-1,b=n(k),e={head:p(k),tail:c},c=h;return f(c)}};this.foldl=e;this.foldl1=b;this.foldr=a;this.foldr1=function(b){return function(c){if(c.hasOwnProperty("nil"))throw"Foldr1 called on empty list";
+return a(b)(p(c))(n(c))}};this.all_=function(a){var d=b(function(a){return function(b){return a&&b}}),f=c(a);return function(a){return d(f(a))}};this.any_=function(a){var d=b(function(a){return function(b){return a||b}}),f=c(a);return function(a){return d(f(a))}};this.sum=b(function(a){return function(b){return a+b}});this.product=b(function(a){return function(b){return a*b}});var v=b(function(a){return function(b){return k(a)(b)}});this.concat=v;this.concat_map=function(a){return function(b){return v(c(a)(b))}};
+this.maximum=b(function(a){return function(b){return a>b?a:b}});this.minimum=b(function(a){return function(b){return a>b?b:a}})};this.list=m;this.seq=new function(){function a(b){if(b.hasOwnProperty("end"))return{end:i};var c=b.seq;if(b.hasOwnProperty("seq")){var d=h;return{seq:function(){if(!d){var b;b=c();var f=b.elem,e=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var k={elem:f,next:a(e)};b=function(){return k}}else s(),b=h;d=b()}return d}}}s()}function b(a){return function(c){return function(d){if(c.hasOwnProperty("end")||
+d.hasOwnProperty("end"))return{end:i};var f=c.seq,e=d.seq;if(c.hasOwnProperty("seq")&&d.hasOwnProperty("seq"))return{seq:function(){var c;var d=f();c=d.elem;var k=d.next;if(d.hasOwnProperty("elem")&&d.hasOwnProperty("next")){var d=e(),p=d.elem,g=d.next;if(d.hasOwnProperty("elem")&&d.hasOwnProperty("next")){var t={elem:a(c)(p),next:b(a)(k)(g)};c=function(){return t}}else s(),c=h}else s(),c=h;return c()}};s()}}}function e(a){if(a.hasOwnProperty("end"))return{nil:i};var b=a.seq;if(a.hasOwnProperty("seq")){var b=
+b(),a=b.elem,c=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var d,b=e(c);d={head:a,tail:b};a=function(){return d}}else s(),a=h;return a()}s()}function f(a){if(a.hasOwnProperty("nil"))return{end:i};var b=a.head,c=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return{seq:function(){return{elem:b,next:f(c)}}};s()}function c(a){return function(b){return{seq:function(){return{elem:b,next:c(a)(a(b))}}}}}var d=m.tail||window.tail,k=m.take||window.take;this.seq=function(a){return{seq:a}};
+this.iterate=c;this.from_list=f;this.to_list=e;this.take=k=function(a){return function(b){if(b.hasOwnProperty("end")||0===a)return{end:i};var c=b.seq;if(b.hasOwnProperty("seq"))return{seq:function(){var b;b=c();var d=b.elem,f=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var e={elem:d,next:k(a-1)(f)};b=function(){return e}}else s(),b=h;return b()}};s()}};this.zip_with=b;this._col_col_col=function(a){return function(b){return{seq:function(){return{elem:a,next:b()}}}}};this.tail=d=function(a){if(a.hasOwnProperty("end"))throw"tail called on empty seq";
+var b=a.seq;if(a.hasOwnProperty("seq"))return b().next;s()};var g=this.to_lazy=a,r=q({seq:function(){var a=b(function(a){return function(b){return a+b}})(l),c=d(l);return{elem:1,next:a(c)}}}),l;this.fibs=l=g({seq:function(){return{elem:1,next:r()}}})};this.Formal_Z=new function(){var a=m.map||window.map,b=m.concat_map||window.concat_map;this.map=a=function(a){return function(b){return function(d){return a.map(d)(b)}}};this.bind=function(a){return function(b){var d=a.ret;if(a.hasOwnProperty("ret"))return d(b);
+s()}};var e={map:function(a){return function(b){if(b.hasOwnProperty("nil"))return{nil:i};var d=b.head,k=b.tail;if(b.hasOwnProperty("head")&&b.hasOwnProperty("tail"))return{head:a(d),tail:e.map(a)(k)};s()}}};this.list_functor=e;this.list_monad={_grea_grea_eq:function(a){return function(c){return b(c)(a)}},_return_:function(a){return{head:a,tail:{nil:i}}}};this.js_monad={_grea_grea_eq:function(a){return function(b){return b(a())}},_return_:function(a){return function(){return a}}}}};
+("undefined"==typeof global?window:global).prelude=u;
+("undefined"==typeof global?window:global).parsec=new function(){function l(a){return function(b){b.unshift(a);return b}}function g(a){return function(b){var e=b.parser;if(b.hasOwnProperty("parser"))return{parser:function(b){var c=e(b);return a({f:e,f_apos:c,parsed:c.parsed,rest:c.rest,text:b})}};s()}}var q=u._eq_eq||window._eq_eq;this.run_parser=function(a){return function(b){var e=a.parser;if(a.hasOwnProperty("parser"))return b=e(b),e=b.parsed.some,b.hasOwnProperty("parsed")&&b.parsed.hasOwnProperty("some")?
+{some:e}:{none:i};s()}};this._less$_grea=function(a){return function(b){var e=b.parser;if(b.hasOwnProperty("parser"))return{parser:function(b){var b=e(b),c=b.parsed.some,d=b.rest;b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("some")?b={parsed:{some:a(c)},rest:d}:(c=b.rest,b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("none")?b={parsed:{none:i},rest:c}:(s(),b=h));return b}};s()}};this._less_star_grea=function(a){return function(b){var e=
+a.parser,f=b.parser;if(a.hasOwnProperty("parser")&&b.hasOwnProperty("parser"))return{parser:function(a){var b=e(a),a=b.parsed.some,k=b.rest;if(b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("some")){var b=f(k),k=b.parsed.some,g=b.rest;b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("some")?a={parsed:{some:a(k)},rest:g}:(k=b.rest,b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("none")?a={parsed:{none:i},rest:k}:
+(s(),a=h))}else a=b.rest,b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("none")?a={parsed:{none:i},rest:a}:(s(),a=h);return a}};s()}};this.lift=g;this._star_grea=function(a){return function(b){var e=a.parser,f=b.parser;if(a.hasOwnProperty("parser")&&b.hasOwnProperty("parser"))return{parser:function(a){var a=e(a),b=a.parsed.some,b=a.rest;a.hasOwnProperty("parsed")&&a.hasOwnProperty("rest")&&a.parsed.hasOwnProperty("some")?a=f(b):(b=a.rest,a.hasOwnProperty("parsed")&&
+a.hasOwnProperty("rest")&&a.parsed.hasOwnProperty("none")?a={parsed:{none:i},rest:b}:(s(),a=h));return a}};s()}};this._less_or_grea=function(a){return function(b){var e=a.parser,f=b.parser;if(a.hasOwnProperty("parser")&&b.hasOwnProperty("parser"))return{parser:function(a){var b=e(a),k=b.rest;return b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("none")&&q(a)(k)?f(a):b}};s()}};this.try_apos=g(function(a){return a.hasOwnProperty("parsed")&&a.parsed.hasOwnProperty("none")?
+{parsed:{none:i},rest:a.text}:a.f_apos});this.string=function(a){return{parser:function(b){var e=b.substring(0,a.length);return q(e)(a)?{parsed:{some:a},rest:b.substring(a.length)}:{parsed:{none:i},rest:b}}}};this.push_excl=l;var m=g(function(a){var b=a;if(a.hasOwnProperty("parsed")&&a.parsed.hasOwnProperty("none"))return{parsed:{some:[]},rest:b.rest};b=a.parsed.some;if(a.hasOwnProperty("parsed")&&a.parsed.hasOwnProperty("some")){var e=l(b);var b=m({parser:a.f}),f=b.parser;b.hasOwnProperty("parser")?
+b={parser:function(a){var a=f(a),b=a.parsed.some,k=a.rest;a.hasOwnProperty("parsed")&&a.hasOwnProperty("rest")&&a.parsed.hasOwnProperty("some")?a={parsed:{some:e(b)},rest:k}:(b=a.rest,a.hasOwnProperty("parsed")&&a.hasOwnProperty("rest")&&a.parsed.hasOwnProperty("none")?a={parsed:{none:i},rest:b}:(s(),a=h));return a}}:(s(),b=h);return b.parser(a.rest)}s()});this.many=m;this.Testing=new function(){}};
+("undefined"==typeof global?window:global).Benchmarks_for_the_prelude=new function(){function l(b){for(var d=h;"undefined"==typeof d;)if(d=b,3>d)d=0;else{var d=b,e=a(d%3)(0),f=h,f=a(d%5)(0);e||f?f=1+l(d-1):(b=d-1,f=h);d=f}return d}this.title=function(a){return function(){return g(m("\r                                  "))(function(){return g(m(a))(function(){return q(i)})})()}};var g=u._grea_grea_eq||window._grea_grea_eq,q=u._return_||window._return_,m=u.log||window.log,a=u._eq_eq||window._eq_eq,
+b=u._comp_comp||window._comp_comp,e=u.filter||window.filter,f=u.sum||window.sum,b=u.list._comp_comp||window._comp_comp,e=u.list.filter||window.filter,f=u.list.sum||window.sum;this.euler_1=function(a){return function(){for(var b=0,e=1;e<a;){if(0==e%3||0==e%5)b+=e;e++}return b}};this.euler_2=function(b){return function(d){for(var e=h,f=b;"undefined"==typeof e;){var e=f,g=d;if(3>e)e=g;else{var e=f,g=d,m=a(e%3)(0),l=a(e%5)(0);m||l?(f=e-1,d=g+1):(e=f,g=d,f=e-1,d=g);e=h}}return e}};this.euler_3=l;this.euler_4=
+function(c){return function(){var d=b(1)(c),d=e(function(b){var c=a(b%3)(0),b=a(b%5)(0);return c||b})(d);return f(d)}};this.euler_5=function(a){return function(b){for(var e=h,f=a;"undefined"==typeof e;){var e=f,g=b;3>e?e=g:(e=f,g=b,0==e%3||0==e%5?(f=e-1,b=g+1):(e=f,g=b,f=e-1,b=g),e=h)}return e}}};("undefined"==typeof global?window:global).Tests_for_partial_records=new function(){};
+var z=new function(){this.rev_1=function(g){for(var l=h,m={nil:i};"undefined"==typeof l;){var a=m;if(g.hasOwnProperty("nil"))l=a;else{var a=m,b=g.head,e=g.tail;g.hasOwnProperty("head")&&g.hasOwnProperty("tail")?(m={head:b,tail:a},g=e,l=h):s()}}return l};var l={nil:i};this.rev_2=function(g){for(var q=h,m=l;"undefined"==typeof q;){var a=m;if(g.hasOwnProperty("nil"))q=a;else{var a=m,b=g.head,e=g.tail;g.hasOwnProperty("head")&&g.hasOwnProperty("tail")?(m={head:b,tail:a},g=e,q=h):s()}}return q};this.test_x=
+{head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{head:6,tail:{head:7,tail:{nil:i}}}}}}}}};("undefined"==typeof global?window:global).Tests_for_TCO_bugs=z;("undefined"==typeof global?window:global).Tests_for_parser_bugs=new function(){};
+var is_array;is_array=function(i){return i instanceof Array};var __undefined__;__undefined__="undefined";var run;run=function(i){return i()};var error;error=function(i){throw i;};var exhaust;exhaust=function(){error("Pattern Match Exhausted")};var __check;__check=function(i,g){return i.hasOwnProperty(g)};
+describe("",function(){describe("prelude",function(){var i;i=prelude.array_;var g;g=prelude._eq_eq;var e;e=prelude.fib;var a;a=prelude.speedtest;var c;c=prelude.id;var d;d=prelude.err;var f;f=prelude.list;i=prelude.array_;g=prelude._eq_eq;e=prelude.fib;a=prelude.speedtest;c=prelude.id;d=prelude.err;f=prelude.list;new function(){it("26_26__::__        not false",function(){expect(function(){try{var b;b=run(function(){return run(function(){return!0})});return b}catch(n){return{error:n}}}()).toEqual(!0)});
+it("29_29__::__        object? {}",function(){expect(function(){try{var b;var n={};b=run(function(){return run(function(){return"object"===typeof n})});return b}catch(a){return{error:a}}}()).toEqual(!0)});it("30_30__::__        array? []",function(){expect(function(){try{return i([])}catch(b){return{error:b}}}()).toEqual(!0)});it("31_31__::__        not (array? {})",function(){expect(function(){try{var b;var n=i({});b=run(function(){return run(function(){return!n})});return b}catch(a){return{error:a}}}()).toEqual(!0)});
+it("32_32__::__        not (object? 0)",function(){expect(function(){try{var b;b=run(function(){return run(function(){return!1})});var n;n=run(function(){return run(function(){return!b})});return n}catch(a){return{error:a}}}()).toEqual(!0)});it("53_56multi__::__        do! x   <- `1 + 4`\n            y   <- `2 + 3`\n            ans <- `x + y`\n            return (10 == ans)",function(){expect(function(){try{return run(function(){var b=run,a=run(function(){return 5}),c=run(function(){return 5}),h=
+run(function(){return a+c}),f=g(10)(h);return b(function(){return f})})}catch(b){return{error:b}}}()).toEqual(!0)});it("58_58__::__        5  == do! return 5",function(){expect(5).toEqual(run(function(){return run(function(){return 5})}))});it("59_59__::__        10 == do! `5 + 5`",function(){expect(10).toEqual(run(function(){return run(function(){return 10})}))});it("70_73multi__::__        var x = 0\n            y = do z <- `x = 1`\n                   return z\n        x == 0",function(){expect(function(){try{return g(0)(0)}catch(b){return{error:b}}}()).toEqual(!0)});
+it("129_129__::__        (3 * 4) + 5 * 4 == 64 / 2",function(){expect(function(b){return function(a){return run(function(){return run(function(){return b+a})})}}(function(b){return function(a){return run(function(){return run(function(){return b*a})})}}(3)(4))(function(b){return function(a){return run(function(){return run(function(){return b*a})})}}(5)(4))).toEqual(function(b){return function(a){return run(function(){return run(function(){return b/a})})}}(64)(2))});it("130_130__::__        4 - 1 != 5 - 10",
+function(){expect(function(){try{var b;b=run(function(){return run(function(){return 3})});var a=run(function(){return run(function(){return-5})}),c=g(b)(a);return run(function(){return run(function(){return!c})})}catch(f){return{error:f}}}()).toEqual(!0)});it("131_131__::__        (10 >= 5 + 5) != (4 + 5 <= 10 - 2)",function(){expect(function(){try{var b,a=run(function(){return run(function(){return 10})});b=run(function(){return run(function(){return 10>=a})});var c;c=run(function(){return run(function(){return 9})});
+var f=run(function(){return run(function(){return 8})}),h=run(function(){return run(function(){return c<=f})}),d=g(b)(h);return run(function(){return run(function(){return!d})})}catch(e){return{error:e}}}()).toEqual(!0)});it("132_132__::__        ({test: 1} == {test: 1}) == true",function(){expect(g({test:1})({test:1})).toEqual(!0)});it("133_133__::__        ({test: 1} != {test: 1}) == false",function(){expect(function(b){return function(a){var c=g(b)(a);return run(function(){return run(function(){return!c})})}}({test:1})({test:1})).toEqual(!1)});
+describe("speedtest",function(){var b;b=prelude.speedtest.time;var a;a=prelude.speedtest.fast_fib;var c;c=prelude.speedtest.floor;b=prelude.speedtest.time;a=prelude.speedtest.fast_fib;c=prelude.speedtest.floor;new function(){it("165_165__::__            fast_fib 7 == fib 7",function(){expect(a(7)).toEqual(e(7))});it("174_176multi__::__            do! fast_time <- time yield fast_fib 30\n                slow_time <- time yield fib 30\n                return (floor (fast_time / slow_time * 100) >= 80)",
+function(){expect(function(){try{return run(function(){var f=run,d=b(function(){return a(30)}),g=run(d),d=b(function(){return e(30)}),j=run(d),d=c,m;m=run(function(){return run(function(){return g/j})});var k;k=run(function(){return run(function(){return 100*m})});var p=d(k),s;s=run(function(){return run(function(){return 80<=p})});return f(function(){return s})})}catch(f){return{error:f}}}()).toEqual(!0)})}});it("185_185__::__        3 |> (\u03bby = y + 1) |> \u03bby = y + 1 == 5",function(){expect(function(){try{var b;
+b=run(function(){return run(function(){return 4})});var a=g,c;c=run(function(){return run(function(){return b+1})});return a(c)(5)}catch(f){return{error:f}}}()).toEqual(!0)});it("186_186__::__        (\u03bby x z = x + y + z + 1) 1 <| 3 <| 4 == 9",function(){expect(function(b){return function(a){return b(a)}}(function(b){return function(a){return b(a)}}(function(b){return function(a){return function(c){var f;f=run(function(){return run(function(){return a+b})});var h;h=run(function(){return run(function(){return f+
+c})});return run(function(){return run(function(){return h+1})})}}}(1))(3))(4)).toEqual(9)});it("193_193__::__        (\u03bbx = x - 3) <: (\u03bbx = x - 3) <: 5 + 5 == 4",function(){expect(function(b){return function(a){return b(a)}}(function(b){return run(function(){return run(function(){return b-3})})})(function(b){return function(a){return b(a)}}(function(b){return run(function(){return run(function(){return b-3})})})(function(b){return function(a){return run(function(){return run(function(){return b+
+a})})}}(5)(5)))).toEqual(4)});it("204_204__::__        ((\u03bbx = x + 1) .: (\u03bbx = x * 2) .: \u03bbx = x - 3) 4 == 3",function(){expect(function(b){return function(a){return function(c){return b(a(c))}}}(function(b){return run(function(){return run(function(){return b+1})})})(function(b){return function(a){return function(c){return b(a(c))}}}(function(b){return run(function(){return run(function(){return 2*b})})})(function(b){return run(function(){return run(function(){return b-3})})}))(4)).toEqual(3)});
+it("205_205__::__        id [1, 2, 3] == [1, 2, 3]",function(){expect([1,2,3]).toEqual([1,2,3])});it("206_206__::__        flip (\u03bbx y = x - y) 3 5 == 2",function(){expect(function(b){return function(a){return function(c){return b(c)(a)}}}(function(b){return function(a){return run(function(){return run(function(){return b-a})})}})(3)(5)).toEqual(2)});describe("string",function(){var b;b=b=prelude.string.strip;new function(){it('228_228__::__            strip "    test    " is "test"',function(){expect(b("    test    ")).toEqual("test")});
+it('232_233multi__::__            let x = "test"\n            in "hello `x`" is "hello test"',function(){expect(function(){try{var b=g,a;a=run(function(){return run(function(){return"hello test"})});var c;c=run(function(){return run(function(){return""+a+""})});return b(c)("hello test")}catch(f){return{error:f}}}()).toEqual(!0)})}});describe("option",function(){var b;b=b=prelude.option.option;new function(){it("258_258__::__            option 3 {some: 2} == 2",function(){expect(b(3)({some:2})).toEqual(2)})}});
+describe("html",function(){var b;b=prelude.html.get;var a;a=prelude.html.div;b=prelude.html.get;a=prelude.html.div;new function(){it('331_341multi__::__            do! d <- div "test1"\n    \n                "body"   $+ d\n                "#test1" $= "I am a test!"\n    \n                text <- get "#test1"\n                text <- text.inner\n    \n                "#test1" $= ""\n    \n                return (text == "I am a test!")',function(){expect(function(){try{return run(function(){var c=
+run,f=a("test1"),d=run(f);run(function(){return $("body").append(d)});run(function(){if("undefined"!=typeof $){var a;a=$("#test1").get(0);"undefined"!=typeof a&&(a.innerHTML="I am a test!")}});f=b("#test1");f=run(f).inner;f=run(f);run(function(){if("undefined"!=typeof $){var a;a=$("#test1").get(0);"undefined"!=typeof a&&(a.innerHTML="")}});var e=g(f)("I am a test!");return c(function(){return e})})}catch(c){return{error:c}}}()).toEqual(!0)})}});describe("list",function(){var a;a=prelude.list.empty_;
+var f;f=prelude.list.head;var e;e=prelude.list.tail;var k;k=prelude.list.last;var h;h=prelude.list.take;var i;i=prelude.list.drop;var l;l=prelude.list._comp_comp;var j;j=prelude.list.take_while;var m;m=prelude.list.drop_while;var r;r=prelude.list.length;var p;p=prelude.list.init;var s;s=prelude.list._plus_plus;var w;w=prelude.list.filter;var x;x=prelude.list.map;var t;t=prelude.list.reverse;var B;B=prelude.list.take_apos;var y;y=prelude.list.foldl;var C;C=prelude.list.foldr;var u;u=prelude.list.all_;
+var v;v=prelude.list.any_;var z;z=prelude.list.sum;var D;D=prelude.list.product;var A;A=prelude.list.concat;var H;H=prelude.list.concat_map;var F;F=prelude.list.maximum;var G;G=prelude.list.minimum;a=prelude.list.empty_;f=prelude.list.head;e=prelude.list.tail;k=prelude.list.last;h=prelude.list.take;i=prelude.list.drop;l=prelude.list._comp_comp;j=prelude.list.take_while;m=prelude.list.drop_while;r=prelude.list.length;p=prelude.list.init;s=prelude.list._plus_plus;w=prelude.list.filter;x=prelude.list.map;
+t=prelude.list.reverse;B=prelude.list.take_apos;y=prelude.list.foldl;C=prelude.list.foldr;u=prelude.list.all_;v=prelude.list.any_;z=prelude.list.sum;D=prelude.list.product;A=prelude.list.concat;H=prelude.list.concat_map;F=prelude.list.maximum;G=prelude.list.minimum;new function(){it("481_495multi__::__            var xs = [:\n    \n                [:1,2,3]\n    \n                [:1,2,3:]\n    \n                (1::2::3::{nil})\n    \n                { head = 1\n                  tail = { head = 2\n                           tail = { head = 3\n                                    tail = {nil} }}}\n            ]\n    \n            all? (\u03bby = [:1,2,3] == y) xs",
+function(){expect(function(){try{return u(function(a){return g({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})(a)})({head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{nil:!0}}}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("522_522__::__            1 .. 5 == [:1,2,3,4,5]",function(){expect(l(1)(5)).toEqual({head:1,
+tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{nil:!0}}}}}})});it("526_526__::__            288045 == 1 .. 1111 |> filter (\u03bbx = x % 3 == 0 || x % 5 == 0) |> sum",function(){expect(288045).toEqual(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(l(1)(1111))(w(function(a){var b=g,c;c=run(function(){return run(function(){return a%3})});var f=b(c)(0),b=g;c=run(function(){return run(function(){return a%5})});var j=b(c)(0);return run(function(){return run(function(){return f||
+j})})})))(z))});it("537_537__::__            not (empty? (1 :: {nil}))",function(){expect(function(){try{var c;var f=a({head:1,tail:{nil:!0}});c=run(function(){return run(function(){return!f})});return c}catch(j){return{error:j}}}()).toEqual(!0)});it("538_538__::__            empty? [:]",function(){expect(function(){try{return a({nil:!0})}catch(c){return{error:c}}}()).toEqual(!0)});it("540_540__::__            head [: 1, 2 ] is 1",function(){expect(f({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual(1)});
+it("541_541__::__            tail [: 1, 2 ] is [:2]",function(){expect(e({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual({head:2,tail:{nil:!0}})});it("542_542__::__            last [: 1, 2 ] is 2",function(){expect(k({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual(2)});it('544_544__::__            err (lazy head {nil}) is "Head called on empty list"',function(){expect(d(function(){var a;a=void 0;return function(){a||(a=f({nil:!0}));return a}}())).toEqual("Head called on empty list")});it('545_545__::__            err (lazy tail {nil}) is "Tail called on empty list"',
+function(){expect(d(function(){var a;a=void 0;return function(){a||(a=e({nil:!0}));return a}}())).toEqual("Tail called on empty list")});it('546_546__::__            err (lazy last {nil}) is "Last called on empty list"',function(){expect(d(function(){var a;a=void 0;return function(){a||(a=k({nil:!0}));return a}}())).toEqual("Last called on empty list")});it("548_548__::__            take(2, [: 1, 2, 3 ]) == [: 1, 2 ]",function(){expect(h(2)({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual({head:1,
+tail:{head:2,tail:{nil:!0}}})});it("549_549__::__            drop(2, [: 1, 2, 3 ]) == [: 3 ]",function(){expect(i(2)({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual({head:3,tail:{nil:!0}})});it("551_551__::__            take_while (\u03bbx = x < 0) [:] == [:]",function(){expect(j(function(a){return run(function(){return run(function(){return 0>a})})})({nil:!0})).toEqual({nil:!0})});it("552_552__::__            take_while (\u03bbx = x > 0) [: 2, 1, 0 ] == [: 2, 1 ]",function(){expect(j(function(a){return run(function(){return run(function(){return 0<
+a})})})({head:2,tail:{head:1,tail:{head:0,tail:{nil:!0}}}})).toEqual({head:2,tail:{head:1,tail:{nil:!0}}})});it("554_554__::__            drop_while (\u03bbx = x < 0) {nil} == {nil}",function(){expect(m(function(a){return run(function(){return run(function(){return 0>a})})})({nil:!0})).toEqual({nil:!0})});it("555_555__::__            drop_while (\u03bbx = x > 0) [: 2, 1, 0 ] == [: 0 ]",function(){expect(m(function(a){return run(function(){return run(function(){return 0<a})})})({head:2,tail:{head:1,
+tail:{head:0,tail:{nil:!0}}}})).toEqual({head:0,tail:{nil:!0}})});it("564_564__::__            length [: 1, 2, 3, 4 ] == 4",function(){expect(r({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(4)});it("571_571__::__            length (init 30 0) == 30",function(){expect(r(p(30)(0))).toEqual(30)});it("572_572__::__            tail (init 3 0)    == init 2 0",function(){expect(e(p(3)(0))).toEqual(p(2)(0))});it("581_581__::__            {nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}",
+function(){expect(s({nil:!0})(function(a){return function(b){return{head:a,tail:b}}}(1)(function(a){return function(b){return{head:a,tail:b}}}(2)({nil:!0})))).toEqual(function(a){return function(b){return{head:a,tail:b}}}(1)(function(a){return function(b){return{head:a,tail:b}}}(2)({nil:!0})))});it("582_582__::__            [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]",function(){expect(s({head:1,tail:{head:2,tail:{nil:!0}}})({head:3,tail:{head:4,tail:{nil:!0}}})).toEqual({head:1,tail:{head:2,tail:{head:3,
+tail:{head:4,tail:{nil:!0}}}}})});it("591_591__::__            [: 1, 2, 3, 4 ] 'filter (\u03bbx = x > 2) == [: 3, 4 ]",function(){expect(function(a){return function(b){return b(a)}}({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})(w(function(a){return run(function(){return run(function(){return 2<a})})}))).toEqual({head:3,tail:{head:4,tail:{nil:!0}}})});it("598_598__::__            [: 2, 3, 4 ] == [: 1, 2, 3 ] |> map \u03bbx = x + 1",function(){expect({head:2,tail:{head:3,tail:{head:4,
+tail:{nil:!0}}}}).toEqual(function(a){return function(b){return b(a)}}({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})(x(function(a){return run(function(){return run(function(){return a+1})})})))});it("609_609__::__            reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]",function(){expect(t({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual({head:4,tail:{head:3,tail:{head:2,tail:{head:1,tail:{nil:!0}}}}})});it("611_612multi__::__            var test_x = [: 1, 2, 3, 4 ]\n            test_x == reverse <| reverse test_x",
+function(){expect(function(){try{var a;a={head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}};var b=g(a),c=t,f,j=t(a);f=c(j);return b(f)}catch(d){return{error:d}}}()).toEqual(!0)});it("620_621multi__::__            var x = [: 1, 2, 3, 4, 5, 6, 7, 8 ]\n            take 5 x == take' 5 x",function(){expect(function(){try{var a;a={head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{head:6,tail:{head:7,tail:{head:8,tail:{nil:!0}}}}}}}}};return g(h(5)(a))(B(5)(a))}catch(b){return{error:b}}}()).toEqual(!0)});
+it("655_655__::__            foldl (\u03bbx y = x + y) 0 [: 1, 2, 3, 4 ] == 10",function(){expect(y(function(a){return function(b){return run(function(){return run(function(){return a+b})})}})(0)({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(10)});it("656_656__::__            foldr (\u03bbx y = x + y) 0 [: 1, 2, 3, 4 ] == 10",function(){expect(C(function(a){return function(b){return run(function(){return run(function(){return a+b})})}})(0)({head:1,tail:{head:2,tail:{head:3,
+tail:{head:4,tail:{nil:!0}}}}})).toEqual(10)});it("657_657__::__            all? id [:true,true]",function(){expect(function(){try{return u(c)({head:!0,tail:{head:!0,tail:{nil:!0}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("658_658__::__            not (all? id [:true,false])",function(){expect(function(){try{var a;var b=u(c)({head:!0,tail:{head:!1,tail:{nil:!0}}});a=run(function(){return run(function(){return!b})});return a}catch(f){return{error:f}}}()).toEqual(!0)});it("659_659__::__            any? id [:true,false]",
+function(){expect(function(){try{return v(c)({head:!0,tail:{head:!1,tail:{nil:!0}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("660_660__::__            not (any? id [:false,false])",function(){expect(function(){try{var a;var b=v(c)({head:!1,tail:{head:!1,tail:{nil:!0}}});a=run(function(){return run(function(){return!b})});return a}catch(f){return{error:f}}}()).toEqual(!0)});it("661_661__::__            sum [:1,2,3] == 6",function(){expect(z({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(6)});
+it("662_662__::__            product [:1,2,4] == 8",function(){expect(D({head:1,tail:{head:2,tail:{head:4,tail:{nil:!0}}}})).toEqual(8)});it("664_665multi__::__            let x = [:1,2], y = [:3,4]\n            concat [:x,y] == [:1,2,3,4]",function(){expect(function(){try{return g(A({head:{head:1,tail:{head:2,tail:{nil:!0}}},tail:{head:{head:3,tail:{head:4,tail:{nil:!0}}},tail:{nil:!0}}}))({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})}catch(a){return{error:a}}}()).toEqual(!0)});
+it("667_667__::__            concat_map (\u03bbx = [:x,x+1]) [:1,2] == [:1,2,2,3]",function(){expect(H(function(a){var b;b=run(function(){return run(function(){return a+1})});return{head:a,tail:{head:b,tail:{nil:!0}}}})({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual({head:1,tail:{head:2,tail:{head:2,tail:{head:3,tail:{nil:!0}}}}})});it("669_669__::__            minimum [: 1, 2, 3 ] == 1",function(){expect(G({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(1)});it("670_670__::__            maximum [: 1, 2, 3 ] == 3",
+function(){expect(F({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(3)})}});describe("seq",function(){var b;b=prelude.seq.iterate;var c;c=prelude.seq.from_list;var d;d=prelude.seq.to_list;var e;e=prelude.seq.take;var h;h=prelude.seq.fibs;var g;g=f.last||window.last;e=f.take||window.take;var l;l=f.length||window.length;var j;j=a.time||window.time;var m;m=a.fast_fib||window.fast_fib;var i;i=a.floor||window.floor;b=prelude.seq.iterate;c=prelude.seq.from_list;d=prelude.seq.to_list;e=prelude.seq.take;
+h=prelude.seq.fibs;new function(){it("706_706__::__            to_list (from_list [:1,2]) == [:1,2]",function(){expect(d(c({head:1,tail:{head:2,tail:{nil:!0}}}))).toEqual({head:1,tail:{head:2,tail:{nil:!0}}})});it("707_707__::__            iterate (\u03bbx = x + 1) 0 |> take 100 |> to_list |> length == 100",function(){expect(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(b(function(a){return run(function(){return run(function(){return a+
+1})})})(0))(e(100)))(d))(l)).toEqual(100)});it('743_747multi__::__            do! fast_time <- time yield fast_fib 30\n                slow_time <- time yield fibs |> take 30 |> to_list |> last\n                let ratio = floor (fast_time / slow_time * 100)\n                "#speedtest" $= ratio\n                return (ratio >= 2)',function(){expect(function(){try{return run(function(){var a=run,b=j(function(){return m(30)}),c=run(b),b=j(function(){var a=h,a=e(30)(a),a=d(a);return g(a)}),f,p,l=
+run(b);p=run(function(){return run(function(){return c/l})});b=run(function(){return run(function(){return 100*p})});f=i(b);run(function(){if("undefined"!=typeof $){var a;a=$("#speedtest").get(0);"undefined"!=typeof a&&(a.innerHTML=f)}});var n;n=run(function(){return run(function(){return 2<=f})});return a(function(){return n})})}catch(a){return{error:a}}}()).toEqual(!0)});it("749_749__::__            fibs |> take 5 |> to_list == [:1,1,2,3,5]",function(){expect(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(h)(e(5)))(d)).toEqual({head:1,
+tail:{head:1,tail:{head:2,tail:{head:3,tail:{head:5,tail:{nil:!0}}}}}})});it("751_753multi__::__            fast_fib 15 == fibs |> take 15\n                                |> to_list\n                                |> last",function(){expect(m(15)).toEqual(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(h)(e(15)))(d))(g))})}});describe("Formal Z",function(){var a;a=f._comp_comp||window._comp_comp;var c;c=f.concat_map||
+window.concat_map;new function(){it("798_801multi__::__            let (>>>=) x g = concat_map g x\n                z = 1 .. 3 >>>= \u03bbx = [:x, x + 1, x + 2]\n    \n            z == [:1,2,3,2,3,4,3,4,5]",function(){expect(function(){try{var f,d=a(1)(3);f=c(function(a){var b=run(function(){return run(function(){return a+1})}),c;c=run(function(){return run(function(){return a+2})});return{head:a,tail:{head:b,tail:{head:c,tail:{nil:!0}}}}})(d);return g(f)({head:1,tail:{head:2,tail:{head:3,tail:{head:2,
+tail:{head:3,tail:{head:4,tail:{head:3,tail:{head:4,tail:{head:5,tail:{nil:!0}}}}}}}}}})}catch(e){return{error:e}}}()).toEqual(!0)})}})}})});
+describe("",function(){describe("parsec",function(){var i;i=parsec.try_apos;var g;g=parsec.many;var e;e=prelude._eq_eq||window._eq_eq;i=parsec.try_apos;g=parsec.many;new function(){describe("Testing",function(){new function(){it('141_141__::__            {some = "ten"} == run_parser (string "ten") "tens"',function(){expect({some:"ten"}).toEqual(function(a){return function(c){var d;d=a.parser;if(__check(a,"parser"))return c=d(c),d=c.parsed.some,__check(c,"parsed")&&__check(c.parsed,"some")?{some:d}:
+{none:!0};exhaust()}}(function(a){return{parser:function(c){var d;d=run(function(){return run(function(){return c.substring(0,a.length)})});return e(d)(a)?{parsed:{some:a},rest:run(function(){return run(function(){return c.substring(a.length)})})}:{parsed:{none:!0},rest:c}}}}("ten"))("tens"))});it('142_142__::__            {some = "tenten"} == run_parser ((\u03bbx = x +++ x) <$> string "ten") "tenfingers"',function(){expect({some:"tenten"}).toEqual(function(a){return function(c){var d;d=a.parser;
+if(__check(a,"parser"))return c=d(c),d=c.parsed.some,__check(c,"parsed")&&__check(c.parsed,"some")?{some:d}:{none:!0};exhaust()}}(function(a){return function(c){var d;d=c.parser;if(__check(c,"parser"))return{parser:function(c){var c=d(c),b;b=c.parsed.some;var e;e=c.rest;__check(c,"parsed")&&__check(c,"rest")&&__check(c.parsed,"some")?c={parsed:{some:a(b)},rest:e}:(b=c.rest,__check(c,"parsed")&&__check(c,"rest")&&__check(c.parsed,"none")?c={parsed:{none:!0},rest:b}:(exhaust(),c=void 0));return c}};
+exhaust()}}(function(a){return run(function(){return run(function(){return""+a+a})})})(function(a){return{parser:function(c){var d;d=run(function(){return run(function(){return c.substring(0,a.length)})});return e(d)(a)?{parsed:{some:a},rest:run(function(){return run(function(){return c.substring(a.length)})})}:{parsed:{none:!0},rest:c}}}}("ten")))("tenfingers"))});it('144_145multi__::__            {parsed = {some = "tenten"}, rest = "fingers"} \n                == ((\u03bbx = x +++ x) <$> string "ten").parser "tenfingers"',
+function(){expect({parsed:{some:"tenten"},rest:"fingers"}).toEqual(function(a){return function(c){var d;d=c.parser;if(__check(c,"parser"))return{parser:function(c){var c=d(c),b;b=c.parsed.some;var e;e=c.rest;__check(c,"parsed")&&__check(c,"rest")&&__check(c.parsed,"some")?c={parsed:{some:a(b)},rest:e}:(b=c.rest,__check(c,"parsed")&&__check(c,"rest")&&__check(c.parsed,"none")?c={parsed:{none:!0},rest:b}:(exhaust(),c=void 0));return c}};exhaust()}}(function(a){return run(function(){return run(function(){return""+
+a+a})})})(function(a){return{parser:function(c){var d;d=run(function(){return run(function(){return c.substring(0,a.length)})});return e(d)(a)?{parsed:{some:a},rest:run(function(){return run(function(){return c.substring(a.length)})})}:{parsed:{none:!0},rest:c}}}}("ten")).parser("tenfingers"))});it('147_148multi__::__            var result = run_parser ((\u03bbx y = y +++ x) <$> string "ten" <*> string "fingers") "tenfingers"\n            result == {some: "fingersten"}',function(){expect(function(){try{var a,
+c;var d={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,3)})});return e(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},f;f=d.parser;__check(d,"parser")?c={parser:function(a){var a=f(a),b;b=a.parsed.some;var c;c=a.rest;if(__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some"))var d=b,a={parsed:{some:function(a){return run(function(){return run(function(){return""+a+d})})}},
+rest:c};else b=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:b}:(exhaust(),a=void 0);return a}}:(exhaust(),c=void 0);var b;var d={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,7)})});return e(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},g;g=c.parser;var i;i=d.parser;__check(c,"parser")&&__check(d,"parser")?b={parser:function(a){var b=
+g(a),a=b.parsed.some,c;c=b.rest;if(__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"some")){b=i(c);c=b.parsed.some;var d;d=b.rest;__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"some")?a={parsed:{some:a(c)},rest:d}:(c=b.rest,__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")?a={parsed:{none:!0},rest:c}:(exhaust(),a=void 0))}else a=b.rest,__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")?a={parsed:{none:!0},rest:a}:(exhaust(),a=void 0);return a}}:(exhaust(),
+b=void 0);var k;k=b.parser;if(__check(b,"parser")){var h=k("tenfingers"),q;q=h.parsed.some;a=__check(h,"parsed")&&__check(h.parsed,"some")?{some:q}:{none:!0}}else exhaust(),a=void 0;return e(a)({some:"fingersten"})}catch(l){return{error:l}}}()).toEqual(!0)});it('150_151multi__::__            var result = run_parser (string "ten" <|> string "eleven") "eleven"\n            result == {some: "eleven"}',function(){expect(function(){try{var a,c={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,
+3)})});return e(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},d;var f={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,6)})});return e(b)("eleven")?{parsed:{some:"eleven"},rest:run(function(){return run(function(){return a.substring(6)})})}:{parsed:{none:!0},rest:a}}},b;b=c.parser;var g;g=f.parser;if(__check(c,"parser")&&__check(f,"parser")){var i;i=function(a){return function(b){var c;
+c=b.rest;return __check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")&&e(a)(c)?g(a):b}};d={parser:function(a){return i(a)(b(a))}}}else exhaust(),d=void 0;var k;k=d.parser;if(__check(d,"parser")){var h=k("eleven"),q;q=h.parsed.some;a=__check(h,"parsed")&&__check(h.parsed,"some")?{some:q}:{none:!0}}else exhaust(),a=void 0;return e(a)({some:"eleven"})}catch(l){return{error:l}}}()).toEqual(!0)});it('153_154multi__::__            var result = run_parser (string "ten" *> string "fingers") "tenfingers"\n            result == {some: "fingers"}',
+function(){expect(function(){try{var a,c={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,3)})});return e(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},d;var f={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,7)})});return e(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},
+rest:a}}},b;b=c.parser;var g;g=f.parser;__check(c,"parser")&&__check(f,"parser")?d={parser:function(a){var a=b(a),c;c=a.rest;__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some")?a=g(c):(c=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:c}:(exhaust(),a=void 0));return a}}:(exhaust(),d=void 0);var i;i=d.parser;if(__check(d,"parser")){var k=i("tenfingers"),h;h=k.parsed.some;a=__check(k,"parsed")&&__check(k.parsed,"some")?{some:h}:{none:!0}}else exhaust(),
+a=void 0;return e(a)({some:"fingers"})}catch(q){return{error:q}}}()).toEqual(!0)});it('156_158multi__::__            var parser = (string "ten" *> string "fingers") <|> string "tentoes"\n                result = run_parser parser "tentoes"\n            result == {none}',function(){expect(function(){try{var a,c={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,3)})});return e(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:
+{parsed:{none:!0},rest:a}}},d;var f={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,7)})});return e(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},b;b=c.parser;var g;g=f.parser;__check(c,"parser")&&__check(f,"parser")?d={parser:function(a){var a=b(a),c;c=a.rest;__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some")?a=g(c):(c=a.rest,__check(a,"parsed")&&__check(a,
+"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:c}:(exhaust(),a=void 0));return a}}:(exhaust(),d=void 0);var i;var c={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,7)})});return e(b)("tentoes")?{parsed:{some:"tentoes"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},k;k=d.parser;var h;h=c.parser;if(__check(d,"parser")&&__check(c,"parser")){var q;q=function(a){return function(b){var c;c=b.rest;return __check(b,
+"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")&&e(a)(c)?h(a):b}};i={parser:function(a){return q(a)(k(a))}}}else exhaust(),i=void 0;var l;l=i.parser;if(__check(i,"parser")){var j=l("tentoes"),m;m=j.parsed.some;a=__check(j,"parsed")&&__check(j.parsed,"some")?{some:m}:{none:!0}}else exhaust(),a=void 0;return e(a)({none:!0})}catch(r){return{error:r}}}()).toEqual(!0)});it('160_162multi__::__            var parser = try\' (string "ten" *> string "fingers") <|> string "tentoes"\n                result = run_parser parser "tentoes"\n            result == {some: "tentoes"}',
+function(){expect(function(){try{var a,c=i,d={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,3)})});return e(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},f;var b={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,7)})});return e(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},
+rest:a}}},g;g=d.parser;var E;E=b.parser;__check(d,"parser")&&__check(b,"parser")?f={parser:function(a){var a=g(a),b;b=a.rest;__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some")?a=E(b):(b=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:b}:(exhaust(),a=void 0));return a}}:(exhaust(),f=void 0);var k=c(f),h;var c={parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,7)})});return e(b)("tentoes")?{parsed:{some:"tentoes"},
+rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},q;q=k.parser;var l;l=c.parser;if(__check(k,"parser")&&__check(c,"parser")){var j;j=function(a){return function(b){var c;c=b.rest;return __check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")&&e(a)(c)?l(a):b}};h={parser:function(a){return j(a)(q(a))}}}else exhaust(),h=void 0;var m;m=h.parser;if(__check(h,"parser")){var r=m("tentoes"),p;p=r.parsed.some;a=__check(r,"parsed")&&__check(r.parsed,"some")?
+{some:p}:{none:!0}}else exhaust(),a=void 0;return e(a)({some:"tentoes"})}catch(s){return{error:s}}}()).toEqual(!0)});it('164_166multi__::__            var parser = many (string "ten")\n                result = run_parser parser "tententententen"\n            result == {some: ["ten", "ten", "ten", "ten", "ten"]}',function(){expect(function(){try{var a,c=g({parser:function(a){var b;b=run(function(){return run(function(){return a.substring(0,3)})});return e(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:
+{parsed:{none:!0},rest:a}}});var d;d=c.parser;if(__check(c,"parser")){var f=d("tententententen"),b;b=f.parsed.some;a=__check(f,"parsed")&&__check(f.parsed,"some")?{some:b}:{none:!0}}else exhaust(),a=void 0;return e(a)({some:["ten","ten","ten","ten","ten"]})}catch(i){return{error:i}}}()).toEqual(!0)})}})}})});
+describe("",function(){describe("Benchmarks for the prelude",function(){var i;i=Benchmarks_for_the_prelude.title;var g;g=Benchmarks_for_the_prelude.euler_1;var e;e=Benchmarks_for_the_prelude.euler_2;var a;a=Benchmarks_for_the_prelude.euler_3;var c;c=Benchmarks_for_the_prelude.euler_4;var d;d=Benchmarks_for_the_prelude.euler_5;var f;f=prelude._return_||window._return_;var b;b=prelude.time||window.time;var n;n=prelude.err||window.err;b=prelude.speedtest.time||window.time;i=Benchmarks_for_the_prelude.title;
+g=Benchmarks_for_the_prelude.euler_1;e=Benchmarks_for_the_prelude.euler_2;a=Benchmarks_for_the_prelude.euler_3;c=Benchmarks_for_the_prelude.euler_4;d=Benchmarks_for_the_prelude.euler_5;new function(){it('56_70multi__::__        do! title "Relative Speeds (10k)"\n    \n            w <- time (euler_1 10000)\n            x <- time yield euler_2 10000 0\n            y <- time yield euler_3 10000\n            z <- time (euler_4 10000)\n            q <- time yield euler_5 10000 0\n    \n            log "  Native JS:          `w / 1000`s"\n            log "  Formal TCO Unboxed: `q / 1000`s"\n            log "  Formal TCO:         `x / 1000`s"\n            log "  Formal Recursive:   `y / 1000`s"\n            log "  Formal list:        `z / 1000`s"\n            \n            return <| (x <= y && y < z)',
+function(){expect(function(){try{return run(function(){var k=run,h=i("Relative Speeds (10k)");run(h);var h=b(g(1E4)),n=run(h),h=b(function(){return e(1E4)(0)}),l=run(h),h=b(function(){return a(1E4)}),j=run(h),h=b(c(1E4)),m=run(h),h=b(function(){return d(1E4)(0)}),r=run(h),p,s=run(function(){return run(function(){return n/1E3})});p=run(function(){return run(function(){return"  Native JS:          "+s})});var w;w=run(function(){return run(function(){return""+p+"s"})});run(function(){return console.log(w)});
+var x,t=run(function(){return run(function(){return r/1E3})});x=run(function(){return run(function(){return"  Formal TCO Unboxed: "+t})});var B;B=run(function(){return run(function(){return""+x+"s"})});run(function(){return console.log(B)});var y,C=run(function(){return run(function(){return l/1E3})});y=run(function(){return run(function(){return"  Formal TCO:         "+C})});var u;u=run(function(){return run(function(){return""+y+"s"})});run(function(){return console.log(u)});var v,z=run(function(){return run(function(){return j/
+1E3})});v=run(function(){return run(function(){return"  Formal Recursive:   "+z})});var D;D=run(function(){return run(function(){return""+v+"s"})});run(function(){return console.log(D)});var A,E=run(function(){return run(function(){return m/1E3})});A=run(function(){return run(function(){return"  Formal list:        "+E})});var F;F=run(function(){return run(function(){return""+A+"s"})});run(function(){return console.log(F)});var G;G=run(function(){return run(function(){return l<=j})});var I=run(function(){return run(function(){return j<
+m})}),h=run(function(){return run(function(){return G&&I})}),h=f(h);return k(h)})}catch(n){return{error:n}}}()).toEqual(!0)});it("72_72__::__        string? (err yield euler_3(250000)).message",function(){expect(function(){try{var b;var c=n(function(){return a(25E4)}).message;b=run(function(){return run(function(){return"string"===typeof c})});return b}catch(d){return{error:d}}}()).toEqual(!0)});it('74_88multi__::__        do! title "Relative Speeds (2.5M)"\n    \n            w <- time (euler_1 2500000)\n            x <- time yield euler_2 2500000 0\n            y <- time yield euler_5 2500000 0\n            \n            log "  Native JS:          `w / 1000`s"\n            log "  Formal TCO Unboxed: `y / 1000`s"\n            log "  Formal TCO:         `x / 1000`s"\n            log "  Formal Recursive:   `err yield euler_3(250000)`"\n            log "  Formal list:        `err (euler_4 250000)`"\n    \n            log ""\n            \n            return <| (w < x)',
+function(){expect(function(){try{return run(function(){var k=run,h=i("Relative Speeds (2.5M)");run(h);var h=b(g(25E5)),q=run(h),h=b(function(){return e(25E5)(0)}),l=run(h),h=b(function(){return d(25E5)(0)}),j=run(h),m,r=run(function(){return run(function(){return q/1E3})});m=run(function(){return run(function(){return"  Native JS:          "+r})});var p;p=run(function(){return run(function(){return""+m+"s"})});run(function(){return console.log(p)});var s,w=run(function(){return run(function(){return j/
+1E3})});s=run(function(){return run(function(){return"  Formal TCO Unboxed: "+w})});var x;x=run(function(){return run(function(){return""+s+"s"})});run(function(){return console.log(x)});var t,B=run(function(){return run(function(){return l/1E3})});t=run(function(){return run(function(){return"  Formal TCO:         "+B})});var y;y=run(function(){return run(function(){return""+t+"s"})});run(function(){return console.log(y)});var C,u=n(function(){return a(25E4)});C=run(function(){return run(function(){return"  Formal Recursive:   "+
+u})});var v;v=run(function(){return run(function(){return""+C+""})});run(function(){return console.log(v)});var z,D=n(c(25E4));z=run(function(){return run(function(){return"  Formal list:        "+D})});var A;A=run(function(){return run(function(){return""+z+""})});run(function(){return console.log(A)});run(function(){return console.log("")});h=run(function(){return run(function(){return q<l})});h=f(h);return k(h)})}catch(E){return{error:E}}}()).toEqual(!0)})}});describe("Tests for partial records",
+function(){var i;i=prelude._eq_eq||window._eq_eq;new function(){it("95_96multi__::__        var f {a: x, b: y, _ } = x + y\n        f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }",function(){expect(function(){try{var g;g=function(a){var c;c=a.a;var d;d=a.b;if(__check(a,"a")&&__check(a,"b"))return run(function(){return run(function(){return c+d})});exhaust()};return i(g({a:5,b:5,c:5}))(g({a:5,b:5,d:5}))}catch(e){return{error:e}}}()).toEqual(!0)});it("98_100multi__::__        var f {a: 1, b: 1, _ } = 2\n            f {b: 2, c: 2, _ } = 2\n        f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4",
+function(){expect(function(){try{var g;g=function(a){if(__check(a,"a")&&__check(a,"b")&&1===a.a&&1===a.b||__check(a,"b")&&__check(a,"c")&&2===a.b&&2===a.c)return 2;exhaust()};var e=g({a:1,b:1,c:3,d:5}),a,c=g({a:1,b:2,c:2,e:5});a=run(function(){return run(function(){return e+c})});return i(a)(4)}catch(d){return{error:d}}}()).toEqual(!0)});it("102_105multi__::__        var f { a = 1, b = 2, _ } = 1\n            g { b = 2, c = 3, _ } = 2\n            x = { a = 1, b = 2, c = 3, d = 4 }\n        f x + 1 == g x",
+function(){expect(function(){try{var g;g={a:1,b:2,c:3,d:4};var e;__check(g,"a")&&__check(g,"b")&&1===g.a&&2===g.b?e=1:(exhaust(),e=void 0);var a=e,c;c=run(function(){return run(function(){return a+1})});var d=i(c),f;__check(g,"b")&&__check(g,"c")&&2===g.b&&3===g.c?f=2:(exhaust(),f=void 0);return d(f)}catch(b){return{error:b}}}()).toEqual(!0)})}});describe("Tests for TCO bugs",function(){var i;i=Tests_for_TCO_bugs.rev_1;var g;g=Tests_for_TCO_bugs.rev_2;var e;e=Tests_for_TCO_bugs.test_x;var a;a=prelude.length||
+window.length;a=prelude.length||window.length;var c;c=prelude.reverse||window.reverse;a=prelude.list.length||window.length;c=prelude.list.reverse||window.reverse;i=Tests_for_TCO_bugs.rev_1;g=Tests_for_TCO_bugs.rev_2;e=Tests_for_TCO_bugs.test_x;new function(){it("126_126__::__        rev_2 [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]",function(){expect(g({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual({head:4,tail:{head:3,tail:{head:2,tail:{head:1,tail:{nil:!0}}}}})});it("130_130__::__        rev_2 test_x == rev_1 test_x",
+function(){expect(g(e)).toEqual(i(e))});it("131_131__::__        rev_1 test_x == reverse test_x",function(){expect(i(e)).toEqual(c(e))});it("132_132__::__        length (rev_2 test_x) == length (rev_1 test_x)",function(){expect(a(g(e))).toEqual(a(i(e)))});it("133_133__::__        length (rev_2 test_x) == length test_x",function(){expect(a(g(e))).toEqual(a(e))});it("134_134__::__        length (rev_1 test_x) == length (reverse test_x)",function(){expect(a(i(e))).toEqual(a(c(e)))})}});describe("Tests for parser bugs",
+function(){var i;i=prelude._eq_eq||window._eq_eq;new function(){it('143_144multi__::__        var x = do! `[ {x: 1}, {x: 2}, {x: 3} ]`\n        stringify (x !! 0).x == "1"',function(){expect(function(){try{var g;g=run(function(){return run(function(){return[{x:1},{x:2},{x:3}]})});var e,a=run(function(){return run(function(){return g[0]})}).x;e=run(function(){return run(function(){return JSON.stringify(a)})});return i(e)("1")}catch(c){return{error:c}}}()).toEqual(!0)})}})});
+</script><p>If you are familiar with Haskell or ML, the prelude may serve as a good introduction to formal. Formal's syntax is quite liberal; to illustrate, the prelude will maintain an intentionally inconsistent style throughout.</p>
+<p>First, we need to create a namespace with the <code>module</code> keyword.</p>
+<pre><code>module prelude
+
+
+    JS a = {} -&gt; a
+
+    inline object? x = do! `typeof x === &quot;object&quot;`
+    inline array?    = do! `is_array`
+    inline string? x = do! `typeof x === &quot;string&quot;`
+
+    inline
+    num? x = do! `typeof x == &quot;number&quot;`
+
+
+    inline type? x   = do! `typeof x`
+
+    inline
+    not: Bool -&gt; Bool 
+    not x = do! `!x`
+    <span class='test' id='test_26_26'>not false</span>
+
+
+    <span class='test' id='test_29_29'>object? {}</span>
+    <span class='test' id='test_30_30'>array? []</span>
+    <span class='test' id='test_31_31'>not (array? {})</span>
+    <span class='test' id='test_32_32'>not (object? 0)</span></code></pre>
+<p>Side effects can only happen in Javascript, so we use a monadic container to compose these bits.</p>
+<pre><code>    inline 
+    (&gt;&gt;=): JS a -&gt; (a -&gt; JS b) -&gt; JS b
+    (&gt;&gt;=)  x       y            = y (run x)
+
+    inline 
+    (&gt;&gt;): JS a -&gt; JS b -&gt; JS b
+    (&gt;&gt;)  x       y     = `run x; return (run y)`
+
+    inline return:
+
+             a -&gt; JS a
+      return x  = `x`
+
+
+    <span class='test' id='test_53_56multi'>do! x   &lt;- `1 + 4`
+        y   &lt;- `2 + 3`
+        ans &lt;- `x + y`
+        return (10 == ans)</span>
+
+    <span class='test' id='test_58_58'>5  == do! return 5</span>
+    <span class='test' id='test_59_59'>10 == do! `5 + 5`</span>
+
+
+
+    inline log: a -&gt; JS {} 
+              | x  = `console.log(x)`</code></pre>
+<p>Testing to verify that escaping Javascript &amp; utilizing escaped Javascript with <code>do</code> sugar and composition in general works as expected.</p>
+<pre><code>    <span class='test' id='test_70_73multi'>var x = 0
+        y = do z &lt;- `x = 1`
+               return z
+    x == 0</span></code></pre>
+<h2 id="numbers">Numbers</h2>
+<p>Some basic aliases to native javascript infix functions. These are type annotated to constrain inferrence - otherwise, these functions would all be inferred as <code>a -&gt; b -&gt; c</code>.</p>
+<pre><code>    inline (&amp;&amp;): Bool -&gt; Bool -&gt; Bool | x y = do! `x &amp;&amp; y`
+    inline (||): Bool -&gt; Bool -&gt; Bool | x y = do! `x || y`
+    inline (*):  Num -&gt; Num -&gt; Num    | x y = do! `x * y`
+    inline (/):  Num -&gt; Num -&gt; Num    | x y = do! `x / y`
+    inline (%):  Num -&gt; Num -&gt; Num    | x y = do! `x % y`
+    inline (+):  Num -&gt; Num -&gt; Num    | x y = do! `x + y`
+    inline (-):  Num -&gt; Num -&gt; Num    | x y = do! `x - y`
+    inline (&lt;=): Num -&gt; Num -&gt; Bool   | x y = do! `x &lt;= y`
+    inline (&gt;=): Num -&gt; Num -&gt; Bool   | x y = do! `x &gt;= y`
+    inline (&lt;):  Num -&gt; Num -&gt; Bool   | x y = do! `x &lt; y`
+    inline (&gt;):  Num -&gt; Num -&gt; Bool   | x y = do! `x &gt; y`</code></pre>
+<p>Equality is overloaded to match records and arrays. By constraining the type of this operator, we need only dispatch on the type of the first element, constraining</p>
+<pre><code>    inline x != y = not (x is y)
+
+    inline x /= y = not (x == y)
+
+    (==): a -&gt; a -&gt; Bool
+        | x y when do! `x === y` = true
+        | x y when object? x =
+            do! `var result = true;
+                 for (key in x) {
+                    result = result &amp;&amp; y.hasOwnProperty(key) &amp;&amp; _eq_eq(x[key])(y[key]);
+                 };
+
+                 var z = Object.keys(x).length 
+                             === Object.keys(y).length;
+
+                 result &amp;&amp; z`
+
+        | x y when array? x =
+            do! `var result = true;
+                 for (z in x) {
+                     result = result &amp;&amp; _eq_eq(x[z])(y[z]);
+                 };
+
+                 result &amp;&amp; x.length == y.length`
+
+        | x y = false</code></pre>
+<p>And a few simple tests to verify the correctness of these implementations. This is not meant to be exhaustive, only a smoke test against regressions.</p>
+<pre><code>    <span class='test' id='test_129_129'>(3 * 4) + 5 * 4 == 64 / 2</span>
+    <span class='test' id='test_130_130'>4 - 1 != 5 - 10</span>
+    <span class='test' id='test_131_131'>(10 &gt;= 5 + 5) != (4 + 5 &lt;= 10 - 2)</span>
+    <span class='test' id='test_132_132'>({test: 1} == {test: 1}) == true</span>
+    <span class='test' id='test_133_133'>({test: 1} != {test: 1}) == false</span></code></pre>
+<p>Fibonacci function</p>
+<pre><code>    fib 0 = 0 | 1 = 1 | n = fib(n - 1) + fib(n - 2)</code></pre>
+<h2 id="speed">Speed</h2>
+<p>Due to the nested recursion, <code>fib</code> is an excellent function for testing the runtime speed versus raw javascript. <code>fast_fib</code> is a trivial javascript implementation of the same function, recursed itself to remove any potential overhead from formal's dispatch mechanism.</p>
+<pre><code>    module speedtest
+
+        private inline get_time = `new Date().getTime()`
+
+        time js =
+
+            do start &lt;- get_time
+               js
+               stop  &lt;- get_time
+               return (stop - start)
+
+        private inline
+        fast_fib =
+
+            do! `var f = function(n) {
+                     return 0 === n ? 0 : 1 === n ? 1 : f(n - 1) + f(n - 2)
+                 }; f`
+
+        <span class='test' id='test_165_165'>fast_fib 7 == fib 7</span></code></pre>
+<p>With this, we can set up a simple canary to let us know if the prelude is suddenly dramatically slower than it previously was; in this case, we fail a test if the formal version isn't at least 90% as fast as the native javascript version.</p>
+<pre><code>        floor: Num -&gt; Num = do! `Math.floor`
+
+        <span class='test' id='test_174_176multi'>do! fast_time &lt;- time yield fast_fib 30
+            slow_time &lt;- time yield fib 30
+            return (floor (fast_time / slow_time * 100) &gt;= 80)</span></code></pre>
+<h2 id="function-combinators">Function Combinators</h2>
+<p>Simple left &amp; right pipes, ala F#.</p>
+<pre><code>    inline x &lt;| y = x y
+    inline x |&gt; y = y x
+
+    <span class='test' id='test_185_185'>3 |&gt; (&#955;y = y + 1) |&gt; &#955;y = y + 1 == 5</span>
+    <span class='test' id='test_186_186'>(&#955;y x z = x + y + z + 1) 1 &lt;| 3 &lt;| 4 == 9</span></code></pre>
+<p>Alternatively, there is a right associative version of <code>&lt;|</code>, ala haskell. All operators which end with a <code>:</code> are right associative.</p>
+<pre><code>    inline x &lt;: y = x y
+
+    <span class='test' id='test_193_193'>(&#955;x = x - 3) &lt;: (&#955;x = x - 3) &lt;: 5 + 5 == 4</span></code></pre>
+<p>Function composition</p>
+<pre><code>    inline x .: y = &#955;z = x y(z)
+    inline id x = x
+    inline flip(f) x y = f(y, x)
+
+    inline x &#39; y = y x
+
+
+    <span class='test' id='test_204_204'>((&#955;x = x + 1) .: (&#955;x = x * 2) .: &#955;x = x - 3) 4 == 3</span>
+    <span class='test' id='test_205_205'>id [1, 2, 3] == [1, 2, 3]</span>
+    <span class='test' id='test_206_206'>flip (&#955;x y = x - y) 3 5 == 2</span></code></pre>
+<h2 id="strings">Strings</h2>
+<pre><code>    module string
+
+        inline 
+        lstrip: String -&gt; String
+        lstrip x = do! `x.replace(/^\s+/, &#39;&#39;)` 
+
+        inline rstrip: String -&gt; String | x = do! `x.replace(/\s+$/, &#39;&#39;)` 
+        inline strip:  String -&gt; String | = lstrip .: rstrip
+
+        length: String -&gt; Num | n = do! `n.length`
+
+        inline 
+        (+++): a -&gt; b -&gt; String
+        x +++ y = do! `&quot;&quot; + x + y`
+
+        <span class='test' id='test_228_228'>strip &quot;    test    &quot; is &quot;test&quot;</span></code></pre>
+<p>interpolated strings</p>
+<pre><code>        <span class='test' id='test_232_233multi'>let x = &quot;test&quot;
+        in &quot;hello `x`&quot; is &quot;hello test&quot;</span>
+
+    open string</code></pre>
+<h2 id="tests">Tests</h2>
+<p>By invoking javascript, we can listen for exceptions.</p>
+<pre><code>    err x = do! `try {
+                     x();
+                     return false;
+                 } catch (e) {
+                     return e;
+                 }`</code></pre>
+<h2 id="option">Option</h2>
+<pre><code>    module option
+
+        Option a = {some: a} | {none}
+
+        option b {none} = b
+             | _ {some: x} = x
+
+        <span class='test' id='test_258_258'>option 3 {some: 2} == 2</span>
+
+    module html
+
+        HTML = { element:   a
+                 inner:     JS String
+                 on_click:  JS {} -&gt; JS {}
+                 set:       b -&gt; JS {}
+                 add_class: String -&gt; JS {}
+                 add_style: String -&gt; String -&gt; JS {} }
+
+        get:
+              String -&gt; JS HTML
+            | x = do el &lt;- `$(x).get(0)`
+
+                     return { element    = el
+                              inner      = `el.innerHTML`
+                              on_click y = `el.onclick = y`
+                              set y      = `el.innerHTML = y`
+
+                              add_class y =
+                                  `el.setAttribute(&quot;class&quot;, el.getAttribute(&quot;class&quot;) + &quot; &quot; + y)`
+
+                              add_style y z = `el.style[y] = z` }
+
+        inline ($=):
+
+           String -&gt; a -&gt; JS {}
+           x      $= y  =
+
+             `if (typeof $ != &quot;undefined&quot;) {
+                  var xx = $(x).get(0);
+                  if (typeof xx != &quot;undefined&quot;) {
+                      xx.innerHTML = y;
+                  }
+              }`
+
+        inline ($|): 
+
+             String   -&gt; String -&gt; String -&gt; JS {}
+             selector $| rule      value   = `$(selector).css(rule, value)`
+
+        inline 
+        ($.): String -&gt; String -&gt; JS {}
+        ($.) x y = `$(x).addClass(y)`
+
+        inline ($+): String -&gt; String -&gt; JS {}
+            | x y = `$(x).append(y)`
+
+        div: String -&gt; JS String
+            | x = yield &quot;&lt;div id=&#39;`x`&#39;/&gt;&quot;
+
+        move: HTML -&gt; HTML -&gt; JS a
+            | x y = `$(y.element).append($(x.element).detach())`
+
+        on_load: JS {} -&gt; JS {}
+            | x = `window.addEventListener(&quot;load&quot;, x, false)`
+
+        inline stringify: a -&gt; String | x = do! `JSON.stringify(x)`
+
+        inline (!!): Array a -&gt; Num -&gt; a | x y = do! `x[y]`
+
+        with_page: JS&lt;a&gt; -&gt; JS&lt;a&gt;
+            | x = do old &lt;- `$(&quot;body&quot;).clone()`
+                     xx &lt;- x
+                     `$(&quot;body&quot;).replaceWith(old)`
+                     return xx</code></pre>
+<p>do! with_page do &quot;body&quot; $= &quot;Test&quot; text &lt;- get &quot;body&quot; text &lt;- text.inner return (text == &quot;Test&quot;)</p>
+<pre><code>        <span class='test' id='test_331_341multi'>do! d &lt;- div &quot;test1&quot;
+
+            &quot;body&quot;   $+ d
+            &quot;#test1&quot; $= &quot;I am a test!&quot;
+
+            text &lt;- get &quot;#test1&quot;
+            text &lt;- text.inner
+
+            &quot;#test1&quot; $= &quot;&quot;
+
+            return (text == &quot;I am a test!&quot;)</span>
+
+        inline split: String -&gt; String -&gt; Array String | y x = do! `x.split(y)`</code></pre>
+<p>This is the initializer for prelude's console test suite.</p>
+<pre><code>        console_runner: JS {} =
+
+            var is_error = 0
+
+            var get_line x =  x |&gt; split &quot;__::__&quot;
+                                |&gt; \x = x !! 0
+                                |&gt; split &quot;_&quot; 
+                                |&gt; \x = x !! 0
+                                |&gt; \x = do! `parseInt x`
+                                |&gt; \x = x + 1
+                                |&gt; stringify
+
+            var report_failed spec results =
+
+                    let items = spec.results_.items_
+                        desc  = spec.description.split &quot;__::__&quot; !! 1
+                        exp   = stringify (items !! 0).expected
+                        act   = stringify (items !! 0).actual
+                        line  = get_line spec.description
+
+                    do  if is_error == 0
+                            then log &quot;\r                        &quot; 
+                            else return {}
+
+                        `is_error = 1`
+
+                        log &quot;Test failed at line `line`
+
+                             `desc`
+
+                                 Expected `exp`
+                                 Actual   `act`&quot;
+
+                        log &quot;&quot;
+
+            var report spec = 
+
+                    do! results &lt;- `spec.results()`
+                        passed  &lt;- `results.passed()`
+
+                        if   passed 
+                        then return {}
+                        else report_failed spec results
+
+            var reporter = { reportSpecResults:   report 
+                             reportRunnerResults: `phantom.exit(is_error)` }
+
+            do env &lt;- `jasmine.getEnv()`
+
+               `env.addReporter(reporter)`
+               `env.execute()`
+
+
+        push : a -&gt; Array a -&gt; JS (Array a)
+        push xs x = `xs.push(x)` 
+
+        private console_reporter = {
+
+            total    = 0
+            failed   = 0
+
+            messages = []
+
+            reportSpecResults spec =
+
+                do! results &lt;- `spec.results()`
+                    passed  &lt;- `results.passed()`
+                    `console_reporter.total++`
+
+                    if not passed then do
+                        `console_reporter.failed++`
+                        push console_reporter.messages spec.description
+                        return {}
+                    else return {}
+
+            reportRunnerResults =
+
+                do if console_reporter.failed &gt; 0
+                       log console_reporter.messages
+                   else 
+                       return {}
+
+                   log &quot;`console_reporter.total - console_reporter.failed`/`console_reporter.total` tests passed&quot;
+        }</code></pre>
+<p>This is the initializer for prelude's HTML test suite.</p>
+<pre><code>        table_of_contents =
+
+            do &quot;code&quot;  $. &quot;prettyprint&quot;
+               &quot;code&quot;  $. &quot;lang-hs&quot;
+
+               &quot;.test&quot; $| &quot;position&quot; &lt;| &quot;relative&quot;
+               &quot;.test&quot; $| &quot;left&quot;     &lt;| &quot;50px&quot;
+
+               `prettyPrint()`
+
+               trivial &lt;- `new jasmine.TrivialReporter()`
+               formal  &lt;- `new jasmine.FormalReporter()`
+               env     &lt;- `jasmine.getEnv()`
+
+               `env.addReporter trivial`
+               `env.addReporter formal`
+               `env.addReporter console_reporter`
+
+               `env.execute()`
+
+               reporter &lt;- get &quot;.jasmine_reporter&quot;
+               body     &lt;- get &quot;#test_suite&quot;
+
+               move reporter body</code></pre>
+<h2 id="lists">Lists</h2>
+<p>A simple implementation of a library for manipulating linked lists.</p>
+<pre><code>    module list
+
+        List a = { head: a, tail: List a } 
+               | { nil }</code></pre>
+<p>This complex type can be hidden behind a constructor function which works more like a traditional cons.</p>
+<pre><code>        inline 
+        x :: y = { head = x, tail = y }</code></pre>
+<p>The compiler itself also supports the list sugar <code>[: 1, 2, 3 ]</code> (or <code>[: 1, 2, 3 :]</code>, if you prefer symmetry). All of these lists are synonyms.</p>
+<pre><code>        <span class='test' id='test_481_495multi'>var xs = [:
+
+            [:1,2,3]
+
+            [:1,2,3:]
+
+            (1::2::3::{nil})
+
+            { head = 1
+              tail = { head = 2
+                       tail = { head = 3
+                                tail = {nil} }}}
+        ]
+
+        all? (&#955;y = [:1,2,3] == y) xs </span></code></pre>
+<p>Simple implementations of list accessors, which illustrate incomplete definition.</p>
+<pre><code>        empty? { nil } = true | _ = false
+
+        head { head: x, tail: _ } = x
+           | { nil } = error &quot;Head called on empty list&quot;
+
+        tail { head: _, tail: x } = x 
+           | { nil } = error &quot;Tail called on empty list&quot;
+
+        last { head: x, tail: { nil } } = x
+        last { head: _, tail: x } = last x
+        last { nil } = error &quot;Last called on empty list&quot;
+
+        take 0 x = { nil } | n x = head x :: take (n - 1) (tail x)
+        drop 0 x = x | n x = drop (n - 1) (tail x)
+
+        x .. y = 
+            let f xx z when xx &gt;= x = f (xx - 1) (xx :: z)
+                f _ z = z 
+
+            f y {nil}
+
+        <span class='test' id='test_522_522'>1 .. 5 == [:1,2,3,4,5]</span></code></pre>
+<p>Project Euler problem 1, modified to protect the innocent:</p>
+<pre><code>        <span class='test' id='test_526_526'>288045 == 1 .. 1111 |&gt; filter (&#955;x = x % 3 == 0 || x % 5 == 0) |&gt; sum</span>
+
+
+        take_while f { nil } = { nil }
+                 | f x when f (head x) = head x :: filter f (tail x)
+                 | _ _ = { nil }
+
+        drop_while f { nil } = { nil }
+                 | f x when f (head x) = drop_while f (tail x)
+                 | _ x = x
+
+        <span class='test' id='test_537_537'>not (empty? (1 :: {nil}))</span>
+        <span class='test' id='test_538_538'>empty? [:]</span>
+
+        <span class='test' id='test_540_540'>head [: 1, 2 ] is 1</span>
+        <span class='test' id='test_541_541'>tail [: 1, 2 ] is [:2]</span>
+        <span class='test' id='test_542_542'>last [: 1, 2 ] is 2</span>
+
+        <span class='test' id='test_544_544'>err (lazy head {nil}) is &quot;Head called on empty list&quot;</span>
+        <span class='test' id='test_545_545'>err (lazy tail {nil}) is &quot;Tail called on empty list&quot;</span>
+        <span class='test' id='test_546_546'>err (lazy last {nil}) is &quot;Last called on empty list&quot;</span>
+
+        <span class='test' id='test_548_548'>take(2, [: 1, 2, 3 ]) == [: 1, 2 ]</span>
+        <span class='test' id='test_549_549'>drop(2, [: 1, 2, 3 ]) == [: 3 ]</span>
+
+        <span class='test' id='test_551_551'>take_while (&#955;x = x &lt; 0) [:] == [:]</span>
+        <span class='test' id='test_552_552'>take_while (&#955;x = x &gt; 0) [: 2, 1, 0 ] == [: 2, 1 ]</span>
+
+        <span class='test' id='test_554_554'>drop_while (&#955;x = x &lt; 0) {nil} == {nil}</span>
+        <span class='test' id='test_555_555'>drop_while (&#955;x = x &gt; 0) [: 2, 1, 0 ] == [: 0 ]</span></code></pre>
+<p>Cardinality</p>
+<pre><code>        length 
+
+             | {nil}              = 0
+             | {head: _, tail: x} = 1 + length x
+
+        <span class='test' id='test_564_564'>length [: 1, 2, 3, 4 ] == 4</span></code></pre>
+<p>Generators</p>
+<pre><code>        init 0 _ = {nil}
+           | n x = x :: init (n - 1) x
+
+        <span class='test' id='test_571_571'>length (init 30 0) == 30</span>
+        <span class='test' id='test_572_572'>tail (init 3 0)    == init 2 0</span></code></pre>
+<p>List concatenation</p>
+<pre><code>        (++)
+
+           | {nil} y                = y
+           | {head: y, tail: ys} xs = y :: (ys ++ xs)
+
+        <span class='test' id='test_581_581'>{nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}</span>
+        <span class='test' id='test_582_582'>[: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]</span></code></pre>
+<p>Filter.</p>
+<pre><code>        filter: (a -&gt; Bool) -&gt; List a -&gt; List a
+              | f {nil} = {nil}
+              | f x when f (head x) = head x :: filter f (tail x)
+              | f x = filter f &lt;| tail x
+
+        <span class='test' id='test_591_591'>[: 1, 2, 3, 4 ] &#39;filter (&#955;x = x &gt; 2) == [: 3, 4 ]</span></code></pre>
+<p>Map</p>
+<pre><code>        map(f, {nil}) = {nil}
+        map(f, x)     = f(head(x)) :: map(f, tail(x))
+
+        <span class='test' id='test_598_598'>[: 2, 3, 4 ] == [: 1, 2, 3 ] |&gt; map &#955;x = x + 1</span></code></pre>
+<p>Reverse</p>
+<pre><code>        reverse y = 
+            let r rest [:] = rest
+                r rest { head: x, tail: xs } = 
+                    r (x :: rest) xs
+
+            in  r {nil} y
+
+        <span class='test' id='test_609_609'>reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]</span>
+
+        <span class='test' id='test_611_612multi'>var test_x = [: 1, 2, 3, 4 ]
+        test_x == reverse &lt;| reverse test_x</span>
+
+        take&#39; x y =
+            let t(0, _, acc) = acc
+                t(n, x, acc) = t(n - 1, tail x, head x :: acc)
+
+            in  reverse t(x, y, {nil})
+
+        <span class='test' id='test_620_621multi'>var x = [: 1, 2, 3, 4, 5, 6, 7, 8 ]
+        take 5 x == take&#39; 5 x</span></code></pre>
+<p>Folds</p>
+<pre><code>        foldl f x xs =
+            var g y {nil} = y
+                | y { head: z, tail: zs } = g (f y z) zs
+            g x xs
+
+        foldl1 _ {nil} = error &quot;Foldl1 called on empty list&quot;
+             | f x = foldl f (head x) (tail x)
+
+        foldr f x =
+            var g {nil} = x
+                g { head: y, tail: ys } = f y (g ys)
+            g
+
+        foldr1 _ {nil} = error &quot;Foldr1 called on empty list&quot;
+             | f x = foldr f (head x) (tail x)
+
+        all? f = foldl1 (&#955;x y = x &amp;&amp; y) .: map f
+        any? f = foldl1 (&#955;x y = x || y) .: map f
+
+        sum     = foldl1 &#955;(x, y) = x + y
+        product = foldl1 &#955;(x, y) = x * y
+
+        concat = foldl1 &#955;x y = x ++ y
+        concat_map f xs = concat (map f xs)
+
+        maximum = foldl1 &#955;(x, y) when x &gt; y = x
+                         |(_, y) = y
+
+        minimum = foldl1 &#955;x y = if x &gt; y then y else x
+
+        <span class='test' id='test_655_655'>foldl (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10</span>
+        <span class='test' id='test_656_656'>foldr (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10</span>
+        <span class='test' id='test_657_657'>all? id [:true,true]</span>
+        <span class='test' id='test_658_658'>not (all? id [:true,false])</span>
+        <span class='test' id='test_659_659'>any? id [:true,false]</span>
+        <span class='test' id='test_660_660'>not (any? id [:false,false])</span>
+        <span class='test' id='test_661_661'>sum [:1,2,3] == 6</span>
+        <span class='test' id='test_662_662'>product [:1,2,4] == 8</span>
+
+        <span class='test' id='test_664_665multi'>let x = [:1,2], y = [:3,4]
+        concat [:x,y] == [:1,2,3,4]</span>
+
+        <span class='test' id='test_667_667'>concat_map (&#955;x = [:x,x+1]) [:1,2] == [:1,2,2,3]</span>
+
+        <span class='test' id='test_669_669'>minimum [: 1, 2, 3 ] == 1</span>
+        <span class='test' id='test_670_670'>maximum [: 1, 2, 3 ] == 3</span></code></pre>
+<h2 id="sequences">Sequences</h2>
+<p>Sequences are an abstract data type which resembles a list, except that elements Sequences may be infinite, as long as you never try to read every element. However, the current implementation is stack-consuming and thus limited by the underlying javascript runtime [TODO].</p>
+<pre><code>    module seq
+
+        open list
+        open speedtest
+        open html
+
+        Seq a = { seq: JS { elem: a, next: Seq a}}
+              | { end }
+
+        inline seq x = {seq: x}
+
+        iterate f x = seq yield { elem: x, next: iterate f (f x) }
+
+        from_list {nil} = {end}
+                | { head: x, tail: xs } =
+                    { seq: yield { elem: x, next: from_list xs }}
+
+        to_list { end }    = {nil}
+              | { seq: x } = do! { elem: y, next: ys } &lt;- x
+                                 return (y :: to_list ys)
+
+        take _ {end} = {end}
+           | 0 _ = {end}
+           | x { seq: y } = seq do { elem: z, next: zs } &lt;- y
+                                   return { elem: z, next: take (x - 1) zs }
+
+        <span class='test' id='test_706_706'>to_list (from_list [:1,2]) == [:1,2]</span>
+        <span class='test' id='test_707_707'>iterate (&#955;x = x + 1) 0 |&gt; take 100 |&gt; to_list |&gt; length == 100</span>
+
+        zip_with:
+
+              (a -&gt; b -&gt; c) -&gt; Seq a -&gt; Seq b -&gt; Seq c
+            | _ {end}    _____    = {end}
+            | _ _____    {end}    = {end}
+            | f {seq: a} {seq: b} = seq do
+
+                { elem: xx, next: xs } &lt;- a
+                { elem: yy, next: ys } &lt;- b
+
+                return { elem: f xx yy, next: zip_with f xs ys }
+
+        inline x ::: y = seq yield { elem: x, next: do! y }
+
+        tail:
+              Seq a   -&gt; Seq a
+            | {end}    = error &quot;tail called on empty seq&quot;
+            | {seq: t} = do! t &gt;&gt;= &#955;x = return x.next
+
+        to_lazy
+              | {end} = {end}
+              | {seq: y} = seq lazy do!
+                    {elem: x, next: xs} &lt;- y
+                    return {elem: x, next: to_lazy xs}</code></pre>
+<p>Infinite sequence example</p>
+<pre><code>        fibs = to_lazy &lt;: 1 ::: return &lt;: 1 ::: yield zip_with (&#955;x y = x + y) fibs &lt;: tail fibs</code></pre>
+<p>Since the <code>lazy</code> keyword memoizes it's argument, this fibonacci implementation is ridiculously faster than the recursive version. For example, the runtime speed of this fib implementation compared to the native recursive one is <span
+id="speedtest">__________</span>%.</p>
+<pre><code>        <span class='test' id='test_743_747multi'>do! fast_time &lt;- time yield fast_fib 30
+            slow_time &lt;- time yield fibs |&gt; take 30 |&gt; to_list |&gt; last
+            let ratio = floor (fast_time / slow_time * 100)
+            &quot;#speedtest&quot; $= ratio
+            return (ratio &gt;= 2)</span>
+
+        <span class='test' id='test_749_749'>fibs |&gt; take 5 |&gt; to_list == [:1,1,2,3,5]</span>
+
+        <span class='test' id='test_751_753multi'>fast_fib 15 == fibs |&gt; take 15
+                            |&gt; to_list
+                            |&gt; last</span></code></pre>
+<h2 id="formalz">FormalZ</h2>
+<p>Demonstration of some classic FP data structures. This form of polymorphism can be simulated in Formal the same way they are implemented in Haskell - as a function dictionary, the only difference being that you must explicitly bind the dictionary instance to a symbol (as opposed to it being referenced by the type variable's instantiation).</p>
+<pre><code>    module &quot;Formal Z&quot;
+
+        open list
+
+        Functor f =
+
+            { map: (a -&gt; b) -&gt; f a -&gt; f b }
+
+        Monad m =
+
+            { (&gt;&gt;=): m a -&gt; (a -&gt; m b) -&gt; m b
+              ret: a -&gt; m a }
+
+        map z x f = z.map f x
+
+        bind { ret: f, _ } x = f x
+
+        list_functor =
+
+            { map _ {nil} = {nil} 
+                | f { head: x, tail: xs } =
+                      { head: f x
+                        tail: list_functor.map f xs }}
+
+        list_monad =
+
+            { (&gt;&gt;=) x g = concat_map g x
+              return x = [:x] }
+
+        js_monad =
+
+            { (&gt;&gt;=) x f = x &gt;&gt;= f
+              return x = return x }
+
+        <span class='test' id='test_798_801multi'>let (&gt;&gt;&gt;=) x g = concat_map g x
+            z = 1 .. 3 &gt;&gt;&gt;= &#955;x = [:x, x + 1, x + 2]
+
+        z == [:1,2,3,2,3,4,3,4,5]</span></code></pre><pre><code>module parsec
+
+    open prelude
+    open prelude.option
+    open prelude.string
+    open prelude.html
+
+
+
+    Parser a = {parser: String -&gt; {rest: String, parsed: Option a}}
+
+
+
+    inline run_parser:</code></pre>
+<p>Runs a parser over a text argument and throws away the leftover text.</p>
+<pre><code>          Parser p  -&gt; String -&gt; Option p	                    
+        | {parser = p} x = p x |&gt; &#955; {parsed = {some = y}, _} = {some = y} 
+                                  | _  = {none}
+
+
+
+    inline (&lt;$&gt;):</code></pre>
+<p>Applies a function to the parse result, only if the parse was successful.</p>
+<pre><code>        (a -&gt; b) -&gt; Parser a    -&gt; Parser b
+        f       &lt;$&gt; {parser = z} =
+
+            { parser s =
+                  z s |&gt;  &#955; {parsed = {some: x}, rest = ss} =
+                               {parsed = {some = f x}, rest = ss}
+                          | {parsed = {none}, rest = x} =
+                               {parsed = {none}, rest = x} }
+
+
+
+    inline (&lt;*&gt;):</code></pre>
+<p>Allows functions that take multiple arguments to be applied sequentially to a sequence of parsed values.</p>
+<pre><code>        Parser (a -&gt; b) -&gt; Parser a    -&gt; Parser b
+        {parser = fp}  &lt;*&gt; {parser = p} =
+
+            { parser s = 
+                  fp s |&gt; &#955; {parsed = {some: f}, rest = rr} =
+                                p rr |&gt; &#955; {parsed = {some = x}, rest = z} =
+                                              {parsed = {some = f x}, rest = z}
+                                        | {parsed = {none}, rest = x} =
+                                              {parsed = {none}, rest = x}
+                          | {parsed: {none}, rest: x} =
+                               {parsed: {none}, rest: x} }
+
+
+
+
+
+    private inline lift(g, {parser: f}) =
+        { parser text =
+             let f&#39; = f text
+             in  g { text: text
+                     f: f
+                     parsed: f&#39;.parsed
+                     rest: f&#39;.rest
+                     f&#39;: f&#39; }}
+
+    inline (*&gt;):</code></pre>
+<p>Applies two parsers in sequence, throwing out the result of the first.</p>
+<pre><code>        Parser a -&gt; Parser b -&gt; Parser b
+        {parser = f} *&gt; {parser = g} =
+
+            { parser s =
+                  f s |&gt; &#955; {parsed = {some = x}, rest = zz} = g zz
+                         | {parsed = {none}, rest = x} =
+                               {parsed = {none}, rest = x} }
+
+
+
+    inline (&lt;|&gt;):</code></pre>
+<p>Alternative will try the first parser, and applies the second only if the first fails <em>and</em> consumes no input from the text.</p>
+<pre><code>        Parser a      -&gt; Parser a    -&gt; Parser a
+        {parser = f} &lt;|&gt; {parser = g} =
+
+            let h text {parsed = {none}, rest = textt} when text == textt =
+                    g text
+                | _ x = x
+
+            in {parser text = h text (f text)}
+
+
+
+    inline try&#39;:</code></pre>
+<p>Tries to apply a parser, but restores the parser state in the case of a failure. This is useful with combinators that check the state of the consumed text, like <code>&lt;|&gt;</code></p>
+<pre><code>          Parser a    -&gt; Parser a
+        = lift &#955; (x &amp; {_, parsed: {none}}) =
+                     {parsed: {none}, rest: x.text}
+               | x = x.f&#39;
+
+
+
+    inline string:</code></pre>
+<p>A parser that matches a string. Unlike Haskell's Parsec library, parsec.formal will not consume any input if the entire string doesn't match. This is for efficiency reasons currently, but may change in the future.</p>
+<pre><code>	  String -&gt; Parser String              
+        | x = { parser y = 
+                    let sub = do! `y.substring(0, x.length)`
+                    if (sub == x)    
+                        { rest   = do! `y.substring(x.length)`
+                          parsed = {some = x} }
+                    else {rest = y, parsed = {none}} }
+
+
+
+    inline push! : x -&gt; Array x -&gt; Array x
+         | x xs = do! `xs.unshift(x); xs`
+
+    many:</code></pre>
+<p>Applies a parser repeatedly, until parsing fails.</p>
+<pre><code>          Parser a -&gt; Parser (Array a)
+        = lift &#955; (x &amp; {_, parsed: {none}}) =
+                     {parsed: {some: []}, rest = x.rest}
+               | (y &amp; {_, parsed: {some: x}}) =
+                     (push! x &lt;$&gt; many {parser: y.f}).parser y.rest
+
+
+
+    module &quot;Testing&quot;
+
+        <span class='test' id='test_141_141'>{some = &quot;ten&quot;} == run_parser (string &quot;ten&quot;) &quot;tens&quot;</span>
+        <span class='test' id='test_142_142'>{some = &quot;tenten&quot;} == run_parser ((&#955;x = x +++ x) &lt;$&gt; string &quot;ten&quot;) &quot;tenfingers&quot;</span>
+
+        <span class='test' id='test_144_145multi'>{parsed = {some = &quot;tenten&quot;}, rest = &quot;fingers&quot;} 
+            == ((&#955;x = x +++ x) &lt;$&gt; string &quot;ten&quot;).parser &quot;tenfingers&quot;</span>
+
+        <span class='test' id='test_147_148multi'>var result = run_parser ((&#955;x y = y +++ x) &lt;$&gt; string &quot;ten&quot; &lt;*&gt; string &quot;fingers&quot;) &quot;tenfingers&quot;
+        result == {some: &quot;fingersten&quot;}</span>
+
+        <span class='test' id='test_150_151multi'>var result = run_parser (string &quot;ten&quot; &lt;|&gt; string &quot;eleven&quot;) &quot;eleven&quot;
+        result == {some: &quot;eleven&quot;}</span>
+
+        <span class='test' id='test_153_154multi'>var result = run_parser (string &quot;ten&quot; *&gt; string &quot;fingers&quot;) &quot;tenfingers&quot;
+        result == {some: &quot;fingers&quot;}</span>
+
+        <span class='test' id='test_156_158multi'>var parser = (string &quot;ten&quot; *&gt; string &quot;fingers&quot;) &lt;|&gt; string &quot;tentoes&quot;
+            result = run_parser parser &quot;tentoes&quot;
+        result == {none}</span>
+
+        <span class='test' id='test_160_162multi'>var parser = try&#39; (string &quot;ten&quot; *&gt; string &quot;fingers&quot;) &lt;|&gt; string &quot;tentoes&quot;
+            result = run_parser parser &quot;tentoes&quot;
+        result == {some: &quot;tentoes&quot;}</span>
+
+        <span class='test' id='test_164_166multi'>var parser = many (string &quot;ten&quot;)
+            result = run_parser parser &quot;tententententen&quot;
+        result == {some: [&quot;ten&quot;, &quot;ten&quot;, &quot;ten&quot;, &quot;ten&quot;, &quot;ten&quot;]}</span></code></pre><h2 id="tests">Tests</h2>
+<p>A collection of tests for compiler bugs, benchmarking, etc.</p>
+<h2 id="benchmarks">Benchmarks</h2>
+<p>A collection of simple benchmarks. You can view the results by opening your browser's terminal.</p>
+<pre><code>module &quot;Benchmarks for the prelude&quot;
+
+    title x = 
+        do log &quot;\r                                  &quot;
+           log x
+           return true
+
+    open prelude
+    open prelude.speedtest
+    open prelude.list
+    open prelude.string</code></pre>
+<p>Here we have 5 implementations of (Project Euler problem #1)[http://projecteuler.net/problem=1]. The first is simply a native JS implementation.</p>
+<pre><code>    euler_1 x = `var sum = 0;
+                 for (var i = 1; i &lt; x; i++) {
+                     if (i % 3 == 0 || i % 5 == 0) sum += i;
+                 };
+                 return sum;`</code></pre>
+<p>The second is a tail recursive. The formal compiler will optimize simple functions which are tail recursive into javascript <code>for</code> loops automatically, making them much faster.</p>
+<pre><code>    euler_2 x y when x &lt; 3 = y
+          | x y when x % 3 == 0 || x % 5 == 0 =
+                euler_2 (x - 1) (y + 1)
+          | x y = euler_2 (x - 1) y
+
+    euler_3 x when x &lt; 3 = 0
+    euler_3 x = if x % 3 == 0 || x % 5 == 0
+                then 1 + euler_3 (x - 1)
+                else euler_3 (x - 1)
+
+    euler_4 z = yield 1 .. z 
+                      |&gt; filter (&#955;x = x % 3 == 0 || x % 5 == 0)
+                      |&gt; sum
+
+    euler_5 x y when x &lt; 3 = y
+          | x y when do! `x % 3 == 0 || x % 5 == 0` =
+                euler_5 (x - 1) (y + 1)
+          | x y = euler_5 (x - 1) y
+
+    <span class='test' id='test_56_70multi'>do! title &quot;Relative Speeds (10k)&quot;
+
+        w &lt;- time (euler_1 10000)
+        x &lt;- time yield euler_2 10000 0
+        y &lt;- time yield euler_3 10000
+        z &lt;- time (euler_4 10000)
+        q &lt;- time yield euler_5 10000 0
+
+        log &quot;  Native JS:          `w / 1000`s&quot;
+        log &quot;  Formal TCO Unboxed: `q / 1000`s&quot;
+        log &quot;  Formal TCO:         `x / 1000`s&quot;
+        log &quot;  Formal Recursive:   `y / 1000`s&quot;
+        log &quot;  Formal list:        `z / 1000`s&quot;
+
+        return &lt;| (x &lt;= y &amp;&amp; y &lt; z)</span>
+
+    <span class='test' id='test_72_72'>string? (err yield euler_3(250000)).message</span>
+
+    <span class='test' id='test_74_88multi'>do! title &quot;Relative Speeds (2.5M)&quot;
+
+        w &lt;- time (euler_1 2500000)
+        x &lt;- time yield euler_2 2500000 0
+        y &lt;- time yield euler_5 2500000 0
+
+        log &quot;  Native JS:          `w / 1000`s&quot;
+        log &quot;  Formal TCO Unboxed: `y / 1000`s&quot;
+        log &quot;  Formal TCO:         `x / 1000`s&quot;
+        log &quot;  Formal Recursive:   `err yield euler_3(250000)`&quot;
+        log &quot;  Formal list:        `err (euler_4 250000)`&quot;
+
+        log &quot;&quot;
+
+        return &lt;| (w &lt; x)</span>
+
+
+module &quot;Tests for partial records&quot;
+
+    open prelude
+
+    <span class='test' id='test_95_96multi'>var f {a: x, b: y, _ } = x + y
+    f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }</span>
+
+    <span class='test' id='test_98_100multi'>var f {a: 1, b: 1, _ } = 2
+        f {b: 2, c: 2, _ } = 2
+    f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4</span>
+
+    <span class='test' id='test_102_105multi'>var f { a = 1, b = 2, _ } = 1
+        g { b = 2, c = 3, _ } = 2
+        x = { a = 1, b = 2, c = 3, d = 4 }
+    f x + 1 == g x</span>
+
+module &quot;Tests for TCO bugs&quot;
+
+    open prelude
+    open prelude.list
+
+    rev_1 y = 
+        var r rest [:] = rest
+            | rest { head: x, tail: xs } = 
+                r (x :: rest) xs
+
+        r {nil} y
+
+    rev_2 = 
+        var rrr rest [:] = rest
+            rrr rest { head: x, tail: xs } = 
+                rrr (x :: rest) xs
+
+        rrr {nil}
+
+    <span class='test' id='test_126_126'>rev_2 [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]</span>
+
+    test_x = [: 1, 2, 3, 4, 5, 6, 7 ]
+
+    <span class='test' id='test_130_130'>rev_2 test_x == rev_1 test_x</span>
+    <span class='test' id='test_131_131'>rev_1 test_x == reverse test_x</span>
+    <span class='test' id='test_132_132'>length (rev_2 test_x) == length (rev_1 test_x)</span>
+    <span class='test' id='test_133_133'>length (rev_2 test_x) == length test_x</span>
+    <span class='test' id='test_134_134'>length (rev_1 test_x) == length (reverse test_x)</span>
+
+
+module &quot;Tests for parser bugs&quot;
+
+    open prelude
+    open prelude.string
+    open prelude.html
+
+    <span class='test' id='test_143_144multi'>var x = do! `[ {x: 1}, {x: 2}, {x: 3} ]`
+    stringify (x !! 0).x == &quot;1&quot;</span></code></pre><script>$('#run_tests').click(prelude.html.table_of_contents)</script><div id="test_suite">
+</div>
+
+</div>
+</div>
+</body>
+ </html>
