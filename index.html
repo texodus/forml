@@ -397,11 +397,8 @@ var c=a({nothing:!0});b=run(function(){return run(function(){return!c})});return
 <pre><code>    hello_world = do
 
         `console.log(&quot;Hello World&quot;)` -- Calls to Javascript always return type `JS a`
-
         x &lt;- `Math.sqrt(9)`          -- `x` is inferred to be the unrestricted type `a`
-
         let z = x + 1                -- `x` is now restricted to type `Num`
-
         return (z + 1)               -- type of `hello_world` is inferred to be `JS Num`
 
     <span class='test' id='test_220_220'>8 == do! hello_world &gt;&gt;= &#955;x = `x + 3`</span></code></pre>
@@ -436,7 +433,7 @@ var c=a({nothing:!0});b=run(function(){return run(function(){return!c})});return
 
     <span class='test' id='test_277_277'>has_value {just: 4}</span>
     <span class='test' id='test_278_278'>not (has_value {nothing})</span></code></pre>
-    <div id="test_suite" style="display: inline"><script>$('#run_tests').bind('click', prelude.html.table_of_contents)</script>
+    <div id="test_suite" style="display: inline"><script>$("code").addClass("prettyprint").addClass("lang-hs");prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents)</script>
 </div>
 
 </div>
