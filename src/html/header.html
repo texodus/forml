@@ -1,55 +1,24 @@
-<!DOCTYPE html>
-<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
-<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
-<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
-<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"> <!--<![endif]-->
+<!doctype html>
+<html>
   <head>
-
-    <!-- Basic Page Needs
-         ================================================== -->
     <meta charset="utf-8">
-    <meta name="description" content="">
-    <meta name="author" content="">
-
-    <!-- Mobile Specific Metas
-         ================================================== -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-
-    <!-- CSS
-         ================================================== -->
-    <link rel="stylesheet" href="lib/base.css">
-    <link rel="stylesheet" href="lib/skeleton.css">
-    <link rel="stylesheet" href="lib/layout.css">
-
-    <link href='lib/js/prettify.css' type='text/css' rel='stylesheet' />
-    <link href='lib/default.css' type='text/css' rel='stylesheet' />
-    <link href='lib/js/jasmine-1.0.1/jasmine.css' type='text/css' rel='stylesheet' />
-
-    <script type='text/javascript' src='lib/js/prettify.js'></script>
-    <script type='text/javascript' src='lib/js/lang-hs.js'></script>
-    <script type='text/javascript' src='lib/js/jquery.js'></script>
-
-
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Formal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
-	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-	<![endif]-->
-
-    <!-- Favicons
-	 ================================================== -->
-    <link rel="shortcut icon" href="images/favicon.ico">
-    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
-
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
+    <div class="wrapper">
+      <header>
+        <h1></h1>
+        <span id="test_button_container">
+        <ul>
+          <li id="test_button"><a id="run_tests">Run<strong>Tests</strong></a></li>
+        </ul>
+        </span>
+      </header>
+      <section>
+
     <div class="container">
-      <div class="three columns sidebar">
-        <nav>
-          <h1 id="title">Formal</h1>
-          <div>A Programming Language</div>
-          <br/>
-          <div id="run_tests">Test</div>
-        </nav>
-      </div>
-      <div class="twelve columns offset-by-one content">

@@ -65,18 +65,28 @@ to_parsed name src env = case parseFormal name src of
                                            (as, []) -> Right (as, (x, src))
                                            (_, y)   -> Left y
 
-parse_formal :: [String] -> IO ([String], TypeSystem, [(Program, String)])
-parse_formal xs = foldM parse' (xs, [], []) xs
+parse_formal :: [String] -> IO ([String], TypeSystem, [(Program, String)], [String])
+parse_formal xs = foldM parse' (xs, [], [], []) xs
 
-    where parse' :: ([String], TypeSystem, [(Program, String)]) -> String -> IO ([String], TypeSystem, [(Program, String)])
-          parse' (zs, ts, as) filename = do hFile <- openFile filename ReadMode
-                                            src <-   hGetContents hFile
-                                            let src' = to_literate filename . (++ "\n") $ src
-                                            (ts', as') <- monitor [qq|Loading $filename|] $ return$ to_parsed (head zs) src' ts
-                                            return (tail zs, ts ++ ts', as ++ [as'])
+    where parse' :: ([String], TypeSystem, [(Program, String)], [String]) -> String -> IO ([String], TypeSystem, [(Program, String)], [String])
+          parse' (zs, ts, as, titles) filename =
+          
+             do hFile <- openFile filename ReadMode
+                src'' <-   hGetContents hFile
+                let (title, src) = get_title src''
+                let src' = to_literate filename . (++ "\n") $ src
+                (ts', as') <- monitor [qq|Loading $filename|] $ return$ to_parsed (head zs) src' ts
+                return (tail zs, ts ++ ts', as ++ [as'], titles ++ [title])
 
 gen_js :: [String] -> [Program] -> (String, [(String, String)])
 gen_js src p = (compress (read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render (Program $ get_program p)) src p)), [("",  read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render_spec (Program $ get_program p)) src p))])
+
+get_title :: String -> (String, String)
+get_title x = case lines x of
+                  z @ ((strip -> ('-':'-':_:x')):('-':'-':_:'-':_):_) -> 
+                      (x', unlines $ drop 2 z)
+                  _ -> ("<i>Untitled Program</i>", x)
+
 
 read' :: [Char] -> [Char]
 read' xs @ ('"':_) = read xs
@@ -98,16 +108,19 @@ main' (parseArgs -> rc') =
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
-          jquery  = $(embedFile "lib/js/jquery.js")
-          header  = $(embedFile "src/html/header.html")
-          footer  = $(embedFile "src/html/footer.html")
-          jasmine = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js")
-                      `mappend` $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
+          jquery   = $(embedFile "lib/js/jquery.js")
+          header   = $(embedFile "src/html/header.html")
+          footer   = $(embedFile "src/html/footer.html")
+          jasmine  = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js") `mappend` $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
+          prettify = $(embedFile "lib/js/prettify.js") `mappend` $(embedFile "lib/js/lang-hs.js")
+          
+          css      = $(embedFile "lib/js/jasmine-1.0.1/jasmine.css") `mappend` $(embedFile "src/html/styles.css") `mappend` $(embedFile "lib/js/prettify.css")
 
-          console = "prelude.html.console_runner()"
-          report  = $(embedFile "src/js/FormalReporter.js")
-          htmljs  = "$('#run_tests').click(prelude.html.table_of_contents)"
+          report   = $(embedFile "src/js/FormalReporter.js")
 
+          htmljs   = "$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents)"
+          console  = "prelude.html.console_runner()"
+          
           watch' rc =
 
               do x <- mapM getModificationTime . inputs $ rc
@@ -126,7 +139,7 @@ main' (parseArgs -> rc') =
 
           compile rc =
 
-              do (_, as, src') <- parse_formal$ inputs rc
+              do (_, as, src', titles) <- parse_formal$ inputs rc
                  let src'' = O.run_optimizer (fmap fst src') as
                  let (js', ((_, tests'):_)) = gen_js (fmap snd src') src''
 
@@ -148,10 +161,11 @@ main' (parseArgs -> rc') =
                               yyy = map snd src'
                               html' xxx' yyy' = highlight (case xxx' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy' xxx')
                               html = concat $ zipWith html' xxx yyy
-                              prelude' = "<script>" ++ B.unpack jasmine ++ B.unpack report ++ js ++ tests ++ "</script>"
-                              hook = "<script>" ++ htmljs ++ "</script>"
+                              prelude' = "<script>" ++ B.unpack jquery ++ B.unpack jasmine ++ B.unpack report ++ B.unpack prettify ++ js ++ tests ++ "</script>"
+                              css' = "<style type=\"text/css\">" ++ B.unpack css ++ "</style>"
+                              hook = "<script>" ++ htmljs ++ ";window.document.title='"++(titles !! 0)++"';$('h1').html('" ++ (titles !! 0) ++ "')</script>"
 
-                          in do writeFile ((output rc) ++ ".html") (B.unpack header ++ prelude' ++ html ++ hook ++ B.unpack footer)
+                          in do writeFile ((output rc) ++ ".html") (B.unpack header ++ css' ++ prelude' ++ html ++ hook ++ B.unpack footer)
                                 return $ Right ()
                      else return $ Right ()
 
