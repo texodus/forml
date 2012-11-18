@@ -25,16 +25,16 @@ import Data.List         as L
 import Data.Monoid
 import Data.String.Utils
 
-import Formal.Closure
-import Formal.Javascript
-import Formal.Javascript.Backend
-import Formal.Javascript.Utils   (prelude)
-import Formal.Parser
-import Formal.TypeCheck          hiding (split)
-import Formal.Types.Statement
-import Formal.CLI
+import Forml.Closure
+import Forml.Javascript
+import Forml.Javascript.Backend
+import Forml.Javascript.Utils   (prelude)
+import Forml.Parser
+import Forml.TypeCheck          hiding (split)
+import Forml.Types.Statement
+import Forml.CLI
 
-import qualified Formal.Optimize as O
+import qualified Forml.Optimize as O
 
 import qualified Data.ByteString.Char8 as B
 import           Data.FileEmbed
@@ -52,21 +52,21 @@ toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaul
 
 to_literate :: String -> String -> String
 to_literate filename
-    | (head . tail . split "." $ filename) == "formal" = unlines . map l . lines
+    | (head . tail . split "." $ filename) == "forml" = unlines . map l . lines
     | otherwise = id
 
     where l (lstrip -> '-':'-':xs) = lstrip xs
           l x = "    " ++ x
 
 to_parsed :: String -> String -> TypeSystem -> Either [String] (TypeSystem, (Program, String))
-to_parsed name src env = case parseFormal name src of
+to_parsed name src env = case parseForml name src of
                               Left x  -> Left [show x]
                               Right x -> case tiProgram x env of
                                            (as, []) -> Right (as, (x, src))
                                            (_, y)   -> Left y
 
-parse_formal :: [String] -> IO ([String], TypeSystem, [(Program, String)], [String])
-parse_formal xs = foldM parse' (xs, [], [], []) xs
+parse_forml :: [String] -> IO ([String], TypeSystem, [(Program, String)], [String])
+parse_forml xs = foldM parse' (xs, [], [], []) xs
 
     where parse' :: ([String], TypeSystem, [(Program, String)], [String]) -> String -> IO ([String], TypeSystem, [(Program, String)], [String])
           parse' (zs, ts, as, titles) filename =
@@ -116,10 +116,12 @@ main' (parseArgs -> rc') =
           
           css      = $(embedFile "lib/js/jasmine-1.0.1/jasmine.css") `mappend` $(embedFile "src/html/styles.css") `mappend` $(embedFile "lib/js/prettify.css")
 
-          report   = $(embedFile "src/js/FormalReporter.js")
+          report   = $(embedFile "src/js/FormlReporter.js")
 
           htmljs   = "$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents)"
           console  = "prelude.html.console_runner()"
+          
+          prelude  = $(embedFile "prelude.js");
           
           watch' rc =
 
@@ -139,7 +141,7 @@ main' (parseArgs -> rc') =
 
           compile rc =
 
-              do (_, as, src', titles) <- parse_formal$ inputs rc
+              do (_, as, src', titles) <- parse_forml$ inputs rc
                  let src'' = O.run_optimizer (fmap fst src') as
                  let (js', ((_, tests'):_)) = gen_js (fmap snd src') src''
 
