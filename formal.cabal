@@ -79,4 +79,6 @@ Executable forml
                   Forml.Types.Type,
                   Forml.Types.TypeDefinition,
                   Forml.Closure,
-                  Forml.CLI
+                  Forml.CLI,
+                  Forml.Doc,
+                  Forml.Static

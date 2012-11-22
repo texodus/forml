@@ -3,3 +3,8 @@ dist
 *.swn
 *.swo
 *.swp
+.dist-buildwrapper
+.externalToolBuilders
+
+.project
+.settings

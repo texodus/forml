@@ -1,6 +1,12 @@
-{-# LANGUAGE FlexibleContexts, NamedFieldPuns, OverlappingInstances,
-             QuasiQuotes, RankNTypes, RecordWildCards, TemplateHaskell,
-             TupleSections, ViewPatterns #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE NamedFieldPuns       #-}
+{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE QuasiQuotes          #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TupleSections        #-}
+{-# LANGUAGE ViewPatterns         #-}
 
 
 module Main(main) where
@@ -8,6 +14,7 @@ module Main(main) where
 import Text.InterpolatedString.Perl6
 
 import Control.Applicative
+import Control.Concurrent
 import Control.Monad.State hiding (lift)
 
 import System.Directory
@@ -16,85 +23,56 @@ import System.Exit
 import System.IO
 import System.Process
 
-import Control.Concurrent
-
-import Text.Pandoc
-
-import Data.Char         (isAscii, ord)
-import Data.List         as L
-import Data.Monoid
-import Data.String.Utils
-
-import Forml.Closure
-import Forml.Javascript
-import Forml.Javascript.Backend
-import Forml.Javascript.Utils   (prelude)
-import Forml.Parser
-import Forml.TypeCheck          hiding (split)
-import Forml.Types.Statement
-import Forml.CLI
-
-import qualified Forml.Optimize as O
-
---import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.UTF8 as B
 import           Data.FileEmbed
+import           Data.List            as L
+import           Data.Monoid
+import           Data.String.Utils
 
+import           Forml.CLI
+import           Forml.Closure
+import           Forml.Doc
+import           Forml.Javascript
+import           Forml.Javascript.Backend
+import           Forml.Javascript.Utils   (prelude)
+import qualified Forml.Optimize           as O
+import           Forml.Parser
+import           Forml.Static
+import           Forml.TypeCheck          hiding (split)
+import           Forml.Types.Statement
 
+type Source   = String
+type Title    = String
+type Error    = String
+type Filename = String
 
-toEntities :: String -> String
-toEntities [] = ""
-toEntities (c:cs) | isAscii c = c : toEntities cs
-                  | otherwise = [qq|&#{ord c};{toEntities cs}|]
-
-toHTML :: String -> String
-toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
-
-
-to_literate :: String -> String -> String
-to_literate "(Prelude)" = id
-to_literate filename
-    | (head . tail . split "." $ filename) == "forml" = unlines . map l . lines
-    | otherwise = id
-
-    where l (lstrip -> '-':'-':xs) = lstrip xs
-          l x = "    " ++ x
-
-to_parsed :: String -> String -> TypeSystem -> Either [String] (TypeSystem, (Program, String))
+to_parsed :: Title -> Source -> TypeSystem -> Either [Error] (TypeSystem, Program)
 to_parsed name src env = case parseForml name src of
                               Left x  -> Left [show x]
                               Right x -> case tiProgram x env of
-                                           (as, []) -> Right (as, (x, src))
+                                           (as, []) -> Right (as, x)
                                            (_, y)   -> Left y
 
-prelude' = B.toString $(embedFile "src/forml/prelude.forml")
+parse_forml :: [Filename] -> IO ([Filename], TypeSystem, [(Program, Source)], [Title])
+parse_forml filenames =
 
-
-parse_forml :: [String] -> IO ([String], TypeSystem, [(Program, String)], [String])
-parse_forml xs = do xs' <- mapM get_source xs 
-                    foldM parse' ("prelude.forml" : xs, [], [], []) (prelude' : xs')
+    do sources <- mapM get_source filenames
+       foldM parse' ("prelude.forml" : filenames, [], [], []) (prelude' : sources)
 
     where parse' :: ([String], TypeSystem, [(Program, String)], [String]) -> String -> IO ([String], TypeSystem, [(Program, String)], [String])
           parse' (zs, ts, as, titles) src'' =
-          
+
              do let (title, src) = get_title src''
                 let src' = to_literate (head zs) . (++ "\n") $ src
                 (ts', as') <- monitor [qq|Loading {head zs}|] $ return$ to_parsed (head zs) src' ts
-                return (tail zs, ts ++ ts', as ++ [as'], titles ++ [title])
+                return (tail zs, ts ++ ts', as ++ [(as', src')], titles ++ [title])
 
-                
           get_source filename =
              do hFile <- openFile filename ReadMode
                 hGetContents hFile
 
 gen_js :: [String] -> [Program] -> (String, [(String, String)])
 gen_js src p = (compress (read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render (Program $ get_program p)) src p)), [("",  read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render_spec (Program $ get_program p)) src p))])
-
-get_title :: String -> (String, String)
-get_title x = case lines x of
-                  z @ ((strip -> ('-':'-':_:x')):('-':'-':_:'-':_):_) -> 
-                      (x', unlines $ drop 2 z)
-                  _ -> ("<i>Untitled Program</i>", x)
 
 
 read' :: [Char] -> [Char]
@@ -117,22 +95,10 @@ main' (parseArgs -> rc') =
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
-          jquery   = $(embedFile "lib/js/jquery.js")
-          header   = $(embedFile "src/html/header.html")
-          footer   = $(embedFile "src/html/footer.html")
-          jasmine  = $(embedFile "lib/js/jasmine-1.0.1/jasmine.js") `mappend` $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
-          prettify = $(embedFile "lib/js/prettify.js") `mappend` $(embedFile "lib/js/lang-hs.js")
-          
-          css      = $(embedFile "lib/js/jasmine-1.0.1/jasmine.css") `mappend` $(embedFile "src/html/styles.css") `mappend` $(embedFile "lib/js/prettify.css")
-          report   = $(embedFile "src/js/FormlReporter.js")
-
-          htmljs   = "$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents)"
-          console  = "prelude.html.console_runner()"
-          
 --          assump   = case S.decode $(embedFile "prelude.types") of
 --                       Left _ -> error "I Shouldn't be!"
 --                       Right x -> x
-          
+
           watch' rc =
 
               do x <- mapM getModificationTime . inputs $ rc
@@ -154,7 +120,7 @@ main' (parseArgs -> rc') =
               do (_, as, src', titles) <- parse_forml$ inputs rc
                  let src'' = O.run_optimizer (fmap fst src') as
                  let (js', ((_, tests'):_)) = gen_js (fmap snd src') src''
-                 
+
                --  writeFile "prelude.types" (B.toString $ S.encode as)
 
                  js <- if optimize rc
@@ -175,12 +141,12 @@ main' (parseArgs -> rc') =
                               yyy = map snd src'
                               html' xxx' yyy' = highlight (case xxx' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy' xxx')
                               html = concat $ zipWith html' xxx yyy
-                              prelude' = "<script>" ++ B.toString jquery ++ B.toString jasmine ++ B.toString report ++ B.toString prettify ++ js ++ tests ++ "</script>"
-                              css' = "<style type=\"text/css\">" ++ B.toString css ++ "</style>"
+                              compiled = [qq|<script>$js $tests</script>|]
                               hook = "<script>" ++ htmljs ++ ";window.document.title='"++(titles !! 0)++"';$('h1').html('" ++ (titles !! 0) ++ "')</script>"
 
-                          in do writeFile ((output rc) ++ ".html") (B.toString header ++ css' ++ prelude' ++ html ++ hook ++ B.toString footer)
+                          in do writeFile ((output rc) ++ ".html") (header ++ css' ++ scripts ++ compiled ++ html ++ hook ++ footer)
                                 return $ Right ()
+                                
                      else return $ Right ()
 
                  case run_tests rc of
@@ -191,7 +157,7 @@ main' (parseArgs -> rc') =
                              forkIO $ do errors <- hGetContents std_out
                                          putStr errors
                                          hFlush stdout
-                             hPutStrLn std_in$ B.toString jasmine
+                             hPutStrLn std_in$ jasmine
                              hPutStrLn std_in$ js ++ "\n\n"
                              hPutStrLn std_in$ tests
                              hPutStrLn std_in$ console
@@ -206,7 +172,7 @@ main' (parseArgs -> rc') =
                      Phantom ->
                           monitor "Testing [Phantom.js]"$
                           do writeFile (output rc ++ ".phantom.js")
-                                   (B.toString jquery ++ B.toString jasmine ++ js ++ tests ++ console)
+                                   (jquery ++ jasmine ++ js ++ tests ++ console)
 
                              (Just std_in, Just std_out, _, p) <-
                                  createProcess (proc "phantomjs" [output rc ++ ".phantom.js"]) { std_in = CreatePipe, std_out = CreatePipe }
