@@ -81,4 +81,5 @@ Executable forml
                   Forml.Closure,
                   Forml.CLI,
                   Forml.Doc,
-                  Forml.Static
+                  Forml.Static,
+                  Forml.Javascript.Test

@@ -1,44 +1,42 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE NamedFieldPuns       #-}
 {-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes          #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE ViewPatterns         #-}
 
 module Forml.Types.Expression where
 
-import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 
 import Control.Applicative
 import Control.Monad
 import Control.Monad.State hiding (lift)
 
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import Text.Parsec.Indent  hiding (same)
-import Text.Parsec.Expr
+import           Text.InterpolatedString.Perl6
+import           Text.Parsec                   hiding (State, label, many, parse, spaces, (<|>))
+import qualified Text.Parsec                   as P
+import           Text.Parsec.Expr
+import           Text.Parsec.Indent            hiding (same)
 
-import qualified Text.Parsec as P
-import qualified Data.Map as M
-import qualified Data.List as L
+import qualified Data.List         as L
+import qualified Data.Map          as M
+import           Data.Monoid
+import           Data.String.Utils hiding (join)
 
-import Forml.Parser.Utils
+
 import Forml.Javascript.Utils
-
-import Forml.Types.Literal
-import Forml.Types.Type
-import Forml.Types.Symbol
-import Forml.Types.Pattern
+import Forml.Parser.Utils
 import Forml.Types.Axiom
-
-import Data.String.Utils hiding (join)
-import Data.Monoid
+import Forml.Types.Literal
+import Forml.Types.Pattern
+import Forml.Types.Symbol
+import Forml.Types.Type
 
 import Prelude hiding (curry, (++))
 
@@ -67,7 +65,7 @@ data Expression d = ApplyExpression (Expression d) [Expression d]
 
 instance (Show d) => Show (Expression d) where
 
-    show (ApplyExpression x @ (SymbolExpression (show -> f : _)) y) 
+    show (ApplyExpression x @ (SymbolExpression (show -> f : _)) y)
         | f `elem` "abcdefghijklmnopqrstuvwxyz" = [qq|$x {sep_with " " y}|]
         | length y == 2                         = [qq|{y !! 0} $x {y !! 1}|]
 
@@ -81,9 +79,9 @@ instance (Show d) => Show (Expression d) where
     show (LazyExpression x Once)      = "lazy " ++ show x
     show (LazyExpression x Every)      = "do " ++ show x
     show (LetExpression ax e)    = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
-    show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|] 
-    show (InheritExpression x m) = [qq|\{ $x with {unsep_with " = " m} \}|] 
-    show (AccessorExpression x m) = [qq|$x.{sep_with "." m}|] 
+    show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|]
+    show (InheritExpression x m) = [qq|\{ $x with {unsep_with " = " m} \}|]
+    show (AccessorExpression x m) = [qq|$x.{sep_with "." m}|]
 
 
 instance (Syntax d, Show d) => Syntax (Expression d) where
@@ -104,11 +102,11 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                       <|> inner
 
               inner = try accessor <|> inner_no_accessor
-              
+
               inner_no_accessor =
-                      indentPairs "(" syntax ")" 
-                      <|> js 
-                      <|> try record 
+                      indentPairs "(" syntax ")"
+                      <|> js
+                      <|> try record
                       <|> named_key
                       <|> literal
                       <|> symbol
@@ -132,7 +130,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         i <- try (string "!") <|> return ""
                         P.spaces
                         l <- withPos line
-                        if i == "!" 
+                        if i == "!"
                            then return$ ApplyExpression (SymbolExpression (Symbol "run")) [wrap s l]
                            else return$ wrap s l
 
@@ -141,8 +139,8 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         wrap s x = LazyExpression (Addr s s (ApplyExpression (SymbolExpression (Symbol "run")) [x])) Every
 
                         bind = do p <- syntax
-                                  whitespace <* (string "<-" <|> string "←") <* whitespace 
-                                  ex <- withPos syntax 
+                                  whitespace <* (string "<-" <|> string "←") <* whitespace
+                                  ex <- withPos syntax
                                   spaces *> same
                                   f ex p <$> addr line
 
@@ -161,10 +159,10 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         unit_bind v = do spaces *> same
                                          f v AnyPattern <$> addr line
 
-                        f ex pat zx = ApplyExpression 
+                        f ex pat zx = ApplyExpression
                                          (SymbolExpression (Operator ">>="))
-                                         [ ex, (FunctionExpression 
-                                                    [ EqualityAxiom 
+                                         [ ex, (FunctionExpression
+                                                    [ EqualityAxiom
                                                       (Match [pat] Nothing)
                                                       zx ]) ]
 
@@ -185,7 +183,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                     where jStyle e = do indented
                                         cont e
 
-                          hStyle e = do string "then" 
+                          hStyle e = do string "then"
                                         whitespace1
                                         cont e
 
@@ -193,9 +191,9 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                         P.spaces
                                         string "else"
                                         whitespace1
-                                        IfExpression e t <$> withPos (try infix' <|> other) 
+                                        IfExpression e t <$> withPos (try infix' <|> other)
 
-              infix' = buildExpressionParser table term 
+              infix' = buildExpressionParser table term
 
                   where table  = [ [ix "^"]
                                  , [ix "*", ix "/"]
@@ -206,7 +204,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                  , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
                         ix s   = Infix (try . op $ (unwind <$> string s) <* notFollowedBy operator) AssocLeft
-                        
+
                         unwind "and" = Operator "&&"
                         unwind "or" = Operator "||"
                         unwind "is" = Operator "=="
@@ -218,11 +216,11 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                                 op <- SymbolExpression . Operator <$> string s
                                                 spaces
                                                 return (\x -> ApplyExpression op [x])
-                                 
+
                         term   = try other
-                        
+
                         user_op_left = try $ do spaces
-                                                op' <- not_system (many1 operator) 
+                                                op' <- not_system (many1 operator)
                                                 spaces
                                                 return $ f op'
 
@@ -240,21 +238,21 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         op p   = do spaces
                                     op' <- SymbolExpression <$> p
                                     spaces
-                                          
+
                                     return (\x y -> ApplyExpression op' [x, y])
 
               named_key = do x <- indentPairs "{" syntax "}"
-                             return $ RecordExpression (M.fromList [(x, SymbolExpression (Symbol "true"))]) 
+                             return $ RecordExpression (M.fromList [(x, SymbolExpression (Symbol "true"))])
 
               accessor = do s <- getPosition
                             x <- indentPairs "(" syntax ")"
-                                 <|> js 
-                                 <|> record 
+                                 <|> js
+                                 <|> record
                                  <|> literal
                                  <|> try java_apply
                                  <|> try symbol
                                  <|> list
-                                 
+
                             f <- getPosition
                             string "."
                             z <- syntax `sepBy1` string "."
@@ -318,10 +316,10 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                   where p (parseJM . wrap -> Right (BlockStat [AssignStat _ x])) =
                             [jmacroE| (function() { return `(x)`; }) |]
                         p (parseJM . (++";") -> Right z) = [jmacroE| (function() { `(z)`; }) |]
-                        p (parseJM . concat . L.intersperse ";" . h . split ";" -> Right x) = 
+                        p (parseJM . concat . L.intersperse ";" . h . split ";" -> Right x) =
                             [jmacroE| (function() { `(x)`; }) |]
                         p _ = error "\n\nJavascript parsing failed"
-                        
+
                         g x | last x == '!' = ApplyExpression (SymbolExpression (Symbol "run"))
                                               [JSExpression (p (take (length x - 1) x))]
                             | otherwise = JSExpression$ p x
@@ -329,15 +327,15 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         h [] = []
                         h (x:[]) = ["return " ++ x]
                         h (x:xs) = x : h xs
- 
+
                         wrap x = "__ans__ = " ++ x ++ ";"
 
               record = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
-        
-                  where pairs' = withPos $ (try key_eq_val <|> try function') 
+
+                  where pairs' = withPos $ (try key_eq_val <|> try function')
                                          `sepBy` optional_sep
 
-                        function' = do n <- syntax 
+                        function' = do n <- syntax
                                        whitespace
                                        eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
                                        return $ (n, FunctionExpression eqs)
@@ -369,7 +367,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
               strip_indent x y = let splitted = split "\n" y
                                      r x' | strip (take x x') == "" = drop x x'
                                           | otherwise = error$ "Badly formatted string \"" ++ show splitted ++ "\""
-                                 in  if length splitted > 1 
+                                 in  if length splitted > 1
                                      then head splitted ++ "\n" ++ (concat . L.intersperse "\n" . fmap r . tail $ splitted)
                                      else y
 
@@ -377,8 +375,8 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
               undo _ l = LiteralExpression l
 
               to_escaped (x:s:xs) =
-                  ApplyExpression (SymbolExpression$ Operator "+++") 
-                                      [ ApplyExpression (SymbolExpression$ Operator "+++") 
+                  ApplyExpression (SymbolExpression$ Operator "+++")
+                                      [ ApplyExpression (SymbolExpression$ Operator "+++")
                                         [LiteralExpression $ StringLiteral x
                                           , p s ]
                                       , to_escaped xs ]
@@ -467,7 +465,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
 --    toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
 
-    toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y]) = 
+    toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y]) =
         toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])
 
     toJExpr (ApplyExpression (SymbolExpression (Operator _)) x) =
@@ -491,8 +489,8 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
     toJExpr (FunctionExpression x)  = toJExpr x
     toJExpr (LazyExpression x Every) =
 
-        toJExpr (FunctionExpression 
-                 [ EqualityAxiom 
+        toJExpr (FunctionExpression
+                 [ EqualityAxiom
                    (Match [AnyPattern] Nothing)
                    x ])
 
@@ -518,13 +516,13 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (IfExpression x y z) =
 
-        [jmacroE| (function(){ 
-                     if (`(x)`) { 
+        [jmacroE| (function(){
+                     if (`(x)`) {
                         return `(y)`;
-                     } else { 
-                        return `(z)` 
+                     } else {
+                        return `(z)`
                      }
-                   })() |] 
+                   })() |]
 
     toJExpr x = error $ "Unimplemented " ++ show x
 

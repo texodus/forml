@@ -8,32 +8,25 @@
 {-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE ViewPatterns         #-}
 
-
 module Main(main) where
 
 import Text.InterpolatedString.Perl6
 
-import Control.Applicative
 import Control.Concurrent
 import Control.Monad.State hiding (lift)
 
 import System.Directory
 import System.Environment
-import System.Exit
 import System.IO
-import System.Process
 
-import qualified Data.ByteString.UTF8 as B
-import           Data.FileEmbed
-import           Data.List            as L
-import           Data.Monoid
-import           Data.String.Utils
+import Data.List as L
 
 import           Forml.CLI
 import           Forml.Closure
 import           Forml.Doc
 import           Forml.Javascript
 import           Forml.Javascript.Backend
+import           Forml.Javascript.Test
 import           Forml.Javascript.Utils   (prelude)
 import qualified Forml.Optimize           as O
 import           Forml.Parser
@@ -95,10 +88,6 @@ main' (parseArgs -> rc') =
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
---          assump   = case S.decode $(embedFile "prelude.types") of
---                       Left _ -> error "I Shouldn't be!"
---                       Right x -> x
-
           watch' rc =
 
               do x <- mapM getModificationTime . inputs $ rc
@@ -124,12 +113,12 @@ main' (parseArgs -> rc') =
                --  writeFile "prelude.types" (B.toString $ S.encode as)
 
                  js <- if optimize rc
-                       then (monitor "Closure [libs"$ closure_local (js') "ADVANCED_OPTIMIZATIONS")
+                       then (monitor "Closure [libs"$ closure_local js' "ADVANCED_OPTIMIZATIONS")
                        else do warn "Closure [libs]" js'
 
                  tests <- case rc of
                               RunConfig { optimize = True, run_tests = Phantom } ->
-                                  monitor "Closure [tests"$ closure_local (tests') "SIMPLE_OPTIMIZATIONS"
+                                  monitor "Closure [tests"$ closure_local tests' "SIMPLE_OPTIMIZATIONS"
                               _ -> warn "Closure [tests]" tests'
 
                  writeFile (output rc ++ ".js") js
@@ -146,49 +135,15 @@ main' (parseArgs -> rc') =
 
                           in do writeFile ((output rc) ++ ".html") (header ++ css' ++ scripts ++ compiled ++ html ++ hook ++ footer)
                                 return $ Right ()
-                                
+
                      else return $ Right ()
 
                  case run_tests rc of
-                     Node ->
-                          monitor "Testing [Node.js]"$
-                          do (Just std_in, Just std_out, _, p) <-
-                                 createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
-                             forkIO $ do errors <- hGetContents std_out
-                                         putStr errors
-                                         hFlush stdout
-                             hPutStrLn std_in$ jasmine
-                             hPutStrLn std_in$ js ++ "\n\n"
-                             hPutStrLn std_in$ tests
-                             hPutStrLn std_in$ console
-                             z <- waitForProcess p
+                     Node    -> test_node rc js tests
+                     Phantom -> test_phantom rc js tests
+                     NoTest  -> warn "Testing" ()
 
-                             case z of
-                               ExitFailure _ -> return$ Left []
-                               ExitSuccess -> if (show_types rc)
-                                              then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
-                                              else return$ Right ()
+                 if (show_types rc)
+                      then putStrLn ("\nTypes\n\n  " ++ concat (map f as))
+                      else return ()
 
-                     Phantom ->
-                          monitor "Testing [Phantom.js]"$
-                          do writeFile (output rc ++ ".phantom.js")
-                                   (jquery ++ jasmine ++ js ++ tests ++ console)
-
-                             (Just std_in, Just std_out, _, p) <-
-                                 createProcess (proc "phantomjs" [output rc ++ ".phantom.js"]) { std_in = CreatePipe, std_out = CreatePipe }
-                             forkIO $ do errors <- hGetContents std_out
-                                         putStr errors
-                                         hFlush stdout
-                             z <- waitForProcess p
-                             system$ "rm " ++ output rc ++ ".phantom.js"
-
-                             case z of
-                               ExitFailure _ -> return$ Left []
-                               ExitSuccess -> if (show_types rc)
-                                              then Right <$> putStrLn ("\nTypes\n\n  " ++ concat (map f as))
-                                              else return$ Right ()
-                     NoTest ->
-                          do warn "Testing" ()
-                             if (show_types rc)
-                               then putStrLn$ "\nTypes\n\n  " ++ concat (map f as)
-                               else return ()
