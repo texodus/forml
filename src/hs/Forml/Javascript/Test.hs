@@ -18,8 +18,7 @@ import System.Process
 import Forml.CLI
 import Forml.Static
 
-test_node rc js tests =
-
+test RunConfig { run_tests = Node } js tests =
 
       monitor "Testing [Node.js]"$
       do (Just std_in, Just std_out, _, p) <-
@@ -40,7 +39,7 @@ test_node rc js tests =
            ExitFailure _ -> return$ Left []
            ExitSuccess   -> return$ Right ()
 
-test_phantom rc js tests =
+test rc @ RunConfig { run_tests = Phantom } js tests =
 
       monitor "Testing [Phantom.js]"$
       do writeFile (output rc ++ ".phantom.js")
@@ -60,3 +59,5 @@ test_phantom rc js tests =
          case z of
              ExitFailure _ -> return$ Left []
              ExitSuccess   -> return$ Right ()
+             
+test _ _ _ = warn "Testing" ()

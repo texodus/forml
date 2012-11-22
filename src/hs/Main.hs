@@ -52,7 +52,7 @@ parse_forml filenames =
     do sources <- mapM get_source filenames
        foldM parse' ("prelude.forml" : filenames, [], [], []) (prelude' : sources)
 
-    where parse' :: ([String], TypeSystem, [(Program, String)], [String]) -> String -> IO ([String], TypeSystem, [(Program, String)], [String])
+    where parse' :: ([Filename], TypeSystem, [(Program, Source)], [Title]) -> String -> IO ([Filename], TypeSystem, [(Program, Source)], [Title])
           parse' (zs, ts, as, titles) src'' =
 
              do let (title, src) = get_title src''
@@ -138,10 +138,7 @@ main' (parseArgs -> rc') =
 
                      else return $ Right ()
 
-                 case run_tests rc of
-                     Node    -> test_node rc js tests
-                     Phantom -> test_phantom rc js tests
-                     NoTest  -> warn "Testing" ()
+                 test rc js tests
 
                  if (show_types rc)
                       then putStrLn ("\nTypes\n\n  " ++ concat (map f as))
