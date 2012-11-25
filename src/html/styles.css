@@ -183,7 +183,7 @@ footer {
   position:fixed;
   bottom:0px;
   top: 220px;
-  overflow: scroll;
+  overflow: auto;
 }
 
 #test_suite {
