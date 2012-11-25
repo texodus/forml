@@ -35,7 +35,7 @@ closure_local x y =
              Just env ->
                  do exists' <- doesFileExist env
                     if exists' 
-                        then do putStr " local]"
+                        then do putStr "[local]"
                                 hFlush stdout
                                 writeFile "temp.js" x
                                 system$ "java -jar $CLOSURE --compilation_level "
@@ -64,5 +64,8 @@ closure x z = do let uri = fromMaybe undefined $ parseURI "http://closure-compil
 
                  rsp <- simpleHTTP (Request uri POST args y)
                  txt <- getResponseBody rsp
+
+                 putStr "[remote]"
+                 hFlush stdout
 
                  return$ Right txt

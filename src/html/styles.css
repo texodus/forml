@@ -187,7 +187,8 @@ footer {
 }
 
 #test_suite {
-	top: 150px;
+	top: 165px;
+	margin-top: 20px;
 }
 
 @media print, screen and (max-width: 1060px) {

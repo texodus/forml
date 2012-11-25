@@ -112,8 +112,8 @@
 -- --------
 -- This is unfortunately not comprehensive, and presumes some working knowledge of 
 -- ML or Haskell.  For more examples, see the annotated 
--- [prelude](http://texodus.github.com/forml/prelude)
--- and [parsec](http://texodus.github.com/forml.parsec.html).  
+-- [prelude](http://texodus.github.com/forml/Prelude)
+-- and [parsec](http://texodus.github.com/forml.Parsec.html).  
 
 -- Forml supports a flexible, forgiving syntax that supports many synonymous forms.
 -- This will be illustrated by adherring to an entirely random, arbitrary style throughout.
@@ -218,11 +218,8 @@ module readme
     hello_world = do
 
         `console.log("Hello World")` -- Calls to Javascript always return type `JS a`
-
         x <- `Math.sqrt(9)`          -- `x` is inferred to be the unrestricted type `a`
-
         let z = x + 1                -- `x` is now restricted to type `Num`
-
         return (z + 1)               -- type of `hello_world` is inferred to be `JS Num`
 
     8 == do! hello_world >>= λx = `x + 3`

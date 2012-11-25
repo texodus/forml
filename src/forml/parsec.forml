@@ -1,4 +1,5 @@
-
+-- Parsec
+-- ------
 
 module parsec
 
@@ -6,25 +7,28 @@ module parsec
     open prelude.option
     open prelude.string
     open prelude.html
+    open prelude.array
 
-    
+
 
     Parser a = {parser: String -> {rest: String, parsed: Option a}}
 
 
 
-    inline run_parser:
     --  Runs a parser over a text argument and throws away the leftover text.
+
+    inline run_parser:
     
           Parser p  -> String -> Option p	                    
         | {parser = p} x = p x |> λ {parsed = {some = y}, _} = {some = y} 
                                   | _  = {none}
+
+
                                        
-                    
+    --  Applies a function to the parse result, only if the parse was
+    --  successful.                    
     
     inline (<$>):
-    --  Applies a function to the parse result, only if the parse was
-    --  successful.
     
         (a -> b) -> Parser a    -> Parser b
         f       <$> {parser = z} =
@@ -37,10 +41,11 @@ module parsec
 
 
 
-    inline (<*>):
     --  Allows functions that take multiple arguments to be applied
     --  sequentially to a sequence of parsed values.
     
+    inline (<*>):
+
         Parser (a -> b) -> Parser a    -> Parser b
         {parser = fp}  <*> {parser = p} =
 
@@ -57,6 +62,19 @@ module parsec
 
 
 
+    --  Applies two parsers in sequence, throwing out the result
+    --  of the first.
+
+    inline (*>):
+        
+        Parser a -> Parser b -> Parser b
+        {parser = f} *> {parser = g} =
+
+            { parser s =
+                  f s |> λ {parsed = {some = x}, rest = zz} = g zz
+                         | {parsed = {none}, rest = x} =
+                               {parsed = {none}, rest = x} }
+
     private inline lift(g, {parser: f}) =
         { parser text =
              let f' = f text
@@ -66,23 +84,13 @@ module parsec
                      rest: f'.rest
                      f': f' }}
 
-    inline (*>):
-    --  Applies two parsers in sequence, throwing out the result
-    --  of the first.
-        
-        Parser a -> Parser b -> Parser b
-        {parser = f} *> {parser = g} =
 
-            { parser s =
-                  f s |> λ {parsed = {some = x}, rest = zz} = g zz
-                         | {parsed = {none}, rest = x} =
-                               {parsed = {none}, rest = x} }
+
        
-
-
-    inline (<|>):
     --  Alternative will try the first parser, and applies the second only if
     --  the first fails *and* consumes no input from the text.
+
+    inline (<|>):
     
         Parser a      -> Parser a    -> Parser a
         {parser = f} <|> {parser = g} =
@@ -95,10 +103,11 @@ module parsec
 
 
 
-    inline try':
     --  Tries to apply a parser, but restores the parser state in the case
     --  of a failure.  This is useful with combinators that check the
     --  state of the consumed text, like `<|>`
+
+    inline try':
 
           Parser a    -> Parser a
         = lift λ (x & {_, parsed: {none}}) =
@@ -107,11 +116,12 @@ module parsec
 
 
 
-    inline string:
     --  A parser that matches a string.  Unlike Haskell's Parsec library,
     --  parsec.forml will not consume any input if the entire string
     --  doesn't match.  This is for efficiency reasons currently, but
     --  may change in the future.
+
+    inline string:
 	
 	  String -> Parser String              
         | x = { parser y = 
@@ -123,11 +133,9 @@ module parsec
                       
                       
     
-    inline push! : x -> Array x -> Array x
-         | x xs = do! `xs.unshift(x); xs`
+    --  Applies a parser repeatedly, until parsing fails. 
 
     many:
-    --  Applies a parser repeatedly, until parsing fails. 
 
           Parser a -> Parser (Array a)
         = lift λ (x & {_, parsed: {none}}) =

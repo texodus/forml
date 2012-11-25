@@ -17,7 +17,14 @@ import Text.Pandoc
 import Data.Char         (isAscii, ord)
 import Data.String.Utils
 
+import Forml.Parser
+import Forml.Static
+import Forml.CLI
 
+type Source   = String
+type Title    = String
+type Error    = String
+type Filename = String
 
 toEntities :: String -> String
 toEntities [] = ""
@@ -38,9 +45,27 @@ to_literate filename
           l x = "    " ++ x
 
 
-get_title :: String -> (String, String)
-get_title x = case lines x of
+get_title :: String -> String -> (String, String)
+get_title d x = case lines x of
                   z @ ((strip -> ('-':'-':_:x')):('-':'-':_:'-':_):_) ->
                       (x', unlines $ drop 2 z)
-                  _ -> ("<i>Untitled Program</i>", x)
+                  _ -> (d, x)
 
+
+docs :: String -> [String] -> [Title] -> [Program] -> [Source] -> IO ()
+docs _ [] [] [] [] = return ()
+docs js (tests:testses) (title:titles) (program @ (Program xs):programs) (source:sources) =
+
+  let html     = highlight (get_tests xs) $ toHTML (annotate_tests source program)
+
+      filename = [qq|$title.html|]
+      compiled = [qq|<script>$js $tests</script>|]
+      hook     = [qq|<script>$htmljs;window.document.title='{title}';$('h1').html('{title}')</script>|]
+
+  in  do monitor [qq|Docs {title}.html|] $
+            do writeFile filename $ concat [header, css', scripts, compiled, html, hook, footer]
+               return $ Right ()
+         
+         docs js testses titles programs sources
+
+docs _ _ _ _ _ = error "Paradox: `docs` called with non equivalent arguments"

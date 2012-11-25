@@ -32,12 +32,7 @@ import qualified Forml.Optimize           as O
 import           Forml.Parser
 import           Forml.Static
 import           Forml.TypeCheck          hiding (split)
-import           Forml.Types.Statement
-
-type Source   = String
-type Title    = String
-type Error    = String
-type Filename = String
+import Data.String.Utils (split)
 
 to_parsed :: Title -> Source -> TypeSystem -> Either [Error] (TypeSystem, Program)
 to_parsed name src env = case parseForml name src of
@@ -55,7 +50,7 @@ parse_forml filenames =
     where parse' :: ([Filename], TypeSystem, [(Program, Source)], [Title]) -> String -> IO ([Filename], TypeSystem, [(Program, Source)], [Title])
           parse' (zs, ts, as, titles) src'' =
 
-             do let (title, src) = get_title src''
+             do let (title, src) = get_title (head . split "." . last . split "/" . head $ zs) src''
                 let src' = to_literate (head zs) . (++ "\n") $ src
                 (ts', as') <- monitor [qq|Loading {head zs}|] $ return$ to_parsed (head zs) src' ts
                 return (tail zs, ts ++ ts', as ++ [(as', src')], titles ++ [title])
@@ -64,17 +59,21 @@ parse_forml filenames =
              do hFile <- openFile filename ReadMode
                 hGetContents hFile
 
-gen_js :: [String] -> [Program] -> (String, [(String, String)])
-gen_js src p = (compress (read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render (Program $ get_program p)) src p)), [("",  read' prelude ++ "\n" ++ (unlines $ map read' $ zipWith (render_spec (Program $ get_program p)) src p))])
+gen_js :: [Source] -> [Program] -> (String, [String])
+gen_js src p = (g, h)
 
+    where g = unserialize $ zipWith (render whole_program) src p
+          h = map (unserialize . (:[])) $ zipWith (render_spec whole_program) src p
 
-read' :: [Char] -> [Char]
-read' xs @ ('"':_) = read xs
-read' x = x
+          unserialize x = compress $ read' prelude ++ "\n" ++ (unlines $ map read' x)
 
-get_program :: [Program] -> [Statement]
-get_program (Program ss: ps) = ss ++ get_program ps
-get_program [] = []
+          read' xs @ ('"':_) = read xs
+          read' x = x
+          
+          whole_program = Program $ get_program p
+          
+          get_program (Program ss: ps) = ss ++ get_program ps
+          get_program [] = []
 
 main :: IO ()
 main  = do args <- getArgs
@@ -106,41 +105,33 @@ main' (parseArgs -> rc') =
 
           compile rc =
 
-              do (_, as, src', titles) <- parse_forml$ inputs rc
-                 let src'' = O.run_optimizer (fmap fst src') as
-                 let (js', ((_, tests'):_)) = gen_js (fmap snd src') src''
+              do (_, types, src', titles) <- parse_forml$ inputs rc
+                 let src'' = O.run_optimizer (fmap fst src') types
+                 let (js', tests') = gen_js (fmap snd src') src''
 
                --  writeFile "prelude.types" (B.toString $ S.encode as)
 
                  js <- if optimize rc
-                       then (monitor "Closure [libs"$ closure_local js' "ADVANCED_OPTIMIZATIONS")
+                       then monitor [qq|Closure {output rc}.js |]$ closure_local js' "ADVANCED_OPTIMIZATIONS"
                        else do warn "Closure [libs]" js'
 
                  tests <- case rc of
                               RunConfig { optimize = True, run_tests = Phantom } ->
-                                  monitor "Closure [tests"$ closure_local tests' "SIMPLE_OPTIMIZATIONS"
+                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS") titles tests'
                               _ -> warn "Closure [tests]" tests'
 
                  writeFile (output rc ++ ".js") js
-                 writeFile (output rc ++ ".spec.js") tests
+                 zipWithM writeFile (map (++ ".spec.js") titles) tests
 
-                 monitor "Docs" $
-                     if write_docs rc
-                     then let xxx = map fst src'
-                              yyy = map snd src'
-                              html' xxx' yyy' = highlight (case xxx' of (Program xs) -> get_tests xs)$ toHTML (annotate_tests yyy' xxx')
-                              html = concat $ zipWith html' xxx yyy
-                              compiled = [qq|<script>$js $tests</script>|]
-                              hook = "<script>" ++ htmljs ++ ";window.document.title='"++(titles !! 0)++"';$('h1').html('" ++ (titles !! 0) ++ "')</script>"
+                 if write_docs rc
+                     then let programs = map fst src'
+                              sources  = map snd src'
+                          in  do docs js tests titles programs sources
+                     else monitor "Docs" $ return $ Right ()
 
-                          in do writeFile ((output rc) ++ ".html") (header ++ css' ++ scripts ++ compiled ++ html ++ hook ++ footer)
-                                return $ Right ()
-
-                     else return $ Right ()
-
-                 test rc js tests
+                 sequence (zipWith (test rc js) titles tests)
 
                  if (show_types rc)
-                      then putStrLn ("\nTypes\n\n  " ++ concat (map f as))
+                      then putStrLn ("\nTypes\n\n  " ++ concat (map f types))
                       else return ()
-
+ 

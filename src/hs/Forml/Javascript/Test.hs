@@ -9,6 +9,8 @@
 
 module Forml.Javascript.Test where
 
+import Text.InterpolatedString.Perl6
+
 import Control.Concurrent
 
 import System.Exit
@@ -18,9 +20,10 @@ import System.Process
 import Forml.CLI
 import Forml.Static
 
-test RunConfig { run_tests = Node } js tests =
+test :: RunConfig -> String -> String -> String -> IO ()
+test RunConfig { run_tests = Node } js title tests =
 
-      monitor "Testing [Node.js]"$
+      monitor [qq|Testing {title}.js [Node.js]|] $
       do (Just std_in, Just std_out, _, p) <-
              createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
 
@@ -39,9 +42,9 @@ test RunConfig { run_tests = Node } js tests =
            ExitFailure _ -> return$ Left []
            ExitSuccess   -> return$ Right ()
 
-test rc @ RunConfig { run_tests = Phantom } js tests =
+test rc @ RunConfig { run_tests = Phantom } js title tests =
 
-      monitor "Testing [Phantom.js]"$
+      monitor [qq|Testing {title}.js [Phantom.js]|] $
       do writeFile (output rc ++ ".phantom.js")
                (jquery ++ jasmine ++ js ++ tests ++ console)
 
@@ -60,4 +63,4 @@ test rc @ RunConfig { run_tests = Phantom } js tests =
              ExitFailure _ -> return$ Left []
              ExitSuccess   -> return$ Right ()
              
-test _ _ _ = warn "Testing" ()
+test _ _ _ _ = warn "Testing" ()

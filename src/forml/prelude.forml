@@ -460,7 +460,14 @@ module prelude
 
                move reporter body
 
+    module array
+    
+        inline push! : x -> Array x -> Array x
+        | x xs = do! `xs.unshift(x); xs`
 
+
+
+        
                        
     -- Lists
     -- -----
