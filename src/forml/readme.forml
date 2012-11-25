@@ -281,6 +281,16 @@ module readme
 
     has_value {just: 4}
     not (has_value {nothing})
+    
+    -- Changes
+    -- -------
+    
+    -- 0.1.1
+
+    -- * Documentation generation has been greatly improved.  Better styling, generates individual pages for each file.
+    -- * The prelude is now embedded in the compiler.  Simply import it via `open prelude` - the compiler will include
+    --   the code automatically.  Currently weighs in at ~11k, if you care about that sort of thing.
+    -- * Command line interface is more pleasant to work with 
 
 
 

@@ -1,1 +1,1 @@
-[http://texodus.github.com/formal](http://texodus.github.com/formal)
+[http://texodus.github.com/forml](http://texodus.github.com/forml)
