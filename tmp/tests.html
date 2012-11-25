@@ -808,157 +808,152 @@ b=t._comp_comp||window._comp_comp,f=t.filter||window.filter,g=t.sum||window.sum,
 function(c){return function(){var e=b(1)(c),e=f(function(b){var c=a(b%3)(0),b=a(b%5)(0);return c||b})(e);return g(e)}};this.euler_5=function(a){return function(b){for(var d=i,f=a;"undefined"==typeof d;){var d=f,g=b;3>d?d=g:(d=f,g=b,0==d%3||0==d%5?(f=d-1,b=g+1):(d=f,g=b,f=d-1,b=g),d=i)}return d}}};("undefined"==typeof global?window:global).Tests_for_partial_records=new function(){};
 var y=new function(){this.rev_1=function(h){for(var l=i,d={nil:j};"undefined"==typeof l;){var a=d;if(h.hasOwnProperty("nil"))l=a;else{var a=d,b=h.head,f=h.tail;h.hasOwnProperty("head")&&h.hasOwnProperty("tail")?(d={head:b,tail:a},h=f,l=i):q()}}return l};var m={nil:j};this.rev_2=function(h){for(var l=i,d=m;"undefined"==typeof l;){var a=d;if(h.hasOwnProperty("nil"))l=a;else{var a=d,b=h.head,f=h.tail;h.hasOwnProperty("head")&&h.hasOwnProperty("tail")?(d={head:b,tail:a},h=f,l=i):q()}}return l};this.test_x=
 {head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{head:6,tail:{head:7,tail:{nil:j}}}}}}}}};("undefined"==typeof global?window:global).Tests_for_TCO_bugs=y;("undefined"==typeof global?window:global).Tests_for_parser_bugs=new function(){};
- var is_array=function(e){return e instanceof Array},__undefined__="undefined",run=function(e){return e()},error=function(e){throw e;},exhaust=function(){error("Pattern Match Exhausted")},__check=function(e,l){return e.hasOwnProperty(l)};
-describe("",function(){describe("parsec",function(){var e=parsec.try_apos,l=parsec.many,d=prelude._eq_eq||window._eq_eq,e=parsec.try_apos,l=parsec.many;new function(){describe("Testing",function(){new function(){it('147_147__::__            {some = "ten"} == run_parser (string "ten") "tens"',function(){expect({some:"ten"}).toEqual(function(b){return function(a){var c=b.parser;if(__check(b,"parser"))return a=c(a),c=a.parsed.some,a=__check(a,"parsed")&&__check(a.parsed,"some")?{some:c}:{none:!0},a;
-exhaust()}}(function(b){return{parser:function(a){var c=run(function(){return run(function(){return a.substring(0,b.length)})});return d(c)(b)?{parsed:{some:b},rest:run(function(){return run(function(){return a.substring(b.length)})})}:{parsed:{none:!0},rest:a}}}}("ten"))("tens"))});it('148_148__::__            {some = "tenten"} == run_parser ((\u03bbx = x +++ x) <$> string "ten") "tenfingers"',function(){expect({some:"tenten"}).toEqual(function(b){return function(a){var c=b.parser;if(__check(b,"parser"))return a=
-c(a),c=a.parsed.some,a=__check(a,"parsed")&&__check(a.parsed,"some")?{some:c}:{none:!0},a;exhaust()}}(function(b){return function(a){var c=a.parser;if(__check(a,"parser"))return{parser:function(a){var a=c(a),d=a.parsed.some,f=a.rest;__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some")?a={parsed:{some:b(d)},rest:f}:(d=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:d}:(exhaust(),a=void 0));return a}};exhaust()}}(function(b){var a;a=run(function(){return run(function(){return""+
-b+b})});return a})(function(b){return{parser:function(a){var c=run(function(){return run(function(){return a.substring(0,b.length)})});return d(c)(b)?{parsed:{some:b},rest:run(function(){return run(function(){return a.substring(b.length)})})}:{parsed:{none:!0},rest:a}}}}("ten")))("tenfingers"))});it('150_151multi__::__            {parsed = {some = "tenten"}, rest = "fingers"} \n                == ((\u03bbx = x +++ x) <$> string "ten").parser "tenfingers"',function(){expect({parsed:{some:"tenten"},
-rest:"fingers"}).toEqual(function(b){return function(a){var c=a.parser;if(__check(a,"parser"))return{parser:function(a){var a=c(a),d=a.parsed.some,f=a.rest;__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some")?a={parsed:{some:b(d)},rest:f}:(d=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:d}:(exhaust(),a=void 0));return a}};exhaust()}}(function(b){var a;a=run(function(){return run(function(){return""+b+b})});return a})(function(b){return{parser:function(a){var c=
-run(function(){return run(function(){return a.substring(0,b.length)})});return d(c)(b)?{parsed:{some:b},rest:run(function(){return run(function(){return a.substring(b.length)})})}:{parsed:{none:!0},rest:a}}}}("ten")).parser("tenfingers"))});it('153_154multi__::__            var result = run_parser ((\u03bbx y = y +++ x) <$> string "ten" <*> string "fingers") "tenfingers"\n            result == {some: "fingersten"}',function(){expect(function(){try{var b;var a={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,
-3)})});return d(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},c=a.parser;__check(a,"parser")?b={parser:function(a){var a=c(a),b=a.parsed.some,g=a.rest;if(__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some"))var d=b,a={parsed:{some:function(a){return run(function(){return run(function(){return""+a+d})})}},rest:g};else b=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},
-rest:b}:(exhaust(),a=void 0);return a}}:(exhaust(),b=void 0);var i;var a={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,7)})});return d(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},p=b.parser,f=a.parser;__check(b,"parser")&&__check(a,"parser")?i={parser:function(a){var b=p(a),a=b.parsed.some,g=b.rest;if(__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"some")){var b=
-f(g),g=b.parsed.some,d=b.rest;__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"some")?a={parsed:{some:a(g)},rest:d}:(g=b.rest,__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")?a={parsed:{none:!0},rest:g}:(exhaust(),a=void 0))}else a=b.rest,__check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")?a={parsed:{none:!0},rest:a}:(exhaust(),a=void 0);return a}}:(exhaust(),i=void 0);var k;var h=i.parser;if(__check(i,"parser")){var j=h("tenfingers"),e=j.parsed.some;k=__check(j,
-"parsed")&&__check(j.parsed,"some")?{some:e}:{none:!0}}else exhaust(),k=void 0;return d(k)({some:"fingersten"})}catch(g){return{error:g}}}()).toEqual(!0)});it('156_157multi__::__            var result = run_parser (string "ten" <|> string "eleven") "eleven"\n            result == {some: "eleven"}',function(){expect(function(){try{var b={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,3)})});return d(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:
-{parsed:{none:!0},rest:a}}},a;var c={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,6)})});return d(b)("eleven")?{parsed:{some:"eleven"},rest:run(function(){return run(function(){return a.substring(6)})})}:{parsed:{none:!0},rest:a}}},i=b.parser,e=c.parser;__check(b,"parser")&&__check(c,"parser")?a={parser:function(a){var b=i(a),c=b.rest;return __check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")&&d(a)(c)?e(a):b}}:(exhaust(),a=void 0);var f;var k=a.parser;
-if(__check(a,"parser")){var h=k("eleven"),j=h.parsed.some;f=__check(h,"parsed")&&__check(h.parsed,"some")?{some:j}:{none:!0}}else exhaust(),f=void 0;return d(f)({some:"eleven"})}catch(m){return{error:m}}}()).toEqual(!0)});it('159_160multi__::__            var result = run_parser (string "ten" *> string "fingers") "tenfingers"\n            result == {some: "fingers"}',function(){expect(function(){try{var b={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,3)})});return d(b)("ten")?
-{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},a;var c={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,7)})});return d(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},i=b.parser,e=c.parser;__check(b,"parser")&&__check(c,"parser")?a={parser:function(a){var a=i(a),b=a.parsed.some,b=a.rest;__check(a,"parsed")&&
-__check(a,"rest")&&__check(a.parsed,"some")?a=e(b):(b=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:b}:(exhaust(),a=void 0));return a}}:(exhaust(),a=void 0);var f;var k=a.parser;if(__check(a,"parser")){var h=k("tenfingers"),j=h.parsed.some;f=__check(h,"parsed")&&__check(h.parsed,"some")?{some:j}:{none:!0}}else exhaust(),f=void 0;return d(f)({some:"fingers"})}catch(m){return{error:m}}}()).toEqual(!0)});it('162_164multi__::__            var parser = (string "ten" *> string "fingers") <|> string "tentoes"\n                result = run_parser parser "tentoes"\n            result == {none}',
-function(){expect(function(){try{var b={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,3)})});return d(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},a;var c={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,7)})});return d(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},
-rest:a}}},i=b.parser,e=c.parser;__check(b,"parser")&&__check(c,"parser")?a={parser:function(a){var a=i(a),b=a.parsed.some,b=a.rest;__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some")?a=e(b):(b=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:b}:(exhaust(),a=void 0));return a}}:(exhaust(),a=void 0);var f;var b={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,7)})});return d(b)("tentoes")?{parsed:{some:"tentoes"},
-rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},k=a.parser,h=b.parser;__check(a,"parser")&&__check(b,"parser")?f={parser:function(a){var b=k(a),c=b.rest;return __check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")&&d(a)(c)?h(a):b}}:(exhaust(),f=void 0);var j;var m=f.parser;if(__check(f,"parser")){var g=m("tentoes"),l=g.parsed.some;j=__check(g,"parsed")&&__check(g.parsed,"some")?{some:l}:{none:!0}}else exhaust(),j=void 0;return d(j)({none:!0})}catch(n){return{error:n}}}()).toEqual(!0)});
-it('166_168multi__::__            var parser = try\' (string "ten" *> string "fingers") <|> string "tentoes"\n                result = run_parser parser "tentoes"\n            result == {some: "tentoes"}',function(){expect(function(){try{var b={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,3)})});return d(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}},a=e,c;var i={parser:function(a){var b=
-run(function(){return run(function(){return a.substring(0,7)})});return d(b)("fingers")?{parsed:{some:"fingers"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},l=b.parser,f=i.parser;__check(b,"parser")&&__check(i,"parser")?c={parser:function(a){var a=l(a),b=a.parsed.some,b=a.rest;__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"some")?a=f(b):(b=a.rest,__check(a,"parsed")&&__check(a,"rest")&&__check(a.parsed,"none")?a={parsed:{none:!0},rest:b}:
-(exhaust(),a=void 0));return a}}:(exhaust(),c=void 0);var k=a(c),h;var b={parser:function(a){var b=run(function(){return run(function(){return a.substring(0,7)})});return d(b)("tentoes")?{parsed:{some:"tentoes"},rest:run(function(){return run(function(){return a.substring(7)})})}:{parsed:{none:!0},rest:a}}},j=k.parser,m=b.parser;__check(k,"parser")&&__check(b,"parser")?h={parser:function(a){var b=j(a),c=b.rest;return __check(b,"parsed")&&__check(b,"rest")&&__check(b.parsed,"none")&&d(a)(c)?m(a):b}}:
-(exhaust(),h=void 0);var g;var q=h.parser;if(__check(h,"parser")){var n=q("tentoes"),r=n.parsed.some;g=__check(n,"parsed")&&__check(n.parsed,"some")?{some:r}:{none:!0}}else exhaust(),g=void 0;return d(g)({some:"tentoes"})}catch(s){return{error:s}}}()).toEqual(!0)});it('170_172multi__::__            var parser = many (string "ten")\n                result = run_parser parser "tententententen"\n            result == {some: ["ten", "ten", "ten", "ten", "ten"]}',function(){expect(function(){try{var b=
-l({parser:function(a){var b=run(function(){return run(function(){return a.substring(0,3)})});return d(b)("ten")?{parsed:{some:"ten"},rest:run(function(){return run(function(){return a.substring(3)})})}:{parsed:{none:!0},rest:a}}}),a;var c=b.parser;if(__check(b,"parser")){var e=c("tententententen"),p=e.parsed.some;a=__check(e,"parsed")&&__check(e.parsed,"some")?{some:p}:{none:!0}}else exhaust(),a=void 0;return d(a)({some:["ten","ten","ten","ten","ten"]})}catch(f){return{error:f}}}()).toEqual(!0)})}})}})});
-</script><pre><code>module parsec
+ var is_array=function(d){return d instanceof Array},__undefined__="undefined",run=function(d){return d()},error=function(d){throw d;},exhaust=function(){error("Pattern Match Exhausted")},__check=function(d,a){return d.hasOwnProperty(a)};
+describe("",function(){describe("Benchmarks for the prelude",function(){var d=Benchmarks_for_the_prelude.title,a=Benchmarks_for_the_prelude.euler_1,b=Benchmarks_for_the_prelude.euler_2,e=Benchmarks_for_the_prelude.euler_3,f=Benchmarks_for_the_prelude.euler_4,h=Benchmarks_for_the_prelude.euler_5,j=prelude._return_||window._return_,g=prelude.time||window.time,k=prelude.err||window.err,g=prelude.speedtest.time||window.time,d=Benchmarks_for_the_prelude.title,a=Benchmarks_for_the_prelude.euler_1,b=Benchmarks_for_the_prelude.euler_2,
+e=Benchmarks_for_the_prelude.euler_3,f=Benchmarks_for_the_prelude.euler_4,h=Benchmarks_for_the_prelude.euler_5;new function(){it('56_70multi__::__        do! title "Relative Speeds (10k)"\n    \n            w <- time (euler_1 10000)\n            x <- time yield euler_2 10000 0\n            y <- time yield euler_3 10000\n            z <- time (euler_4 10000)\n            q <- time yield euler_5 10000 0\n    \n            log "  Native JS:          `w / 1000`s"\n            log "  Forml TCO Unboxed: `q / 1000`s"\n            log "  Forml TCO:         `x / 1000`s"\n            log "  Forml Recursive:   `y / 1000`s"\n            log "  Forml list:        `z / 1000`s"\n            \n            return <| (x <= y && y < z)',
+function(){expect(function(){try{return run(function(){var i=run;var c=d("Relative Speeds (10k)");run(c);var c=g(a(1E4)),A=run(c);var c=g(function(){return b(1E4)(0)}),l=run(c);var c=g(function(){return e(1E4)}),m=run(c);var c=g(f(1E4)),n=run(c);var c=g(function(){return h(1E4)(0)}),B=run(c),p;p=run(function(){return run(function(){return A/1E3})});var q;q=run(function(){return run(function(){return"  Native JS:          "+p})});var r;r=run(function(){return run(function(){return""+q+"s"})});run(function(){return console.log(r)});
+var s;s=run(function(){return run(function(){return B/1E3})});var t;t=run(function(){return run(function(){return"  Forml TCO Unboxed: "+s})});var u;u=run(function(){return run(function(){return""+t+"s"})});run(function(){return console.log(u)});var v;v=run(function(){return run(function(){return l/1E3})});var w;w=run(function(){return run(function(){return"  Forml TCO:         "+v})});var C;C=run(function(){return run(function(){return""+w+"s"})});run(function(){return console.log(C)});var x;x=run(function(){return run(function(){return m/
+1E3})});var y;y=run(function(){return run(function(){return"  Forml Recursive:   "+x})});var D;D=run(function(){return run(function(){return""+y+"s"})});run(function(){return console.log(D)});var z;z=run(function(){return run(function(){return n/1E3})});var k;k=run(function(){return run(function(){return"  Forml list:        "+z})});var E;E=run(function(){return run(function(){return""+k+"s"})});run(function(){return console.log(E)});var F;F=run(function(){return run(function(){return l<=m})});var G;
+G=run(function(){return run(function(){return m<n})});c=run(function(){return run(function(){return F&&G})});c=j(c);return i(c)})}catch(i){return{error:i}}}()).toEqual(!0)});it("72_72__::__        string? (err yield euler_3(250000)).message",function(){expect(function(){try{var a;var b=k(function(){return e(25E4)}).message;a=run(function(){return run(function(){return"string"===typeof b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});it('74_88multi__::__        do! title "Relative Speeds (2.5M)"\n    \n            w <- time (euler_1 2500000)\n            x <- time yield euler_2 2500000 0\n            y <- time yield euler_5 2500000 0\n            \n            log "  Native JS:          `w / 1000`s"\n            log "  Forml TCO Unboxed: `y / 1000`s"\n            log "  Forml TCO:         `x / 1000`s"\n            log "  Forml Recursive:   `err yield euler_3(250000)`"\n            log "  Forml list:        `err (euler_4 250000)`"\n    \n            log ""\n            \n            return <| (w < x)',
+function(){expect(function(){try{return run(function(){var i=run;var c=d("Relative Speeds (2.5M)");run(c);var c=g(a(25E5)),A=run(c);var c=g(function(){return b(25E5)(0)}),l=run(c);var c=g(function(){return h(25E5)(0)}),m=run(c),n;n=run(function(){return run(function(){return A/1E3})});var B;B=run(function(){return run(function(){return"  Native JS:          "+n})});var p;p=run(function(){return run(function(){return""+B+"s"})});run(function(){return console.log(p)});var q;q=run(function(){return run(function(){return m/
+1E3})});var r;r=run(function(){return run(function(){return"  Forml TCO Unboxed: "+q})});var s;s=run(function(){return run(function(){return""+r+"s"})});run(function(){return console.log(s)});var t;t=run(function(){return run(function(){return l/1E3})});var u;u=run(function(){return run(function(){return"  Forml TCO:         "+t})});var v;v=run(function(){return run(function(){return""+u+"s"})});run(function(){return console.log(v)});var w;var C=k(function(){return e(25E4)});w=run(function(){return run(function(){return"  Forml Recursive:   "+
+C})});var x;x=run(function(){return run(function(){return""+w+""})});run(function(){return console.log(x)});var y;var D=k(f(25E4));y=run(function(){return run(function(){return"  Forml list:        "+D})});var z;z=run(function(){return run(function(){return""+y+""})});run(function(){return console.log(z)});run(function(){return console.log("")});c=run(function(){return run(function(){return A<l})});c=j(c);return i(c)})}catch(i){return{error:i}}}()).toEqual(!0)})}});describe("Tests for partial records",
+function(){var d=prelude._eq_eq||window._eq_eq;new function(){it("95_96multi__::__        var f {a: x, b: y, _ } = x + y\n        f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }",function(){expect(function(){try{var a=function(a){var b=a.a,d=a.b;if(__check(a,"a")&&__check(a,"b"))return run(function(){return run(function(){return b+d})});exhaust()};return d(a({a:5,b:5,c:5}))(a({a:5,b:5,d:5}))}catch(b){return{error:b}}}()).toEqual(!0)});it("98_100multi__::__        var f {a: 1, b: 1, _ } = 2\n            f {b: 2, c: 2, _ } = 2\n        f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4",
+function(){expect(function(){try{var a=function(a){if(__check(a,"a")&&__check(a,"b")&&1===a.a&&1===a.b||__check(a,"b")&&__check(a,"c")&&2===a.b&&2===a.c)return 2;exhaust()},b=a({a:1,b:1,c:3,d:5}),e,f=a({a:1,b:2,c:2,e:5});e=run(function(){return run(function(){return b+f})});return d(e)(4)}catch(h){return{error:h}}}()).toEqual(!0)});it("102_105multi__::__        var f { a = 1, b = 2, _ } = 1\n            g { b = 2, c = 3, _ } = 2\n            x = { a = 1, b = 2, c = 3, d = 4 }\n        f x + 1 == g x",
+function(){expect(function(){try{var a={a:1,b:2,c:3,d:4},b;__check(a,"a")&&__check(a,"b")&&1===a.a&&2===a.b?b=1:(exhaust(),b=void 0);var e=b,f;f=run(function(){return run(function(){return e+1})});var h=d(f),j;__check(a,"b")&&__check(a,"c")&&2===a.b&&3===a.c?j=2:(exhaust(),j=void 0);return h(j)}catch(g){return{error:g}}}()).toEqual(!0)})}});describe("Tests for TCO bugs",function(){var d=Tests_for_TCO_bugs.rev_1,a=Tests_for_TCO_bugs.rev_2,b=Tests_for_TCO_bugs.test_x,e=prelude.length||window.length,
+e=prelude.length||window.length,f=prelude.reverse||window.reverse,e=prelude.list.length||window.length,f=prelude.list.reverse||window.reverse,d=Tests_for_TCO_bugs.rev_1,a=Tests_for_TCO_bugs.rev_2,b=Tests_for_TCO_bugs.test_x;new function(){it("126_126__::__        rev_2 [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]",function(){expect(a({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual({head:4,tail:{head:3,tail:{head:2,tail:{head:1,tail:{nil:!0}}}}})});it("130_130__::__        rev_2 test_x == rev_1 test_x",
+function(){expect(a(b)).toEqual(d(b))});it("131_131__::__        rev_1 test_x == reverse test_x",function(){expect(d(b)).toEqual(f(b))});it("132_132__::__        length (rev_2 test_x) == length (rev_1 test_x)",function(){expect(e(a(b))).toEqual(e(d(b)))});it("133_133__::__        length (rev_2 test_x) == length test_x",function(){expect(e(a(b))).toEqual(e(b))});it("134_134__::__        length (rev_1 test_x) == length (reverse test_x)",function(){expect(e(d(b))).toEqual(e(f(b)))})}});describe("Tests for parser bugs",
+function(){var d=prelude._eq_eq||window._eq_eq;new function(){it('143_144multi__::__        var x = do! `[ {x: 1}, {x: 2}, {x: 3} ]`\n        stringify (x !! 0).x == "1"',function(){expect(function(){try{var a=run(function(){return run(function(){return[{x:1},{x:2},{x:3}]})}),b;var e=run(function(){return run(function(){return a[0]})}).x;b=run(function(){return run(function(){return JSON.stringify(e)})});return d(b)("1")}catch(f){return{error:f}}}()).toEqual(!0)})}})});
+</script><h2 id="tests">Tests</h2>
+<p>A collection of tests for compiler bugs, benchmarking, etc.</p>
+<h2 id="benchmarks">Benchmarks</h2>
+<p>A collection of simple benchmarks. You can view the results by opening your browser's terminal.</p>
+<pre><code>module &quot;Benchmarks for the prelude&quot;
+
+    title x = 
+        do log &quot;\r                                  &quot;
+           log x
+           return true
 
     open prelude
-    open prelude.option
+    open prelude.speedtest
+    open prelude.list
+    open prelude.string</code></pre>
+<p>Here we have 5 implementations of (Project Euler problem #1)[http://projecteuler.net/problem=1]. The first is simply a native JS implementation.</p>
+<pre><code>    euler_1 x = `var sum = 0;
+                 for (var i = 1; i &lt; x; i++) {
+                     if (i % 3 == 0 || i % 5 == 0) sum += i;
+                 };
+                 return sum;`</code></pre>
+<p>The second is a tail recursive. The forml compiler will optimize simple functions which are tail recursive into javascript <code>for</code> loops automatically, making them much faster.</p>
+<pre><code>    euler_2 x y when x &lt; 3 = y
+          | x y when x % 3 == 0 || x % 5 == 0 =
+                euler_2 (x - 1) (y + 1)
+          | x y = euler_2 (x - 1) y
+
+    euler_3 x when x &lt; 3 = 0
+    euler_3 x = if x % 3 == 0 || x % 5 == 0
+                then 1 + euler_3 (x - 1)
+                else euler_3 (x - 1)
+
+    euler_4 z = yield 1 .. z 
+                      |&gt; filter (&#955;x = x % 3 == 0 || x % 5 == 0)
+                      |&gt; sum
+
+    euler_5 x y when x &lt; 3 = y
+          | x y when do! `x % 3 == 0 || x % 5 == 0` =
+                euler_5 (x - 1) (y + 1)
+          | x y = euler_5 (x - 1) y
+
+    <span class='test' id='test_56_70multi'>do! title &quot;Relative Speeds (10k)&quot;
+
+        w &lt;- time (euler_1 10000)
+        x &lt;- time yield euler_2 10000 0
+        y &lt;- time yield euler_3 10000
+        z &lt;- time (euler_4 10000)
+        q &lt;- time yield euler_5 10000 0
+
+        log &quot;  Native JS:          `w / 1000`s&quot;
+        log &quot;  Forml TCO Unboxed: `q / 1000`s&quot;
+        log &quot;  Forml TCO:         `x / 1000`s&quot;
+        log &quot;  Forml Recursive:   `y / 1000`s&quot;
+        log &quot;  Forml list:        `z / 1000`s&quot;
+
+        return &lt;| (x &lt;= y &amp;&amp; y &lt; z)</span>
+
+    <span class='test' id='test_72_72'>string? (err yield euler_3(250000)).message</span>
+
+    <span class='test' id='test_74_88multi'>do! title &quot;Relative Speeds (2.5M)&quot;
+
+        w &lt;- time (euler_1 2500000)
+        x &lt;- time yield euler_2 2500000 0
+        y &lt;- time yield euler_5 2500000 0
+
+        log &quot;  Native JS:          `w / 1000`s&quot;
+        log &quot;  Forml TCO Unboxed: `y / 1000`s&quot;
+        log &quot;  Forml TCO:         `x / 1000`s&quot;
+        log &quot;  Forml Recursive:   `err yield euler_3(250000)`&quot;
+        log &quot;  Forml list:        `err (euler_4 250000)`&quot;
+
+        log &quot;&quot;
+
+        return &lt;| (w &lt; x)</span>
+
+
+module &quot;Tests for partial records&quot;
+
+    open prelude
+
+    <span class='test' id='test_95_96multi'>var f {a: x, b: y, _ } = x + y
+    f { a: 5, b: 5, c: 5 } == f { a: 5, b: 5, d: 5 }</span>
+
+    <span class='test' id='test_98_100multi'>var f {a: 1, b: 1, _ } = 2
+        f {b: 2, c: 2, _ } = 2
+    f {a:1,b:1,c:3,d:5} + f {a:1,b:2,c:2,e:5} == 4</span>
+
+    <span class='test' id='test_102_105multi'>var f { a = 1, b = 2, _ } = 1
+        g { b = 2, c = 3, _ } = 2
+        x = { a = 1, b = 2, c = 3, d = 4 }
+    f x + 1 == g x</span>
+
+module &quot;Tests for TCO bugs&quot;
+
+    open prelude
+    open prelude.list
+
+    rev_1 y = 
+        var r rest [:] = rest
+            | rest { head: x, tail: xs } = 
+                r (x :: rest) xs
+
+        r {nil} y
+
+    rev_2 = 
+        var rrr rest [:] = rest
+            rrr rest { head: x, tail: xs } = 
+                rrr (x :: rest) xs
+
+        rrr {nil}
+
+    <span class='test' id='test_126_126'>rev_2 [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]</span>
+
+    test_x = [: 1, 2, 3, 4, 5, 6, 7 ]
+
+    <span class='test' id='test_130_130'>rev_2 test_x == rev_1 test_x</span>
+    <span class='test' id='test_131_131'>rev_1 test_x == reverse test_x</span>
+    <span class='test' id='test_132_132'>length (rev_2 test_x) == length (rev_1 test_x)</span>
+    <span class='test' id='test_133_133'>length (rev_2 test_x) == length test_x</span>
+    <span class='test' id='test_134_134'>length (rev_1 test_x) == length (reverse test_x)</span>
+
+
+module &quot;Tests for parser bugs&quot;
+
+    open prelude
     open prelude.string
     open prelude.html
-    open prelude.array
 
-
-
-    Parser a = {parser: String -&gt; {rest: String, parsed: Option a}}</code></pre>
-<p>Runs a parser over a text argument and throws away the leftover text.</p>
-<pre><code>    inline run_parser:
-
-          Parser p  -&gt; String -&gt; Option p	                    
-        | {parser = p} x = p x |&gt; &#955; {parsed = {some = y}, _} = {some = y} 
-                                  | _  = {none}</code></pre>
-<p>Applies a function to the parse result, only if the parse was successful.</p>
-<pre><code>    inline (&lt;$&gt;):
-
-        (a -&gt; b) -&gt; Parser a    -&gt; Parser b
-        f       &lt;$&gt; {parser = z} =
-
-            { parser s =
-                  z s |&gt;  &#955; {parsed = {some: x}, rest = ss} =
-                               {parsed = {some = f x}, rest = ss}
-                          | {parsed = {none}, rest = x} =
-                               {parsed = {none}, rest = x} }</code></pre>
-<p>Allows functions that take multiple arguments to be applied sequentially to a sequence of parsed values.</p>
-<pre><code>    inline (&lt;*&gt;):
-
-        Parser (a -&gt; b) -&gt; Parser a    -&gt; Parser b
-        {parser = fp}  &lt;*&gt; {parser = p} =
-
-            { parser s = 
-                  fp s |&gt; &#955; {parsed = {some: f}, rest = rr} =
-                                p rr |&gt; &#955; {parsed = {some = x}, rest = z} =
-                                              {parsed = {some = f x}, rest = z}
-                                        | {parsed = {none}, rest = x} =
-                                              {parsed = {none}, rest = x}
-                          | {parsed: {none}, rest: x} =
-                               {parsed: {none}, rest: x} }</code></pre>
-<p>Applies two parsers in sequence, throwing out the result of the first.</p>
-<pre><code>    inline (*&gt;):
-
-        Parser a -&gt; Parser b -&gt; Parser b
-        {parser = f} *&gt; {parser = g} =
-
-            { parser s =
-                  f s |&gt; &#955; {parsed = {some = x}, rest = zz} = g zz
-                         | {parsed = {none}, rest = x} =
-                               {parsed = {none}, rest = x} }
-
-    private inline lift(g, {parser: f}) =
-        { parser text =
-             let f&#39; = f text
-             in  g { text: text
-                     f: f
-                     parsed: f&#39;.parsed
-                     rest: f&#39;.rest
-                     f&#39;: f&#39; }}</code></pre>
-<p>Alternative will try the first parser, and applies the second only if the first fails <em>and</em> consumes no input from the text.</p>
-<pre><code>    inline (&lt;|&gt;):
-
-        Parser a      -&gt; Parser a    -&gt; Parser a
-        {parser = f} &lt;|&gt; {parser = g} =
-
-            let h text {parsed = {none}, rest = textt} when text == textt =
-                    g text
-                | _ x = x
-
-            in {parser text = h text (f text)}</code></pre>
-<p>Tries to apply a parser, but restores the parser state in the case of a failure. This is useful with combinators that check the state of the consumed text, like <code>&lt;|&gt;</code></p>
-<pre><code>    inline try&#39;:
-
-          Parser a    -&gt; Parser a
-        = lift &#955; (x &amp; {_, parsed: {none}}) =
-                     {parsed: {none}, rest: x.text}
-               | x = x.f&#39;</code></pre>
-<p>A parser that matches a string. Unlike Haskell's Parsec library, parsec.forml will not consume any input if the entire string doesn't match. This is for efficiency reasons currently, but may change in the future.</p>
-<pre><code>    inline string:
-
-	  String -&gt; Parser String              
-        | x = { parser y = 
-                    let sub = do! `y.substring(0, x.length)`
-                    if (sub == x)    
-                        { rest   = do! `y.substring(x.length)`
-                          parsed = {some = x} }
-                    else {rest = y, parsed = {none}} }</code></pre>
-<p>Applies a parser repeatedly, until parsing fails.</p>
-<pre><code>    many:
-
-          Parser a -&gt; Parser (Array a)
-        = lift &#955; (x &amp; {_, parsed: {none}}) =
-                     {parsed: {some: []}, rest = x.rest}
-               | (y &amp; {_, parsed: {some: x}}) =
-                     (push! x &lt;$&gt; many {parser: y.f}).parser y.rest
-
-
-
-    module &quot;Testing&quot;
-
-        <span class='test' id='test_147_147'>{some = &quot;ten&quot;} == run_parser (string &quot;ten&quot;) &quot;tens&quot;</span>
-        <span class='test' id='test_148_148'>{some = &quot;tenten&quot;} == run_parser ((&#955;x = x +++ x) &lt;$&gt; string &quot;ten&quot;) &quot;tenfingers&quot;</span>
-
-        <span class='test' id='test_150_151multi'>{parsed = {some = &quot;tenten&quot;}, rest = &quot;fingers&quot;} 
-            == ((&#955;x = x +++ x) &lt;$&gt; string &quot;ten&quot;).parser &quot;tenfingers&quot;</span>
-
-        <span class='test' id='test_153_154multi'>var result = run_parser ((&#955;x y = y +++ x) &lt;$&gt; string &quot;ten&quot; &lt;*&gt; string &quot;fingers&quot;) &quot;tenfingers&quot;
-        result == {some: &quot;fingersten&quot;}</span>
-
-        <span class='test' id='test_156_157multi'>var result = run_parser (string &quot;ten&quot; &lt;|&gt; string &quot;eleven&quot;) &quot;eleven&quot;
-        result == {some: &quot;eleven&quot;}</span>
-
-        <span class='test' id='test_159_160multi'>var result = run_parser (string &quot;ten&quot; *&gt; string &quot;fingers&quot;) &quot;tenfingers&quot;
-        result == {some: &quot;fingers&quot;}</span>
-
-        <span class='test' id='test_162_164multi'>var parser = (string &quot;ten&quot; *&gt; string &quot;fingers&quot;) &lt;|&gt; string &quot;tentoes&quot;
-            result = run_parser parser &quot;tentoes&quot;
-        result == {none}</span>
-
-        <span class='test' id='test_166_168multi'>var parser = try&#39; (string &quot;ten&quot; *&gt; string &quot;fingers&quot;) &lt;|&gt; string &quot;tentoes&quot;
-            result = run_parser parser &quot;tentoes&quot;
-        result == {some: &quot;tentoes&quot;}</span>
-
-        <span class='test' id='test_170_172multi'>var parser = many (string &quot;ten&quot;)
-            result = run_parser parser &quot;tententententen&quot;
-        result == {some: [&quot;ten&quot;, &quot;ten&quot;, &quot;ten&quot;, &quot;ten&quot;, &quot;ten&quot;]}</span></code></pre><script>$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents);window.document.title='Parsec';$('h1').html('Parsec')</script>
+    <span class='test' id='test_143_144multi'>var x = do! `[ {x: 1}, {x: 2}, {x: 3} ]`
+    stringify (x !! 0).x == &quot;1&quot;</span></code></pre><script>$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents);window.document.title='tests';$('h1').html('tests')</script>
       </section>
       <footer>
         <div id="test_suite"></div>
