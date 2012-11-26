@@ -24,7 +24,8 @@ jasmine.FormlReporter = function(doc) {
  
  jasmine.FormlReporter.prototype.reportRunnerResults = function(runner) {
      $("#run_tests").unbind();
-     $("header #test_button").css({"background-color":"lightgreen"})
+     $("header #test_button").css({"background-color":"lightgreen"});
+     $("header #test_button a, header #test_button strong").css({"color":"white"});
  };
  
  jasmine.FormlReporter.prototype.reportSuiteResults = function(suite) {

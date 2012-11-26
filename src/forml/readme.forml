@@ -3,7 +3,12 @@
 
 -- <script type="text/javascript">
 -- $("header ul").prepend('<li><a href="https://github.com/texodus/forml/zipball/master">Download <strong>ZIP File</strong></a></li><li><a href="https://github.com/texodus/forml/tarball/master">Download <strong>TAR Ball</strong></a></li><li><a href="https://github.com/texodus/forml">View On <strong>GitHub</strong></a></li>').css("width", "360");
--- $("header h1").after('<p></p><p class="view"><a href="https://github.com/texodus/forml">View the Project on GitHub <small>texodus/forml</small></a></p><br style="clear: both;"/>');
+-- $("header h1").after('<br style="clear: both;"/>');
+-- $("h1").css("font-family", "Montserrat");
+-- $("h1").css("font-size", "60px");
+-- $("h1:first-letter").css("color", "#E53007");
+
+
 -- </script>
 
 -- Forml is an modern programming language for the discriminating
