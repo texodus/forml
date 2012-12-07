@@ -23,6 +23,7 @@ data-files:
                      src/forml/readme.forml, 
                      src/html/footer.html, 
                      src/html/header.html, 
+                     src/html/styles.css,
                      src/js/FormlReporter.js
 homepage:            http://texodus.github.com/forml
 
