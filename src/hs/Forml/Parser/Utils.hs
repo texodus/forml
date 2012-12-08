@@ -189,19 +189,23 @@ type_sep    :: Parser Char
 indentPairs :: String -> Parser a -> String -> Parser a
 not_comma   :: Parser ()
 comma       :: Parser ()
+optional_sep :: ParsecT T.Text () (StateT SourcePos Identity) ()
 
 type_sep          = try (spaces *> char '|' <* whitespace)
 not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}")
-comma             = spaces *> string "," *> spaces
+comma             = P.spaces *> string "," *> P.spaces
 optional_sep      = try (try comma <|> not_comma)
 
-indentPairs a p b = string a *> P.spaces *> withPosTemp (withPos p) <* P.spaces <* string b
+indentPairs a p b = string a *> P.spaces *> withPosTemp p <* P.spaces <* string b
 
 indentAsymmetricPairs :: String -> Parser a -> Parser b -> Parser a
-indentAsymmetricPairs a p b = string a *> P.spaces *> withPos p <* P.spaces <* b
+indentAsymmetricPairs a p b = string a *> P.spaces *> withPosTemp p <* P.spaces <* b
 
+withPosTemp :: Parser a -> Parser a
 withPosTemp p = do x <- get
-                   try p <|> (put x >> parserFail ("expression continuation indented to " ++ show x))
+                   p' <- try (withPos p) <|> parserFail ("expression continuation indented to " ++ show x)
+                   put x
+                   return p'
 
 
 db :: Show a => a -> a

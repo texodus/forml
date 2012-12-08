@@ -462,8 +462,15 @@ module prelude
 
     module array
     
-        inline push! : x -> Array x -> Array x
-        | x xs = do! `xs.unshift(x); xs`
+        inline push! x y = do! push x y
+        
+        inline push : x -> Array x -> JS (Array x)
+        | x xs = `xs.unshift(x); xs`
+        
+        inline get : Num -> Array x -> x
+        | x xs = do! `xs[x]`
+        
+        inline length xs = do! `xs.length`
 
 
 

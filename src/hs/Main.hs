@@ -129,7 +129,7 @@ main' (parseArgs -> rc') =
                           in  do docs js tests titles programs sources
                      else monitor "Docs" $ return $ Right ()
 
-                 sequence (zipWith (test rc js) titles tests)
+                 sequence (zipWith (test rc js) (drop 1 titles) (drop 1 tests))
 
                  if (show_types rc)
                       then putStrLn ("\nTypes\n\n  " ++ concat (map f types))
