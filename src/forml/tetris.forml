@@ -1,0 +1,68 @@
+-- Tetris
+-- ------
+
+-- An implementation of the classic 80s computer game TETRIS, written
+-- in the programming language Forml.
+
+module tetris
+
+    open prelude
+    open prelude.array
+
+
+    Piece = Array (Array Bool)
+    
+    pieces: Array Piece =
+    
+        let x = true
+            o = false
+
+        [ [ [ x ]
+            [ x ]
+            [ x ]
+            [ x ] ]
+    
+          [ [ x, o ]
+            [ x, o ]
+            [ x, o ]
+            [ x, x ] ]
+            
+          [ [ o, x ]
+            [ o, x ]
+            [ o, x ]
+            [ x, x ] ]
+    
+          [ [ x, x ]
+            [ x, x ] ]
+            
+          [ [ o, x, o ]
+            [ x, x, x ] ]
+            
+          [ [ x, x, o ]
+            [ o, x, x ] ]
+            
+          [ [ o, x, x ]
+            [ x, x, o ] ] ]
+            
+                
+    rotate: Piece -> JS Piece
+    rotate x =
+    
+        var new_row acc piece index col =
+
+                if index < length piece
+                
+                    do acc <- put (get col (get index piece)) acc
+                       new_row acc piece (index + 1) col
+
+                else return acc
+        
+        sequence <| map (new_row [] x 0) (0 .. length (get 0 x) - 1)
+
+    
+    get 1 pieces is
+    
+        do! x <- rotate (get 1 pieces)
+            x <- rotate x
+            x <- rotate x
+            rotate x

@@ -471,6 +471,19 @@ module prelude
         | x xs = do! `xs[x]`
         
         inline length xs = do! `xs.length`
+        
+        inline map: (a -> b) -> Array a -> Array b | f xs = do! `xs.map(f)`
+        
+        inline sequence : Array (JS a) -> JS (Array a) | xs = `xs.map(run)`
+        
+        inline (..): Num -> Num -> Array Num 
+        x .. y = do! `var z = []; for (var i = x; i <= y; i++) z.push(i); return z` 
+        
+        inline put: a -> Array a -> JS (Array a)
+        put x xs = `var y = jQuery.extend(true,[],xs); y.push(x); return y`
+        
+        [1, 2, 3] == do! put 3 [1, 2]
+
 
 
 

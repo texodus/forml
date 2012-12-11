@@ -232,7 +232,7 @@ mgu' x y = case x |=| y of
     where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
               
               do as <- get_assumptions
-                 g  <- find''' as x
+                 g  <- find x
 
                  case g of
                    Nothing -> return $ Left e --add_error e >> return []
@@ -242,31 +242,54 @@ mgu' x y = case x |=| y of
 
           second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
           second_chance e (TypeApplication a b) (TypeApplication c d) =
-              do xss <- second_chance e a c
-                 yss <- second_chance e b d
+              do xss <- a `mgu'` c
+                 yss <- b `mgu'` d
                  case (xss, yss) of
                    (Right xss', Right yss') -> return$ Right$ xss' @@ yss'
                    (Left e', _) -> return $ Left e'
                    (_, Left e') -> return $ Left e'
-                   
+             
+          second_chance e r @ (Type (TypeConst x k)) t' =
+          
+                do as <- get_assumptions
+                   find' as
+                
+                where find' []              = return $ Left e
+                      find' ((i':>>:(Forall _ (_ :=> (Type (TypeConst x' k'))))):as) 
+                          | x == x' = do (_ :=> i'') <- freshInst i'
+                                         i'' `mgu'` t'
+                      find' (_:as)          = find' as
+                                  
+                 
+          second_chance e y (Type x) = second_chance e (Type x) y     
 
-          second_chance e x y = case x |=| y of
-                                  Error _ -> return $ Left e --add_error e >> return []
-                                  Z x -> return $ Right x
+          second_chance e x y = return $ Left e
+
+apply_rules t' r =
+        do sc <- find $ quantify (tv r) ([] :=> r)
+           case sc of
+             Nothing ->
+                 do unify t' r
+                    return t'
+             Just (Forall _ scr, sct) ->
+                 do (_ :=> t'') <- freshInst sct
+                    (qs :=> t''') <- return$ inst (map TypeVar$ tv t'') (scr)
+                    (_ :=> t) <- freshInst (quantify (tv t''' \\ tv t'') (qs :=> t'''))
+                    unify t r
+                    unify t' t''
+                    s <- get_substitution
+                    let t''' = apply s t
+                        r''' = apply s r
+                        qt   = quantify (tv t''') $ [] :=> t'''
+                        rt   = quantify (tv r''') $ [] :=> r'''
+                        sct' = apply s t''
+                    if qt /= rt
+                        then do add_error$ "Record does not match expected signature for " ++ show sct' ++ "\n"
+                                             ++ "  Expected: " ++ show qt ++ "\n"
+                                             ++ "  Actual:   " ++ show rt
+                                return t'
+                        else return t'
  
-          find''' [] _ = return Nothing
-          find''' (_:>:_:xs) t = find''' xs t
-          find''' ((Forall _ x :>>: y):xs) t =
-
-              do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
-                 case t' |=| t of
-                   Error _ -> find''' xs t
-
-                   -- TODO Only allow this shorthand if the match is unique - true?
-                   Z x  -> do zz' <- find''' xs t
-                              case zz' of
-                                Nothing -> return$ Just (x, y)
-                                Just _ -> return$ Nothing
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t
@@ -499,6 +522,26 @@ instance Find Scheme (Maybe (Scheme, Scheme)) where
                                          x <- i'' `can_unify` i'''
                                          if x then return $ Just (i', sc) else find' as
               find' (_:as)          = find' as
+              
+instance Find Type (Maybe (Substitution, Scheme)) where
+
+    find x = do as <- get_assumptions
+                find''' as x
+
+             where find''' [] _ = return Nothing
+                   find''' (_:>:_:xs) t = find''' xs t
+                   find''' ((Forall _ x :>>: y):xs) t =
+                   
+                       do (_ :=> t') <- return$ inst (map TypeVar$ tv t) x
+                          case t' |=| t of
+                            Error _ -> find''' xs t
+                   
+                            -- TODO Only allow this shorthand if the match is unique - true?
+                            Z x  -> do zz' <- find''' xs t
+                                       case zz' of
+                                         Nothing -> return$ Just (x, y)
+                                         Just _ -> return$ Nothing
+
 
 
 
