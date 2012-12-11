@@ -276,9 +276,19 @@ instance Infer [Definition] () where
               f _ = error "Fatal error occurred while reticulating splines"
 
 
-data BindGroup = Scope [Namespace] [Statement] [Definition] [[Definition]] [Addr (Expression Definition)]
-               | Module String [BindGroup]
-               deriving (Show)
+data BindGroup =
+
+    Scope {
+         imports :: [(Namespace, Maybe String)],
+         statements :: [Statement],
+         explicits :: [Definition],
+         implicits :: [[Definition]],
+         tests :: [Addr (Expression Definition)]
+     } 
+
+   | Module String [BindGroup]
+
+   deriving (Show)
 
 instance Infer Definition () where
 
@@ -355,7 +365,7 @@ instance Infer BindGroup [Assumption] where
                     Nothing -> sigs xs
                     Just x -> g (h name) x ++ sigs xs
 
-              import' (Namespace ns) =
+              import' (Namespace ns, Nothing) =
 
                   do z <- get_modules
                      a <- get_assumptions
@@ -363,8 +373,39 @@ instance Infer BindGroup [Assumption] where
                      case Namespace ns `lookup` z of
                        Just z' -> assume$ a ++ z'
                        Nothing -> if length ns' > 0 && head ns' /= head ns
-                                  then import' (Namespace (head ns' : ns))
+                                  then import' (Namespace (head ns' : ns), Nothing)
                                   else add_error$ "Unknown namespace " ++ show (Namespace ns)
+
+              import' (Namespace ns, Just alias) =
+
+                  do z <- get_modules
+                     a <- get_assumptions
+                     (Namespace ns') <- get_namespace
+                     case Namespace ns `lookup` z of
+                       Just z' -> 
+                           do record <- to_record z'
+                              assume $ alias :>: record
+                       Nothing -> if length ns' > 0 && head ns' /= head ns
+                                  then import' (Namespace (head ns' : ns), Just alias)
+                                  else add_error$ "Unknown namespace " ++ show (Namespace ns)
+                                  
+              to_record assumptions =
+              
+                  let f (_ :>: scheme) =
+
+                          [ do (_ :=> t) <- freshInst scheme
+                               return t ]
+
+                      f _ = []
+                      
+                      g (i :>: _) = [i]
+                      g _ = []
+                      
+                  in  do schemes <- sequence $ concat $ map f assumptions
+                         let symbols = concat $ map g assumptions 
+                         let rec = TypeRecord (TRecord (M.fromList (zip symbols schemes)) TComplete Star)
+                         return $ quantify (tv rec) ([] :=> rec)
+
 
               h (Symbol x) = x
               h (Operator x) = x
@@ -542,29 +583,29 @@ tiProgram (Program bgs) env =
 
 to_group :: [Statement] -> [BindGroup]
 to_group [] = []
-to_group xs = case takeWhile not_module xs of
-                [] -> to_group' xs
-                yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx)
-                      : to_group' (dropWhile not_module xs)
+to_group xs =
+
+    case takeWhile not_module xs of
+        [] -> to_group' xs
+        yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx)
+                   : to_group' (dropWhile not_module xs)
 
     where to_group' [] = []
-          to_group' (ModuleStatement x y:xs) = Module (show x) (to_group y) : to_group xs
+          to_group' (ModuleStatement x y:ys) = Module (show x) (to_group y) : to_group ys
           to_group' _ = error "Unexpected"
 
-          sort_deps (Scope i t a b c) = Scope i t a (sort_dep b) c
+          sort_deps s @ Scope { implicits = b } = s { implicits = sort_dep b }
 
           not_module (ModuleStatement _ _) = False
           not_module _ = True
 
-          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ _ _ (EqualityAxiom _ _:_))) =
-              Scope i t a (b ++ [[x]]) c
-          f (Scope i t a b c) (DefinitionStatement x @ (Definition _ _ _ (TypeAxiom _:_))) =
-              Scope i t (a ++ [x]) b c
-          f (Scope i t a b c) (ExpressionStatement x) =
-              Scope i t a b (c ++ [x])
-          f (Scope i t a b c) (ImportStatement ns) =
-              Scope (i ++ [ns]) t a b c
-          f (Scope i t a b c) x @ (TypeStatement _ _) =
-              Scope i (t ++ [x]) a b c
+          f s @ Scope { implicits = b} (DefinitionStatement x @ (Definition _ _ _ (EqualityAxiom _ _:_))) =
+              s { implicits = b ++ [[x]] }
+          f s @ Scope { explicits = a} (DefinitionStatement x @ (Definition _ _ _ (TypeAxiom _:_))) =
+              s { explicits = a ++ [x] }
+          f s @ Scope { tests = c } (ExpressionStatement x) = s { tests = c ++ [x] }
+          f s @ Scope { imports = i } (ImportStatement ns Nothing) = s { imports = i ++ [(ns, Nothing)] }
+          f s @ Scope { imports = i } (ImportStatement ns (Just alias)) = s { imports = i ++ [(ns, Just alias)] }
+          f s @ Scope { statements = t } x @ (TypeStatement _ _) = s { statements = t ++ [x] }
           f x _ = x
 

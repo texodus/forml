@@ -8,9 +8,13 @@ module tetris
 
     open prelude
     open prelude.array
-
+    
+    -- The `Piece` type is a type synonym - it declares a local alias which
+    -- can be used to make the type signatures easier to read.
 
     Piece = Array (Array Bool)
+
+    -- The classic Tetris pieces.
     
     pieces: Array Piece =
     
@@ -24,11 +28,9 @@ module tetris
     
           [ [ x, o ]
             [ x, o ]
-            [ x, o ]
             [ x, x ] ]
             
           [ [ o, x ]
-            [ o, x ]
             [ o, x ]
             [ x, x ] ]
     
@@ -44,9 +46,10 @@ module tetris
           [ [ o, x, x ]
             [ x, x, o ] ] ]
             
+
                 
-    rotate: Piece -> JS Piece
-    rotate x =
+    rotate: Piece -> JS Piece 
+    | x =
     
         var new_row acc piece index col =
 
@@ -59,6 +62,7 @@ module tetris
         
         sequence <| map (new_row [] x 0) (0 .. length (get 0 x) - 1)
 
+    get 3 pieces is do! rotate (get 3 pieces)
     
     get 1 pieces is
     
@@ -66,3 +70,49 @@ module tetris
             x <- rotate x
             x <- rotate x
             rotate x
+            
+
+
+    Board =
+
+        { piece: Piece
+          board: Array (Array Bool)
+          x: Num
+          y: Num }
+        
+
+
+    board: Board =
+
+        var new_row = yield 0 .. 9 'map λ_ = false
+
+        { piece = get 0 pieces
+          board = do! sequence (0 .. 9 'map λ_ = new_row)
+          x = 0
+          y = 3 }
+        
+    length board.board == 10
+    length (get 0 board.board) == 10
+    
+    module graphics
+    
+        open prelude.html
+        open prelude.array as array
+
+        draw: Board -> Piece -> JS {}
+        draw  board    piece  =
+    
+            var draw_block _ =
+                    "body" $+ "<div style='width:10;height:10;'/>"
+            
+    
+            do "body" $| "display" <| "inline"
+               "body" $= ""
+               sequence <| map draw_block (array.get 0 board.board)
+               return {}
+
+    open graphics
+    
+        
+        
+         

@@ -55,14 +55,15 @@ import System.IO.Unsafe (unsafePerformIO)
 data Statement = TypeStatement TypeDefinition UnionType
                | DefinitionStatement Definition
                | ExpressionStatement (Addr (Expression Definition))
-               | ImportStatement Namespace
+               | ImportStatement Namespace (Maybe String)
                | ModuleStatement Namespace [Statement]
 
 instance Show Statement where
     show (TypeStatement t c)     = [qq|type $t = $c|]
     show (DefinitionStatement d) = show d
     show (ExpressionStatement (Addr _ _ x)) = show x
-    show (ImportStatement x) = [qq|import $x|]
+    show (ImportStatement x Nothing) = [qq|open $x|]
+    show (ImportStatement x (Just a)) = [qq|open $x as $a|]
     show (ModuleStatement x xs) = replace "\n |" "\n     |" 
                                   $ replace "\n\n" "\n\n    " 
                                   $ "module " 
@@ -82,9 +83,22 @@ instance Syntax Statement where
 
               def_statement = DefinitionStatement <$> syntax
 
-              import_statement = do string "open"
-                                    whitespace
-                                    ImportStatement <$> syntax
+              import_statement =
+
+                  do string "open"
+                     whitespace
+                     imports <- syntax
+                     alias   <- try alias_statement <|> return Nothing
+                     return $ ImportStatement imports alias
+                     
+                  where alias_statement =
+
+                            do spaces
+                               string "as"
+                               spaces
+                               (Symbol x) <- syntax
+                               return  (Just x)
+                                    
 
               module_statement = do try (string "module")
                                     whitespace1
@@ -146,21 +160,26 @@ instance Javascript Meta JStat where
     -- Imports work identically for both targets
     toJS (Meta { modules, 
                  namespace = Namespace [], 
-                 expr      = ImportStatement target_namespace @ (find modules -> Nothing) }) = 
+                 expr      = ImportStatement target_namespace @ (find modules -> Nothing) _ }) = 
 
         fail [qq| Could not resolve namespace $target_namespace |]  
 
     toJS (Meta { modules, 
-                 expr      = ImportStatement target_namespace, 
+                 expr      = ImportStatement target_namespace Nothing, 
                  namespace = (find modules . (++ target_namespace) -> Just y) }) =
 
         return $ open target_namespace y
 
-    toJS meta @ (Meta { expr = ImportStatement _, .. }) = 
+    toJS (Meta { modules, 
+                 expr      = ImportStatement target_namespace (Just alias), 
+                 namespace = (find modules . (++ target_namespace) -> Just y) }) =
+
+        return $ declare alias y
+
+    toJS meta @ (Meta { expr = ImportStatement _ _, .. }) = 
 
         let slice (Namespace ns) = Namespace . take (length ns - 1) $ ns
         in  toJS (meta { namespace = slice namespace })
-
 
 
     -- Modules in test mode must open the contents of the Library
@@ -185,7 +204,7 @@ instance Javascript Meta JStat where
     toJS meta @ (Meta { target = Test, expr = ModuleStatement ns xs, .. }) =
 
         let (imports, rest) = L.partition f xs
-            f (ImportStatement _) = True
+            f (ImportStatement _ _) = True
             f _ = False in
 
         do imports' <- toJS $ map (\z -> meta { namespace = namespace ++ ns, expr = z }) imports

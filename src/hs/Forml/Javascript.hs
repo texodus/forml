@@ -32,7 +32,7 @@ instance (Functor m, Compress a) => Compress (m a) where
 instance Compress JStat where
     comp (ReturnStat x)      = ReturnStat (comp x)
     comp (IfStat a b c)      = IfStat (comp a) (comp b) (comp c)
-    comp (WhileStat a b)     = WhileStat (comp a) (comp b)
+    comp (WhileStat a b c)     = WhileStat a (comp b) (comp c)
     comp (ForInStat a b c d) = ForInStat a b (comp c) (comp d)
     comp (SwitchStat a b c)  = SwitchStat (comp a) (comp b) (comp c)
     comp (TryStat a b c d)   = TryStat (comp a) b (comp c) (comp d)

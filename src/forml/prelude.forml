@@ -470,6 +470,8 @@ module prelude
         inline get : Num -> Array x -> x
         | x xs = do! `xs[x]`
         
+        inline set: Num -> a -> Array a -> JS (Array a) | idx i arr = `arr[idx] = i; return arr`
+        
         inline length xs = do! `xs.length`
         
         inline map: (a -> b) -> Array a -> Array b | f xs = do! `xs.map(f)`

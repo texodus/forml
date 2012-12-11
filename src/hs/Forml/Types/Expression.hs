@@ -48,7 +48,7 @@ import Prelude hiding (curry, (++))
 class ToLocalStat a where
     toLocal :: a -> JStat
 
-data Lazy = Once | Every
+data Lazy = Once | Every deriving (Eq)
 
 data Expression d = ApplyExpression (Expression d) [Expression d]
                   | IfExpression (Expression d) (Expression d) (Expression d)
@@ -62,6 +62,7 @@ data Expression d = ApplyExpression (Expression d) [Expression d]
                   | LetExpression [d] (Expression d)
                   | ListExpression [Expression d]
                   | AccessorExpression (Addr (Expression d)) [Symbol]
+                  deriving (Eq)
 
 instance (Show d) => Show (Expression d) where
 
@@ -416,7 +417,7 @@ instance (Functor m, Opt a) => Opt (m a) where
 instance Opt JStat where
     opt (ReturnStat x)      = ReturnStat (opt x)
     opt (IfStat a b c)      = IfStat (opt a) (opt b) (opt c)
-    opt (WhileStat a b)     = WhileStat (opt a) (opt b)
+    opt (WhileStat a b c)     = WhileStat a (opt b) (opt c)
     opt (ForInStat a b c d) = ForInStat a b (opt c) (opt d)
     opt (SwitchStat a b c)  = SwitchStat (opt a) (opt b) (opt c)
     opt (TryStat a b c d)   = TryStat (opt a) b (opt c) (opt d)

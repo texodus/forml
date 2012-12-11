@@ -41,10 +41,9 @@ import Prelude hiding (curry, (++))
 -- Definition
 -- --------------------------------------------------------------------------------
 
-data Visibility = Public | Private
+data Visibility = Public | Private deriving (Eq)
 
-
-data Definition = Definition Visibility Bool Symbol [Axiom (Expression Definition)]
+data Definition = Definition Visibility Bool Symbol [Axiom (Expression Definition)] deriving (Eq)
 
 instance Show Definition where
     show (Definition Public _ name ax) =[qq|$name {sep_with "\\n" ax}|]

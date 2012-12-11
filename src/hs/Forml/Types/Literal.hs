@@ -10,7 +10,7 @@ import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Forml.Parser.Utils
 import Forml.TypeCheck.Types
 
-data Literal = StringLiteral String | IntLiteral Int | DoubleLiteral Double
+data Literal = StringLiteral String | IntLiteral Int | DoubleLiteral Double deriving (Eq)
 
 instance Show Literal where
    show (StringLiteral x) = show x

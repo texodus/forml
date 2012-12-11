@@ -46,7 +46,7 @@ import Data.Monoid (mappend)
 -- Pattern
 -- --------------------------------------------------------------------------------
 
-data Match a = Match [Pattern a] (Maybe a)
+data Match a = Match [Pattern a] (Maybe a) deriving (Eq)
 data Pattern a = VarPattern String
                | AnyPattern
                | LiteralPattern Literal
@@ -54,6 +54,7 @@ data Pattern a = VarPattern String
                | ListPattern [Pattern a]
                | ViewPattern a (Pattern a)
                | AliasPattern [Pattern a]
+               deriving (Eq)
 
 
 instance (Show a) => Show (Match a) where

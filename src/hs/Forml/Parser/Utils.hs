@@ -28,14 +28,13 @@ import qualified Data.List as L
 import Data.String.Utils
 
 
-import Text.Parsec.Prim hiding ((<|>), State, many, parse, label)
 import qualified Data.Text as T
 import System.IO.Unsafe (unsafePerformIO)
 
 
 
 
-data Addr a = Addr SourcePos SourcePos a
+data Addr a = Addr SourcePos SourcePos a deriving (Eq)
 
 instance Functor Addr where
 

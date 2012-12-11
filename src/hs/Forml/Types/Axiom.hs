@@ -35,6 +35,7 @@ import Prelude hiding (curry, (++))
 
 data Axiom a = TypeAxiom UnionType
              | EqualityAxiom (Match a) (Addr a)
+             deriving (Eq)
 
 instance (Show a) => Show (Axiom a) where
     show (TypeAxiom x) = ": " ++ show x

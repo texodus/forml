@@ -45,10 +45,10 @@ import qualified Forml.Javascript.Utils as J
 import Prelude hiding (curry)
 
 
+data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq)
 
-
-type Inlines = [((Namespace, Symbol), (Match (Expression Definition), Expression Definition))]
-type Inline  = [(Symbol, (Match (Expression Definition), Expression Definition))]
+type Inlines = [((Namespace, Inlineable), (Match (Expression Definition), Expression Definition))]
+type Inline  = [(Inlineable, (Match (Expression Definition), Expression Definition))]
 
 data OptimizeState = OptimizeState { ns :: Namespace
                                    , assumptions :: [(Namespace, [Assumption])]
@@ -121,7 +121,7 @@ instance Optimize (Expression Definition) where
     optimize (ApplyExpression f' @ (SymbolExpression f) args) =
 
         do is <- get_env
-           case f `lookup` is of
+           case (InlineSymbol f) `lookup` is of
              Just (m @ (Match pss _), ex) | length pss == length args ->
 
                  do args' <- mapM optimize args
@@ -131,13 +131,25 @@ instance Optimize (Expression Definition) where
 
              _ -> ApplyExpression <$> optimize f' <*> mapM optimize args
 
+    optimize (ApplyExpression a @ (AccessorExpression x xs) args) =
+    
+        do is <- get_env
+           case (InlineRecord a) `lookup` is of
+             Just (m @ (Match pss _), ex) | length pss == length args ->
+
+                 do args' <- mapM optimize args
+                    ex'   <- optimize ex
+                    m'    <- optimize m
+                    return $ ApplyExpression (FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]) args'
+
+             _ -> flip AccessorExpression xs <$> optimize x
 
 
     optimize (ApplyExpression f args) = ApplyExpression <$> optimize f <*> mapM optimize args
     optimize (IfExpression a b c) = IfExpression <$> optimize a <*> optimize b <*> optimize c
     optimize (LazyExpression x l) = flip LazyExpression l <$> optimize x
     optimize (FunctionExpression xs) = FunctionExpression <$> mapM optimize xs
-    optimize (AccessorExpression x xs) = flip AccessorExpression xs <$> optimize x
+    
     optimize (ListExpression ex) = ListExpression <$> mapM optimize ex
 
     optimize (LetExpression ds ex) =
@@ -176,8 +188,8 @@ instance Optimize Definition where
            is  <- get_inline
            e   <- get_env
            ns  <- get_namespace
-           set_inline (((ns, name), (m, get_addr ex)) : is)
-           set_env    ((name, (m, get_addr ex)) : e)
+           set_inline (((ns, (InlineSymbol name)), (m, get_addr ex)) : is)
+           set_env    ((InlineSymbol name, (m, get_addr ex)) : e)
            return (Definition a True name [EqualityAxiom m ex])
 
     optimize (Definition a True c (TypeAxiom _ : x)) = optimize (Definition a True c x)
@@ -277,7 +289,7 @@ instance Optimize Statement where
            set_namespace ns
            return$ ModuleStatement x xs'
 
-    optimize ss @ (ImportStatement (Namespace x)) =
+    optimize ss @ (ImportStatement (Namespace x) (Just alias)) = 
 
         do is <- get_inline
            e  <- get_env
@@ -287,10 +299,11 @@ instance Optimize Statement where
         where rfind (Namespace n) is e =
 
                      case lookup' (Namespace x) is of
+
                        [] ->
 
                            if length n > 0 && head n /= head x
-                           then do optimize (ImportStatement (Namespace (head n : x)))
+                           then do optimize (ImportStatement (Namespace (head n : x)) Nothing)
                                    return ss
                            else return ss
 
@@ -302,8 +315,41 @@ instance Optimize Statement where
               cc (((_, s), ex): zs) = (s, ex) : cc zs
               cc [] = []
 
-              lookup' x (((y, z), w):ys) | x == y = (((y, z), w) : lookup' x ys)
-                                         | otherwise = lookup' x ys
+              lookup' x (((y, (InlineSymbol z)), w):ys)
+                  | x == y    = (((y, (InlineRecord (AccessorExpression (Addr undefined undefined (SymbolExpression (Symbol alias))) [z]))), w) : lookup' x ys)
+                  | otherwise = lookup' x ys
+              lookup' _ [] = []
+         
+        
+    optimize ss @ (ImportStatement (Namespace x) Nothing) =
+
+        do is <- get_inline
+           e  <- get_env
+           n  <- get_namespace
+           rfind n is e
+
+        where rfind (Namespace n) is e =
+
+                     case lookup' (Namespace x) is of
+
+                       [] ->
+
+                           if length n > 0 && head n /= head x
+                           then do optimize (ImportStatement (Namespace (head n : x)) Nothing)
+                                   return ss
+                           else return ss
+
+                       zs ->
+
+                           do set_env $ cc zs ++ e
+                              return ss
+
+              cc (((_, s), ex): zs) = (s, ex) : cc zs
+              cc [] = []
+
+              lookup' x (((y, z), w):ys)
+                  | x == y    = (((y, z), w) : lookup' x ys)
+                  | otherwise = lookup' x ys
               lookup' _ [] = []
 
     optimize x = return x
