@@ -117,19 +117,19 @@ main' (parseArgs -> rc') =
 
                  tests <- case rc of
                               RunConfig { optimize = True, run_tests = Phantom } ->
-                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS") titles tests'
+                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS") (drop 1 titles) (drop 1 tests')
                               _ -> warn "Closure [tests]" tests'
 
                  writeFile (output rc ++ ".js") js
                  zipWithM writeFile (map (++ ".spec.js") titles) tests
 
                  if write_docs rc
-                     then let programs = map fst src'
-                              sources  = map snd src'
-                          in  do docs js tests titles programs sources
+                     then let programs = map fst (drop 1 src')
+                              sources  = map snd (drop 1 src')
+                          in  do docs js tests (drop 1 titles) programs sources
                      else monitor "Docs" $ return $ Right ()
 
-                 sequence (zipWith (test rc js) (drop 1 titles) (drop 1 tests))
+                 sequence (zipWith (test rc js) (drop 1 titles) tests)
 
                  if (show_types rc)
                       then putStrLn ("\nTypes\n\n  " ++ concat (map f types))
