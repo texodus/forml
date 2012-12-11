@@ -6,8 +6,21 @@
 
 module tetris
 
+    open prelude.string
     open prelude
+    open prelude.html
     open prelude.array
+    
+    n_rows    = 19
+    n_columns = 9 
+
+    css =
+    
+        "position: absolute;
+         width: 28px;
+         height: 28px;
+         background-color: green;"    
+
     
     -- The `Piece` type is a type synonym - it declares a local alias which
     -- can be used to make the type signatures easier to read.
@@ -84,35 +97,45 @@ module tetris
 
     board: Board =
 
-        var new_row = yield 0 .. 9 'map λ_ = false
+        var new_row = yield 0 .. n_columns 'map λ_ = true
 
         { piece = get 0 pieces
-          board = do! sequence (0 .. 9 'map λ_ = new_row)
+          board = do! sequence (0 .. n_rows 'map λ_ = new_row)
           x = 0
           y = 3 }
         
-    length board.board == 10
+    length board.board == 20
     length (get 0 board.board) == 10
     
-    module graphics
-    
-        open prelude.html
-        open prelude.array as array
-
-        draw: Board -> Piece -> JS {}
-        draw  board    piece  =
-    
-            var draw_block _ =
-                    "body" $+ "<div style='width:10;height:10;'/>"
+    zip_with: (a -> b -> c) -> Array a -> Array b -> Array c
+    zip_with f xs ys = do! `var z = [];
+                            for (var x in xs) {
+                               z.push(f(xs[x])(ys[x]));
+                            };
+                            return z;`
+                            
             
-    
-            do "body" $| "display" <| "inline"
-               "body" $= ""
-               sequence <| map draw_block (array.get 0 board.board)
-               return {}
+    draw: Board -> Piece -> JS {}
+    draw  board    piece  =
 
-    open graphics
-    
+        var draw_block: Num -> Num -> {}
+            draw_block x y when get x (get y board.board) =
+                do! "body" $+ "<div style='top:`y*30`px;left:`x*30`px;`css`'/>"
+                
+            draw_block _ _ = {}
+
+            draw_row: Array Num -> Num -> (Array {})
+            draw_row row x = map (λf = f x) <| map draw_block row
+            
+            rows = 0 .. n_rows 'map λ_ = 0 .. n_columns
+
+        do  "body" $| "display" <| "inline"
+            "body" $= ""
+            return (zip_with draw_row rows (0 .. n_rows))
+            return {}
+
+    do! draw board (get 0 pieces) 
+        return false    
         
         
          
