@@ -246,7 +246,7 @@ find (Var _: xs) ns                  = find xs ns
 find [] (Namespace [])               = Just []
 find [] _                            = Nothing
 
-find (Module _ xs : ms) n @ (Namespace []) = Just (map show xs) ++ find ms n
+find (Module _ xs : ms) n @ (Namespace []) = find ms n
 find (Module (Namespace ys) x : zs) n @ (Namespace xs)
      | length xs >= length ys && take (length ys) xs == ys = 
          find x (Namespace $ drop (length ys) xs)
