@@ -223,6 +223,9 @@ module prelude
         inline strip:  String -> String | = lstrip .: rstrip
 
         length: String -> Num | n = do! `n.length`
+        
+        concat: Array String -> String
+        concat xs = do! `xs.join("")`
 
         inline 
         (+++): a -> b -> String
@@ -486,6 +489,14 @@ module prelude
         
         [1, 2, 3] == do! put 3 [1, 2]
 
+        inline zip_with: (a -> b -> c) -> Array a -> Array b -> Array c
+        zip_with f xs ys =
+        
+            do! `var z = [];
+                 for (var x in xs) {
+                    z.push(f(xs[x])(ys[x]));
+                 };
+                 return z;`
 
 
 

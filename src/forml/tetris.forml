@@ -103,37 +103,30 @@ module tetris
           x = 0
           y = 3 }
         
-    length board.board == 20
-    length (get 0 board.board) == 10
+    length board.board == n_rows + 1
+    length (get 0 board.board) == n_columns + 1
     
-    zip_with: (a -> b -> c) -> Array a -> Array b -> Array c
-    zip_with f xs ys = do! `var z = [];
-                            for (var x in xs) {
-                               z.push(f(xs[x])(ys[x]));
-                            };
-                            return z;`
-                            
+      
+      
+    concat ["a", "b", "c"] == "abc"                        
             
-    draw: Board -> Piece -> JS {}
+    draw: Board -> Piece -> String
     draw  board    piece  =
 
-        var draw_block: Num -> Num -> {}
+        var draw_block: Num -> Num -> String
             draw_block x y when get x (get y board.board) =
-                do! "body" $+ "<div style='top:`y*30`px;left:`x*30`px;`css`'/>"
+                "<div style='top:`y*30`px;left:`x*30`px;`css`'></div>"
                 
-            draw_block _ _ = {}
+            draw_block _ _ = ""
 
-            draw_row: Array Num -> Num -> (Array {})
-            draw_row row x = map (λf = f x) <| map draw_block row
+            draw_row: Array Num -> Num -> String
+            draw_row row x = concat <: map (λf = f x) <: map draw_block row
             
             rows = 0 .. n_rows 'map λ_ = 0 .. n_columns
 
-        do  "body" $| "display" <| "inline"
-            "body" $= ""
-            return (zip_with draw_row rows (0 .. n_rows))
-            return {}
+        concat <: zip_with draw_row rows (0 .. n_rows)
 
-    do! draw board (get 0 pieces) 
+    do! "body" $= draw board (get 0 pieces) 
         return false    
         
         
