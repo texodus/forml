@@ -174,7 +174,7 @@ instance Javascript Meta JStat where
                  expr      = ImportStatement target_namespace (Just alias), 
                  namespace = (find modules . (++ target_namespace) -> Just y) }) =
 
-        return $ declare alias y
+        return $ declare alias target_namespace
 
     toJS meta @ (Meta { expr = ImportStatement _ _, .. }) = 
 

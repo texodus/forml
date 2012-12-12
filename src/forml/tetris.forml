@@ -106,25 +106,21 @@ module tetris
     length board.board == n_rows + 1
     length (get 0 board.board) == n_columns + 1
     
-      
-      
-    concat ["a", "b", "c"] == "abc"                        
-            
+
+  
     draw: Board -> Piece -> String
     draw  board    piece  =
 
-        var draw_block: Num -> Num -> String
-            draw_block x y when get x (get y board.board) =
-                "<div style='top:`y*30`px;left:`x*30`px;`css`'></div>"
-                
-            draw_block _ _ = ""
+        var draw_block x y =
 
-            draw_row: Array Num -> Num -> String
-            draw_row row x = concat <: map (λf = f x) <: map draw_block row
-            
-            rows = 0 .. n_rows 'map λ_ = 0 .. n_columns
+                if get x (get y board.board)
+                    "<div style='top:`y*30`px;left:`x*30`px;`css`'></div>"
+                else ""
 
-        concat <: zip_with draw_row rows (0 .. n_rows)
+            draw_row x = concat .: map (λf = f x) .: map draw_block
+            rows       = 0 .. n_rows 'map λ_ = 0 .. n_columns
+
+        in  concat <: zip_with draw_row (0 .. n_rows) rows 
 
     do! "body" $= draw board (get 0 pieces) 
         return false    

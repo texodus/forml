@@ -224,6 +224,10 @@ module prelude
 
         length: String -> Num | n = do! `n.length`
         
+        -- TODO concat cannot be inlined because it shadows concat
+        -- in other modules, and inlines currently do not respect
+        -- shadows.
+        
         concat: Array String -> String
         concat xs = do! `xs.join("")`
 
@@ -462,6 +466,9 @@ module prelude
                body     <- get "#test_suite"
 
                move reporter body
+               
+    -- Arrays
+    -- ------
 
     module array
     
@@ -489,7 +496,8 @@ module prelude
         
         [1, 2, 3] == do! put 3 [1, 2]
 
-        inline zip_with: (a -> b -> c) -> Array a -> Array b -> Array c
+        inline
+        zip_with: (a -> b -> c) -> Array a -> Array b -> Array c
         zip_with f xs ys =
         
             do! `var z = [];
@@ -497,6 +505,8 @@ module prelude
                     z.push(f(xs[x])(ys[x]));
                  };
                  return z;`
+                 
+        zip_with (\x y = x + y) [1, 2, 3] [3, 2, 1] == [4, 4, 4]
 
 
 

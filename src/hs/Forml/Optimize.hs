@@ -43,6 +43,7 @@ import Forml.Parser.Utils
 import qualified Forml.Javascript.Utils as J
 
 import Prelude hiding (curry)
+import Text.Parsec.Pos (newPos)
 
 
 data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq)
@@ -315,7 +316,7 @@ instance Optimize Statement where
               cc [] = []
 
               lookup' x (((y, (InlineSymbol z)), w):ys)
-                  | x == y    = (((y, (InlineRecord (AccessorExpression (Addr undefined undefined (SymbolExpression (Symbol alias))) [z]))), w) : lookup' x ys)
+                  | x == y    = (((y, (InlineRecord (AccessorExpression (Addr  (newPos "Optimizer" 0 0) (newPos "Optimizer" 0 0) (SymbolExpression (Symbol alias))) [z]))), w) : lookup' x ys)
                   | otherwise = lookup' x ys
               lookup' _ [] = []
          

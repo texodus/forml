@@ -11,22 +11,23 @@
 
 -- </script>
 
--- Forml is an modern programming language for the discriminating
--- programmer.  More importantly, forml is my vanity project, an
--- attempt to learn ML by writing one.  
+-- Forml is a contemporary programming language for the discriminating
+-- programmer, intended to fill a niche
+-- somewhere between [Haskell](http://www.haskell.org) and
+-- [Ruby](http://www.ruby.org), should such a niche turn out to exist. 
 
 -- Philosophy
 -- ----------
 
---     1) Writing software is unnecessarily hard, because the language's
---        syntax treats the programmer like a machine.  A modern programming
---        language should be read and written for programmers - a philosophy
---        lifted unapologetically from [Ruby](http://www.artima.com/intv/ruby4.html).
+--     1) Writing software is unnecessarily hard, because syntax is sufficiently
+--        abstracted from thought process to lose something in the translation. A 
+--        modern programming language should be designed for reading - an API 
+--        exposing the programmer - a philosophy lifted unapologetically
+--        from [Ruby](http://www.artima.com/intv/ruby4.html).
 
---     2) Writing software is unnecessarily hard, because the language
---        lets the programmer make mistakes.  A modern programming language
---        should prevent the programmer from writing incorrect code, in so far
---        as it never conflicts with #1.
+--     2) Writing software is unnecessarily hard, because making mistakes is too
+--        easy. A modern programming language should prevent the programmer from
+--        writing incorrect code, in so far as it doesn't conflict with #1.
 
 -- Features
 -- --------
@@ -89,28 +90,28 @@
 -- which it expects to find on your PATH.  You may optionally specifiy to run your suite
 -- via node.js with
 
---        <pre><code>--$ forml -node-test test.forml</pre></code>
+--        <pre><code>$ forml -node-test test.forml</pre></code>
 
 -- To compile literate
 -- forml (eg, Forml code embedded in Markdown):
    
---        <pre><code>--$ forml test.lforml</pre></code>
+--        <pre><code>$ forml test.lforml</pre></code>
    
 -- To see the inferred types:
    
---        <pre><code>--$ forml -t test.forml</pre></code>
+--        <pre><code>$ forml -t test.forml</pre></code>
    
 -- To turn off optimizing (eg, Closure) or testing:
    
---        <pre><code>--$ forml -no-test -no-opt test.forml</pre></code>
+--        <pre><code>$ forml -no-test -no-opt test.forml</pre></code>
 
 -- To watch a file for changes and incrementally compile:
    
---        <pre><code>--$ forml -w test.forml</pre></code>
+--        <pre><code>$ forml -w test.forml</pre></code>
 
 -- To generate an HTML (like this one!) and test suite:
    
---        <pre><code>--$ forml -docs test.forml</pre></code>
+--        <pre><code>$ forml -docs test.forml</pre></code>
 
 
 -- Tutorial
@@ -132,6 +133,19 @@ module readme
 
     open prelude
     open prelude.string
+    
+    -- Namespaces are not symbols, so this won't work:
+    
+    --        <pre><code>    prelude.log "Hello, World!"    -- Won't compile!</pre></code>
+    
+    -- Instead, you must qualify the import and supply 
+    -- a symbol name to bind to.  The alias will be typed
+    -- to a record whose fields are the first-class 
+    -- definitions in the module.
+    
+    open prelude.array as array
+    
+    array.map fib [3,4,5] == [2,3,5]
 
     -- Simple function.  Forml allows functions to be written in ML style, or
     -- in more traditional java style.
