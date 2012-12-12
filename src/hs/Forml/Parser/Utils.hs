@@ -202,9 +202,11 @@ indentAsymmetricPairs a p b = string a *> P.spaces *> withPosTemp p <* P.spaces 
 
 withPosTemp :: Parser a -> Parser a
 withPosTemp p = do x <- get
-                   p' <- try (withPos p) <|> parserFail ("expression continuation indented to " ++ show x)
+                   p' <- try (Just <$> withPos p) <|> return Nothing
                    put x
-                   return p'
+                   case p' of
+                     Just p' -> return p'
+                     Nothing -> parserFail ("expression continuation indented to " ++ show x)
 
 
 db :: Show a => a -> a

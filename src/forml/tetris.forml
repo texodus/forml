@@ -61,9 +61,8 @@ module tetris
             
 
                 
-    rotate: Piece -> JS Piece 
-    | x =
-    
+    rotate: Piece -> JS Piece | x =
+
         var new_row acc piece index col =
 
                 if index < length piece

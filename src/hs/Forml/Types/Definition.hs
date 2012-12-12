@@ -101,7 +101,7 @@ instance Syntax Definition where
 
                       eq_axiom =
 
-                          do try (spaces >> same) <|> (whitespace >> return ())
+                          do P.spaces
                              string "|" <|> try (string name' <* notFollowedBy (digit <|> letter)) 
                              naked_eq_axiom
 
@@ -117,7 +117,7 @@ instance Syntax Definition where
 
                       no_args_eq_axiom patterns =
 
-                          do P.spaces *> string "=" *> spaces *> indented
+                          do P.spaces *> string "=" *> P.spaces
                              ex <- withPos (addr syntax)
                              return $ EqualityAxiom patterns ex
 

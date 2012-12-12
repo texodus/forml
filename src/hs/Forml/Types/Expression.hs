@@ -284,18 +284,9 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                             where  java_args = do x <- syntax `sepEndBy1` comma
                                                   option x ((x ++) <$> try arguments)
 
-              -- No idea why this is necessary?
-              withPosTemp :: Parser a -> Parser a
-              withPosTemp p = do x <- get
-                                 z <- try (Just <$> p) <|> return Nothing
-                                 put x
-                                 case z of
-                                   Just z -> return z
-                                   Nothing -> parserFail ("expression continuation indented to " ++ show x)
-
-              function = withPosTemp$ withPos $ do try (char '\\') <|> char 'λ'
-                                                   whitespace
-                                                   pat_fun
+              function = withPosTemp$ do try (char '\\') <|> char 'λ'
+                                         whitespace
+                                         pat_fun
 
                   where pat_fun    = do t <- option [] ( ((:[]) <$> type_axiom <* spaces))
                                         eqs <- try eq_axiom `sepBy1` try (spaces *> string "|" <* whitespace)
