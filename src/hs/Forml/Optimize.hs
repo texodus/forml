@@ -142,14 +142,13 @@ instance Optimize (Expression Definition) where
                     m'    <- optimize m
                     return $ ApplyExpression (FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]) args'
 
-             _ -> flip AccessorExpression xs <$> optimize x
-
+             _ -> ApplyExpression <$> optimize a <*> mapM optimize args
 
     optimize (ApplyExpression f args) = ApplyExpression <$> optimize f <*> mapM optimize args
     optimize (IfExpression a b c) = IfExpression <$> optimize a <*> optimize b <*> optimize c
     optimize (LazyExpression x l) = flip LazyExpression l <$> optimize x
     optimize (FunctionExpression xs) = FunctionExpression <$> mapM optimize xs
-    
+    optimize (AccessorExpression x xs) = flip AccessorExpression xs <$> optimize x
     optimize (ListExpression ex) = ListExpression <$> mapM optimize ex
 
     optimize (LetExpression ds ex) =
