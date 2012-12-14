@@ -153,7 +153,11 @@ instance (Syntax a, Show a) => Syntax (Pattern a) where
         where alias = let sep = P.spaces <* string "&" <* P.spaces
                       in  AliasPattern <$> ((:) <$> syntax <* sep <*> sepBy1 syntax sep) 
 
-              var         = VarPattern <$> type_var
+              var = 
+              
+                  do (Symbol x) <- syntax
+                     return (VarPattern x)
+              
               literal     = LiteralPattern <$> syntax
               any'        = many1 (string "_") *> return AnyPattern
               naked_apply =

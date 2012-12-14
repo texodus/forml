@@ -166,6 +166,12 @@ type_name   :: Parser Symbol
 type_var    :: Parser String
 
 type_name   = Symbol <$> not_reserved (upper <:> many (alphaNum <|> oneOf "_'"))
-type_var    = not_reserved (oneOf "abscdefghijklmnopqrstuvwxyz" <:> many (alphaNum <|> oneOf "_'"))
+
+type_var    = 
+    not_reserved (oneOf "_abscdefghijklmnopqrstuvwxyz" <:> many (alphaNum <|> oneOf "_'")) >>= f
+    
+    where f "_" = do x <- getPosition
+                     return $ "_" ++ show (sourceLine x * sourceColumn x)
+          f x   = return x
 
 

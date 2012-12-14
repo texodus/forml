@@ -232,7 +232,7 @@ module prelude
         concat xs = do! `xs.join("")`
 
         inline 
-        (+++): a -> b -> String
+        (+++): _ -> _ -> String
         x +++ y = do! `"" + x + y`
 
         strip "    test    " is "test"
@@ -292,7 +292,7 @@ module prelude
 
         inline ($=):
 
-           String -> a -> JS {}
+           String -> _ -> JS {}
            x      $= y  =
 
              `if (typeof $ != "undefined") {
@@ -317,13 +317,13 @@ module prelude
         div: String -> JS String
             | x = yield "<div id='`x`'/>"
 
-        move: HTML -> HTML -> JS a
+        move: HTML -> HTML -> JS _
             | x y = `$(y.element).append($(x.element).detach())`
                        
         on_load: JS {} -> JS {}
             | x = `window.addEventListener("load", x, false)`
 
-        inline stringify: a -> String | x = do! `JSON.stringify(x)`
+        inline stringify: _ -> String | x = do! `JSON.stringify(x)`
 
         inline (!!): Array a -> Num -> a | x y = do! `x[y]`
 
