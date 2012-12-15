@@ -217,10 +217,18 @@ h1, h2, h3 {
 }
 
 h1 {
-  font-size:28px;
+  font-size:20px;
 }
 
-h1:first-letter {
+h2 {
+  font-size: 16px;
+}
+
+header h1 {
+	font-size: 60px;
+}
+
+header h1:first-letter {
 	color: #E53007;
 }
 
@@ -773,78 +781,122 @@ PR['registerLangHandler'](
          [PR['PR_PUNCTUATION'], /^[^\t\n\x0B\x0C\r a-zA-Z0-9\'\"]+/]
         ]),
     ['hs']);
-</script><script>var j=void 0,l=!0;function m(i){return i instanceof Array}function v(){throw"Pattern Match Exhausted";}
-var z=new function(){function i(a){var b;0===a?b=0:1===a?b=1:(b=i(a-1),a=i(a-2),b+=a);return b}function n(a){return function(b){var k=a,c;if(k===b)return l;k=a;c=b;if("object"===typeof k){var d=l,h;for(h in k)d=d&&c.hasOwnProperty(h)&&n(k[h])(c[h]);k=Object.keys(k).length===Object.keys(c).length;return d&&k}k=a;c=b;if(m(k)){h=l;for(d in k)h=h&&n(k[d])(c[d]);return h&&k.length==c.length}return!1}}function s(a){return function(){return a}}this.object_=function(a){return"object"===typeof a};this.array_=
-m;this.string_=function(a){return"string"===typeof a};this.num_=function(a){return"number"==typeof a};this.type_=function(a){return typeof a};this.not=function(a){return!a};this._grea_grea_eq=function(a){return function(b){return b(a())}};this._grea_grea=function(a){return function(b){return function(){a();return b()}}};this._return_=s;this.log=function(a){return function(){return console.log(a)}};this._and_and=function(a){return function(b){return a&&b}};this._or_or=function(a){return function(b){return a||
-b}};this._star=function(a){return function(b){return a*b}};this._forw=function(a){return function(b){return a/b}};this._perc=function(a){return function(b){return a%b}};this._plus=function(a){return function(b){return a+b}};this._minu=function(a){return function(b){return a-b}};this._less_eq=function(a){return function(b){return a<=b}};this._grea_eq=function(a){return function(b){return a>=b}};this._less=function(a){return function(b){return a<b}};this._grea=function(a){return function(b){return a>
-b}};this._bang_eq=function(a){return function(b){return!n(a)(b)}};this._forw_eq=function(a){return function(b){return!n(a)(b)}};this._eq_eq=n;this.fib=i;this.speedtest=new function(){function a(b){return 0===b?0:1===b?1:a(b-1)+a(b-2)}function b(){return(new Date).getTime()}this.get_time=b;this.time=function(a){return function(){var c=b();a();return b()-c}};this.fast_fib=a;this.floor=Math.floor};this._less_or=function(a){return function(b){return a(b)}};this._or_grea=function(a){return function(b){return b(a)}};
-this._less_col=function(a){return function(b){return a(b)}};this._comp_col=function(a){return function(b){return function(c){return a(b(c))}}};this.id=function(a){return a};this.flip=function(a){return function(b){return function(c){return a(c)(b)}}};this._apos=function(a){return function(b){return b(a)}};this.string=new function(){function a(a){return a.replace(/\s+$/,"")}function b(a){return a.replace(/^\s+/,"")}this.lstrip=b;this.rstrip=a;this.strip=function(c){return b(a(c))};this.length=function(a){return a.length};
-this._plus_plus_plus=function(a){return function(b){return""+a+b}}};this.err=function(a){var b;try{a(),b=!1}catch(c){b=c}return b};this.option=new function(){this.option=function(a){return function(b){if(b.hasOwnProperty("none"))return a;var c=b.some;if(b.hasOwnProperty("some"))return c;v()}}};this.html=new function(){function a(a){return function(b){return function(){return a.push(b)}}}function b(a){return function(b){return b.split(a)}}function c(a){return JSON.stringify(a)}function p(a){return function(b){return function(){return $(b.element).append($(a.element).detach())}}}
-function d(a){return function(){var b=$(a).get(0);return{add_class:function(a){return function(){return b.setAttribute("class",b.getAttribute("class")+" "+a)}},add_style:function(a){return function(c){return function(){b.style[a]=c}}},element:b,inner:function(){return b.innerHTML},on_click:function(a){return function(){b.onclick=a}},set:function(a){return function(){b.innerHTML=a}}}}}this.get=d;this.$_eq=function(a){return function(b){return function(){if("undefined"!=typeof $){var c=$(a).get(0);
-"undefined"!=typeof c&&(c.innerHTML=b)}}}};var h;this.$_or=h=function(a){return function(b){return function(c){return function(){return $(a).css(b,c)}}}};this.$_comp=function(a){return function(b){return function(){return $(a).addClass(b)}}};this.$_plus=function(a){return function(b){return function(){return $(a).append(b)}}};this.div=function(a){return function(){return"<div id='"+a+"'/>"}};this.move=p;this.on_load=function(a){return function(){return window.addEventListener("load",a,!1)}};this.stringify=
-c;this._bang_bang=function(a){return function(b){return a[b]}};this.with_page=function(a){return function(){var b=$("body").clone(),c=a();$("body").replaceWith(b);return c}};this.split=b;var r=0,i={reportRunnerResults:function(){return phantom.exit(r)},reportSpecResults:function(a){if(a.results().passed())var f={},a=function(){return f};else{var g=a.results_.items_,d;d=a.description.split("__::__")[1];var x;x=JSON.stringify(g[0].expected);var y;y=JSON.stringify(g[0].actual);var t,a=b("__::__")(a.description),
-a=b("_")(a[0])[0];t=c(parseInt(a)+1);a=function(){var a;if(n(r)(0))a=function(){return console.log("\r                        ")};else{var b={};a=function(){return b}}a();r=1;console.log("Test failed at line "+t+("\n\n"+d+("\n\n    Expected "+x+("\n    Actual   "+y+""))));return console.log("")}}return a()}};this.console_runner=function(){var a=jasmine.getEnv();a.addReporter(i);return a.execute()};this.push=a;var q={failed:0,messages:[],reportRunnerResults:function(){var a;if(0<q.failed){var b=q.messages;
-a=function(){return console.log(b)}}else{var c={};a=function(){return c}}a();return console.log(""+(q.total-q.failed)+("/"+q.total+" tests passed"))},reportSpecResults:function(b){var c=b.results().passed();q.total++;if(c)var g={},c=function(){return g};else c=function(){q.failed++;a(q.messages)(b.description)();return{}};return c()},total:0};this.console_reporter=q;this.table_of_contents=function(){$("code").addClass("prettyprint");$("code").addClass("lang-hs");h(".test")("position")("relative")();
-h(".test")("left")("50px")();prettyPrint();var a=new jasmine.TrivialReporter,b=new jasmine.FormlReporter,c=jasmine.getEnv();c.addReporter(a);c.addReporter(b);c.addReporter(q);c.execute();a=d(".jasmine_reporter")();b=d("#test_suite")();return p(a)(b)()}};this.array=new function(){this.push_excl=function(a){return function(b){b.unshift(a);return b}}};var c=new function(){function a(a){return function(b){function t(c){if(c.hasOwnProperty("nil"))return b;var f=c.head,g=c.tail;if(c.hasOwnProperty("head")&&
-c.hasOwnProperty("tail"))return a(f)(t(g));v()}return t}}function b(a){return function(b){if(b.hasOwnProperty("nil"))throw"Foldl1 called on empty list";return c(a)(g(b))(f(b))}}function c(a){return function(b){return function(c){for(var e=j,f=b;"undefined"==typeof e;){var g=f;if(c.hasOwnProperty("nil"))e=g;else{var g=f,d=c.head,p=c.tail;c.hasOwnProperty("head")&&c.hasOwnProperty("tail")?(f=a(g)(d),c=p,e=j):v()}}return e}}}function p(a){for(var b=j,c={nil:l};"undefined"==typeof b;){var e=c;if(a.hasOwnProperty("nil"))b=
-e;else{var e=c,f=a.head,g=a.tail;a.hasOwnProperty("head")&&a.hasOwnProperty("tail")?(c={head:f,tail:e},a=g,b=j):v()}}return b}function d(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:l};var c=a,e=c(g(b)),b=d(c)(f(b));return{head:e,tail:b}}}function h(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:l};var c=a,e=b;if(c(g(e)))return b=g(e),c=h(c)(f(e)),{head:b,tail:c};c=a;c=h(c);b=f(b);return c(b)}}function r(a){return function(b){var c=b;if(a.hasOwnProperty("nil"))return c;
-var c=a.head,e=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b=r(e)(b),{head:c,tail:b};v()}}function i(a){return function(b){if(0===a)b={nil:l};else var c=i(a-1)(b),b={head:b,tail:c};return b}}function q(a){if(a.hasOwnProperty("nil"))return 0;var b=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return 1+q(b);v()}function n(a){return function(b){var c=b;if(0===a)return{nil:l};c=b;b=g(c);c=n(a-1)(f(c));return{head:b,tail:c}}}function f(a){var b=a.tail;if(a.hasOwnProperty("head")&&
-a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))throw"Tail called on empty list";v()}function g(a){var b=a.head;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))throw"Head called on empty list";v()}this._col_col=function(a){return function(b){return{head:a,tail:b}}};this.empty_=function(a){return a.hasOwnProperty("nil")?l:!1};this.head=g;this.tail=f;this.last=function(a){for(var b=j;"undefined"==typeof b;){var c=a.head;if(a.hasOwnProperty("head")&&
-a.hasOwnProperty("tail")&&a.tail.hasOwnProperty("nil"))b=c;else if(c=a.tail,a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))a=c,b=j;else{if(a.hasOwnProperty("nil"))throw"Last called on empty list";v()}}return b};this.take=n;this.drop=function(a){return function(b){for(var c=j,e=a;"undefined"==typeof c;)c=b,0!==e&&(c=b,e-=1,b=f(c),c=j);return c}};this._comp_comp=function(a){return function(b){for(var c=j,e={nil:l};"undefined"==typeof c;){var c=b,f=e;c>=a?(b=c-1,e={head:c,tail:f},c=j):c=f=e}return c}};
-this.take_while=function(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:l};var c=a,e;c(g(b))?(e=g(b),b=h(c)(f(b)),e={head:e,tail:b}):e={nil:l};return e}};this.drop_while=function(a){return function(b){for(var c=j,e=a;"undefined"==typeof c;)if(c=e,b.hasOwnProperty("nil"))c={nil:l};else{var c=e,d=b;c(g(d))?(e=c,b=f(d),c=j):c=d=b}return c}};this.length=q;this.init=i;this._plus_plus=r;this.filter=h;this.map=d;this.reverse=p;this.take_apos=function(a){return function(b){for(var c=
-j,e=a,d={nil:l};"undefined"==typeof c;)if(c=d,0!==e)var h=b,c=d,e=e-1,b=f(h),d={head:g(h),tail:c},c=j;return p(c)}};this.foldl=c;this.foldl1=b;this.foldr=a;this.foldr1=function(b){return function(c){if(c.hasOwnProperty("nil"))throw"Foldr1 called on empty list";return a(b)(g(c))(f(c))}};this.all_=function(a){var c=b(function(a){return function(b){return a&&b}}),f=d(a);return function(a){return c(f(a))}};this.any_=function(a){var c=b(function(a){return function(b){return a||b}}),f=d(a);return function(a){return c(f(a))}};
-this.sum=b(function(a){return function(b){return a+b}});this.product=b(function(a){return function(b){return a*b}});var w=b(function(a){return function(b){return r(a)(b)}});this.concat=w;this.concat_map=function(a){return function(b){return w(d(a)(b))}};this.maximum=b(function(a){return function(b){return a>b?a:b}});this.minimum=b(function(a){return function(b){return a>b?b:a}})};this.list=c;this.seq=new function(){function a(b){if(b.hasOwnProperty("end"))return{end:l};var c=b.seq;if(b.hasOwnProperty("seq")){var d=
-j;return{seq:function(){if(!d){var b;b=c();var f=b.elem,p=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var e={elem:f,next:a(p)};b=function(){return e}}else v(),b=j;d=b()}return d}}}v()}function b(a){return function(c){return function(d){if(c.hasOwnProperty("end")||d.hasOwnProperty("end"))return{end:l};var p=c.seq,h=d.seq;if(c.hasOwnProperty("seq")&&d.hasOwnProperty("seq"))return{seq:function(){var c;var d=p();c=d.elem;var g=d.next;if(d.hasOwnProperty("elem")&&d.hasOwnProperty("next")){var d=
-h(),k=d.elem,i=d.next;if(d.hasOwnProperty("elem")&&d.hasOwnProperty("next")){var n={elem:a(c)(k),next:b(a)(g)(i)};c=function(){return n}}else v(),c=j}else v(),c=j;return c()}};v()}}}function k(a){if(a.hasOwnProperty("end"))return{nil:l};var b=a.seq;if(a.hasOwnProperty("seq")){var b=b(),a=b.elem,c=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var d,b=k(c);d={head:a,tail:b};a=function(){return d}}else v(),a=j;return a()}v()}function p(a){if(a.hasOwnProperty("nil"))return{end:l};var b=
-a.head,c=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return{seq:function(){return{elem:b,next:p(c)}}};v()}function d(a){return function(b){return{seq:function(){return{elem:b,next:d(a)(a(b))}}}}}var h=c.tail||window.tail,i=c.take||window.take;this.seq=function(a){return{seq:a}};this.iterate=d;this.from_list=p;this.to_list=k;this.take=i=function(a){return function(b){if(b.hasOwnProperty("end")||0===a)return{end:l};var c=b.seq;if(b.hasOwnProperty("seq"))return{seq:function(){var b;
-b=c();var d=b.elem,p=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var e={elem:d,next:i(a-1)(p)};b=function(){return e}}else v(),b=j;return b()}};v()}};this.zip_with=b;this._col_col_col=function(a){return function(b){return{seq:function(){return{elem:a,next:b()}}}}};this.tail=h=function(a){if(a.hasOwnProperty("end"))throw"tail called on empty seq";var b=a.seq;if(a.hasOwnProperty("seq"))return b().next;v()};var n=this.to_lazy=a,q=s({seq:function(){var a=b(function(a){return function(b){return a+
-b}})(u),c=h(u);return{elem:1,next:a(c)}}}),u;this.fibs=u=n({seq:function(){return{elem:1,next:q()}}})};this.Forml_Z=new function(){var a=c.map||window.map,b=c.concat_map||window.concat_map;this.map=a=function(a){return function(b){return function(c){return a.map(c)(b)}}};this.bind=function(a){return function(b){var c=a.ret;if(a.hasOwnProperty("ret"))return c(b);v()}};var k={map:function(a){return function(b){if(b.hasOwnProperty("nil"))return{nil:l};var c=b.head,i=b.tail;if(b.hasOwnProperty("head")&&
-b.hasOwnProperty("tail"))return{head:a(c),tail:k.map(a)(i)};v()}}};this.list_functor=k;this.list_monad={_grea_grea_eq:function(a){return function(c){return b(c)(a)}},_return_:function(a){return{head:a,tail:{nil:l}}}};this.js_monad={_grea_grea_eq:function(a){return function(b){return b(a())}},_return_:function(a){return function(){return a}}}}};("undefined"==typeof global?window:global).prelude=z;
-("undefined"==typeof global?window:global).readme=new function(){function i(c){return Math.sqrt(c)}function n(c){var a;0===c?a=0:1===c?a=1:(a=n(c-1),c=n(c-2),a+=c);return a}var s=z.fib||window.fib;this.square=function(c){return c*c};this.add=function(c){return function(a){return c+a}};this.fib=s=function(c){var a;0===c?a=0:1===c?a=1:(a=s(c-1),c=s(c-2),a+=c);return a};this.fib_apos=n;this.person=function(c){return function(a){return{address:a,message:""+c+(" lives at "+a+""),name:c}}};this.point={x:10,
-y:10};this.magnitude=function(c){var a=c.x,b=c.y;if(c.hasOwnProperty("x")&&c.hasOwnProperty("y"))return i(a*a+b*b);v()};this._star_star=function(c){return function(a){for(var b=j,k=c,i=a,a="";"undefined"==typeof b;)if(b=a,0!==i)var d=k,b=a,k=d,i=i-1,a=""+b+d,b=j;return b}};this.map_excl=function(c){return function(a){return a.map(c)}};this.hello_world=function(){console.log("Hello World");return Math.sqrt(9)+1+1};this.sqrt=i;this.num_or_string=function(c){return"number"==typeof c?"Num":"String"};
-this.maybe=function(c){return function(a){var b=c,b=a.just;if(a.hasOwnProperty("just"))return b;b=c;if(a.hasOwnProperty("nothing"))return b;v()}};this.has_value=function(c){return c.hasOwnProperty("just")?l:!1}};
+</script><script>var i=void 0,j=!0,k=!1;function t(q){return q instanceof Array}function u(q){return q()}function w(q){throw q;}function z(){w("Pattern Match Exhausted")}
+var A=new function(){function q(a){return function(b){return function(d){return a(d)(b)}}}function l(a){var b;0===a?b=0:1===a?b=1:(b=l(a-1),a=l(a-2),b+=a);return b}function m(a){return function(b){var d=a,c;if(d===b)return j;d=a;c=b;if("object"===typeof d){var f=j,n;for(n in d)f=f&&c.hasOwnProperty(n)&&m(d[n])(c[n]);d=Object.keys(d).length===Object.keys(c).length;return f&&d}d=a;c=b;if(t(d)){n=j;for(f in d)n=n&&m(d[f])(c[f]);return n&&d.length==c.length}return k}}function g(a){return function(){return a}}
+function e(a){return a}this.object_=function(a){return"object"===typeof a};this.array_=t;this.string_=function(a){return"string"===typeof a};this.cast=e;this.num_=function(a){return"number"==typeof a};this.type_=function(a){return typeof a};this.not=function(a){return!a};this._grea_grea_eq=function(a){return function(b){return b(a())}};this._grea_grea=function(a){return function(b){return function(){a();return b()}}};this._return_=g;this.log=function(a){return function(){return console.log(a)}};this._and_and=
+function(a){return function(b){return a&&b}};this._or_or=function(a){return function(b){return a||b}};this._star=function(a){return function(b){return a*b}};this._forw=function(a){return function(b){return a/b}};this._perc=function(a){return function(b){return a%b}};this._plus=function(a){return function(b){return a+b}};this._minu=function(a){return function(b){return a-b}};this._less_eq=function(a){return function(b){return a<=b}};this._grea_eq=function(a){return function(b){return a>=b}};this._less=
+function(a){return function(b){return a<b}};this._grea=function(a){return function(b){return a>b}};this._bang_eq=function(a){return function(b){return!m(a)(b)}};this._forw_eq=function(a){return function(b){return!m(a)(b)}};this._eq_eq=m;this.fib=l;this.speedtest=new function(){function a(b){return 0===b?0:1===b?1:a(b-1)+a(b-2)}function b(){return(new Date).getTime()}this.get_time=b;this.time=function(a){return function(){var c=b();a();return b()-c}};this.fast_fib=a;this.floor=Math.floor};this._less_or=
+function(a){return function(b){return a(b)}};this._or_grea=function(a){return function(b){return b(a)}};this._less_col=function(a){return function(b){return a(b)}};this._comp_col=function(a){return function(b){return function(d){return a(b(d))}}};this.id=function(a){return a};this.flip=q;this._apos=function(a){return function(b){return b(a)}};this.string=new function(){function a(a){return a.replace(/\s+$/,"")}function b(a){return a.replace(/^\s+/,"")}this.lstrip=b;this.rstrip=a;this.strip=function(d){return b(a(d))};
+this.length=function(a){return a.length};this.concat=function(a){return a.join("")};this._plus_plus_plus=function(a){return function(b){return""+a+b}}};this.err=function(a){var b;try{a(),b=k}catch(d){b=d}return b};this.option=new function(){this.option=function(a){return function(b){if(b.hasOwnProperty("none"))return a;var d=b.some;if(b.hasOwnProperty("some"))return d;z()}}};this.html=new function(){function a(a){return function(b){return function(){return a.push(b)}}}function b(a){return function(b){return b.split(a)}}
+function d(a){return JSON.stringify(a)}function c(a){return function(b){return function(){return $(b.element).append($(a.element).detach())}}}function f(a){return function(){var b=$(a).get(0);return{add_class:function(a){return function(){return b.setAttribute("class",b.getAttribute("class")+" "+a)}},add_style:function(a){return function(f){return function(){b.style[a]=f}}},element:b,inner:function(){return b.innerHTML},on_click:function(a){return function(){b.onclick=a}},set:function(a){return function(){b.innerHTML=
+a}}}}}this.get=f;this.$_eq=function(a){return function(b){return function(){if("undefined"!=typeof $){var f=$(a).get(0);"undefined"!=typeof f&&(f.innerHTML=b)}}}};var n;this.$_or=n=function(a){return function(b){return function(f){return function(){return $(a).css(b,f)}}}};this.$_comp=function(a){return function(b){return function(){return $(a).addClass(b)}}};this.$_plus=function(a){return function(b){return function(){return $(a).append(b)}}};this.div=function(a){return function(){return"<div id='"+
+a+"'/>"}};this.move=c;this.on_load=function(a){return function(){return window.addEventListener("load",a,k)}};this.stringify=d;this._bang_bang=function(a){return function(b){return a[b]}};this.with_page=function(a){return function(){var b=$("body").clone(),f=a();$("body").replaceWith(b);return f}};this.split=b;var e=0,h={reportRunnerResults:function(){return phantom.exit(e)},reportSpecResults:function(a){if(a.results().passed())var f={},a=function(){return f};else{var c=a.results_.items_,n;n=a.description.split("__::__")[1];
+var y;y=JSON.stringify(c[0].expected);var x;x=JSON.stringify(c[0].actual);var p,a=b("__::__")(a.description),a=b("_")(a[0])[0];p=d(parseInt(a)+1);a=function(){var a;if(m(e)(0))a=function(){return console.log("\r                        ")};else{var b={};a=function(){return b}}a();e=1;console.log("Test failed at line "+p+("\n\n"+n+("\n\n    Expected "+y+("\n    Actual   "+x+""))));return console.log("")}}return a()}};this.console_runner=function(){var a=jasmine.getEnv();a.addReporter(h);return a.execute()};
+this.push=a;var g={failed:0,messages:[],reportRunnerResults:function(){var a;if(0<g.failed){var b=g.messages;a=function(){return console.log(b)}}else{var f={};a=function(){return f}}a();return console.log(""+(g.total-g.failed)+("/"+g.total+" tests passed"))},reportSpecResults:function(b){var f=b.results().passed();g.total++;if(f)var c={},f=function(){return c};else f=function(){g.failed++;a(g.messages)(b.description)();return{}};return f()},total:0};this.console_reporter=g;this.table_of_contents=
+function(){$("code").addClass("prettyprint");$("code").addClass("lang-hs");n(".test")("position")("relative")();n(".test")("left")("50px")();prettyPrint();var a=new jasmine.TrivialReporter,b=new jasmine.FormlReporter,d=jasmine.getEnv();d.addReporter(a);d.addReporter(b);d.addReporter(g);d.execute();a=f(".jasmine_reporter")();b=f("#test_suite")();return c(a)(b)()}};this.array=new function(){function a(a){return function(b){return function(){for(var c in b)a(c)}}}function b(a){return function(b){return b[a]}}
+function d(a){return c(function(b){return b.push(a)})}function c(a){return function(b){a(b);return b}}this.box=this.unbox=e;this.chain=c;this.length=function(a){return a.length};this.map=function(a){return function(b){return b.map(a)}};this.push_excl=d;this.unshift_excl=function(a){return c(function(b){return b.unshift(a)})};this.get=b;this.set=function(a){return function(b){return function(c){return function(){c[a]=b;return c}}}};this.sequence=function(a){return function(){return a.map(u)}};this._comp_comp=
+function(a){return function(b){for(var c=[],d=a;d<=b;)c.push(d),d++;return c}};this.put=function(a){return function(b){return function(){var c=jQuery.extend(j,[],b);return d(a)(c)}}};this.for_each=a;this.zip_with=function(c){return function(n){return function(e){var g=[],h=q(d)(g);a(function(a){var a=b(a),d=a(e),a=c(a(n))(d);return h(a)})(n)();return g}}}};var h=new function(){function a(a){return function(b){function p(c){if(c.hasOwnProperty("nil"))return b;var d=c.head,f=c.tail;if(c.hasOwnProperty("head")&&
+c.hasOwnProperty("tail"))return a(d)(p(f));z()}return p}}function b(a){return function(b){return b.hasOwnProperty("nil")?w("Foldl1 called on empty list"):d(a)(s(b))(r(b))}}function d(a){return function(b){return function(p){for(var c=i,d=b;"undefined"==typeof c;){var f=d;if(p.hasOwnProperty("nil"))c=f;else{var f=d,r=p.head,s=p.tail;p.hasOwnProperty("head")&&p.hasOwnProperty("tail")?(d=a(f)(r),p=s,c=i):z()}}return c}}}function c(a){for(var b=i,p={nil:j};"undefined"==typeof b;){var c=p;if(a.hasOwnProperty("nil"))b=
+c;else{var c=p,d=a.head,f=a.tail;a.hasOwnProperty("head")&&a.hasOwnProperty("tail")?(p={head:d,tail:c},a=f,b=i):z()}}return b}function f(a){return function(b){var p=a;if(b.hasOwnProperty("nil"))return{nil:j};var p=a,c=p(s(b)),b=f(p)(r(b));return{head:c,tail:b}}}function n(a){return function(b){var p=a;if(b.hasOwnProperty("nil"))return{nil:j};var p=a,c=b;if(p(s(c)))return b=s(c),p=n(p)(r(c)),{head:b,tail:p};p=a;p=n(p);b=r(b);return p(b)}}function e(a){return function(b){var c=b;if(a.hasOwnProperty("nil"))return c;
+var c=a.head,d=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b=e(d)(b),{head:c,tail:b};z()}}function g(a){return function(b){if(0===a)b={nil:j};else var c=g(a-1)(b),b={head:b,tail:c};return b}}function h(a){if(a.hasOwnProperty("nil"))return 0;var b=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return 1+h(b);z()}function v(a){return function(b){var c=b;if(0===a)return{nil:j};c=b;b=s(c);c=v(a-1)(r(c));return{head:b,tail:c}}}function r(a){var b=a.tail;if(a.hasOwnProperty("head")&&
+a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))return w("Tail called on empty list");z()}function s(a){var b=a.head;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))return w("Head called on empty list");z()}this._col_col=function(a){return function(b){return{head:a,tail:b}}};this.empty_=function(a){return a.hasOwnProperty("nil")?j:k};this.head=s;this.tail=r;this.last=function(a){for(var b=i;"undefined"==typeof b;){var c=a.head;a.hasOwnProperty("head")&&
+a.hasOwnProperty("tail")&&a.tail.hasOwnProperty("nil")?b=c:(c=a.tail,a.hasOwnProperty("head")&&a.hasOwnProperty("tail")?(a=c,b=i):a.hasOwnProperty("nil")?b=w("Last called on empty list"):z())}return b};this.take=v;this.drop=function(a){return function(b){for(var c=i,d=a;"undefined"==typeof c;)c=b,0!==d&&(c=b,d-=1,b=r(c),c=i);return c}};this._comp_comp=function(a){return function(b){for(var c=i,d={nil:j};"undefined"==typeof c;){var c=b,f=d;c>=a?(b=c-1,d={head:c,tail:f},c=i):c=f=d}return c}};this.take_while=
+function(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:j};var c=a,d;c(s(b))?(d=s(b),b=n(c)(r(b)),d={head:d,tail:b}):d={nil:j};return d}};this.drop_while=function(a){return function(b){for(var c=i,d=a;"undefined"==typeof c;)if(c=d,b.hasOwnProperty("nil"))c={nil:j};else{var c=d,f=b;c(s(f))?(d=c,b=r(f),c=i):c=f=b}return c}};this.length=h;this.init=g;this._plus_plus=e;this.filter=n;this.map=f;this.reverse=c;this.take_apos=function(a){return function(b){for(var d=i,f=a,n={nil:j};"undefined"==
+typeof d;)if(d=n,0!==f)var e=b,d=n,f=f-1,b=r(e),n={head:s(e),tail:d},d=i;return c(d)}};this.foldl=d;this.foldl1=b;this.foldr=a;this.foldr1=function(b){return function(c){return c.hasOwnProperty("nil")?w("Foldr1 called on empty list"):a(b)(s(c))(r(c))}};this.all_=function(a){var c=b(function(a){return function(b){return a&&b}}),d=f(a);return function(a){return c(d(a))}};this.any_=function(a){var c=b(function(a){return function(b){return a||b}}),d=f(a);return function(a){return c(d(a))}};this.sum=b(function(a){return function(b){return a+
+b}});this.product=b(function(a){return function(b){return a*b}});var B=b(function(a){return function(b){return e(a)(b)}});this.concat=B;this.concat_map=function(a){return function(b){return B(f(a)(b))}};this.maximum=b(function(a){return function(b){return a>b?a:b}});this.minimum=b(function(a){return function(b){return a>b?b:a}})};this.list=h;this.seq=new function(){function a(b){if(b.hasOwnProperty("end"))return{end:j};var c=b.seq;if(b.hasOwnProperty("seq")){var d=i;return{seq:function(){if(!d){var b;
+b=c();var f=b.elem,p=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var r={elem:f,next:a(p)};b=function(){return r}}else z(),b=i;d=b()}return d}}}z()}function b(a){return function(c){return function(d){if(c.hasOwnProperty("end")||d.hasOwnProperty("end"))return{end:j};var f=c.seq,x=d.seq;if(c.hasOwnProperty("seq")&&d.hasOwnProperty("seq"))return{seq:function(){var c;var d=f();c=d.elem;var n=d.next;if(d.hasOwnProperty("elem")&&d.hasOwnProperty("next")){var d=x(),s=d.elem,e=d.next;if(d.hasOwnProperty("elem")&&
+d.hasOwnProperty("next")){var g={elem:a(c)(s),next:b(a)(n)(e)};c=function(){return g}}else z(),c=i}else z(),c=i;return c()}};z()}}}function d(a){if(a.hasOwnProperty("end"))return{nil:j};var b=a.seq;if(a.hasOwnProperty("seq")){var b=b(),a=b.elem,c=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var f,b=d(c);f={head:a,tail:b};a=function(){return f}}else z(),a=i;return a()}z()}function c(a){if(a.hasOwnProperty("nil"))return{end:j};var b=a.head,d=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return{seq:function(){return{elem:b,
+next:c(d)}}};z()}function f(a){return function(b){return{seq:function(){return{elem:b,next:f(a)(a(b))}}}}}var n=h.tail||window.tail,e=h.take||window.take;this.seq=function(a){return{seq:a}};this.iterate=f;this.from_list=c;this.to_list=d;this.take=e=function(a){return function(b){if(b.hasOwnProperty("end")||0===a)return{end:j};var c=b.seq;if(b.hasOwnProperty("seq"))return{seq:function(){var b;b=c();var d=b.elem,f=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var n={elem:d,next:e(a-
+1)(f)};b=function(){return n}}else z(),b=i;return b()}};z()}};this.zip_with=b;this._col_col_col=function(a){return function(b){return{seq:function(){return{elem:a,next:b()}}}}};this.tail=n=function(a){if(a.hasOwnProperty("end"))return w("tail called on empty seq");var b=a.seq;if(a.hasOwnProperty("seq"))return b().next;z()};var l=this.to_lazy=a,m=g({seq:function(){var a=b(function(a){return function(b){return a+b}})(v),c=n(v);return{elem:1,next:a(c)}}}),v;this.fibs=v=l({seq:function(){return{elem:1,
+next:m()}}})};this.Forml_Z=new function(){var a=h.map||window.map,b=h.concat_map||window.concat_map;this.map=a=function(a){return function(b){return function(d){return a.map(d)(b)}}};this.bind=function(a){return function(b){var d=a.ret;if(a.hasOwnProperty("ret"))return d(b);z()}};var d={map:function(a){return function(b){if(b.hasOwnProperty("nil"))return{nil:j};var n=b.head,e=b.tail;if(b.hasOwnProperty("head")&&b.hasOwnProperty("tail"))return{head:a(n),tail:d.map(a)(e)};z()}}};this.list_functor=d;
+this.list_monad={_grea_grea_eq:function(a){return function(d){return b(d)(a)}},_return_:function(a){return{head:a,tail:{nil:j}}}};this.js_monad={_grea_grea_eq:function(a){return function(b){return b(a())}},_return_:function(a){return function(){return a}}}}};("undefined"==typeof global?window:global).prelude=A;
+A=new function(){function q(a){return function(b){return function(d){return a(d)(b)}}}function l(a){var b;0===a?b=0:1===a?b=1:(b=l(a-1),a=l(a-2),b+=a);return b}function m(a){return function(b){var d=a,c;if(d===b)return j;d=a;c=b;if("object"===typeof d){var f=j,e;for(e in d)f=f&&c.hasOwnProperty(e)&&m(d[e])(c[e]);d=Object.keys(d).length===Object.keys(c).length;return f&&d}d=a;c=b;if(t(d)){e=j;for(f in d)e=e&&m(d[f])(c[f]);return e&&d.length==c.length}return k}}function g(a){return function(){return a}}
+function e(a){return a}this.object_=function(a){return"object"===typeof a};this.array_=t;this.string_=function(a){return"string"===typeof a};this.cast=e;this.num_=function(a){return"number"==typeof a};this.type_=function(a){return typeof a};this.not=function(a){return!a};this._grea_grea_eq=function(a){return function(b){return b(a())}};this._grea_grea=function(a){return function(b){return function(){a();return b()}}};this._return_=g;this.log=function(a){return function(){return console.log(a)}};this._and_and=
+function(a){return function(b){return a&&b}};this._or_or=function(a){return function(b){return a||b}};this._star=function(a){return function(b){return a*b}};this._forw=function(a){return function(b){return a/b}};this._perc=function(a){return function(b){return a%b}};this._plus=function(a){return function(b){return a+b}};this._minu=function(a){return function(b){return a-b}};this._less_eq=function(a){return function(b){return a<=b}};this._grea_eq=function(a){return function(b){return a>=b}};this._less=
+function(a){return function(b){return a<b}};this._grea=function(a){return function(b){return a>b}};this._bang_eq=function(a){return function(b){return!m(a)(b)}};this._forw_eq=function(a){return function(b){return!m(a)(b)}};this._eq_eq=m;this.fib=l;this.speedtest=new function(){function a(b){return 0===b?0:1===b?1:a(b-1)+a(b-2)}function b(){return(new Date).getTime()}this.get_time=b;this.time=function(a){return function(){var c=b();a();return b()-c}};this.fast_fib=a;this.floor=Math.floor};this._less_or=
+function(a){return function(b){return a(b)}};this._or_grea=function(a){return function(b){return b(a)}};this._less_col=function(a){return function(b){return a(b)}};this._comp_col=function(a){return function(b){return function(d){return a(b(d))}}};this.id=function(a){return a};this.flip=q;this._apos=function(a){return function(b){return b(a)}};this.string=new function(){function a(a){return a.replace(/\s+$/,"")}function b(a){return a.replace(/^\s+/,"")}this.lstrip=b;this.rstrip=a;this.strip=function(d){return b(a(d))};
+this.length=function(a){return a.length};this.concat=function(a){return a.join("")};this._plus_plus_plus=function(a){return function(b){return""+a+b}}};this.err=function(a){var b;try{a(),b=k}catch(d){b=d}return b};this.option=new function(){this.option=function(a){return function(b){if(b.hasOwnProperty("none"))return a;var d=b.some;if(b.hasOwnProperty("some"))return d;z()}}};this.html=new function(){function a(a){return function(b){return function(){return a.push(b)}}}function b(a){return function(b){return b.split(a)}}
+function d(a){return JSON.stringify(a)}function c(a){return function(b){return function(){return $(b.element).append($(a.element).detach())}}}function f(a){return function(){var b=$(a).get(0);return{add_class:function(a){return function(){return b.setAttribute("class",b.getAttribute("class")+" "+a)}},add_style:function(a){return function(c){return function(){b.style[a]=c}}},element:b,inner:function(){return b.innerHTML},on_click:function(a){return function(){b.onclick=a}},set:function(a){return function(){b.innerHTML=
+a}}}}}this.get=f;this.$_eq=function(a){return function(b){return function(){if("undefined"!=typeof $){var c=$(a).get(0);"undefined"!=typeof c&&(c.innerHTML=b)}}}};var e;this.$_or=e=function(a){return function(b){return function(c){return function(){return $(a).css(b,c)}}}};this.$_comp=function(a){return function(b){return function(){return $(a).addClass(b)}}};this.$_plus=function(a){return function(b){return function(){return $(a).append(b)}}};this.div=function(a){return function(){return"<div id='"+
+a+"'/>"}};this.move=c;this.on_load=function(a){return function(){return window.addEventListener("load",a,k)}};this.stringify=d;this._bang_bang=function(a){return function(b){return a[b]}};this.with_page=function(a){return function(){var b=$("body").clone(),c=a();$("body").replaceWith(b);return c}};this.split=b;var g=0,h={reportRunnerResults:function(){return phantom.exit(g)},reportSpecResults:function(a){if(a.results().passed())var c={},a=function(){return c};else{var f=a.results_.items_,e;e=a.description.split("__::__")[1];
+var y;y=JSON.stringify(f[0].expected);var x;x=JSON.stringify(f[0].actual);var p,a=b("__::__")(a.description),a=b("_")(a[0])[0];p=d(parseInt(a)+1);a=function(){var a;if(m(g)(0))a=function(){return console.log("\r                        ")};else{var b={};a=function(){return b}}a();g=1;console.log("Test failed at line "+p+("\n\n"+e+("\n\n    Expected "+y+("\n    Actual   "+x+""))));return console.log("")}}return a()}};this.console_runner=function(){var a=jasmine.getEnv();a.addReporter(h);return a.execute()};
+this.push=a;var l={failed:0,messages:[],reportRunnerResults:function(){var a;if(0<l.failed){var b=l.messages;a=function(){return console.log(b)}}else{var c={};a=function(){return c}}a();return console.log(""+(l.total-l.failed)+("/"+l.total+" tests passed"))},reportSpecResults:function(b){var c=b.results().passed();l.total++;if(c)var d={},c=function(){return d};else c=function(){l.failed++;a(l.messages)(b.description)();return{}};return c()},total:0};this.console_reporter=l;this.table_of_contents=
+function(){$("code").addClass("prettyprint");$("code").addClass("lang-hs");e(".test")("position")("relative")();e(".test")("left")("50px")();prettyPrint();var a=new jasmine.TrivialReporter,b=new jasmine.FormlReporter,d=jasmine.getEnv();d.addReporter(a);d.addReporter(b);d.addReporter(l);d.execute();a=f(".jasmine_reporter")();b=f("#test_suite")();return c(a)(b)()}};this.array=new function(){function a(a){return function(b){return function(){for(var c in b)a(c)}}}function b(a){return function(b){return b[a]}}
+function d(a){return c(function(b){return b.push(a)})}function c(a){return function(b){a(b);return b}}this.box=this.unbox=e;this.chain=c;this.length=function(a){return a.length};this.map=function(a){return function(b){return b.map(a)}};this.push_excl=d;this.unshift_excl=function(a){return c(function(b){return b.unshift(a)})};this.get=b;this.set=function(a){return function(b){return function(c){return function(){c[a]=b;return c}}}};this.sequence=function(a){return function(){return a.map(u)}};this._comp_comp=
+function(a){return function(b){for(var c=[],d=a;d<=b;)c.push(d),d++;return c}};this.put=function(a){return function(b){return function(){var c=jQuery.extend(j,[],b);return d(a)(c)}}};this.for_each=a;this.zip_with=function(c){return function(e){return function(g){var h=[],l=q(d)(h);a(function(a){var a=b(a),d=a(g),a=c(a(e))(d);return l(a)})(e)();return h}}}};var h=new function(){function a(a){return function(b){function c(d){if(d.hasOwnProperty("nil"))return b;var f=d.head,e=d.tail;if(d.hasOwnProperty("head")&&
+d.hasOwnProperty("tail"))return a(f)(c(e));z()}return c}}function b(a){return function(b){return b.hasOwnProperty("nil")?w("Foldl1 called on empty list"):d(a)(s(b))(r(b))}}function d(a){return function(b){return function(c){for(var d=i,f=b;"undefined"==typeof d;){var e=f;if(c.hasOwnProperty("nil"))d=e;else{var e=f,g=c.head,h=c.tail;c.hasOwnProperty("head")&&c.hasOwnProperty("tail")?(f=a(e)(g),c=h,d=i):z()}}return d}}}function c(a){for(var b=i,c={nil:j};"undefined"==typeof b;){var d=c;if(a.hasOwnProperty("nil"))b=
+d;else{var d=c,f=a.head,e=a.tail;a.hasOwnProperty("head")&&a.hasOwnProperty("tail")?(c={head:f,tail:d},a=e,b=i):z()}}return b}function f(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:j};var c=a,d=c(s(b)),b=f(c)(r(b));return{head:d,tail:b}}}function e(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:j};var c=a,d=b;if(c(s(d)))return b=s(d),c=e(c)(r(d)),{head:b,tail:c};c=a;c=e(c);b=r(b);return c(b)}}function g(a){return function(b){var c=b;if(a.hasOwnProperty("nil"))return c;
+var c=a.head,d=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b=g(d)(b),{head:c,tail:b};z()}}function h(a){return function(b){if(0===a)b={nil:j};else var c=h(a-1)(b),b={head:b,tail:c};return b}}function l(a){if(a.hasOwnProperty("nil"))return 0;var b=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return 1+l(b);z()}function m(a){return function(b){var c=b;if(0===a)return{nil:j};c=b;b=s(c);c=m(a-1)(r(c));return{head:b,tail:c}}}function r(a){var b=a.tail;if(a.hasOwnProperty("head")&&
+a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))return w("Tail called on empty list");z()}function s(a){var b=a.head;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return b;if(a.hasOwnProperty("nil"))return w("Head called on empty list");z()}this._col_col=function(a){return function(b){return{head:a,tail:b}}};this.empty_=function(a){return a.hasOwnProperty("nil")?j:k};this.head=s;this.tail=r;this.last=function(a){for(var b=i;"undefined"==typeof b;){var c=a.head;a.hasOwnProperty("head")&&
+a.hasOwnProperty("tail")&&a.tail.hasOwnProperty("nil")?b=c:(c=a.tail,a.hasOwnProperty("head")&&a.hasOwnProperty("tail")?(a=c,b=i):a.hasOwnProperty("nil")?b=w("Last called on empty list"):z())}return b};this.take=m;this.drop=function(a){return function(b){for(var c=i,d=a;"undefined"==typeof c;)c=b,0!==d&&(c=b,d-=1,b=r(c),c=i);return c}};this._comp_comp=function(a){return function(b){for(var c=i,d={nil:j};"undefined"==typeof c;){var c=b,f=d;c>=a?(b=c-1,d={head:c,tail:f},c=i):c=f=d}return c}};this.take_while=
+function(a){return function(b){var c=a;if(b.hasOwnProperty("nil"))return{nil:j};var c=a,d;c(s(b))?(d=s(b),b=e(c)(r(b)),d={head:d,tail:b}):d={nil:j};return d}};this.drop_while=function(a){return function(b){for(var c=i,d=a;"undefined"==typeof c;)if(c=d,b.hasOwnProperty("nil"))c={nil:j};else{var c=d,f=b;c(s(f))?(d=c,b=r(f),c=i):c=f=b}return c}};this.length=l;this.init=h;this._plus_plus=g;this.filter=e;this.map=f;this.reverse=c;this.take_apos=function(a){return function(b){for(var d=i,f=a,e={nil:j};"undefined"==
+typeof d;)if(d=e,0!==f)var g=b,d=e,f=f-1,b=r(g),e={head:s(g),tail:d},d=i;return c(d)}};this.foldl=d;this.foldl1=b;this.foldr=a;this.foldr1=function(b){return function(c){return c.hasOwnProperty("nil")?w("Foldr1 called on empty list"):a(b)(s(c))(r(c))}};this.all_=function(a){var c=b(function(a){return function(b){return a&&b}}),d=f(a);return function(a){return c(d(a))}};this.any_=function(a){var c=b(function(a){return function(b){return a||b}}),d=f(a);return function(a){return c(d(a))}};this.sum=b(function(a){return function(b){return a+
+b}});this.product=b(function(a){return function(b){return a*b}});var q=b(function(a){return function(b){return g(a)(b)}});this.concat=q;this.concat_map=function(a){return function(b){return q(f(a)(b))}};this.maximum=b(function(a){return function(b){return a>b?a:b}});this.minimum=b(function(a){return function(b){return a>b?b:a}})};this.list=h;this.seq=new function(){function a(b){if(b.hasOwnProperty("end"))return{end:j};var c=b.seq;if(b.hasOwnProperty("seq")){var d=i;return{seq:function(){if(!d){var b;
+b=c();var f=b.elem,e=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var g={elem:f,next:a(e)};b=function(){return g}}else z(),b=i;d=b()}return d}}}z()}function b(a){return function(c){return function(d){if(c.hasOwnProperty("end")||d.hasOwnProperty("end"))return{end:j};var f=c.seq,e=d.seq;if(c.hasOwnProperty("seq")&&d.hasOwnProperty("seq"))return{seq:function(){var c;var d=f();c=d.elem;var g=d.next;if(d.hasOwnProperty("elem")&&d.hasOwnProperty("next")){var d=e(),h=d.elem,n=d.next;if(d.hasOwnProperty("elem")&&
+d.hasOwnProperty("next")){var l={elem:a(c)(h),next:b(a)(g)(n)};c=function(){return l}}else z(),c=i}else z(),c=i;return c()}};z()}}}function d(a){if(a.hasOwnProperty("end"))return{nil:j};var b=a.seq;if(a.hasOwnProperty("seq")){var b=b(),a=b.elem,c=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var f,b=d(c);f={head:a,tail:b};a=function(){return f}}else z(),a=i;return a()}z()}function c(a){if(a.hasOwnProperty("nil"))return{end:j};var b=a.head,d=a.tail;if(a.hasOwnProperty("head")&&a.hasOwnProperty("tail"))return{seq:function(){return{elem:b,
+next:c(d)}}};z()}function f(a){return function(b){return{seq:function(){return{elem:b,next:f(a)(a(b))}}}}}var e=h.tail||window.tail,l=h.take||window.take;this.seq=function(a){return{seq:a}};this.iterate=f;this.from_list=c;this.to_list=d;this.take=l=function(a){return function(b){if(b.hasOwnProperty("end")||0===a)return{end:j};var c=b.seq;if(b.hasOwnProperty("seq"))return{seq:function(){var b;b=c();var d=b.elem,f=b.next;if(b.hasOwnProperty("elem")&&b.hasOwnProperty("next")){var e={elem:d,next:l(a-
+1)(f)};b=function(){return e}}else z(),b=i;return b()}};z()}};this.zip_with=b;this._col_col_col=function(a){return function(b){return{seq:function(){return{elem:a,next:b()}}}}};this.tail=e=function(a){if(a.hasOwnProperty("end"))return w("tail called on empty seq");var b=a.seq;if(a.hasOwnProperty("seq"))return b().next;z()};var m=this.to_lazy=a,q=g({seq:function(){var a=b(function(a){return function(b){return a+b}})(v),c=e(v);return{elem:1,next:a(c)}}}),v;this.fibs=v=m({seq:function(){return{elem:1,
+next:q()}}})};this.Forml_Z=new function(){var a=h.map||window.map,b=h.concat_map||window.concat_map;this.map=a=function(a){return function(b){return function(d){return a.map(d)(b)}}};this.bind=function(a){return function(b){var d=a.ret;if(a.hasOwnProperty("ret"))return d(b);z()}};var d={map:function(a){return function(b){if(b.hasOwnProperty("nil"))return{nil:j};var e=b.head,g=b.tail;if(b.hasOwnProperty("head")&&b.hasOwnProperty("tail"))return{head:a(e),tail:d.map(a)(g)};z()}}};this.list_functor=d;
+this.list_monad={_grea_grea_eq:function(a){return function(d){return b(d)(a)}},_return_:function(a){return{head:a,tail:{nil:j}}}};this.js_monad={_grea_grea_eq:function(a){return function(b){return b(a())}},_return_:function(a){return function(){return a}}}}};("undefined"==typeof global?window:global).prelude=A;
+("undefined"==typeof global?window:global).Benchmarks_for_the_prelude=new function(){function q(a){for(var b=i;"undefined"==typeof b;)if(b=a,3>b)b=0;else{var b=a,f=e(b%3)(0),g=i,g=e(b%5)(0);f||g?g=1+q(b-1):(a=b-1,g=i);b=g}return b}this.title=function(a){return function(){return l(g("\r                                  "))(function(){return l(g(a))(function(){return m(j)})})()}};var l=A._grea_grea_eq||window._grea_grea_eq,m=A._return_||window._return_,g=A.log||window.log,e=A._eq_eq||window._eq_eq,
+h=A.list._comp_comp||window._comp_comp,a=A.list.filter||window.filter,b=A.list.sum||window.sum;this.euler_1=function(a){return function(){for(var b=0,f=1;f<a;){if(0==f%3||0==f%5)b+=f;f++}return b}};this.euler_2=function(a){return function(b){for(var f=i,g=a;"undefined"==typeof f;){var f=g,h=b;if(3>f)f=h;else{var f=g,h=b,l=e(f%3)(0),m=e(f%5)(0);l||m?(g=f-1,b=h+1):(f=g,h=b,g=f-1,b=h);f=i}}return f}};this.euler_3=q;this.euler_4=function(d){return function(){var c=h(1)(d),c=a(function(a){var b=e(a%3)(0),
+a=e(a%5)(0);return b||a})(c);return b(c)}};this.euler_5=function(a){return function(b){for(var f=i,e=a;"undefined"==typeof f;){var f=e,g=b;3>f?f=g:(f=e,g=b,0==f%3||0==f%5?(e=f-1,b=g+1):(f=e,g=b,e=f-1,b=g),f=i)}return f}}};("undefined"==typeof global?window:global).Tests_for_partial_records=new function(){};
+var C=new function(){this.rev_1=function(l){for(var m=i,g={nil:j};"undefined"==typeof m;){var e=g;if(l.hasOwnProperty("nil"))m=e;else{var e=g,h=l.head,a=l.tail;l.hasOwnProperty("head")&&l.hasOwnProperty("tail")?(g={head:h,tail:e},l=a,m=i):z()}}return m};var q={nil:j};this.rev_2=function(l){for(var m=i,g=q;"undefined"==typeof m;){var e=g;if(l.hasOwnProperty("nil"))m=e;else{var e=g,h=l.head,a=l.tail;l.hasOwnProperty("head")&&l.hasOwnProperty("tail")?(g={head:h,tail:e},l=a,m=i):z()}}return m};this.test_x=
+{head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{head:6,tail:{head:7,tail:{nil:j}}}}}}}}};("undefined"==typeof global?window:global).Tests_for_TCO_bugs=C;("undefined"==typeof global?window:global).Tests_for_parser_bugs=new function(){};
+("undefined"==typeof global?window:global).parsec=new function(){function q(e){return function(g){var a=g.parser;if(g.hasOwnProperty("parser"))return{parser:function(b){var d=a(b);return e({f:a,f_apos:d,parsed:d.parsed,rest:d.rest,text:b})}};z()}}var l=A._eq_eq||window._eq_eq,m=A.array.chain||window.chain;this.run_parser=function(e){return function(g){var a=e.parser;if(e.hasOwnProperty("parser"))return g=a(g),a=g.parsed.some,g.hasOwnProperty("parsed")&&g.parsed.hasOwnProperty("some")?{some:a}:{none:j};
+z()}};this._less$_grea=function(e){return function(g){var a=g.parser;if(g.hasOwnProperty("parser"))return{parser:function(b){var b=a(b),d=b.parsed.some,c=b.rest;b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("some")?b={parsed:{some:e(d)},rest:c}:(d=b.rest,b.hasOwnProperty("parsed")&&b.hasOwnProperty("rest")&&b.parsed.hasOwnProperty("none")?b={parsed:{none:j},rest:d}:(z(),b=i));return b}};z()}};this._less_star_grea=function(e){return function(g){var a=e.parser,b=g.parser;
+if(e.hasOwnProperty("parser")&&g.hasOwnProperty("parser"))return{parser:function(d){var c=a(d),d=c.parsed.some,e=c.rest;if(c.hasOwnProperty("parsed")&&c.hasOwnProperty("rest")&&c.parsed.hasOwnProperty("some")){var c=b(e),e=c.parsed.some,g=c.rest;c.hasOwnProperty("parsed")&&c.hasOwnProperty("rest")&&c.parsed.hasOwnProperty("some")?d={parsed:{some:d(e)},rest:g}:(e=c.rest,c.hasOwnProperty("parsed")&&c.hasOwnProperty("rest")&&c.parsed.hasOwnProperty("none")?d={parsed:{none:j},rest:e}:(z(),d=i))}else d=
+c.rest,c.hasOwnProperty("parsed")&&c.hasOwnProperty("rest")&&c.parsed.hasOwnProperty("none")?d={parsed:{none:j},rest:d}:(z(),d=i);return d}};z()}};this._star_grea=function(e){return function(g){var a=e.parser,b=g.parser;if(e.hasOwnProperty("parser")&&g.hasOwnProperty("parser"))return{parser:function(d){var d=a(d),c=d.parsed.some,c=d.rest;d.hasOwnProperty("parsed")&&d.hasOwnProperty("rest")&&d.parsed.hasOwnProperty("some")?d=b(c):(c=d.rest,d.hasOwnProperty("parsed")&&d.hasOwnProperty("rest")&&d.parsed.hasOwnProperty("none")?
+d={parsed:{none:j},rest:c}:(z(),d=i));return d}};z()}};this.lift=q;this._less_or_grea=function(e){return function(g){var a=e.parser,b=g.parser;if(e.hasOwnProperty("parser")&&g.hasOwnProperty("parser"))return{parser:function(d){var c=a(d),e=c.rest;return c.hasOwnProperty("parsed")&&c.hasOwnProperty("rest")&&c.parsed.hasOwnProperty("none")&&l(d)(e)?b(d):c}};z()}};this.try_apos=q(function(e){return e.hasOwnProperty("parsed")&&e.parsed.hasOwnProperty("none")?{parsed:{none:j},rest:e.text}:e.f_apos});this.string=
+function(e){return{parser:function(g){var a=g.substring(0,e.length);return l(a)(e)?{parsed:{some:e},rest:g.substring(e.length)}:{parsed:{none:j},rest:g}}}};var g=q(function(e){var h=e;if(e.hasOwnProperty("parsed")&&e.parsed.hasOwnProperty("none"))return{parsed:{some:[]},rest:h.rest};h=e.parsed.some;if(e.hasOwnProperty("parsed")&&e.parsed.hasOwnProperty("some")){var a=h,b=m(function(b){return b.push(a)});var h=g({parser:e.f}),d=h.parser;h.hasOwnProperty("parser")?h={parser:function(a){var a=d(a),e=
+a.parsed.some,g=a.rest;a.hasOwnProperty("parsed")&&a.hasOwnProperty("rest")&&a.parsed.hasOwnProperty("some")?a={parsed:{some:b(e)},rest:g}:(e=a.rest,a.hasOwnProperty("parsed")&&a.hasOwnProperty("rest")&&a.parsed.hasOwnProperty("none")?a={parsed:{none:j},rest:e}:(z(),a=i));return a}}:(z(),h=i);return h.parser(e.rest)}z()});this.many=g;this.Testing=new function(){}};
+("undefined"==typeof global?window:global).readme=new function(){function q(g){return Math.sqrt(g)}function l(g){var e;0===g?e=0:1===g?e=1:(e=l(g-1),g=l(g-2),e+=g);return e}var m=A.fib||window.fib;this.square=function(g){return g*g};this.add=function(g){return function(e){return g+e}};this.fib=m=function(g){var e;0===g?e=0:1===g?e=1:(e=m(g-1),g=m(g-2),e+=g);return e};this.fib_apos=l;this._star_star=function(g){return function(e){for(var h=i,a=g,b=e,e="";"undefined"==typeof h;)if(h=e,0!==b)var d=a,
+h=e,a=d,b=b-1,e=""+h+d,h=i;return h}};this.person=function(g){return function(e){return{address:e,message:""+g+(" lives at "+e+""),name:g}}};this.point={x:10,y:10};this.magnitude=function(g){var e=g.x,h=g.y;if(g.hasOwnProperty("x")&&g.hasOwnProperty("y"))return q(e*e+h*h);z()};this.map_excl=function(g){return function(e){return e.map(g)}};this.hello_world=function(){console.log("Hello World");return Math.sqrt(9)+1+1};this.sqrt=q;this.num_or_string=function(g){return"number"==typeof g?"Num":"String"};
+this.maybe=function(g){return function(e){var h=g,h=e.just;if(e.hasOwnProperty("just"))return h;h=g;if(e.hasOwnProperty("nothing"))return h;z()}};this.has_value=function(g){return g.hasOwnProperty("just")?j:k}};
  var is_array=function(g){return g instanceof Array},__undefined__="undefined",run=function(g){return g()},error=function(g){throw g;},exhaust=function(){error("Pattern Match Exhausted")},__check=function(g,f){return g.hasOwnProperty(f)};
-describe("",function(){describe("prelude",function(){var g=prelude.array_,f=prelude._eq_eq,j=prelude.fib,k=prelude.speedtest,q=prelude.id,s=prelude.err,h=prelude.list,g=prelude.array_,f=prelude._eq_eq,j=prelude.fib,k=prelude.speedtest,q=prelude.id,s=prelude.err,h=prelude.list;new function(){it("26_26__::__        not false",function(){expect(function(){try{var a;a=run(function(){return run(function(){return!0})});return a}catch(b){return{error:b}}}()).toEqual(!0)});it("29_29__::__        object? {}",
-function(){expect(function(){try{var a;var b={};a=run(function(){return run(function(){return"object"===typeof b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});it("30_30__::__        array? []",function(){expect(function(){try{return g([])}catch(a){return{error:a}}}()).toEqual(!0)});it("31_31__::__        not (array? {})",function(){expect(function(){try{var a;var b=g({});a=run(function(){return run(function(){return!b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});it("32_32__::__        not (object? 0)",
-function(){expect(function(){try{var a;a=run(function(){return run(function(){return!1})});var b;b=run(function(){return run(function(){return!a})});return b}catch(c){return{error:c}}}()).toEqual(!0)});it("53_56multi__::__        do! x   <- `1 + 4`\n            y   <- `2 + 3`\n            ans <- `x + y`\n            return (10 == ans)",function(){expect(function(){try{return run(function(){var a=run;var c=run(function(){return 5});var d=run(function(){return 5});var e=run(function(){return c+d});
-var p=f(10)(e);return a(function(){return p})})}catch(a){return{error:a}}}()).toEqual(!0)});it("58_58__::__        5  == do! return 5",function(){expect(5).toEqual(run(function(){return run(function(){return 5})}))});it("59_59__::__        10 == do! `5 + 5`",function(){expect(10).toEqual(run(function(){return run(function(){return 10})}))});it("70_73multi__::__        var x = 0\n            y = do z <- `x = 1`\n                   return z\n        x == 0",function(){expect(function(){try{return f(0)(0)}catch(a){return{error:a}}}()).toEqual(!0)});
-it("129_129__::__        (3 * 4) + 5 * 4 == 64 / 2",function(){expect(function(a){return function(b){return run(function(){return run(function(){return a+b})})}}(function(a){return function(b){return run(function(){return run(function(){return a*b})})}}(3)(4))(function(a){return function(b){return run(function(){return run(function(){return a*b})})}}(5)(4))).toEqual(function(a){return function(b){return run(function(){return run(function(){return a/b})})}}(64)(2))});it("130_130__::__        4 - 1 != 5 - 10",
-function(){expect(function(){try{var a;a=run(function(){return run(function(){return 3})});var b;b=run(function(){return run(function(){return-5})});var c;var d=f(a)(b);c=run(function(){return run(function(){return!d})});return c}catch(e){return{error:e}}}()).toEqual(!0)});it("131_131__::__        (10 >= 5 + 5) != (4 + 5 <= 10 - 2)",function(){expect(function(){try{var a;a=run(function(){return run(function(){return 10})});var b;b=run(function(){return run(function(){return 10>=a})});var c;c=run(function(){return run(function(){return 9})});
-var d;d=run(function(){return run(function(){return 8})});var e;e=run(function(){return run(function(){return c<=d})});var p;var m=f(b)(e);p=run(function(){return run(function(){return!m})});return p}catch(l){return{error:l}}}()).toEqual(!0)});it("132_132__::__        ({test: 1} == {test: 1}) == true",function(){expect(f({test:1})({test:1})).toEqual(!0)});it("133_133__::__        ({test: 1} != {test: 1}) == false",function(){expect(function(a){return function(b){var c=f(a)(b),b=run(function(){return run(function(){return!c})});
-return b}}({test:1})({test:1})).toEqual(!1)});describe("speedtest",function(){var a=prelude.speedtest.time,b=prelude.speedtest.fast_fib,c=prelude.speedtest.floor,a=prelude.speedtest.time,b=prelude.speedtest.fast_fib,c=prelude.speedtest.floor;new function(){it("165_165__::__            fast_fib 7 == fib 7",function(){expect(b(7)).toEqual(j(7))});it("174_176multi__::__            do! fast_time <- time yield fast_fib 30\n                slow_time <- time yield fib 30\n                return (floor (fast_time / slow_time * 100) >= 80)",
-function(){expect(function(){try{return run(function(){var e=run;var d=a(function(){return b(30)}),f=run(d);var d=a(function(){return j(30)}),l=run(d),d=c,g;g=run(function(){return run(function(){return f/l})});var n;n=run(function(){return run(function(){return 100*g})});var i;var r=d(n);i=run(function(){return run(function(){return 80<=r})});return e(function(){return i})})}catch(d){return{error:d}}}()).toEqual(!0)})}});it("185_185__::__        3 |> (\u03bby = y + 1) |> \u03bby = y + 1 == 5",function(){expect(function(){try{var a;
-a=run(function(){return run(function(){return 4})});var b;var c=f,d;d=run(function(){return run(function(){return a+1})});b=c(d)(5);return b}catch(e){return{error:e}}}()).toEqual(!0)});it("186_186__::__        (\u03bby x z = x + y + z + 1) 1 <| 3 <| 4 == 9",function(){expect(function(a){return function(b){return a(b)}}(function(a){return function(b){return a(b)}}(function(a){return function(b){return function(c){var d;d=run(function(){return run(function(){return b+a})});var e;e=run(function(){return run(function(){return d+
-c})});var f;f=run(function(){return run(function(){return e+1})});return f}}}(1))(3))(4)).toEqual(9)});it("193_193__::__        (\u03bbx = x - 3) <: (\u03bbx = x - 3) <: 5 + 5 == 4",function(){expect(function(a){return function(b){return a(b)}}(function(a){var b;b=run(function(){return run(function(){return a-3})});return b})(function(a){return function(b){return a(b)}}(function(a){var b;b=run(function(){return run(function(){return a-3})});return b})(function(a){return function(b){return run(function(){return run(function(){return a+
-b})})}}(5)(5)))).toEqual(4)});it("204_204__::__        ((\u03bbx = x + 1) .: (\u03bbx = x * 2) .: \u03bbx = x - 3) 4 == 3",function(){expect(function(a){return function(b){return function(c){return a(b(c))}}}(function(a){var b;b=run(function(){return run(function(){return a+1})});return b})(function(a){return function(b){return function(c){return a(b(c))}}}(function(a){var b;b=run(function(){return run(function(){return 2*a})});return b})(function(a){var b;b=run(function(){return run(function(){return a-
-3})});return b}))(4)).toEqual(3)});it("205_205__::__        id [1, 2, 3] == [1, 2, 3]",function(){expect([1,2,3]).toEqual([1,2,3])});it("206_206__::__        flip (\u03bbx y = x - y) 3 5 == 2",function(){expect(function(a){return function(b){return function(c){return a(c)(b)}}}(function(a){return function(b){var c;c=run(function(){return run(function(){return a-b})});return c}})(3)(5)).toEqual(2)});describe("string",function(){var a=prelude.string.strip,a=prelude.string.strip;new function(){it('228_228__::__            strip "    test    " is "test"',
-function(){expect(a("    test    ")).toEqual("test")});it('232_233multi__::__            let x = "test"\n            in "hello `x`" is "hello test"',function(){expect(function(){try{var a=f,c;c=run(function(){return run(function(){return"hello test"})});var d;d=run(function(){return run(function(){return""+c+""})});return a(d)("hello test")}catch(e){return{error:e}}}()).toEqual(!0)})}});describe("option",function(){var a=prelude.option.option,a=prelude.option.option;new function(){it("258_258__::__            option 3 {some: 2} == 2",
-function(){expect(a(3)({some:2})).toEqual(2)})}});describe("html",function(){var a=prelude.html.get,b=prelude.html.div,a=prelude.html.get,b=prelude.html.div;new function(){it('331_341multi__::__            do! d <- div "test1"\n    \n                "body"   $+ d\n                "#test1" $= "I am a test!"\n    \n                text <- get "#test1"\n                text <- text.inner\n    \n                "#test1" $= ""\n    \n                return (text == "I am a test!")',function(){expect(function(){try{return run(function(){var c=
-run;var e=b("test1"),p=run(e);run(function(){return $("body").append(p)});run(function(){if("undefined"!=typeof $){var a=$("#test1").get(0);"undefined"!=typeof a&&(a.innerHTML="I am a test!")}});e=a("#test1");e=run(e);e=run(e.inner);run(function(){if("undefined"!=typeof $){var a=$("#test1").get(0);"undefined"!=typeof a&&(a.innerHTML="")}});var g=f(e)("I am a test!");return c(function(){return g})})}catch(c){return{error:c}}}()).toEqual(!0)})}});describe("array",function(){new function(){}});describe("list",
-function(){var a=prelude.list.empty_,b=prelude.list.head,c=prelude.list.tail,d=prelude.list.last,e=prelude.list.take,g=prelude.list.drop,m=prelude.list._comp_comp,l=prelude.list.take_while,h=prelude.list.drop_while,n=prelude.list.length,i=prelude.list.init,r=prelude.list._plus_plus,v=prelude.list.filter,k=prelude.list.map,t=prelude.list.reverse,x=prelude.list.take_apos,y=prelude.list.foldl,z=prelude.list.foldr,u=prelude.list.all_,j=prelude.list.any_,w=prelude.list.sum,A=prelude.list.product,B=prelude.list.concat,
-C=prelude.list.concat_map,D=prelude.list.maximum,E=prelude.list.minimum,a=prelude.list.empty_,b=prelude.list.head,c=prelude.list.tail,d=prelude.list.last,e=prelude.list.take,g=prelude.list.drop,m=prelude.list._comp_comp,l=prelude.list.take_while,h=prelude.list.drop_while,n=prelude.list.length,i=prelude.list.init,r=prelude.list._plus_plus,v=prelude.list.filter,k=prelude.list.map,t=prelude.list.reverse,x=prelude.list.take_apos,y=prelude.list.foldl,z=prelude.list.foldr,u=prelude.list.all_,j=prelude.list.any_,
-w=prelude.list.sum,A=prelude.list.product,B=prelude.list.concat,C=prelude.list.concat_map,D=prelude.list.maximum,E=prelude.list.minimum;new function(){it("488_502multi__::__            var xs = [:\n    \n                [:1,2,3]\n    \n                [:1,2,3:]\n    \n                (1::2::3::{nil})\n    \n                { head = 1\n                  tail = { head = 2\n                           tail = { head = 3\n                                    tail = {nil} }}}\n            ]\n    \n            all? (\u03bby = [:1,2,3] == y) xs",
-function(){expect(function(){try{return u(function(a){return f({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})(a)})({head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{nil:!0}}}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("529_529__::__            1 .. 5 == [:1,2,3,4,5]",function(){expect(m(1)(5)).toEqual({head:1,
-tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{nil:!0}}}}}})});it("533_533__::__            288045 == 1 .. 1111 |> filter (\u03bbx = x % 3 == 0 || x % 5 == 0) |> sum",function(){expect(288045).toEqual(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(m(1)(1111))(v(function(a){var b=f,c;c=run(function(){return run(function(){return a%3})});var d=b(c)(0),b=f;c=run(function(){return run(function(){return a%5})});var e=b(c)(0),b=run(function(){return run(function(){return d||
-e})});return b})))(w))});it("544_544__::__            not (empty? (1 :: {nil}))",function(){expect(function(){try{var b;var c=a({head:1,tail:{nil:!0}});b=run(function(){return run(function(){return!c})});return b}catch(d){return{error:d}}}()).toEqual(!0)});it("545_545__::__            empty? [:]",function(){expect(function(){try{return a({nil:!0})}catch(b){return{error:b}}}()).toEqual(!0)});it("547_547__::__            head [: 1, 2 ] is 1",function(){expect(b({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual(1)});
-it("548_548__::__            tail [: 1, 2 ] is [:2]",function(){expect(c({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual({head:2,tail:{nil:!0}})});it("549_549__::__            last [: 1, 2 ] is 2",function(){expect(d({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual(2)});it('551_551__::__            err (lazy head {nil}) is "Head called on empty list"',function(){expect(s(function(){var a=void 0;return function(){a||(a=b({nil:!0}));return a}}())).toEqual("Head called on empty list")});it('552_552__::__            err (lazy tail {nil}) is "Tail called on empty list"',
-function(){expect(s(function(){var a=void 0;return function(){a||(a=c({nil:!0}));return a}}())).toEqual("Tail called on empty list")});it('553_553__::__            err (lazy last {nil}) is "Last called on empty list"',function(){expect(s(function(){var a=void 0;return function(){a||(a=d({nil:!0}));return a}}())).toEqual("Last called on empty list")});it("555_555__::__            take(2, [: 1, 2, 3 ]) == [: 1, 2 ]",function(){expect(e(2)({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual({head:1,
-tail:{head:2,tail:{nil:!0}}})});it("556_556__::__            drop(2, [: 1, 2, 3 ]) == [: 3 ]",function(){expect(g(2)({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual({head:3,tail:{nil:!0}})});it("558_558__::__            take_while (\u03bbx = x < 0) [:] == [:]",function(){expect(l(function(a){var b;b=run(function(){return run(function(){return 0>a})});return b})({nil:!0})).toEqual({nil:!0})});it("559_559__::__            take_while (\u03bbx = x > 0) [: 2, 1, 0 ] == [: 2, 1 ]",function(){expect(l(function(a){var b;
-b=run(function(){return run(function(){return 0<a})});return b})({head:2,tail:{head:1,tail:{head:0,tail:{nil:!0}}}})).toEqual({head:2,tail:{head:1,tail:{nil:!0}}})});it("561_561__::__            drop_while (\u03bbx = x < 0) {nil} == {nil}",function(){expect(h(function(a){var b;b=run(function(){return run(function(){return 0>a})});return b})({nil:!0})).toEqual({nil:!0})});it("562_562__::__            drop_while (\u03bbx = x > 0) [: 2, 1, 0 ] == [: 0 ]",function(){expect(h(function(a){var b;b=run(function(){return run(function(){return 0<
-a})});return b})({head:2,tail:{head:1,tail:{head:0,tail:{nil:!0}}}})).toEqual({head:0,tail:{nil:!0}})});it("571_571__::__            length [: 1, 2, 3, 4 ] == 4",function(){expect(n({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(4)});it("578_578__::__            length (init 30 0) == 30",function(){expect(n(i(30)(0))).toEqual(30)});it("579_579__::__            tail (init 3 0)    == init 2 0",function(){expect(c(i(3)(0))).toEqual(i(2)(0))});it("588_588__::__            {nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}",
-function(){expect(r({nil:!0})(function(a){return function(b){return{head:a,tail:b}}}(1)(function(a){return function(b){return{head:a,tail:b}}}(2)({nil:!0})))).toEqual(function(a){return function(b){return{head:a,tail:b}}}(1)(function(a){return function(b){return{head:a,tail:b}}}(2)({nil:!0})))});it("589_589__::__            [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]",function(){expect(r({head:1,tail:{head:2,tail:{nil:!0}}})({head:3,tail:{head:4,tail:{nil:!0}}})).toEqual({head:1,tail:{head:2,tail:{head:3,
-tail:{head:4,tail:{nil:!0}}}}})});it("598_598__::__            [: 1, 2, 3, 4 ] 'filter (\u03bbx = x > 2) == [: 3, 4 ]",function(){expect(function(a){return function(b){return b(a)}}({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})(v(function(a){var b;b=run(function(){return run(function(){return 2<a})});return b}))).toEqual({head:3,tail:{head:4,tail:{nil:!0}}})});it("605_605__::__            [: 2, 3, 4 ] == [: 1, 2, 3 ] |> map \u03bbx = x + 1",function(){expect({head:2,tail:{head:3,
-tail:{head:4,tail:{nil:!0}}}}).toEqual(function(a){return function(b){return b(a)}}({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})(k(function(a){var b;b=run(function(){return run(function(){return a+1})});return b})))});it("616_616__::__            reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]",function(){expect(t({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual({head:4,tail:{head:3,tail:{head:2,tail:{head:1,tail:{nil:!0}}}}})});it("618_619multi__::__            var test_x = [: 1, 2, 3, 4 ]\n            test_x == reverse <| reverse test_x",
-function(){expect(function(){try{var a={head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}},b=f(a),c=t,d,e=t(a);d=c(e);return b(d)}catch(i){return{error:i}}}()).toEqual(!0)});it("627_628multi__::__            var x = [: 1, 2, 3, 4, 5, 6, 7, 8 ]\n            take 5 x == take' 5 x",function(){expect(function(){try{var a={head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{head:6,tail:{head:7,tail:{head:8,tail:{nil:!0}}}}}}}}};return f(e(5)(a))(x(5)(a))}catch(b){return{error:b}}}()).toEqual(!0)});
-it("662_662__::__            foldl (\u03bbx y = x + y) 0 [: 1, 2, 3, 4 ] == 10",function(){expect(y(function(a){return function(b){var c;c=run(function(){return run(function(){return a+b})});return c}})(0)({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(10)});it("663_663__::__            foldr (\u03bbx y = x + y) 0 [: 1, 2, 3, 4 ] == 10",function(){expect(z(function(a){return function(b){var c;c=run(function(){return run(function(){return a+b})});return c}})(0)({head:1,
-tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(10)});it("664_664__::__            all? id [:true,true]",function(){expect(function(){try{return u(q)({head:!0,tail:{head:!0,tail:{nil:!0}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("665_665__::__            not (all? id [:true,false])",function(){expect(function(){try{var a;var b=u(q)({head:!0,tail:{head:!1,tail:{nil:!0}}});a=run(function(){return run(function(){return!b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});
-it("666_666__::__            any? id [:true,false]",function(){expect(function(){try{return j(q)({head:!0,tail:{head:!1,tail:{nil:!0}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("667_667__::__            not (any? id [:false,false])",function(){expect(function(){try{var a;var b=j(q)({head:!1,tail:{head:!1,tail:{nil:!0}}});a=run(function(){return run(function(){return!b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});it("668_668__::__            sum [:1,2,3] == 6",function(){expect(w({head:1,
-tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(6)});it("669_669__::__            product [:1,2,4] == 8",function(){expect(A({head:1,tail:{head:2,tail:{head:4,tail:{nil:!0}}}})).toEqual(8)});it("671_672multi__::__            let x = [:1,2], y = [:3,4]\n            concat [:x,y] == [:1,2,3,4]",function(){expect(function(){try{return f(B({head:{head:1,tail:{head:2,tail:{nil:!0}}},tail:{head:{head:3,tail:{head:4,tail:{nil:!0}}},tail:{nil:!0}}}))({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})}catch(a){return{error:a}}}()).toEqual(!0)});
-it("674_674__::__            concat_map (\u03bbx = [:x,x+1]) [:1,2] == [:1,2,2,3]",function(){expect(C(function(a){var b;b=run(function(){return run(function(){return a+1})});return{head:a,tail:{head:b,tail:{nil:!0}}}})({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual({head:1,tail:{head:2,tail:{head:2,tail:{head:3,tail:{nil:!0}}}}})});it("676_676__::__            minimum [: 1, 2, 3 ] == 1",function(){expect(E({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(1)});it("677_677__::__            maximum [: 1, 2, 3 ] == 3",
-function(){expect(D({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(3)})}});describe("seq",function(){var a=prelude.seq.iterate,b=prelude.seq.from_list,c=prelude.seq.to_list,d=prelude.seq.take,e=prelude.seq.fibs,f=h.last||window.last,d=h.take||window.take,g=h.length||window.length,l=k.time||window.time,j=k.fast_fib||window.fast_fib,n=k.floor||window.floor,a=prelude.seq.iterate,b=prelude.seq.from_list,c=prelude.seq.to_list,d=prelude.seq.take,e=prelude.seq.fibs;new function(){it("713_713__::__            to_list (from_list [:1,2]) == [:1,2]",
-function(){expect(c(b({head:1,tail:{head:2,tail:{nil:!0}}}))).toEqual({head:1,tail:{head:2,tail:{nil:!0}}})});it("714_714__::__            iterate (\u03bbx = x + 1) 0 |> take 100 |> to_list |> length == 100",function(){expect(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(a(function(a){var b;b=run(function(){return run(function(){return a+1})});return b})(0))(d(100)))(c))(g)).toEqual(100)});it('750_754multi__::__            do! fast_time <- time yield fast_fib 30\n                slow_time <- time yield fibs |> take 30 |> to_list |> last\n                let ratio = floor (fast_time / slow_time * 100)\n                "#speedtest" $= ratio\n                return (ratio >= 2)',
-function(){expect(function(){try{return run(function(){var a=run;var b=l(function(){return j(30)}),g=run(b);var b=l(function(){var a=e;a=d(30)(a);a=c(a);a=f(a);return a}),i,h=run(b);i=run(function(){return run(function(){return g/h})});var b=run(function(){return run(function(){return 100*i})}),k=n(b);run(function(){if("undefined"!=typeof $){var a=$("#speedtest").get(0);"undefined"!=typeof a&&(a.innerHTML=k)}});var m;m=run(function(){return run(function(){return 2<=k})});return a(function(){return m})})}catch(a){return{error:a}}}()).toEqual(!0)});
-it("756_756__::__            fibs |> take 5 |> to_list == [:1,1,2,3,5]",function(){expect(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(e)(d(5)))(c)).toEqual({head:1,tail:{head:1,tail:{head:2,tail:{head:3,tail:{head:5,tail:{nil:!0}}}}}})});it("758_760multi__::__            fast_fib 15 == fibs |> take 15\n                                |> to_list\n                                |> last",function(){expect(j(15)).toEqual(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(e)(d(15)))(c))(f))})}});
-describe("Forml Z",function(){var a=h._comp_comp||window._comp_comp,b=h.concat_map||window.concat_map;new function(){it("805_808multi__::__            let (>>>=) x g = concat_map g x\n                z = 1 .. 3 >>>= \u03bbx = [:x, x + 1, x + 2]\n    \n            z == [:1,2,3,2,3,4,3,4,5]",function(){expect(function(){try{var c=a(1)(3),d=b(function(a){var b=run(function(){return run(function(){return a+1})}),c;c=run(function(){return run(function(){return a+2})});return{head:a,tail:{head:b,tail:{head:c,
+describe("",function(){describe("prelude",function(){var g=prelude.array_,f=prelude._eq_eq,l=prelude.fib,m=prelude.speedtest,p=prelude.id,q=prelude.flip,s=prelude.err,k=prelude.list,g=prelude.array_,f=prelude._eq_eq,l=prelude.fib,m=prelude.speedtest,p=prelude.id,q=prelude.flip,s=prelude.err,k=prelude.list;new function(){it("28_28__::__        not false",function(){expect(function(){try{var a;a=run(function(){return run(function(){return!0})});return a}catch(b){return{error:b}}}()).toEqual(!0)});it("31_31__::__        object? {}",
+function(){expect(function(){try{var a;var b={};a=run(function(){return run(function(){return"object"===typeof b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});it("32_32__::__        array? []",function(){expect(function(){try{return g([])}catch(a){return{error:a}}}()).toEqual(!0)});it("33_33__::__        not (array? {})",function(){expect(function(){try{var a;var b=g({});a=run(function(){return run(function(){return!b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});it("34_34__::__        not (object? 0)",
+function(){expect(function(){try{var a;a=run(function(){return run(function(){return!1})});var b;b=run(function(){return run(function(){return!a})});return b}catch(c){return{error:c}}}()).toEqual(!0)});it("55_58multi__::__        do! x   <- `1 + 4`\n            y   <- `2 + 3`\n            ans <- `x + y`\n            return (10 == ans)",function(){expect(function(){try{return run(function(){var a=run;var c=run(function(){return 5});var d=run(function(){return 5});var e=run(function(){return c+d});
+var h=f(10)(e);return a(function(){return h})})}catch(a){return{error:a}}}()).toEqual(!0)});it("60_60__::__        5  == do! return 5",function(){expect(5).toEqual(run(function(){return run(function(){return 5})}))});it("61_61__::__        10 == do! `5 + 5`",function(){expect(10).toEqual(run(function(){return run(function(){return 10})}))});it("72_75multi__::__        var x = 0\n            y = do z <- `x = 1`\n                   return z\n        x == 0",function(){expect(function(){try{return f(0)(0)}catch(a){return{error:a}}}()).toEqual(!0)});
+it("131_131__::__        (3 * 4) + 5 * 4 == 64 / 2",function(){expect(function(a){return function(b){return run(function(){return run(function(){return a+b})})}}(function(a){return function(b){return run(function(){return run(function(){return a*b})})}}(3)(4))(function(a){return function(b){return run(function(){return run(function(){return a*b})})}}(5)(4))).toEqual(function(a){return function(b){return run(function(){return run(function(){return a/b})})}}(64)(2))});it("132_132__::__        4 - 1 != 5 - 10",
+function(){expect(function(){try{var a;a=run(function(){return run(function(){return 3})});var b;b=run(function(){return run(function(){return-5})});var c;var d=f(a)(b);c=run(function(){return run(function(){return!d})});return c}catch(e){return{error:e}}}()).toEqual(!0)});it("133_133__::__        (10 >= 5 + 5) != (4 + 5 <= 10 - 2)",function(){expect(function(){try{var a;a=run(function(){return run(function(){return 10})});var b;b=run(function(){return run(function(){return 10>=a})});var c;c=run(function(){return run(function(){return 9})});
+var d;d=run(function(){return run(function(){return 8})});var e;e=run(function(){return run(function(){return c<=d})});var h;var v=f(b)(e);h=run(function(){return run(function(){return!v})});return h}catch(j){return{error:j}}}()).toEqual(!0)});it("134_134__::__        ({test: 1} == {test: 1}) == true",function(){expect(f({test:1})({test:1})).toEqual(!0)});it("135_135__::__        ({test: 1} != {test: 1}) == false",function(){expect(function(a){return function(b){var c=f(a)(b),b=run(function(){return run(function(){return!c})});
+return b}}({test:1})({test:1})).toEqual(!1)});describe("speedtest",function(){var a=prelude.speedtest.time,b=prelude.speedtest.fast_fib,c=prelude.speedtest.floor,a=prelude.speedtest.time,b=prelude.speedtest.fast_fib,c=prelude.speedtest.floor;new function(){it("167_167__::__            fast_fib 7 == fib 7",function(){expect(b(7)).toEqual(l(7))});it("176_178multi__::__            do! fast_time <- time yield fast_fib 30\n                slow_time <- time yield fib 30\n                return (floor (fast_time / slow_time * 100) >= 80)",
+function(){expect(function(){try{return run(function(){var e=run;var d=a(function(){return b(30)}),f=run(d);var d=a(function(){return l(30)}),j=run(d),d=c,g;g=run(function(){return run(function(){return f/j})});var n;n=run(function(){return run(function(){return 100*g})});var i;var r=d(n);i=run(function(){return run(function(){return 80<=r})});return e(function(){return i})})}catch(d){return{error:d}}}()).toEqual(!0)})}});it("187_187__::__        3 |> (\u03bby = y + 1) |> \u03bby = y + 1 == 5",function(){expect(function(){try{var a;
+a=run(function(){return run(function(){return 4})});var b;var c=f,d;d=run(function(){return run(function(){return a+1})});b=c(d)(5);return b}catch(e){return{error:e}}}()).toEqual(!0)});it("188_188__::__        (\u03bby x z = x + y + z + 1) 1 <| 3 <| 4 == 9",function(){expect(function(a){return function(b){return a(b)}}(function(a){return function(b){return a(b)}}(function(a){return function(b){return function(c){var d;d=run(function(){return run(function(){return b+a})});var e;e=run(function(){return run(function(){return d+
+c})});var h;h=run(function(){return run(function(){return e+1})});return h}}}(1))(3))(4)).toEqual(9)});it("195_195__::__        (\u03bbx = x - 3) <: (\u03bbx = x - 3) <: 5 + 5 == 4",function(){expect(function(a){return function(b){return a(b)}}(function(a){var b;b=run(function(){return run(function(){return a-3})});return b})(function(a){return function(b){return a(b)}}(function(a){var b;b=run(function(){return run(function(){return a-3})});return b})(function(a){return function(b){return run(function(){return run(function(){return a+
+b})})}}(5)(5)))).toEqual(4)});it("206_206__::__        ((\u03bbx = x + 1) .: (\u03bbx = x * 2) .: \u03bbx = x - 3) 4 == 3",function(){expect(function(a){return function(b){return function(c){return a(b(c))}}}(function(a){var b;b=run(function(){return run(function(){return a+1})});return b})(function(a){return function(b){return function(c){return a(b(c))}}}(function(a){var b;b=run(function(){return run(function(){return 2*a})});return b})(function(a){var b;b=run(function(){return run(function(){return a-
+3})});return b}))(4)).toEqual(3)});it("207_207__::__        id [1, 2, 3] == [1, 2, 3]",function(){expect([1,2,3]).toEqual([1,2,3])});it("208_208__::__        flip (\u03bbx y = x - y) 3 5 == 2",function(){expect(function(a){return function(b){return function(c){return a(c)(b)}}}(function(a){return function(b){var c;c=run(function(){return run(function(){return a-b})});return c}})(3)(5)).toEqual(2)});describe("string",function(){var a=prelude.string.strip,a=prelude.string.strip;new function(){it('237_237__::__            strip "    test    " is "test"',
+function(){expect(a("    test    ")).toEqual("test")});it('241_242multi__::__            let x = "test"\n            in "hello `x`" is "hello test"',function(){expect(function(){try{var a=f,c;c=run(function(){return run(function(){return"hello test"})});var d;d=run(function(){return run(function(){return""+c+""})});return a(d)("hello test")}catch(e){return{error:e}}}()).toEqual(!0)})}});describe("option",function(){var a=prelude.option.option,a=prelude.option.option;new function(){it("267_267__::__            option 3 {some: 2} == 2",
+function(){expect(a(3)({some:2})).toEqual(2)})}});describe("html",function(){var a=prelude.html.get,b=prelude.html.div,a=prelude.html.get,b=prelude.html.div;new function(){it('340_350multi__::__            do! d <- div "test1"\n    \n                "body"   $+ d\n                "#test1" $= "I am a test!"\n    \n                text <- get "#test1"\n                text <- text.inner\n    \n                "#test1" $= ""\n    \n                return (text == "I am a test!")',function(){expect(function(){try{return run(function(){var c=
+run;var e=b("test1"),h=run(e);run(function(){return $("body").append(h)});run(function(){if("undefined"!=typeof $){var a=$("#test1").get(0);"undefined"!=typeof a&&(a.innerHTML="I am a test!")}});e=a("#test1");e=run(e);e=run(e.inner);run(function(){if("undefined"!=typeof $){var a=$("#test1").get(0);"undefined"!=typeof a&&(a.innerHTML="")}});var v=f(e)("I am a test!");return c(function(){return v})})}catch(c){return{error:c}}}()).toEqual(!0)})}});describe("array",function(){var a=prelude.array.map,
+b=prelude.array.push_excl,c=prelude.array.get,d=prelude.array.for_each,a=prelude.array.map,b=prelude.array.push_excl,c=prelude.array.get,d=prelude.array.for_each;new function(){it("531_533multi__::__            let x = []\n                _ = push! 1 x\n            x == [1]",function(){expect(function(){try{var a=[];b(1)(a);return f(a)([1])}catch(c){return{error:c}}}()).toEqual(!0)});it("535_535__::__            [1, 2, 3] == do! put 3 [1, 2]",function(){expect([1,2,3]).toEqual(run(function(){var a=
+[1,2];return run(function(){var c=run,d=run(function(){return jQuery.extend(!0,[],a)});return c(function(){return b(3)(d)})})}))});it("537_537__::__            map (.x) [{x: 1}, {x: 2}] == [1, 2]",function(){expect(a(function(a){return a.x})([{x:1},{x:2}])).toEqual([1,2])});it("539_539__::__            zip_with (\\x y = x + y) [1, 2, 3] [3, 2, 1] == [4, 4, 4]",function(){expect(function(a){return function(h){return function(f){var j=[],g=q(b)(j),n=c,i;i=function(b){var b=n(b),c=b(f),b=a(b(h))(c);
+return g(b)};return run(function(){var a=run,b;b=d(i)(h);run(b);return a(function(){return j})})}}}(function(a){return function(b){var c;c=run(function(){return run(function(){return a+b})});return c}})([1,2,3])([3,2,1])).toEqual([4,4,4])})}});describe("list",function(){var a=prelude.list.empty_,b=prelude.list.head,c=prelude.list.tail,d=prelude.list.last,e=prelude.list.take,h=prelude.list.drop,g=prelude.list._comp_comp,j=prelude.list.take_while,k=prelude.list.drop_while,n=prelude.list.length,i=prelude.list.init,
+r=prelude.list._plus_plus,w=prelude.list.filter,m=prelude.list.map,t=prelude.list.reverse,y=prelude.list.take_apos,z=prelude.list.foldl,A=prelude.list.foldr,u=prelude.list.all_,l=prelude.list.any_,x=prelude.list.sum,q=prelude.list.product,B=prelude.list.concat,C=prelude.list.concat_map,D=prelude.list.maximum,E=prelude.list.minimum,a=prelude.list.empty_,b=prelude.list.head,c=prelude.list.tail,d=prelude.list.last,e=prelude.list.take,h=prelude.list.drop,g=prelude.list._comp_comp,j=prelude.list.take_while,
+k=prelude.list.drop_while,n=prelude.list.length,i=prelude.list.init,r=prelude.list._plus_plus,w=prelude.list.filter,m=prelude.list.map,t=prelude.list.reverse,y=prelude.list.take_apos,z=prelude.list.foldl,A=prelude.list.foldr,u=prelude.list.all_,l=prelude.list.any_,x=prelude.list.sum,q=prelude.list.product,B=prelude.list.concat,C=prelude.list.concat_map,D=prelude.list.maximum,E=prelude.list.minimum;new function(){it("564_578multi__::__            var xs = [:\n    \n                [:1,2,3]\n    \n                [:1,2,3:]\n    \n                (1::2::3::{nil})\n    \n                { head = 1\n                  tail = { head = 2\n                           tail = { head = 3\n                                    tail = {nil} }}}\n            ]\n    \n            all? (\u03bby = [:1,2,3] == y) xs",
+function(){expect(function(){try{return u(function(a){return f({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})(a)})({head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{head:{head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}},tail:{nil:!0}}}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("605_605__::__            1 .. 5 == [:1,2,3,4,5]",function(){expect(g(1)(5)).toEqual({head:1,
+tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{nil:!0}}}}}})});it("609_609__::__            288045 == 1 .. 1111 |> filter (\u03bbx = x % 3 == 0 || x % 5 == 0) |> sum",function(){expect(288045).toEqual(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(g(1)(1111))(w(function(a){var b=f,c;c=run(function(){return run(function(){return a%3})});var d=b(c)(0),b=f;c=run(function(){return run(function(){return a%5})});var e=b(c)(0),b=run(function(){return run(function(){return d||
+e})});return b})))(x))});it("620_620__::__            not (empty? (1 :: {nil}))",function(){expect(function(){try{var b;var c=a({head:1,tail:{nil:!0}});b=run(function(){return run(function(){return!c})});return b}catch(d){return{error:d}}}()).toEqual(!0)});it("621_621__::__            empty? [:]",function(){expect(function(){try{return a({nil:!0})}catch(b){return{error:b}}}()).toEqual(!0)});it("623_623__::__            head [: 1, 2 ] is 1",function(){expect(b({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual(1)});
+it("624_624__::__            tail [: 1, 2 ] is [:2]",function(){expect(c({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual({head:2,tail:{nil:!0}})});it("625_625__::__            last [: 1, 2 ] is 2",function(){expect(d({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual(2)});it('627_627__::__            err (lazy head {nil}) is "Head called on empty list"',function(){expect(s(function(){var a=void 0;return function(){a||(a=b({nil:!0}));return a}}())).toEqual("Head called on empty list")});it('628_628__::__            err (lazy tail {nil}) is "Tail called on empty list"',
+function(){expect(s(function(){var a=void 0;return function(){a||(a=c({nil:!0}));return a}}())).toEqual("Tail called on empty list")});it('629_629__::__            err (lazy last {nil}) is "Last called on empty list"',function(){expect(s(function(){var a=void 0;return function(){a||(a=d({nil:!0}));return a}}())).toEqual("Last called on empty list")});it("631_631__::__            take(2, [: 1, 2, 3 ]) == [: 1, 2 ]",function(){expect(e(2)({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual({head:1,
+tail:{head:2,tail:{nil:!0}}})});it("632_632__::__            drop(2, [: 1, 2, 3 ]) == [: 3 ]",function(){expect(h(2)({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual({head:3,tail:{nil:!0}})});it("634_634__::__            take_while (\u03bbx = x < 0) [:] == [:]",function(){expect(j(function(a){var b;b=run(function(){return run(function(){return 0>a})});return b})({nil:!0})).toEqual({nil:!0})});it("635_635__::__            take_while (\u03bbx = x > 0) [: 2, 1, 0 ] == [: 2, 1 ]",function(){expect(j(function(a){var b;
+b=run(function(){return run(function(){return 0<a})});return b})({head:2,tail:{head:1,tail:{head:0,tail:{nil:!0}}}})).toEqual({head:2,tail:{head:1,tail:{nil:!0}}})});it("637_637__::__            drop_while (\u03bbx = x < 0) {nil} == {nil}",function(){expect(k(function(a){var b;b=run(function(){return run(function(){return 0>a})});return b})({nil:!0})).toEqual({nil:!0})});it("638_638__::__            drop_while (\u03bbx = x > 0) [: 2, 1, 0 ] == [: 0 ]",function(){expect(k(function(a){var b;b=run(function(){return run(function(){return 0<
+a})});return b})({head:2,tail:{head:1,tail:{head:0,tail:{nil:!0}}}})).toEqual({head:0,tail:{nil:!0}})});it("647_647__::__            length [: 1, 2, 3, 4 ] == 4",function(){expect(n({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(4)});it("654_654__::__            length (init 30 0) == 30",function(){expect(n(i(30)(0))).toEqual(30)});it("655_655__::__            tail (init 3 0)    == init 2 0",function(){expect(c(i(3)(0))).toEqual(i(2)(0))});it("664_664__::__            {nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}",
+function(){expect(r({nil:!0})(function(a){return function(b){return{head:a,tail:b}}}(1)(function(a){return function(b){return{head:a,tail:b}}}(2)({nil:!0})))).toEqual(function(a){return function(b){return{head:a,tail:b}}}(1)(function(a){return function(b){return{head:a,tail:b}}}(2)({nil:!0})))});it("665_665__::__            [: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]",function(){expect(r({head:1,tail:{head:2,tail:{nil:!0}}})({head:3,tail:{head:4,tail:{nil:!0}}})).toEqual({head:1,tail:{head:2,tail:{head:3,
+tail:{head:4,tail:{nil:!0}}}}})});it("674_674__::__            [: 1, 2, 3, 4 ] 'filter (\u03bbx = x > 2) == [: 3, 4 ]",function(){expect(function(a){return function(b){return b(a)}}({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})(w(function(a){var b;b=run(function(){return run(function(){return 2<a})});return b}))).toEqual({head:3,tail:{head:4,tail:{nil:!0}}})});it("681_681__::__            [: 2, 3, 4 ] == [: 1, 2, 3 ] |> map \u03bbx = x + 1",function(){expect({head:2,tail:{head:3,
+tail:{head:4,tail:{nil:!0}}}}).toEqual(function(a){return function(b){return b(a)}}({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})(m(function(a){var b;b=run(function(){return run(function(){return a+1})});return b})))});it("692_692__::__            reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]",function(){expect(t({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual({head:4,tail:{head:3,tail:{head:2,tail:{head:1,tail:{nil:!0}}}}})});it("694_695multi__::__            var test_x = [: 1, 2, 3, 4 ]\n            test_x == reverse <| reverse test_x",
+function(){expect(function(){try{var a={head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}},b=f(a),c=t,d,e=t(a);d=c(e);return b(d)}catch(i){return{error:i}}}()).toEqual(!0)});it("703_704multi__::__            var x = [: 1, 2, 3, 4, 5, 6, 7, 8 ]\n            take 5 x == take' 5 x",function(){expect(function(){try{var a={head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:5,tail:{head:6,tail:{head:7,tail:{head:8,tail:{nil:!0}}}}}}}}};return f(e(5)(a))(y(5)(a))}catch(b){return{error:b}}}()).toEqual(!0)});
+it("738_738__::__            foldl (\u03bbx y = x + y) 0 [: 1, 2, 3, 4 ] == 10",function(){expect(z(function(a){return function(b){var c;c=run(function(){return run(function(){return a+b})});return c}})(0)({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(10)});it("739_739__::__            foldr (\u03bbx y = x + y) 0 [: 1, 2, 3, 4 ] == 10",function(){expect(A(function(a){return function(b){var c;c=run(function(){return run(function(){return a+b})});return c}})(0)({head:1,
+tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})).toEqual(10)});it("740_740__::__            all? id [:true,true]",function(){expect(function(){try{return u(p)({head:!0,tail:{head:!0,tail:{nil:!0}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("741_741__::__            not (all? id [:true,false])",function(){expect(function(){try{var a;var b=u(p)({head:!0,tail:{head:!1,tail:{nil:!0}}});a=run(function(){return run(function(){return!b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});
+it("742_742__::__            any? id [:true,false]",function(){expect(function(){try{return l(p)({head:!0,tail:{head:!1,tail:{nil:!0}}})}catch(a){return{error:a}}}()).toEqual(!0)});it("743_743__::__            not (any? id [:false,false])",function(){expect(function(){try{var a;var b=l(p)({head:!1,tail:{head:!1,tail:{nil:!0}}});a=run(function(){return run(function(){return!b})});return a}catch(c){return{error:c}}}()).toEqual(!0)});it("744_744__::__            sum [:1,2,3] == 6",function(){expect(x({head:1,
+tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(6)});it("745_745__::__            product [:1,2,4] == 8",function(){expect(q({head:1,tail:{head:2,tail:{head:4,tail:{nil:!0}}}})).toEqual(8)});it("747_748multi__::__            let x = [:1,2], y = [:3,4]\n            concat [:x,y] == [:1,2,3,4]",function(){expect(function(){try{return f(B({head:{head:1,tail:{head:2,tail:{nil:!0}}},tail:{head:{head:3,tail:{head:4,tail:{nil:!0}}},tail:{nil:!0}}}))({head:1,tail:{head:2,tail:{head:3,tail:{head:4,tail:{nil:!0}}}}})}catch(a){return{error:a}}}()).toEqual(!0)});
+it("750_750__::__            concat_map (\u03bbx = [:x,x+1]) [:1,2] == [:1,2,2,3]",function(){expect(C(function(a){var b;b=run(function(){return run(function(){return a+1})});return{head:a,tail:{head:b,tail:{nil:!0}}}})({head:1,tail:{head:2,tail:{nil:!0}}})).toEqual({head:1,tail:{head:2,tail:{head:2,tail:{head:3,tail:{nil:!0}}}}})});it("752_752__::__            minimum [: 1, 2, 3 ] == 1",function(){expect(E({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(1)});it("753_753__::__            maximum [: 1, 2, 3 ] == 3",
+function(){expect(D({head:1,tail:{head:2,tail:{head:3,tail:{nil:!0}}}})).toEqual(3)})}});describe("seq",function(){var a=prelude.seq.iterate,b=prelude.seq.from_list,c=prelude.seq.to_list,d=prelude.seq.take,e=prelude.seq.fibs,f=k.last||window.last,d=k.take||window.take,g=k.length||window.length,j=m.time||window.time,l=m.fast_fib||window.fast_fib,n=m.floor||window.floor,a=prelude.seq.iterate,b=prelude.seq.from_list,c=prelude.seq.to_list,d=prelude.seq.take,e=prelude.seq.fibs;new function(){it("789_789__::__            to_list (from_list [:1,2]) == [:1,2]",
+function(){expect(c(b({head:1,tail:{head:2,tail:{nil:!0}}}))).toEqual({head:1,tail:{head:2,tail:{nil:!0}}})});it("790_790__::__            iterate (\u03bbx = x + 1) 0 |> take 100 |> to_list |> length == 100",function(){expect(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(a(function(a){var b;b=run(function(){return run(function(){return a+1})});return b})(0))(d(100)))(c))(g)).toEqual(100)});it('826_830multi__::__            do! fast_time <- time yield fast_fib 30\n                slow_time <- time yield fibs |> take 30 |> to_list |> last\n                let ratio = floor (fast_time / slow_time * 100)\n                "#speedtest" $= ratio\n                return (ratio >= 2)',
+function(){expect(function(){try{return run(function(){var a=run;var b=j(function(){return l(30)}),g=run(b);var b=j(function(){var a=e;a=d(30)(a);a=c(a);a=f(a);return a}),i,k=run(b);i=run(function(){return run(function(){return g/k})});var b=run(function(){return run(function(){return 100*i})}),m=n(b);run(function(){if("undefined"!=typeof $){var a=$("#speedtest").get(0);"undefined"!=typeof a&&(a.innerHTML=m)}});var p;p=run(function(){return run(function(){return 2<=m})});return a(function(){return p})})}catch(a){return{error:a}}}()).toEqual(!0)});
+it("832_832__::__            fibs |> take 5 |> to_list == [:1,1,2,3,5]",function(){expect(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(e)(d(5)))(c)).toEqual({head:1,tail:{head:1,tail:{head:2,tail:{head:3,tail:{head:5,tail:{nil:!0}}}}}})});it("834_836multi__::__            fast_fib 15 == fibs |> take 15\n                                |> to_list\n                                |> last",function(){expect(l(15)).toEqual(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(function(a){return function(b){return b(a)}}(e)(d(15)))(c))(f))})}});
+describe("Forml Z",function(){var a=k._comp_comp||window._comp_comp,b=k.concat_map||window.concat_map;new function(){it("881_884multi__::__            let (>>>=) x g = concat_map g x\n                z = 1 .. 3 >>>= \u03bbx = [:x, x + 1, x + 2]\n    \n            z == [:1,2,3,2,3,4,3,4,5]",function(){expect(function(){try{var c=a(1)(3),d=b(function(a){var b=run(function(){return run(function(){return a+1})}),c;c=run(function(){return run(function(){return a+2})});return{head:a,tail:{head:b,tail:{head:c,
 tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2,tail:{head:3,tail:{head:4,tail:{head:3,tail:{head:4,tail:{head:5,tail:{nil:!0}}}}}}}}}})}catch(e){return{error:e}}}()).toEqual(!0)})}})}})});
 </script><p>If you are familiar with Haskell or ML, the prelude may serve as a good introduction to forml. Forml's syntax is quite liberal; to illustrate, the prelude will maintain an intentionally inconsistent style throughout.</p>
 <p>First, we need to create a namespace with the <code>module</code> keyword.</p>
@@ -857,6 +909,8 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
     inline array?    = do! `is_array`
     inline string? x = do! `typeof x === &quot;string&quot;`
 
+    inline cast: _ -&gt; _ | x = do! `x`
+
     inline
     num? x = do! `typeof x == &quot;number&quot;`
 
@@ -866,13 +920,13 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
     inline
     not: Bool -&gt; Bool 
     not x = do! `!x`
-    <span class='test' id='test_26_26'>not false</span>
+    <span class='test' id='test_28_28'>not false</span>
 
 
-    <span class='test' id='test_29_29'>object? {}</span>
-    <span class='test' id='test_30_30'>array? []</span>
-    <span class='test' id='test_31_31'>not (array? {})</span>
-    <span class='test' id='test_32_32'>not (object? 0)</span></code></pre>
+    <span class='test' id='test_31_31'>object? {}</span>
+    <span class='test' id='test_32_32'>array? []</span>
+    <span class='test' id='test_33_33'>not (array? {})</span>
+    <span class='test' id='test_34_34'>not (object? 0)</span></code></pre>
 <p>Side effects can only happen in Javascript, so we use a monadic container to compose these bits.</p>
 <pre><code>    inline 
     (&gt;&gt;=): JS a -&gt; (a -&gt; JS b) -&gt; JS b
@@ -888,20 +942,20 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
       return x  = `x`
 
 
-    <span class='test' id='test_53_56multi'>do! x   &lt;- `1 + 4`
+    <span class='test' id='test_55_58multi'>do! x   &lt;- `1 + 4`
         y   &lt;- `2 + 3`
         ans &lt;- `x + y`
         return (10 == ans)</span>
 
-    <span class='test' id='test_58_58'>5  == do! return 5</span>
-    <span class='test' id='test_59_59'>10 == do! `5 + 5`</span>
+    <span class='test' id='test_60_60'>5  == do! return 5</span>
+    <span class='test' id='test_61_61'>10 == do! `5 + 5`</span>
 
 
 
     inline log: a -&gt; JS {} 
               | x  = `console.log(x)`</code></pre>
 <p>Testing to verify that escaping Javascript &amp; utilizing escaped Javascript with <code>do</code> sugar and composition in general works as expected.</p>
-<pre><code>    <span class='test' id='test_70_73multi'>var x = 0
+<pre><code>    <span class='test' id='test_72_75multi'>var x = 0
         y = do z &lt;- `x = 1`
                return z
     x == 0</span></code></pre>
@@ -946,11 +1000,11 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 
         | x y = false</code></pre>
 <p>And a few simple tests to verify the correctness of these implementations. This is not meant to be exhaustive, only a smoke test against regressions.</p>
-<pre><code>    <span class='test' id='test_129_129'>(3 * 4) + 5 * 4 == 64 / 2</span>
-    <span class='test' id='test_130_130'>4 - 1 != 5 - 10</span>
-    <span class='test' id='test_131_131'>(10 &gt;= 5 + 5) != (4 + 5 &lt;= 10 - 2)</span>
-    <span class='test' id='test_132_132'>({test: 1} == {test: 1}) == true</span>
-    <span class='test' id='test_133_133'>({test: 1} != {test: 1}) == false</span></code></pre>
+<pre><code>    <span class='test' id='test_131_131'>(3 * 4) + 5 * 4 == 64 / 2</span>
+    <span class='test' id='test_132_132'>4 - 1 != 5 - 10</span>
+    <span class='test' id='test_133_133'>(10 &gt;= 5 + 5) != (4 + 5 &lt;= 10 - 2)</span>
+    <span class='test' id='test_134_134'>({test: 1} == {test: 1}) == true</span>
+    <span class='test' id='test_135_135'>({test: 1} != {test: 1}) == false</span></code></pre>
 <p>Fibonacci function</p>
 <pre><code>    fib 0 = 0 | 1 = 1 | n = fib(n - 1) + fib(n - 2)</code></pre>
 <h2 id="speed">Speed</h2>
@@ -973,11 +1027,11 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
                      return 0 === n ? 0 : 1 === n ? 1 : f(n - 1) + f(n - 2)
                  }; f`
 
-        <span class='test' id='test_165_165'>fast_fib 7 == fib 7</span></code></pre>
+        <span class='test' id='test_167_167'>fast_fib 7 == fib 7</span></code></pre>
 <p>With this, we can set up a simple canary to let us know if the prelude is suddenly dramatically slower than it previously was; in this case, we fail a test if the forml version isn't at least 90% as fast as the native javascript version.</p>
 <pre><code>        floor: Num -&gt; Num = do! `Math.floor`
 
-        <span class='test' id='test_174_176multi'>do! fast_time &lt;- time yield fast_fib 30
+        <span class='test' id='test_176_178multi'>do! fast_time &lt;- time yield fast_fib 30
             slow_time &lt;- time yield fib 30
             return (floor (fast_time / slow_time * 100) &gt;= 80)</span></code></pre>
 <h2 id="function-combinators">Function Combinators</h2>
@@ -985,12 +1039,12 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 <pre><code>    inline x &lt;| y = x y
     inline x |&gt; y = y x
 
-    <span class='test' id='test_185_185'>3 |&gt; (&#955;y = y + 1) |&gt; &#955;y = y + 1 == 5</span>
-    <span class='test' id='test_186_186'>(&#955;y x z = x + y + z + 1) 1 &lt;| 3 &lt;| 4 == 9</span></code></pre>
+    <span class='test' id='test_187_187'>3 |&gt; (&#955;y = y + 1) |&gt; &#955;y = y + 1 == 5</span>
+    <span class='test' id='test_188_188'>(&#955;y x z = x + y + z + 1) 1 &lt;| 3 &lt;| 4 == 9</span></code></pre>
 <p>Alternatively, there is a right associative version of <code>&lt;|</code>, ala haskell. All operators which end with a <code>:</code> are right associative.</p>
 <pre><code>    inline x &lt;: y = x y
 
-    <span class='test' id='test_193_193'>(&#955;x = x - 3) &lt;: (&#955;x = x - 3) &lt;: 5 + 5 == 4</span></code></pre>
+    <span class='test' id='test_195_195'>(&#955;x = x - 3) &lt;: (&#955;x = x - 3) &lt;: 5 + 5 == 4</span></code></pre>
 <p>Function composition</p>
 <pre><code>    inline x .: y = &#955;z = x y(z)
     inline id x = x
@@ -999,9 +1053,9 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
     inline x &#39; y = y x
 
 
-    <span class='test' id='test_204_204'>((&#955;x = x + 1) .: (&#955;x = x * 2) .: &#955;x = x - 3) 4 == 3</span>
-    <span class='test' id='test_205_205'>id [1, 2, 3] == [1, 2, 3]</span>
-    <span class='test' id='test_206_206'>flip (&#955;x y = x - y) 3 5 == 2</span></code></pre>
+    <span class='test' id='test_206_206'>((&#955;x = x + 1) .: (&#955;x = x * 2) .: &#955;x = x - 3) 4 == 3</span>
+    <span class='test' id='test_207_207'>id [1, 2, 3] == [1, 2, 3]</span>
+    <span class='test' id='test_208_208'>flip (&#955;x y = x - y) 3 5 == 2</span></code></pre>
 <h2 id="strings">Strings</h2>
 <pre><code>    module string
 
@@ -1012,15 +1066,18 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
         inline rstrip: String -&gt; String | x = do! `x.replace(/\s+$/, &#39;&#39;)` 
         inline strip:  String -&gt; String | = lstrip .: rstrip
 
-        length: String -&gt; Num | n = do! `n.length`
+        length: String -&gt; Num | n = do! `n.length`</code></pre>
+<p>TODO concat cannot be inlined because it shadows concat in other modules, and inlines currently do not respect shadows.</p>
+<pre><code>        concat: Array String -&gt; String
+        concat xs = do! `xs.join(&quot;&quot;)`
 
         inline 
-        (+++): a -&gt; b -&gt; String
+        (+++): _ -&gt; _ -&gt; String
         x +++ y = do! `&quot;&quot; + x + y`
 
-        <span class='test' id='test_228_228'>strip &quot;    test    &quot; is &quot;test&quot;</span></code></pre>
+        <span class='test' id='test_237_237'>strip &quot;    test    &quot; is &quot;test&quot;</span></code></pre>
 <p>interpolated strings</p>
-<pre><code>        <span class='test' id='test_232_233multi'>let x = &quot;test&quot;
+<pre><code>        <span class='test' id='test_241_242multi'>let x = &quot;test&quot;
         in &quot;hello `x`&quot; is &quot;hello test&quot;</span>
 
     open string</code></pre>
@@ -1040,7 +1097,7 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
         option b {none} = b
              | _ {some: x} = x
 
-        <span class='test' id='test_258_258'>option 3 {some: 2} == 2</span>
+        <span class='test' id='test_267_267'>option 3 {some: 2} == 2</span>
 
     module html
 
@@ -1067,7 +1124,7 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 
         inline ($=):
 
-           String -&gt; a -&gt; JS {}
+           String -&gt; _ -&gt; JS {}
            x      $= y  =
 
              `if (typeof $ != &quot;undefined&quot;) {
@@ -1092,13 +1149,13 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
         div: String -&gt; JS String
             | x = yield &quot;&lt;div id=&#39;`x`&#39;/&gt;&quot;
 
-        move: HTML -&gt; HTML -&gt; JS a
+        move: HTML -&gt; HTML -&gt; JS _
             | x y = `$(y.element).append($(x.element).detach())`
 
         on_load: JS {} -&gt; JS {}
             | x = `window.addEventListener(&quot;load&quot;, x, false)`
 
-        inline stringify: a -&gt; String | x = do! `JSON.stringify(x)`
+        inline stringify: _ -&gt; String | x = do! `JSON.stringify(x)`
 
         inline (!!): Array a -&gt; Num -&gt; a | x y = do! `x[y]`
 
@@ -1108,7 +1165,7 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
                      `$(&quot;body&quot;).replaceWith(old)`
                      return xx</code></pre>
 <p>do! with_page do &quot;body&quot; $= &quot;Test&quot; text &lt;- get &quot;body&quot; text &lt;- text.inner return (text == &quot;Test&quot;)</p>
-<pre><code>        <span class='test' id='test_331_341multi'>do! d &lt;- div &quot;test1&quot;
+<pre><code>        <span class='test' id='test_340_350multi'>do! d &lt;- div &quot;test1&quot;
 
             &quot;body&quot;   $+ d
             &quot;#test1&quot; $= &quot;I am a test!&quot;
@@ -1230,12 +1287,76 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
                reporter &lt;- get &quot;.jasmine_reporter&quot;
                body     &lt;- get &quot;#test_suite&quot;
 
-               move reporter body
+               move reporter body</code></pre>
+<h2 id="arrays">Arrays</h2>
+<pre><code>    module array
 
-    module array
+        type UnboxedArray x = {
+            unshift: x -&gt; Num
+            push:    x -&gt; Num
+            length:  Num
+            map:     (x -&gt; y) -&gt; Array y
+            forEach: (x -&gt; _) -&gt; {}
+        }
 
-        inline push! : x -&gt; Array x -&gt; Array x
-        | x xs = do! `xs.unshift(x); xs`</code></pre>
+        private inline unbox: Array a -&gt; UnboxedArray a = cast
+        private inline box:   UnboxedArray a -&gt; Array a = cast
+
+        private inline
+        chain f xs =
+
+            let _ = f (unbox xs)
+            in  xs
+
+        inline length     = .length .: unbox
+        inline map f      = .map f  .: unbox
+        inline push! x    = chain (.push x)
+        inline unshift! x = chain (.unshift x)
+
+        inline get: Num -&gt; Array x -&gt; x
+            | x xs = do! `xs[x]`
+
+        inline set: Num -&gt; a -&gt; Array a -&gt; JS (Array a)
+            | idx i arr = `arr[idx] = i; return arr`
+
+        inline sequence: Array (JS a) -&gt; JS (Array a)
+            | xs = `xs.map(run)`
+
+        inline (..): Num -&gt; Num -&gt; Array Num 
+            x .. y = do! `var z = [];
+                          for (var i = x; i &lt;= y; i++) z.push(i);
+                          return z` 
+
+        inline put: a -&gt; Array a -&gt; JS (Array a)
+            | x xs =
+
+                 do y &lt;- `jQuery.extend(true,[],xs)`
+                    yield push! x y
+
+        inline
+        for_each: (Num -&gt; _) -&gt; Array _ -&gt; JS {}
+            | f xs = `for (x in xs) { f(x); }`
+
+        inline
+        zip_with: (a -&gt; b -&gt; c) -&gt; Array a -&gt; Array b -&gt; Array c
+        zip_with f xs ys =
+
+            let z   = []
+                h m = m ys &#39;f (m xs) 
+                g   = flip push! z .: h .: get
+
+            in  do! xs &#39;for_each g
+                    yield z 
+
+        <span class='test' id='test_531_533multi'>let x = []
+            _ = push! 1 x
+        x == [1]</span>
+
+        <span class='test' id='test_535_535'>[1, 2, 3] == do! put 3 [1, 2]</span>
+
+        <span class='test' id='test_537_537'>map (.x) [{x: 1}, {x: 2}] == [1, 2]</span>
+
+        <span class='test' id='test_539_539'>zip_with (\x y = x + y) [1, 2, 3] [3, 2, 1] == [4, 4, 4]</span></code></pre>
 <h2 id="lists">Lists</h2>
 <p>A simple implementation of a library for manipulating linked lists.</p>
 <pre><code>    module list
@@ -1246,7 +1367,7 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 <pre><code>        inline 
         x :: y = { head = x, tail = y }</code></pre>
 <p>The compiler itself also supports the list sugar <code>[: 1, 2, 3 ]</code> (or <code>[: 1, 2, 3 :]</code>, if you prefer symmetry). All of these lists are synonyms.</p>
-<pre><code>        <span class='test' id='test_488_502multi'>var xs = [:
+<pre><code>        <span class='test' id='test_564_578multi'>var xs = [:
 
             [:1,2,3]
 
@@ -1283,9 +1404,9 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 
             f y {nil}
 
-        <span class='test' id='test_529_529'>1 .. 5 == [:1,2,3,4,5]</span></code></pre>
+        <span class='test' id='test_605_605'>1 .. 5 == [:1,2,3,4,5]</span></code></pre>
 <p>Project Euler problem 1, modified to protect the innocent:</p>
-<pre><code>        <span class='test' id='test_533_533'>288045 == 1 .. 1111 |&gt; filter (&#955;x = x % 3 == 0 || x % 5 == 0) |&gt; sum</span>
+<pre><code>        <span class='test' id='test_609_609'>288045 == 1 .. 1111 |&gt; filter (&#955;x = x % 3 == 0 || x % 5 == 0) |&gt; sum</span>
 
 
         take_while f { nil } = { nil }
@@ -1296,58 +1417,58 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
                  | f x when f (head x) = drop_while f (tail x)
                  | _ x = x
 
-        <span class='test' id='test_544_544'>not (empty? (1 :: {nil}))</span>
-        <span class='test' id='test_545_545'>empty? [:]</span>
+        <span class='test' id='test_620_620'>not (empty? (1 :: {nil}))</span>
+        <span class='test' id='test_621_621'>empty? [:]</span>
 
-        <span class='test' id='test_547_547'>head [: 1, 2 ] is 1</span>
-        <span class='test' id='test_548_548'>tail [: 1, 2 ] is [:2]</span>
-        <span class='test' id='test_549_549'>last [: 1, 2 ] is 2</span>
+        <span class='test' id='test_623_623'>head [: 1, 2 ] is 1</span>
+        <span class='test' id='test_624_624'>tail [: 1, 2 ] is [:2]</span>
+        <span class='test' id='test_625_625'>last [: 1, 2 ] is 2</span>
 
-        <span class='test' id='test_551_551'>err (lazy head {nil}) is &quot;Head called on empty list&quot;</span>
-        <span class='test' id='test_552_552'>err (lazy tail {nil}) is &quot;Tail called on empty list&quot;</span>
-        <span class='test' id='test_553_553'>err (lazy last {nil}) is &quot;Last called on empty list&quot;</span>
+        <span class='test' id='test_627_627'>err (lazy head {nil}) is &quot;Head called on empty list&quot;</span>
+        <span class='test' id='test_628_628'>err (lazy tail {nil}) is &quot;Tail called on empty list&quot;</span>
+        <span class='test' id='test_629_629'>err (lazy last {nil}) is &quot;Last called on empty list&quot;</span>
 
-        <span class='test' id='test_555_555'>take(2, [: 1, 2, 3 ]) == [: 1, 2 ]</span>
-        <span class='test' id='test_556_556'>drop(2, [: 1, 2, 3 ]) == [: 3 ]</span>
+        <span class='test' id='test_631_631'>take(2, [: 1, 2, 3 ]) == [: 1, 2 ]</span>
+        <span class='test' id='test_632_632'>drop(2, [: 1, 2, 3 ]) == [: 3 ]</span>
 
-        <span class='test' id='test_558_558'>take_while (&#955;x = x &lt; 0) [:] == [:]</span>
-        <span class='test' id='test_559_559'>take_while (&#955;x = x &gt; 0) [: 2, 1, 0 ] == [: 2, 1 ]</span>
+        <span class='test' id='test_634_634'>take_while (&#955;x = x &lt; 0) [:] == [:]</span>
+        <span class='test' id='test_635_635'>take_while (&#955;x = x &gt; 0) [: 2, 1, 0 ] == [: 2, 1 ]</span>
 
-        <span class='test' id='test_561_561'>drop_while (&#955;x = x &lt; 0) {nil} == {nil}</span>
-        <span class='test' id='test_562_562'>drop_while (&#955;x = x &gt; 0) [: 2, 1, 0 ] == [: 0 ]</span></code></pre>
+        <span class='test' id='test_637_637'>drop_while (&#955;x = x &lt; 0) {nil} == {nil}</span>
+        <span class='test' id='test_638_638'>drop_while (&#955;x = x &gt; 0) [: 2, 1, 0 ] == [: 0 ]</span></code></pre>
 <p>Cardinality</p>
 <pre><code>        length 
 
              | {nil}              = 0
              | {head: _, tail: x} = 1 + length x
 
-        <span class='test' id='test_571_571'>length [: 1, 2, 3, 4 ] == 4</span></code></pre>
+        <span class='test' id='test_647_647'>length [: 1, 2, 3, 4 ] == 4</span></code></pre>
 <p>Generators</p>
 <pre><code>        init 0 _ = {nil}
            | n x = x :: init (n - 1) x
 
-        <span class='test' id='test_578_578'>length (init 30 0) == 30</span>
-        <span class='test' id='test_579_579'>tail (init 3 0)    == init 2 0</span></code></pre>
+        <span class='test' id='test_654_654'>length (init 30 0) == 30</span>
+        <span class='test' id='test_655_655'>tail (init 3 0)    == init 2 0</span></code></pre>
 <p>List concatenation</p>
 <pre><code>        (++)
 
            | {nil} y                = y
            | {head: y, tail: ys} xs = y :: (ys ++ xs)
 
-        <span class='test' id='test_588_588'>{nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}</span>
-        <span class='test' id='test_589_589'>[: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]</span></code></pre>
+        <span class='test' id='test_664_664'>{nil} ++ (1 :: 2 :: {nil}) == 1 :: 2 :: {nil}</span>
+        <span class='test' id='test_665_665'>[: 1, 2 ] ++ [: 3, 4 ] == [: 1, 2, 3, 4 ]</span></code></pre>
 <p>Filter.</p>
 <pre><code>        filter: (a -&gt; Bool) -&gt; List a -&gt; List a
               | f {nil} = {nil}
               | f x when f (head x) = head x :: filter f (tail x)
               | f x = filter f &lt;| tail x
 
-        <span class='test' id='test_598_598'>[: 1, 2, 3, 4 ] &#39;filter (&#955;x = x &gt; 2) == [: 3, 4 ]</span></code></pre>
+        <span class='test' id='test_674_674'>[: 1, 2, 3, 4 ] &#39;filter (&#955;x = x &gt; 2) == [: 3, 4 ]</span></code></pre>
 <p>Map</p>
 <pre><code>        map(f, {nil}) = {nil}
         map(f, x)     = f(head(x)) :: map(f, tail(x))
 
-        <span class='test' id='test_605_605'>[: 2, 3, 4 ] == [: 1, 2, 3 ] |&gt; map &#955;x = x + 1</span></code></pre>
+        <span class='test' id='test_681_681'>[: 2, 3, 4 ] == [: 1, 2, 3 ] |&gt; map &#955;x = x + 1</span></code></pre>
 <p>Reverse</p>
 <pre><code>        reverse y = 
             let r rest [:] = rest
@@ -1356,9 +1477,9 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 
             in  r {nil} y
 
-        <span class='test' id='test_616_616'>reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]</span>
+        <span class='test' id='test_692_692'>reverse [: 1, 2, 3, 4 ] == [: 4, 3, 2, 1 ]</span>
 
-        <span class='test' id='test_618_619multi'>var test_x = [: 1, 2, 3, 4 ]
+        <span class='test' id='test_694_695multi'>var test_x = [: 1, 2, 3, 4 ]
         test_x == reverse &lt;| reverse test_x</span>
 
         take&#39; x y =
@@ -1367,7 +1488,7 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 
             in  reverse t(x, y, {nil})
 
-        <span class='test' id='test_627_628multi'>var x = [: 1, 2, 3, 4, 5, 6, 7, 8 ]
+        <span class='test' id='test_703_704multi'>var x = [: 1, 2, 3, 4, 5, 6, 7, 8 ]
         take 5 x == take&#39; 5 x</span></code></pre>
 <p>Folds</p>
 <pre><code>        foldl f x xs =
@@ -1400,22 +1521,22 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 
         minimum = foldl1 &#955;x y = if x &gt; y then y else x
 
-        <span class='test' id='test_662_662'>foldl (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10</span>
-        <span class='test' id='test_663_663'>foldr (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10</span>
-        <span class='test' id='test_664_664'>all? id [:true,true]</span>
-        <span class='test' id='test_665_665'>not (all? id [:true,false])</span>
-        <span class='test' id='test_666_666'>any? id [:true,false]</span>
-        <span class='test' id='test_667_667'>not (any? id [:false,false])</span>
-        <span class='test' id='test_668_668'>sum [:1,2,3] == 6</span>
-        <span class='test' id='test_669_669'>product [:1,2,4] == 8</span>
+        <span class='test' id='test_738_738'>foldl (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10</span>
+        <span class='test' id='test_739_739'>foldr (&#955;x y = x + y) 0 [: 1, 2, 3, 4 ] == 10</span>
+        <span class='test' id='test_740_740'>all? id [:true,true]</span>
+        <span class='test' id='test_741_741'>not (all? id [:true,false])</span>
+        <span class='test' id='test_742_742'>any? id [:true,false]</span>
+        <span class='test' id='test_743_743'>not (any? id [:false,false])</span>
+        <span class='test' id='test_744_744'>sum [:1,2,3] == 6</span>
+        <span class='test' id='test_745_745'>product [:1,2,4] == 8</span>
 
-        <span class='test' id='test_671_672multi'>let x = [:1,2], y = [:3,4]
+        <span class='test' id='test_747_748multi'>let x = [:1,2], y = [:3,4]
         concat [:x,y] == [:1,2,3,4]</span>
 
-        <span class='test' id='test_674_674'>concat_map (&#955;x = [:x,x+1]) [:1,2] == [:1,2,2,3]</span>
+        <span class='test' id='test_750_750'>concat_map (&#955;x = [:x,x+1]) [:1,2] == [:1,2,2,3]</span>
 
-        <span class='test' id='test_676_676'>minimum [: 1, 2, 3 ] == 1</span>
-        <span class='test' id='test_677_677'>maximum [: 1, 2, 3 ] == 3</span></code></pre>
+        <span class='test' id='test_752_752'>minimum [: 1, 2, 3 ] == 1</span>
+        <span class='test' id='test_753_753'>maximum [: 1, 2, 3 ] == 3</span></code></pre>
 <h2 id="sequences">Sequences</h2>
 <p>Sequences are an abstract data type which resembles a list, except that elements Sequences may be infinite, as long as you never try to read every element. However, the current implementation is stack-consuming and thus limited by the underlying javascript runtime [TODO].</p>
 <pre><code>    module seq
@@ -1444,8 +1565,8 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
            | x { seq: y } = seq do { elem: z, next: zs } &lt;- y
                                    return { elem: z, next: take (x - 1) zs }
 
-        <span class='test' id='test_713_713'>to_list (from_list [:1,2]) == [:1,2]</span>
-        <span class='test' id='test_714_714'>iterate (&#955;x = x + 1) 0 |&gt; take 100 |&gt; to_list |&gt; length == 100</span>
+        <span class='test' id='test_789_789'>to_list (from_list [:1,2]) == [:1,2]</span>
+        <span class='test' id='test_790_790'>iterate (&#955;x = x + 1) 0 |&gt; take 100 |&gt; to_list |&gt; length == 100</span>
 
         zip_with:
 
@@ -1475,15 +1596,15 @@ tail:{nil:!0}}}}})(c);return f(d)({head:1,tail:{head:2,tail:{head:3,tail:{head:2
 <pre><code>        fibs = to_lazy &lt;: 1 ::: return &lt;: 1 ::: yield zip_with (&#955;x y = x + y) fibs &lt;: tail fibs</code></pre>
 <p>Since the <code>lazy</code> keyword memoizes it's argument, this fibonacci implementation is ridiculously faster than the recursive version. For example, the runtime speed of this fib implementation compared to the native recursive one is <span
 id="speedtest">__________</span>%.</p>
-<pre><code>        <span class='test' id='test_750_754multi'>do! fast_time &lt;- time yield fast_fib 30
+<pre><code>        <span class='test' id='test_826_830multi'>do! fast_time &lt;- time yield fast_fib 30
             slow_time &lt;- time yield fibs |&gt; take 30 |&gt; to_list |&gt; last
             let ratio = floor (fast_time / slow_time * 100)
             &quot;#speedtest&quot; $= ratio
             return (ratio &gt;= 2)</span>
 
-        <span class='test' id='test_756_756'>fibs |&gt; take 5 |&gt; to_list == [:1,1,2,3,5]</span>
+        <span class='test' id='test_832_832'>fibs |&gt; take 5 |&gt; to_list == [:1,1,2,3,5]</span>
 
-        <span class='test' id='test_758_760multi'>fast_fib 15 == fibs |&gt; take 15
+        <span class='test' id='test_834_836multi'>fast_fib 15 == fibs |&gt; take 15
                             |&gt; to_list
                             |&gt; last</span></code></pre>
 <h2 id="formlz">FormlZ</h2>
@@ -1522,10 +1643,10 @@ id="speedtest">__________</span>%.</p>
             { (&gt;&gt;=) x f = x &gt;&gt;= f
               return x = return x }
 
-        <span class='test' id='test_805_808multi'>let (&gt;&gt;&gt;=) x g = concat_map g x
+        <span class='test' id='test_881_884multi'>let (&gt;&gt;&gt;=) x g = concat_map g x
             z = 1 .. 3 &gt;&gt;&gt;= &#955;x = [:x, x + 1, x + 2]
 
-        z == [:1,2,3,2,3,4,3,4,5]</span></code></pre><script>$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents);window.document.title='Prelude';$('h1').html('Prelude')</script>
+        z == [:1,2,3,2,3,4,3,4,5]</span></code></pre><script>$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents);window.document.title='Prelude';$('header h1').html('Prelude')</script>
       </section>
       <footer>
         <div id="test_suite"></div>
