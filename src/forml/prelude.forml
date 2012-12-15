@@ -84,8 +84,9 @@ module prelude
     -- annotated to constrain inferrence - otherwise, these functions would all be
     -- inferred as `a -> b -> c`.
 
-    inline (&&): Bool -> Bool -> Bool | x y = do! `x && y`
-    inline (||): Bool -> Bool -> Bool | x y = do! `x || y`
+    (&&): Bool -> Bool -> Bool | x y = do! `x && y`
+    (||): Bool -> Bool -> Bool | x y = do! `x || y`
+
     inline (*):  Num -> Num -> Num    | x y = do! `x * y`
     inline (/):  Num -> Num -> Num    | x y = do! `x / y`
     inline (%):  Num -> Num -> Num    | x y = do! `x % y`

@@ -487,7 +487,8 @@ instance Opt JExpr where
 
 instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
---    toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
+    toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
 
     toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y]) =
         toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])
