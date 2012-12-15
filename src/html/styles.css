@@ -22,10 +22,18 @@ h1, h2, h3 {
 }
 
 h1 {
-  font-size:28px;
+  font-size:20px;
 }
 
-h1:first-letter {
+h2 {
+  font-size: 16px;
+}
+
+header h1 {
+	font-size: 60px;
+}
+
+header h1:first-letter {
 	color: #E53007;
 }
 

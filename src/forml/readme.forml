@@ -1,12 +1,11 @@
 -- Forml
--- -----
+-- =====
 
 -- <script type="text/javascript">
 -- $("header ul").prepend('<li><a href="https://github.com/texodus/forml/zipball/master">Download <strong>ZIP File</strong></a></li><li><a href="https://github.com/texodus/forml/tarball/master">Download <strong>TAR Ball</strong></a></li><li><a href="https://github.com/texodus/forml">View On <strong>GitHub</strong></a></li>').css("width", "360");
 -- $("header h1").after('<br style="clear: both;"/>');
 -- $("h1").css("font-family", "Montserrat");
--- $("h1").css("font-size", "60px");
--- $("h1:first-letter").css("color", "#E53007");
+-- $("header h1:first-letter").css("color", "#E53007");
 
 
 -- </script>
@@ -17,7 +16,7 @@
 -- [Ruby](http://www.ruby.org), should such a niche turn out to exist. 
 
 -- Philosophy
--- ----------
+-- ==========
 
 --     1) Writing software is unnecessarily hard, because syntax is sufficiently
 --        abstracted from thought process to lose something in the translation. A 
@@ -27,10 +26,10 @@
 
 --     2) Writing software is unnecessarily hard, because making mistakes is too
 --        easy. A modern programming language should prevent the programmer from
---        writing incorrect code, in so far as it doesn't conflict with #1.
+--        writing incorrect code, in so far as it doesn't conflict with 1.
 
 -- Features
--- --------
+-- ========
 
 --   * Buzzwords:  functional, strict, expressive, pure(ish), static(y), inferred, fast, fun.
 --     Strong like a gorilla, yet soft and yielding like a Nerf ball.
@@ -64,20 +63,20 @@
 --        , [Ruby](http://www.ruby-lang.org/en/)
 
 -- Installation
--- ------------
+-- ============
 
 -- Mac OSX (tested on Snow Leopard & Lion).  Note that Forml also requires
--- [Closure](https://developers.google.com/closure/)for optimizations and
+-- [Closure](https://developers.google.com/closure/) for optimizations and
 -- either [Phantom.js](http://phantomjs.org) or [Node.js](http://nodejs.org)
 
 -- Install the
 -- [Haskell Platform](http://hackage.haskell.org/platform/index.html), then
 
---        <pre><code>--$ cabal install forml</pre></code>
+--        <pre><code>$ cabal install forml</pre></code>
 
 -- To compile some forml files:
    
---        <pre><code>--$ forml -o app test.forml test2.forml</pre></code>
+--        <pre><code>$ forml -o app test.forml test2.forml</pre></code>
 
 -- will create an app.js and app.spec.js with the compiled code and
 -- test suite respectively.
@@ -109,13 +108,13 @@
    
 --        <pre><code>$ forml -w test.forml</pre></code>
 
--- To generate an HTML (like this one!) and test suite:
+-- To generate documentation and test runner (like this file):
    
 --        <pre><code>$ forml -docs test.forml</pre></code>
 
 
 -- Tutorial
--- --------
+-- ========
 -- This is unfortunately not comprehensive, and presumes some working knowledge of 
 -- ML or Haskell.  For more examples, see the annotated 
 -- [prelude](http://texodus.github.com/forml/Prelude)
@@ -124,15 +123,85 @@
 -- Forml supports a flexible, forgiving syntax that supports many synonymous forms.
 -- This will be illustrated by adherring to an entirely random, arbitrary style throughout.
 
--- All forml programs must reside in a module.
--- Within a module, the compiler recognizes logical sections divided by 
--- `open` statements and sub modules.  Within a section, declarations
+-- The basic unit of code organization in forml is the `module`, which is simply
+-- a collection of definitions in a namespace (see [Modules](#)).
+-- Within a module, the compiler recognizes strictly ordered logical sections divided by 
+-- `open` statements and sub modules;  within a section, however, declarations
 -- can be in any order.
 
 module readme
 
     open prelude
     open prelude.string
+    
+    -- Definitions
+    -- -----------
+    
+    -- Simple function.  Forml allows functions to be written in ML style, or
+    -- in more traditional java style.
+
+    square x = x * x
+
+    add(x, y) = x + y
+
+    -- With pattern matching
+
+    fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
+
+    -- Patterns can be separated with `|`, or by repeating the definition's
+    -- name ala Haskell.  Definitions can have optional type annotations, which
+    -- may restrict the inferred type of the definition, but must not be
+    -- more general
+    
+    private
+
+    fib' : Num -> Num
+
+    fib' 0 = 0
+    fib' 1 = 1
+    fib' n = fib' (n - 1) + fib' (n - 2)
+    
+    -- Operators can be defined much like in Haskell.  Precedence is currently fixed,
+    -- though you can declare right associative operators by ending them with a `:`.
+    -- For performance, you can declare functions to be `inline`.  This example
+    -- will compile to a loop, as it is tail recursive.
+
+    inline (**): 
+
+         String -> Num -> String
+         text   ** n    =
+
+             var f(_, 0, acc) = acc       -- `let` and `var` are synonyms
+                 f(text, n, acc) =
+                     f(text, n - 1, acc +++ text)
+             
+             in f(text, n, "")            -- `in` is optional
+    
+
+    -- Testing
+    -- -------
+    
+    -- Tests are a first class concept in forml - any unbound in a module (or in other words, 
+    -- any expression which isn't part of a definition), which is inferred as type `Bool`,
+    -- is treated as a test, and is compiled
+    -- to a [Jasmine](http://pivotal.github.com/jasmine) suite in a separate file from
+    -- your definitions.  
+
+    fib' 7 == 13
+    fib' 0 == 0
+    
+    "hello" ** 3 == "hellohellohello"
+    length ("a" ** 10000) == 10000
+    
+    -- For example, this file is the result of running the forml compiler with the `-docs`
+    -- flag for [readme.forml](https://github.com/texodus/forml/blob/master/src/forml/readme.forml),
+    -- and incorporates both the compiled output and the Jasmine suite.  You can execute
+    -- this suite by clicking the `RUN TESTS` button, which will highlight the test
+    -- results in this document
+    
+    
+    -- Modules
+    -- -------
     
     -- Namespaces are not symbols, so this won't work:
     
@@ -146,32 +215,10 @@ module readme
     open prelude.array as array
     
     array.map fib [3,4,5] == [2,3,5]
-
-    -- Simple function.  Forml allows functions to be written in ML style, or
-    -- in more traditional java style.
-
-    square x = x * x
-
-    add(x, y) = x + y
-
-    -- With pattern matching
-
-    fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)
-
-    -- Patterns can be separated with `|`, or by repeating the definition's
-    -- name ala Haskell.  Definitions can have optional type annotations and
-    -- assertions (which are compiled separately from your application code).
-
-    private
-
-    fib' : Num -> Num
-
-    fib' 0 = 0
-    fib' 1 = 1
-    fib' n = fib' (n - 1) + fib' (n - 2)
-
-    fib' 7 == 13
-    fib' 0 == 0
+    
+    
+    -- Records
+    -- -------
 
     -- Forml has the basic primative types from Javascript:  Num, String, Bool;  plus
     -- a record, which is structurally typed and implemented as a simple Javascript object.
@@ -195,26 +242,7 @@ module readme
     magnitude {x: 3, y: 4, other: "test"} == 5
     magnitude {x: 4, y: 3, test: "other"} == 5
 
-    -- Operators can be defined much like in Haskell.  Precedence is currently fixed,
-    -- though you can declare right associative operators by ending them with a `:`.
-    -- For performance, you can declare functions to be `inline`.  This example
-    -- will compile to a loop, as it is tail recursive.
-
-    inline (**): 
-
-         String -> Num -> String
-         text   ** n    =
-
-             var f(_, 0, acc) = acc       -- `let` and `var` are synonyms
-                 f(text, n, acc) =
-                     f(text, n - 1, acc +++ text)
-             
-             in f(text, n, "")            -- `in` is optional
-
-
-    "hello" ** 3 == "hellohellohello"
-    length ("a" ** 10000) == 10000
-
+ 
     -- Anonymous functions also follow Haskell, can be written with `\` or `λ`, and
     -- allows pattern seperation via `|`
 
@@ -223,12 +251,14 @@ module readme
     map!: (a -> b) -> Array a -> Array b
     map! f xs = do! `xs.map(f)`
 
-    let fil = λ x when x > 5 = x
-              | x            = 5
+    let fil =
+    
+        λ x when x > 5 = x
+        | x            = 5
 
     map! fil [2, 6, 3, 7] is [5, 6, 5, 7]
 
-    -- Interop / Side Effects
+    -- Interop & Side Effects
     -- ----------------------
     -- Forml technically allows unrestricted side effects, but by default
     -- wraps them in a `JS a` type, which can be composed with the
@@ -274,16 +304,23 @@ module readme
         | x when num? x   = "Num"
         | _               = "String"
 
-    -- You can also gives union types such as these an alias, effectively allowing
+    -- Types may be given a polymorphic alias in much the same way you'd 
+    -- define a function.
+
+    Maybe a = {just: a} | {nothing}
+
+    -- Once a type such as this has a name, you may even refer to it recursively
+
+    LinkedList a = { head: a, tail: LinkedList a }
+
     -- algebraic data types to be declared in a local scope, for all
     -- records which are structurally equivalent to those declared.  For instance,
     -- we could declare a `Maybe a` ADT in forml via
   
-    Maybe a = {just: a} | {nothing}
 
     -- ... where `{nothing}` is shorthand for the strucural type `{nothing: {}}`.
-    -- Any scope which imports the alias `Maybe a` will now allow values which
-    -- can be typed both a `{just: a}` or `{nothing}` record
+    -- When `Maybe a` is in scope, any record type with only the `just` or `nothing`
+    -- keys will be inferred to be a type `Maybe a`.    
 
     maybe x {just: y} = y
     maybe x {nothing} = x
@@ -302,7 +339,7 @@ module readme
     not (has_value {nothing})
     
     -- Changes
-    -- -------
+    -- =======
     
     -- 0.1.1
 

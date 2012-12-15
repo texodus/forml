@@ -49,6 +49,8 @@ get_title :: String -> String -> (String, String)
 get_title d x = case lines x of
                   z @ ((strip -> ('-':'-':_:x')):('-':'-':_:'-':_):_) ->
                       (x', unlines $ drop 2 z)
+                  z @ ((strip -> ('-':'-':_:x')):('-':'-':_:'=':_):_) ->
+                      (x', unlines $ drop 2 z)
                   _ -> (d, x)
 
 
@@ -60,7 +62,7 @@ docs js (tests:testses) (title:titles) (program @ (Program xs):programs) (source
 
       filename = [qq|$title.html|]
       compiled = [qq|<script>$js $tests</script>|]
-      hook     = [qq|<script>$htmljs;window.document.title='{title}';$('h1').html('{title}')</script>|]
+      hook     = [qq|<script>$htmljs;window.document.title='{title}';$('header h1').html('{title}')</script>|]
 
   in  do monitor [qq|Docs {title}.html|] $
             do writeFile filename $ concat [header, css', scripts, compiled, html, hook, footer]
