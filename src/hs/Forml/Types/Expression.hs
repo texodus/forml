@@ -96,8 +96,10 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                       <|> other_next
 
               other_next =
-
-                      try apply
+                      
+                      try accessor_apply
+                      <|> accessor_val
+                      <|> try apply
                       <|> function
                       <|> try accessor
                       <|> inner
@@ -105,6 +107,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
               inner = try accessor <|> inner_no_accessor
 
               inner_no_accessor =
+
                       indentPairs "(" syntax ")"
                       <|> js
                       <|> try record
@@ -113,6 +116,34 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                       <|> symbol
                       <|> try array
                       <|> list
+                      
+              accessor_val =
+
+                    do string "."
+                       (Addr s c (SymbolExpression x)) <- addr symbol   -- TODO or AccessorExpression
+                       return (FunctionExpression
+                           [EqualityAxiom
+                               (Match [VarPattern "__y"] Nothing)
+                               (Addr s c
+                                   (AccessorExpression
+                                           (Addr s c
+                                               (SymbolExpression (Symbol "__y")))
+                                           [x]))])         
+
+              accessor_apply =
+
+                    do string "."
+                       (Addr s c (ApplyExpression (SymbolExpression x) xs)) <- addr apply   -- TODO or AccessorExpression
+                       return (FunctionExpression
+                           [EqualityAxiom
+                               (Match [VarPattern "__y"] Nothing)
+                               (Addr s c
+                                   (ApplyExpression
+                                       (AccessorExpression
+                                           (Addr s c
+                                               (SymbolExpression (Symbol "__y")))
+                                           [x])
+                                       xs))])              
 
               let' = withPosTemp $ do string "var" <|> string "let"
                                       whitespace1
@@ -379,7 +410,8 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                       Left x -> error$ show x
                       Right x -> x
 
-              symbol  = SymbolExpression <$> syntax
+              symbol  = (SymbolExpression <$> syntax)
+              
 
               list    = ListExpression <$> indentPairs "[" v "]"
                   where v = do whitespace
