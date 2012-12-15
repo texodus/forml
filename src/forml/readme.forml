@@ -341,6 +341,17 @@ module readme
     -- Changes
     -- =======
     
+    -- 0.1.2
+    
+    -- * Added accessor function syntax for treating record fields
+    --   as functions (eg `x.map f == x |> .map f`)
+    -- * Added `_` as valid type variable for throwaway unique types.
+    -- * Module aliases allow binding a module to
+    --   a structurally typed symbol (eg `open prelude.list as list`).
+    -- * Prelude expanded, with special attention to the `array` module.
+    -- * Embedded prelude tests are skipped.
+    -- * Bug fixes.
+    
     -- 0.1.1
 
     -- * Documentation generation has been greatly improved.  Better styling, generates individual pages for each file.
