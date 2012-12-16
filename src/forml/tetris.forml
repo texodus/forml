@@ -8,18 +8,32 @@
 -- </script>
 
 -- <script id="game" type="text/html">
---    <div style='position:absolute;top:0;bottom:0;left:0;right:0;background-color:rgba(0,0,0,0.9)'>
---        <div style='position:relative'>
---            <div id='board' style='border: 3px solid #08789E;position:relative;margin-top:20px;margin-left:auto;margin-right:auto;width:300px;height:600px;background-color:#0C3555;'>
+--    <div style='position:fixed;top:0;bottom:0;left:0;right:0;background-color:rgba(0,0,0,0.9)'>
+--            <div id='container' style='position:relative;margin-left:auto;margin-right:auto;width:500px'>
+
+--                <div style='position:absolute;right:0px;width:170px;top:20px;height:100px;font-family:Helvetica;color:white;font-size:1em'>SCORE</div>
+--                <div id='score' style='position:absolute;right:0px;width:170px;top:40px;height:100px;font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
+
+--                <div style='position:absolute;right:0px;width:170px;top:100px;height:100px;font-family:Helvetica;color:white;font-size:1em'>LEVEL</div>
+--                <div id='level' style='position:absolute;right:0px;width:170px;top:120px;height:100px;font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
+
+--                <div id='board' style='position:absolute;left:0px;top:20px;border: 3px solid #08789E;width:300px;height:600px;background-color:rgba(12,53,85,0.9);'>
+--                </div>
 --            </div>
---            <div id='score' style='font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
---        </div>
 --     </div>
 -- </script>
 
 
 -- An implementation of the classic 80s computer game TETЯIS, written
--- in the programming language Forml.
+-- in the programming language [Forml](http://texodus.github.com/forml).
+-- [Tetris.forml](https://github.com/texodus/forml/blob/master/src/forml/tetris.forml) is an example of 
+-- [literate programming](http://en.wikipedia.org/wiki/Literate_programming) - the source when compiled
+-- generates this page.  You can run the test suite to see the [Jasmine](http://pivotal.github.com/jasmine) test report,
+-- or just play Tetris.
+
+-- Architecture
+-- ------------
+-- All forml code must reside in a module
 
 module tetris
 
@@ -31,17 +45,6 @@ module tetris
     n_rows    = 19
     n_columns = 9 
 
-    css =
-    
-        "position: absolute;
-         width: 26px;
-         border: 3px solid rgba(0,0,0,0.4);
-         border-right-width: 1px;
-         border-top-width: 1px;
-         border-radius: 3px;
-         height: 26px;"    
-
-    
     -- The `Piece` type is a type synonym - it declares a local alias which
     -- can be used to make the type signatures easier to read.
 
@@ -79,9 +82,113 @@ module tetris
           [ [ o, x, x ]
             [ x, x, o ] ] ]
             
-    rand: Num -> JS Num | x = `Math.floor(Math.random() * x)`
-    
+    -- The valid piece colors.
+            
     colors = [ "#76F61E", "#F7D909", "#E11E6A" ]
+    
+    -- The game state.
+
+    Board =
+
+        { piece: Piece
+          board: Array (Array String)
+          x: Num
+          score: Num
+          y: Num
+          timer: Num
+          level: Num }
+        
+    -- Main
+    -- ----
+    
+    play = do
+         
+        game  <- `jQuery("#game").html()`
+        board <- new_board
+
+        "body"   $+ game
+        "#score" $= to_commas board.score
+        "#level" $= board.level
+         
+        ref <- tick board 'every 200
+        `board.timer = ref`
+        
+        move board (-1) 0 'on_key 37
+        rot  board        'on_key 38
+        move board 1 0    'on_key 39
+        move board 0 1    'on_key 40
+        
+    -- Game State
+    -- ----------
+
+    new_board: JS Board = do
+
+        let new_row = yield 0 .. n_columns 'map λ_ = ""
+        
+        piece <- random_piece
+
+        return {
+            piece = piece
+            board = do! sequence (0 .. n_rows 'map λ_ = new_row)
+            score = 0
+            timer = 0
+            level = 1
+
+            x     = 3
+            y     = 0
+        }
+     
+
+
+    private   
+    with_board f =
+    
+        do! board <- new_board
+            yield f board
+        
+    with_board \board = length board.board == n_rows + 1
+    with_board \board = length (get 0 board.board) == n_columns + 1
+
+
+    
+    at x y b = get x (get y b) /= ""
+
+
+    -- 
+
+    
+    is_valid board =
+    
+        let intersect row col =
+                not (board.piece 'at col row
+                     && board.board 'at (board.x + col) (board.y + row))
+    
+            intersect_row row =
+                reduce (&&) <|
+                    map (intersect row) (0 .. length (get row board.piece) - 1)
+    
+        yield board.x >= 0
+              && board.x + length (get 0 board.piece) <= n_columns + 1
+              && board.y + length board.piece <= n_rows + 1
+              && reduce (&&) <| map intersect_row (0 .. length board.piece - 1)
+    
+
+
+    paint board x y color =
+        `board.board[x][y] = color`
+
+
+    css =
+    
+        "position: absolute;
+         width: 26px;
+         border: 3px solid rgba(0,0,0,0.4);
+         border-right-width: 1px;
+         border-top-width: 1px;
+         border-radius: 3px;
+         height: 26px;"    
+
+    
             
     random_piece: JS Piece = do
 
@@ -91,7 +198,10 @@ module tetris
         let piece = get r pieces
             color = get c colors
 
-        yield piece 'map \row = row 'map \"red" = color | "" = ""
+        yield piece 'map \row =
+
+            row 'map λ "red" = color
+                     | ""    = ""
                 
     rotate: Piece -> JS Piece | x =
 
@@ -117,38 +227,9 @@ module tetris
             
 
 
-    Board =
-
-        { piece: Piece
-          board: Array (Array String)
-          x: Num
-          score: Num
-          y: Num }
-        
-
-
-    board: Board = do!
-
-        let new_row = yield 0 .. n_columns 'map λ_ = ""
-        
-        piece <- random_piece
-
-        return {
-            piece = piece
-            board = do! sequence (0 .. n_rows 'map λ_ = new_row)
-            x = 3
-            y = 0
-            score = 0
-        }
-        
-    length board.board == n_rows + 1
-    length (get 0 board.board) == n_columns + 1
-
 
     
-    at x y b = get x (get y b) /= ""
-
-
+    
 
     draw: Board -> String
     draw  { board: board, piece: piece, x: bx, y: by, _ } =
@@ -173,17 +254,17 @@ module tetris
 
 
 
-    every: Num -> JS _ -> JS {}
+    every: Num -> JS _ -> JS Num
     every n action = `setInterval(action, n)`
 
 
     
-    move: Num -> Num -> JS {} | x y = do
+    move: Board -> Num -> Num -> JS {} | board x y = do
     
         `board.x += x`
         `board.y += y`
         
-        z <- is_valid
+        z <- is_valid board
         if z
             "#board" $= draw board
         else do
@@ -192,41 +273,22 @@ module tetris
 
 
     
-    rot = do
+    rot board = do
         
         let old_piece = board.piece 
         rotated_piece <- rotate board.piece
         `board.piece = rotated_piece`
-        x <- is_valid
+        x <- is_valid board
         if x
             "#board" $= draw board
         else `board.piece = old_piece`
         
         
 
-    is_valid =
-    
-        let intersect row col =
-                not (board.piece 'at col row
-                     && board.board 'at (board.x + col) (board.y + row))
-    
-            intersect_row row =
-                reduce (&&) <|
-                    map (intersect row) (0 .. length (get row board.piece) - 1)
-    
-        yield board.x >= 0
-              && board.x + length (get 0 board.piece) <= n_columns + 1
-              && board.y + length board.piece <= n_rows + 1
-              && reduce (&&) <| map intersect_row (0 .. length board.piece - 1)
-    
-
-
-    paint x y color =
-        `board.board[x][y] = color`
 
 
     
-    new_piece = do
+    new_piece board = do
 
         board.piece 'for_each λ row =
             do! get row board.piece 'for_each λ col =
@@ -234,7 +296,7 @@ module tetris
                             && (board.y + row <= n_rows + 1)
                             && (board.x + col <= n_columns + 1) then do
 
-                            paint (board.y + row) (board.x + col) (get col (get row board.piece)) 
+                            paint board (board.y + row) (board.x + col) (get col (get row board.piece)) 
 
                         else `undefined`
          
@@ -242,57 +304,65 @@ module tetris
         `board.piece = new_piece`
         `board.x = 3`
         `board.y = 0`
+ 
+ 
         
-    clear_row x = do
+    clear_row board x = do
 
         `board.score += 100`
-        "#score" $= board.score
+        "#score" $= to_commas board.score
 
         s <- reverse (1 .. x)
 
         yield s 'map λ row =
             do! get row board.board 'for_each λ col =
-                do! `board.board[row][col] = board.board[row - 1][col]`  
+                do! paint board row col <| get col (get (row - 1) board.board)  
+ 
+ 
         
-    clear_lines = do
+    clear_lines board = do
     
-        board.board 'for_each \ row =
-            if reduce (&&) (map (\x = x != "") (get row board.board))
-                 do! clear_row row
+        board.board 'for_each λ row =
+            if reduce (&&) (map (λx = x != "") (get row board.board))
+                 do! clear_row board row
             else
                  do! `undefined`
 
 
 
-    tick = do
+    tick board = do
 
         `board.y += 1`
-        x <- is_valid
+        x <- is_valid board
         
         if x
             log "tick"
         else do
             `board.y = board.y - 1`
-            new_piece
-            clear_lines
+            new_piece board
+            clear_lines board
             
 
         "#board" $= draw board
 
+    with_board λ board =
+    
+        do! tick board
+            i <- is_valid board
+            yield (board.y == 1) 
+                      && i
+                      && board.score == 0
+                      && board.level == 1
+                      
+                      
 
-
-    play = do
+    to_commas: Num -> String | x =
+    
+        let regexp = "(\\d)(?=(\\d\\d\\d)+(?!\\d))"
+        do! `(x+"").replace(new RegExp(regexp, "g"), "$1,")`
          
-        game <- `jQuery("#game").html()`
-
-        "body"   $+ game 
-        "#score" $= board.score
-         
-        tick 'every 200
-        
-        move (-1) 0 'on_key 37
-        rot         'on_key 38
-        move 1 0    'on_key 39
-        move 0 1    'on_key 40
+    to_commas 1000 == "1,000"
+    
+    
   
          
