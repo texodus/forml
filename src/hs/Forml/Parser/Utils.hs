@@ -183,6 +183,16 @@ not_system x = not_reserved$ do y <- x
 
     where reserved_words = [ "==", "<=", ">=", "!=", "<", ">", "||", "&&", ".", ","  ]
 
+valid_partial_op :: Parser String -> Parser String
+valid_partial_op x = not_reserved$
+
+                             do y <- x
+                                if y `elem` reserved_words
+                                    then parserFail "non-reserved word"
+                                    else return y
+
+    where reserved_words = [ ".", ","  ]
+
 
 type_sep    :: Parser Char
 indentPairs :: String -> Parser a -> String -> Parser a

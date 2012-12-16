@@ -108,7 +108,8 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
               inner_no_accessor =
 
-                      indentPairs "(" syntax ")"
+                      try (indentPairs "(" (try (SymbolExpression . Operator <$> valid_partial_op (many1 operator))) ")")
+                      <|> indentPairs "(" syntax ")"
                       <|> js
                       <|> try record
                       <|> named_key
@@ -237,11 +238,11 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
                         ix s   = Infix (try . op $ (unwind <$> string s) <* notFollowedBy operator) AssocLeft
 
-                        unwind "and" = Operator "&&"
-                        unwind "or" = Operator "||"
-                        unwind "is" = Operator "=="
+                        unwind "and"  = Operator "&&"
+                        unwind "or"   = Operator "||"
+                        unwind "is"   = Operator "=="
                         unwind "isnt" = Operator "!="
-                        unwind x = Operator x
+                        unwind x      = Operator x
                         
                         neg = try $ do spaces
                                        string "-"

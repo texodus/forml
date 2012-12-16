@@ -494,6 +494,7 @@ module prelude
             map:     (x -> y) -> (UnboxedArray y)
             forEach: (x -> _) -> {}
             reverse: JS (UnboxedArray x)
+            reduce: (x -> x -> x) -> x
         }
         
         private inline unbox: Array a -> UnboxedArray a = cast
@@ -511,6 +512,8 @@ module prelude
         inline unshift! x = chain (.unshift x)
         reverse x         = do yield do! (unbox x).reverse
                                yield x
+
+        reduce f = .reduce f .: unbox
                                
         inline get: Num -> Array x -> x
             | x xs = do! `xs[x]`
@@ -742,11 +745,11 @@ module prelude
         foldr1 _ {nil} = error "Foldr1 called on empty list"
              | f x = foldr f (head x) (tail x)
         
-        all? f = foldl1 (λx y = x && y) .: map f
-        any? f = foldl1 (λx y = x || y) .: map f
+        all? f = foldl1 (&&) .: map f
+        any? f = foldl1 (||) .: map f
 
-        sum     = foldl1 λ(x, y) = x + y
-        product = foldl1 λ(x, y) = x * y
+        sum     = foldl1 (+)
+        product = foldl1 (*)
         
         concat = foldl1 λx y = x ++ y
         concat_map f xs = concat (map f xs)
@@ -756,8 +759,9 @@ module prelude
 
         minimum = foldl1 λx y = if x > y then y else x
 
-        foldl (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
-        foldr (λx y = x + y) 0 [: 1, 2, 3, 4 ] == 10
+        foldl (+) 0 [: 1, 2, 3, 4 ] == 10
+        foldr (+) 0 [: 1, 2, 3, 4 ] == 10
+        
         all? id [:true,true]
         not (all? id [:true,false])
         any? id [:true,false]
