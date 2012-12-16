@@ -126,9 +126,9 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                (Match [VarPattern "__y"] Nothing)
                                (Addr s c
                                    (AccessorExpression
-                                           (Addr s c
-                                               (SymbolExpression (Symbol "__y")))
-                                           [x]))])         
+                                       (Addr s c
+                                           (SymbolExpression (Symbol "__y")))
+                                       [x]))])         
 
               accessor_apply =
 
@@ -161,34 +161,34 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         string "do"
                         i <- try (string "!") <|> return ""
                         P.spaces
-                        l <- withPos line
+                        l <- withPosTemp line
                         if i == "!"
                            then return$ ApplyExpression (SymbolExpression (Symbol "run")) [wrap s l]
                            else return$ wrap s l
 
-                  where line = try bind <|> try let_bind <|> try return'
+                  where line = try bind <|> try let_bind <|> return'
 
                         wrap s x = LazyExpression (Addr s s (ApplyExpression (SymbolExpression (Symbol "run")) [x])) Every
 
                         bind = do p <- syntax
                                   whitespace <* (string "<-" <|> string "←") <* whitespace
-                                  ex <- withPos syntax
-                                  spaces *> same
+                                  ex <- withPosTemp syntax
+                                  P.spaces *> same
                                   f ex p <$> addr line
 
                         let_bind = withPosTemp $ do string "let"
                                                     whitespace1
-                                                    defs <- withPos def
-                                                    spaces
+                                                    defs <- withPosTemp def
+                                                    P.spaces
                                                     same
                                                     LetExpression <$> return defs <*> line
 
-                            where def = try syntax `sepBy1` try (spaces *> same)
+                            where def = try syntax `sepBy1` try (P.spaces *> same)
 
                         return' = do v <- syntax
                                      option v $ try $ unit_bind v
 
-                        unit_bind v = do spaces *> same
+                        unit_bind v = do P.spaces *> same
                                          f v AnyPattern <$> addr line
 
                         f ex pat zx = ApplyExpression
@@ -200,11 +200,11 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
               lazy  = do string "lazy"
                          whitespace1
-                         LazyExpression <$> withPos (addr$ try syntax) <*> return Once
+                         LazyExpression <$> withPosTemp (addr syntax) <*> return Once
 
               yield = do string "yield"
                          whitespace1
-                         LazyExpression <$> withPos (addr$ try syntax) <*> return Every
+                         LazyExpression <$> withPosTemp (addr syntax) <*> return Every
 
               if' = withPos $ do string "if"
                                  whitespace1
@@ -229,10 +229,10 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
                   where table  = [ [ix "^"]
                                  , [ix "*", ix "/"]
-                                 , [px "-", px "!" ]
+                                 , [ Prefix neg ]
                                  , [ix "+", ix "-"]
                                  , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
-                                 , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!=", ix "is", ix "isnt"]
+                                 , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!=", ix "isnt", ix "is"]
                                  , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
                         ix s   = Infix (try . op $ (unwind <$> string s) <* notFollowedBy operator) AssocLeft
@@ -242,6 +242,14 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         unwind "is" = Operator "=="
                         unwind "isnt" = Operator "!="
                         unwind x = Operator x
+                        
+                        neg = try $ do spaces
+                                       string "-"
+                                       spaces
+                                       return (\x -> ApplyExpression
+                                                         (SymbolExpression (Operator "-"))
+                                                         [LiteralExpression (IntLiteral 0), x])
+                                  
 
                         px s   = Prefix (try neg)
                                  where neg = do spaces
@@ -324,14 +332,12 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                         return $ FunctionExpression (t ++ eqs)
 
                         type_axiom = do string ":"
-                                        spaces
-                                        indented
-                                        TypeAxiom <$> withPos type_axiom_signature
+                                        P.spaces
+                                        TypeAxiom <$> withPosTemp type_axiom_signature
 
                         eq_axiom   = do patterns <- syntax
                                         string "="
-                                        spaces
-                                        indented
+                                        P.spaces
                                         ex <- withPosTemp $ withPos (addr syntax)
                                         return $ EqualityAxiom patterns ex
 
