@@ -6,8 +6,6 @@
 -- $("header h1").after('<br style="clear: both;"/>');
 -- $("h1").css("font-family", "Montserrat");
 -- $("header h1:first-letter").css("color", "#E53007");
-
-
 -- </script>
 
 -- Forml is a contemporary programming language for the discriminating
@@ -309,10 +307,6 @@ module readme
 
     Maybe a = {just: a} | {nothing}
 
-    -- Once a type such as this has a name, you may even refer to it recursively
-
-    LinkedList a = { head: a, tail: LinkedList a }
-
     -- algebraic data types to be declared in a local scope, for all
     -- records which are structurally equivalent to those declared.  For instance,
     -- we could declare a `Maybe a` ADT in forml via
@@ -327,6 +321,20 @@ module readme
 
     maybe 3 {just: 4} == 4
     maybe 3 {nothing} == 3
+
+    -- Once a type such as this has a name, you may even refer to it recursively
+    -- (note the `type` keyword is always optional).
+
+    type List a = { head: a, tail: List a } | { nil }
+
+    sum: List Num -> Num
+    sum { head: x, tail: xs } = x + sum xs
+    sum { nil } = 0
+    
+    sum { head: 2
+          tail: { head: 3
+                  tail: { nil } } }
+        == 5
 
     -- In case this sort of things floats your boat, you can also declare
     -- polymorphic types in "java" style, with `< >`.
