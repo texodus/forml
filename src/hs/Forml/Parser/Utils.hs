@@ -72,11 +72,12 @@ instance Syntax String where
                 (escaped_char <|> anyChar) `manyTill` char '"'
 
         where escaped_char = do char '\\'
-                                x <- oneOf "tnr"
+                                x <- oneOf "tnr\\"
                                 case x of
                                   'r' -> return '\r'
                                   'n' -> return '\n'
                                   't' -> return '\t'
+                                  '\\' -> return '\\'
                                   _   -> error "Unimplemented"
 
 
