@@ -513,7 +513,7 @@ module prelude
         reverse x         = do yield do! (unbox x).reverse
                                yield x
 
-        reduce f = .reduce f .: unbox
+        reduce f = .reduce (do! `function(x, y) { return f(x)(y); }`) .: unbox
                                
         inline get: Num -> Array x -> x
             | x xs = do! `xs[x]`
@@ -555,6 +555,8 @@ module prelude
         let x = []
             _ = push! 1 x
         x == [1]
+
+        reduce (&&) [true, true, true]
 
         [1, 2, 3] == do! put 3 [1, 2]
                 

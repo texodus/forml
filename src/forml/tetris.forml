@@ -1,9 +1,20 @@
 -- TETЯIS
 -- ------
 
+-- <link href='http://fonts.googleapis.com/css?family=Orbitron:500' rel='stylesheet' type='text/css'>
 -- <script type="text/javascript">
--- $("header ul").prepend('<li><a id="play_tetris">play<strong>Tetris</strong></a></li>').css("width", "180");
+-- $("header ul").prepend('<li><a id="play_tetris">Play<strong>Tetris</strong></a></li><li><a href="https://github.com/texodus/forml/blob/master/src/forml/tetris.forml">View On <strong>GitHub</strong></a></li>').css("width", "270");
 -- $("#play_tetris").click(tetris.play);
+-- </script>
+
+-- <script id="game" type="text/html">
+--    <div style='position:absolute;top:0;bottom:0;left:0;right:0;background-color:rgba(0,0,0,0.9)'>
+--        <div style='position:relative'>
+--            <div id='board' style='border: 3px solid #08789E;position:relative;margin-top:20px;margin-left:auto;margin-right:auto;width:300px;height:600px;background-color:#0C3555;'>
+--            </div>
+--            <div id='score' style='font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
+--        </div>
+--     </div>
 -- </script>
 
 
@@ -23,22 +34,25 @@ module tetris
     css =
     
         "position: absolute;
-         width: 28px;
-         height: 28px;
-         background-color: green;"    
+         width: 26px;
+         border: 3px solid rgba(0,0,0,0.4);
+         border-right-width: 1px;
+         border-top-width: 1px;
+         border-radius: 3px;
+         height: 26px;"    
 
     
     -- The `Piece` type is a type synonym - it declares a local alias which
     -- can be used to make the type signatures easier to read.
 
-    Piece = Array (Array Bool)
+    Piece = Array (Array String)
 
     -- The classic Tetris pieces.
     
     pieces: Array Piece =
     
-        let x = true
-            o = false
+        let x = "red"
+            o = ""
 
         [ [ [ x ]
             [ x ]
@@ -65,7 +79,19 @@ module tetris
           [ [ o, x, x ]
             [ x, x, o ] ] ]
             
+    rand: Num -> JS Num | x = `Math.floor(Math.random() * x)`
+    
+    colors = [ "#76F61E", "#F7D909", "#E11E6A" ]
+            
+    random_piece: JS Piece = do
 
+        r <- rand (length pieces)
+        c <- rand (length colors)
+
+        let piece = get r pieces
+            color = get c colors
+
+        yield piece 'map \row = row 'map \"red" = color | "" = ""
                 
     rotate: Piece -> JS Piece | x =
 
@@ -94,44 +120,51 @@ module tetris
     Board =
 
         { piece: Piece
-          board: Array (Array Bool)
+          board: Array (Array String)
           x: Num
+          score: Num
           y: Num }
         
 
 
-    board: Board =
+    board: Board = do!
 
-        var new_row = yield 0 .. n_columns 'map λ_ = false
+        let new_row = yield 0 .. n_columns 'map λ_ = ""
+        
+        piece <- random_piece
 
-        { piece = get 4 pieces
-          board = do! sequence (0 .. n_rows 'map λ_ = new_row)
-          x = 3
-          y = 0 }
+        return {
+            piece = piece
+            board = do! sequence (0 .. n_rows 'map λ_ = new_row)
+            x = 3
+            y = 0
+            score = 0
+        }
         
     length board.board == n_rows + 1
     length (get 0 board.board) == n_columns + 1
 
 
     
-    at x y b = get x (get y b)
+    at x y b = get x (get y b) /= ""
 
 
 
     draw: Board -> String
-    draw  { board: board, piece: piece, x: bx, y: by } =
+    draw  { board: board, piece: piece, x: bx, y: by, _ } =
 
         var draw_block x y =
         
                 if board 'at x y
-                    || ((x - bx >= 0)
-                        && (x - bx < length (get 0 piece)) 
-                        && (y - by >= 0)
-                        && (y - by < length piece)
-                        && piece 'at (x - bx) (y - by) )
-
-                    then "<div style='top:`y*30`px;left:`x*30`px;`css`'></div>"
-                    else ""
+                    "<div style='top:`y*30`px;left:`x*30`px;background-color:`get x (get y board)`;`css`'></div>"
+                else (if ((x - bx >= 0)
+                            && (x - bx < length (get 0 piece)) 
+                            && (y - by >= 0)
+                            && (y - by < length piece)
+                            && piece 'at (x - bx) (y - by) )
+                            
+                          "<div style='top:`y*30`px;left:`x*30`px;background-color:`get (x - bx) (get (y - by) piece)`;`css`'></div>"
+                      else "")
 
             draw_row x = concat .: map (λf = f x) .: map draw_block
             rows       = 0 .. n_rows 'map λ_ = 0 .. n_columns
@@ -145,14 +178,17 @@ module tetris
 
 
     
-    move: Num -> JS {} | x = do
+    move: Num -> Num -> JS {} | x y = do
     
         `board.x += x`
-        y <- is_valid
-        if y
-            "body" $= draw board
-        else 
+        `board.y += y`
+        
+        z <- is_valid
+        if z
+            "#board" $= draw board
+        else do
            `board.x = board.x - x`
+           `board.y = board.y - y`
 
 
     
@@ -163,19 +199,31 @@ module tetris
         `board.piece = rotated_piece`
         x <- is_valid
         if x
-            "body" $= draw board
+            "#board" $= draw board
         else `board.piece = old_piece`
         
         
 
     is_valid =
     
-        yield (board.x >= 0)
-              && (board.x + length (get 0 board.piece) <= n_columns + 1)
-              && (board.y + length board.piece <= n_rows + 1)
+        let intersect row col =
+                not (board.piece 'at col row
+                     && board.board 'at (board.x + col) (board.y + row))
+    
+            intersect_row row =
+                reduce (&&) <|
+                    map (intersect row) (0 .. length (get row board.piece) - 1)
+    
+        yield board.x >= 0
+              && board.x + length (get 0 board.piece) <= n_columns + 1
+              && board.y + length board.piece <= n_rows + 1
+              && reduce (&&) <| map intersect_row (0 .. length board.piece - 1)
+    
+
 
     paint x y color =
         `board.board[x][y] = color`
+
 
     
     new_piece = do
@@ -186,12 +234,33 @@ module tetris
                             && (board.y + row <= n_rows + 1)
                             && (board.x + col <= n_columns + 1) then do
 
-                            paint (board.y + row) (board.x + col) true
+                            paint (board.y + row) (board.x + col) (get col (get row board.piece)) 
 
                         else `undefined`
-            
-        `board.piece = get(0)(pieces)`
+         
+        new_piece <- random_piece    
+        `board.piece = new_piece`
+        `board.x = 3`
         `board.y = 0`
+        
+    clear_row x = do
+
+        `board.score += 100`
+        "#score" $= board.score
+
+        s <- reverse (1 .. x)
+
+        yield s 'map λ row =
+            do! get row board.board 'for_each λ col =
+                do! `board.board[row][col] = board.board[row - 1][col]`  
+        
+    clear_lines = do
+    
+        board.board 'for_each \ row =
+            if reduce (&&) (map (\x = x != "") (get row board.board))
+                 do! clear_row row
+            else
+                 do! `undefined`
 
 
 
@@ -205,19 +274,25 @@ module tetris
         else do
             `board.y = board.y - 1`
             new_piece
+            clear_lines
+            
 
-        "body" $= draw board
+        "#board" $= draw board
 
 
 
     play = do
          
-        tick 'every 100
-        
-        move (-1)   'on_key 37
-        rot         'on_key 38
-        move 1      'on_key 39
-        log "Down!" 'on_key 40
+        game <- `jQuery("#game").html()`
 
+        "body"   $+ game 
+        "#score" $= board.score
+         
+        tick 'every 200
+        
+        move (-1) 0 'on_key 37
+        rot         'on_key 38
+        move 1 0    'on_key 39
+        move 0 1    'on_key 40
   
          
