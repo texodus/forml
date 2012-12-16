@@ -2,7 +2,7 @@
 
 body {
   padding:50px;
-  font:14px/1.5 Lato, Helvetica, Arial, sans-serif;
+  font: 14px/1.5 Lato, Helvetica, Arial, sans-serif;
   font-weight:300;
   color:black;
 }
@@ -10,7 +10,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   color:#222;
   margin:0 0 20px;
-  font-family: Montserrat;
+  font-family: Montserrat, Helvetica;
 }
 
 p, ul, ol, table, pre, dl {

@@ -1,7 +1,13 @@
--- Tetris
+-- TETЯIS
 -- ------
 
--- An implementation of the classic 80s computer game TETRIS, written
+-- <script type="text/javascript">
+-- $("header ul").prepend('<li><a id="play_tetris">play<strong>Tetris</strong></a></li>').css("width", "180");
+-- $("#play_tetris").click(tetris.play);
+-- </script>
+
+
+-- An implementation of the classic 80s computer game TETЯIS, written
 -- in the programming language Forml.
 
 module tetris
@@ -70,18 +76,18 @@ module tetris
                     do acc <- put (get col (get index piece)) acc
                        new_row acc piece (index + 1) col
 
-                else return acc
+                else return do! reverse acc
         
         sequence <| map (new_row [] x 0) (0 .. length (get 0 x) - 1)
 
-    get 3 pieces is do! rotate (get 3 pieces)
+    get 3 pieces is
+        do! rotate (get 3 pieces)
     
     get 1 pieces is
-    
-        do! x <- rotate (get 1 pieces)
-            x <- rotate x
-            x <- rotate x
-            rotate x
+        do! rotate (get 1 pieces) >>= rotate >>= rotate >>= rotate
+            
+    get 4 pieces isnt
+        do! rotate (get 4 pieces) >>= rotate
             
 
 
@@ -96,34 +102,122 @@ module tetris
 
     board: Board =
 
-        var new_row = yield 0 .. n_columns 'map λ_ = true
+        var new_row = yield 0 .. n_columns 'map λ_ = false
 
-        { piece = get 0 pieces
+        { piece = get 4 pieces
           board = do! sequence (0 .. n_rows 'map λ_ = new_row)
-          x = 0
-          y = 3 }
+          x = 3
+          y = 0 }
         
     length board.board == n_rows + 1
     length (get 0 board.board) == n_columns + 1
-    
 
-  
-    draw: Board -> Piece -> String
-    draw  board    piece  =
+
+    
+    at x y b = get x (get y b)
+
+
+
+    draw: Board -> String
+    draw  { board: board, piece: piece, x: bx, y: by } =
 
         var draw_block x y =
+        
+                if board 'at x y
+                    || ((x - bx >= 0)
+                        && (x - bx < length (get 0 piece)) 
+                        && (y - by >= 0)
+                        && (y - by < length piece)
+                        && piece 'at (x - bx) (y - by) )
 
-                if get x (get y board.board)
-                    "<div style='top:`y*30`px;left:`x*30`px;`css`'></div>"
-                else ""
+                    then "<div style='top:`y*30`px;left:`x*30`px;`css`'></div>"
+                    else ""
 
             draw_row x = concat .: map (λf = f x) .: map draw_block
             rows       = 0 .. n_rows 'map λ_ = 0 .. n_columns
 
         in  concat <: zip_with draw_row (0 .. n_rows) rows 
 
-    do! "body" $= draw board (get 0 pieces) 
-        return false    
+
+
+    every: Num -> JS _ -> JS {}
+    every n action = `setInterval(action, n)`
+
+
+    
+    move: Num -> JS {} | x = do
+    
+        `board.x += x`
+        y <- is_valid
+        if y
+            "body" $= draw board
+        else 
+           `board.x = board.x - x`
+
+
+    
+    rot = do
+        
+        let old_piece = board.piece 
+        rotated_piece <- rotate board.piece
+        `board.piece = rotated_piece`
+        x <- is_valid
+        if x
+            "body" $= draw board
+        else `board.piece = old_piece`
         
         
+
+    is_valid =
+    
+        yield (board.x >= 0)
+              && (board.x + length (get 0 board.piece) <= n_columns + 1)
+              && (board.y + length board.piece <= n_rows + 1)
+
+    paint x y color =
+        `board.board[x][y] = color`
+
+    
+    new_piece = do
+
+        board.piece 'for_each λ row =
+            do! get row board.piece 'for_each λ col =
+                    do! if board.piece 'at col row 
+                            && (board.y + row <= n_rows + 1)
+                            && (board.x + col <= n_columns + 1) then do
+
+                            paint (board.y + row) (board.x + col) true
+
+                        else `undefined`
+            
+        `board.piece = get(0)(pieces)`
+        `board.y = 0`
+
+
+
+    tick = do
+
+        `board.y += 1`
+        x <- is_valid
+        
+        if x
+            log "tick"
+        else do
+            `board.y = board.y - 1`
+            new_piece
+
+        "body" $= draw board
+
+
+
+    play = do
+         
+        tick 'every 100
+        
+        move (-1)   'on_key 37
+        rot         'on_key 38
+        move 1      'on_key 39
+        log "Down!" 'on_key 40
+
+  
          
