@@ -43,6 +43,8 @@ import           Forml.Parser
 import           Forml.Parser.Utils
 
 import           Forml.TypeCheck.Types
+import Data.Graph (graphFromEdges, SCC(..))
+import Data.Graph.SCC (sccList)
 
 
 -- Type Inference
@@ -510,29 +512,31 @@ instance Infer [Statement] () where
 
 sort_dep :: [[Definition]] -> [[Definition]]
 sort_dep [] = []
-sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
-                [] -> error$ "Unresolvable dependency ordering in " ++ show (get_names xs)
-                xs -> xs ++ sort_dep (map snd$ filter (not . fst) free)
+sort_dep (concat -> xs) = free
 
+    where free = unwrap `map` sccList graph
+    
+              where (graph, reverse_lookup, _) = graphFromEdges . get_nodes $ xs 
 
-    where as = get_needed (get_names xs) (zip (get_names xs) (get_expressions xs))
-
-          free = get_free as `zip` xs
-
-          get_free [] = []
-          get_free ([]:xs) = True : get_free xs
-          get_free (_:xs) = False : get_free xs
-
+                    unwrap (AcyclicSCC v) = [ get_node . reverse_lookup $ v ]
+                    unwrap (CyclicSCC v)  = map (get_node . reverse_lookup) v  
+    
+                    get_node (d, _, _) = d
+                    
+                    get_nodes :: [Definition] -> [(Definition, String, [String])]
+                    get_nodes = map to_node
+                    
+                    to_node :: Definition -> (Definition, String, [String])
+                    to_node def @ (Definition _ _ n as) =
+                        (def, show n, concat $ get_symbols `map` get_expressions' as)
+                 
+          get_names :: [Definition] -> [String]
           get_names [] = []
-          get_names ([Definition _ _ n _]:xs) = show n : get_names xs
+          get_names (Definition _ _ n _:xs) = show n : get_names xs
 
-          get_needed _ [] = []
-          get_needed names ((n,x):xs) =
-              ((names \\ [n]) `L.intersect` (concat$ map get_symbols x)) : get_needed names xs
-
-          get_expressions :: [[Definition]] -> [[Expression Definition]]
+          get_expressions :: [Definition] -> [[Expression Definition]]
           get_expressions [] = []
-          get_expressions ([Definition _ _ _ as]:xs) = get_expressions' as : get_expressions xs
+          get_expressions (Definition _ _ _ as : xs) = get_expressions' as : get_expressions xs
 
           get_expressions' [] = []
           get_expressions' (TypeAxiom _: xs) = get_expressions' xs
@@ -550,8 +554,9 @@ sort_dep xs = case map (:[])$ concat$ map snd$ filter fst free of
           get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
           get_symbols (LetExpression _ x)     = get_symbols x
           get_symbols (ListExpression x)      = concat (map get_symbols x)
-js_type :: Type
 
+
+js_type :: Type
 js_type = Type (TypeConst "JS" (KindFunction Star Star))
 
 tiProgram :: Program -> [(Namespace, [Assumption])] -> ([(Namespace, [Assumption])], [String])

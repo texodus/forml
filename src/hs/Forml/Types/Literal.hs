@@ -33,5 +33,5 @@ instance ToJExpr Literal where
 instance Infer Literal Type where
     infer (StringLiteral _) = return (Type (TypeConst "String" Star))
     infer (IntLiteral _)    = return (Type (TypeConst "Num" Star))
-    infer (DoubleLiteral _)    = return (Type (TypeConst "Double" Star))
+    infer (DoubleLiteral _)    = return (Type (TypeConst "Num" Star))
     

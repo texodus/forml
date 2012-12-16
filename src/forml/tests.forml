@@ -133,6 +133,13 @@ module "Tests for TCO bugs"
     length (rev_2 test_x) == length (rev_1 test_x)
     length (rev_2 test_x) == length test_x
     length (rev_1 test_x) == length (reverse test_x)
+    
+
+
+module "Tests for typing bugs"    
+    
+    ff x = gg x + 1
+    gg x = ff x - 1
 
 
 module "Tests for parser bugs"
