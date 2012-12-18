@@ -19,7 +19,7 @@
 module Forml.TypeCheck where
 
 import           Data.List                     (intersect, partition,
-                                                union, (\\))
+                                                union, (\\), reverse)
 
 import qualified Data.List                     as L
 import qualified Data.Map                      as M
@@ -112,7 +112,7 @@ instance Infer (Expression Definition) Type where
                      as'' <- get_assumptions
                      return$ as'' \\ as
 
-    infer (AccessorExpression (Addr s f x) y) = infer (acc y)
+    infer (AccessorExpression (Addr s f x) y) = infer (acc $ reverse y)
 
         where acc :: [Symbol] -> Expression Definition
               acc [] = x
