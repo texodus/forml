@@ -512,48 +512,36 @@ instance Infer [Statement] () where
 
 sort_dep :: [[Definition]] -> [[Definition]]
 sort_dep [] = []
-sort_dep (concat -> xs) = free
+sort_dep (concat -> xs) = unwrap `map` sccList graph
 
-    where free = unwrap `map` sccList graph
-    
-              where (graph, reverse_lookup, _) = graphFromEdges . get_nodes $ xs 
+    where (graph, reverse_lookup, _) = graphFromEdges . map to_node $ xs 
 
-                    unwrap (AcyclicSCC v) = [ get_node . reverse_lookup $ v ]
-                    unwrap (CyclicSCC v)  = map (get_node . reverse_lookup) v  
+          unwrap (AcyclicSCC v) = [ get_node . reverse_lookup $ v ]
+          unwrap (CyclicSCC v)  = map (get_node . reverse_lookup) v  
     
-                    get_node (d, _, _) = d
-                    
-                    get_nodes :: [Definition] -> [(Definition, String, [String])]
-                    get_nodes = map to_node
-                    
-                    to_node :: Definition -> (Definition, String, [String])
-                    to_node def @ (Definition _ _ n as) =
-                        (def, show n, concat $ get_symbols `map` get_expressions' as)
+          get_node (d, _, _) = d
+          
+          to_node :: Definition -> (Definition, String, [String])
+          to_node def @ (Definition _ _ n as) =
+              (def, show n, concat . map get_symbols . get_expressions $ as)
                  
-          get_names :: [Definition] -> [String]
-          get_names [] = []
-          get_names (Definition _ _ n _:xs) = show n : get_names xs
-
-          get_expressions :: [Definition] -> [[Expression Definition]]
           get_expressions [] = []
-          get_expressions (Definition _ _ _ as : xs) = get_expressions' as : get_expressions xs
-
-          get_expressions' [] = []
-          get_expressions' (TypeAxiom _: xs) = get_expressions' xs
-          get_expressions' (EqualityAxiom (Match _ (Just y)) (Addr _ _ x): xs) = y : x : get_expressions' xs
-          get_expressions' (EqualityAxiom _ (Addr _ _ x): xs) = x : get_expressions' xs
+          get_expressions (TypeAxiom _: xs') = get_expressions xs'
+          get_expressions (EqualityAxiom (Match _ (Just y)) (Addr _ _ x): xs') = y : x : get_expressions xs'
+          get_expressions (EqualityAxiom _ (Addr _ _ x): xs') = x : get_expressions xs'
 
           get_symbols (RecordExpression (unzip . M.toList -> (_, xs))) = concat (map get_symbols xs)
           get_symbols (AccessorExpression (Addr _ _ x) _) = get_symbols x
-          get_symbols (ApplyExpression a b)   = get_symbols a ++ concat (map get_symbols b)
-          get_symbols (IfExpression a b c)    = get_symbols a ++ get_symbols b ++ get_symbols c
-          get_symbols (LiteralExpression _)   = []
-          get_symbols (SymbolExpression x)    = [show x]
-          get_symbols (JSExpression _)        = []
+          get_symbols (ApplyExpression a b) = get_symbols a ++ concat (map get_symbols b)
+          get_symbols (IfExpression a b c) = get_symbols a ++ get_symbols b ++ get_symbols c
+          get_symbols (LiteralExpression _) = []
+          get_symbols (SymbolExpression x) = [show x]
+          get_symbols (JSExpression _) = []
           get_symbols (LazyExpression (Addr _ _ x) _)      = get_symbols x
-          get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions' as
-          get_symbols (LetExpression _ x)     = get_symbols x
-          get_symbols (ListExpression x)      = concat (map get_symbols x)
+          get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions as
+          get_symbols (LetExpression _ x) = get_symbols x
+          get_symbols (ListExpression x) = concat (map get_symbols x)
+          get_symbols _ = error "Unimplemented TypeCheck 544"
 
 
 js_type :: Type

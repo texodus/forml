@@ -17,7 +17,7 @@
 --                <div style='position:absolute;right:0px;width:170px;top:100px;height:100px;font-family:Helvetica;color:white;font-size:1em'>LEVEL</div>
 --                <div id='level' style='position:absolute;right:0px;width:170px;top:120px;height:100px;font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
 
---                <div id='board' style='position:absolute;left:0px;top:20px;border: 3px solid #08789E;width:300px;height:600px;background-color:rgba(12,53,85,0.9);'>
+--                <div id='board' style='position:absolute;left:0px;top:20px;border: 3px solid;width:300px;height:600px;opacity:0.9'>
 --                </div>
 --            </div>
 --     </div>
@@ -33,7 +33,11 @@
 
 -- Architecture
 -- ------------
--- All forml code must reside in a module
+-- The entire application will live in the `tetris` module in the
+-- global namespace.  We're going to need forml's standard library,
+-- the `prelude`, as well as a number of sub modules:  the data
+-- representation for the game will need additional functions from
+-- `array` module, and the `html` module for manipulating the UI.
 
 module tetris
 
@@ -42,20 +46,32 @@ module tetris
     open prelude.html
     open prelude.array
     
+    -- The order of import here is important - each `open` statement
+    -- defines a new section, where subsequent `open`s shadow already
+    -- imported symbols.  Because some symbols in `prelude.html` are shadowed by 
+    -- those in `prelude.array`, we can bind the `prelude.html` to a record-
+    -- typed symbol.  This allows us to access all the symbols from
+    -- `prelude.html`, as well as use the `array` symbol as a function parameter.
+    
+    open prelude.html as html
+    
+    -- Some basic constants describing the physical laws of
+    -- Tetris.
+    
     n_rows    = 19
     n_columns = 9 
 
     -- The `Piece` type is a type synonym - it declares a local alias which
     -- can be used to make the type signatures easier to read.
 
-    Piece = Array (Array String)
+    Piece = Array (Array Num)
 
     -- The classic Tetris pieces.
     
     pieces: Array Piece =
     
-        let x = "red"
-            o = ""
+        let x = 0
+            o = (-1)
 
         [ [ [ x ]
             [ x ]
@@ -84,14 +100,16 @@ module tetris
             
     -- The valid piece colors.
             
-    colors = [ "#76F61E", "#F7D909", "#E11E6A" ]
+    colors = [ [ "#0C3555", "#08789E", "#76F61E", "#F7D909", "#E11E6A" ]
+               [ "#320010", "#74220F", "#B8A04E", "#E1D46C", "#80611D" ]
+               [ "#542437", "#53777A", "#C02942", "#D95B43", "#53777A" ]  ]
     
     -- The game state.
 
     Board =
 
         { piece: Piece
-          board: Array (Array String)
+          board: Array (Array Num)
           x: Num
           score: Num
           y: Num
@@ -100,58 +118,92 @@ module tetris
         
     -- Main
     -- ----
+    -- When the `Play Tetris` button is clicked, the action bound to
+    -- the symbol `play` is realized:  the application's HTML UI is
+    -- appended to the page, the game's state is initialized, and 
+    -- handlers are configured for the game's keyboard events &
+    -- timing loop.
     
     play = do
          
-        game  <- `jQuery("#game").html()`
+        game  <- game_template
         board <- new_board
 
         "body"   $+ game
+        "#board" $| "background-color" <| get 0 (get (board.level - 1) colors)
+        "#board" $| "border-color"     <| get 1 (get (board.level - 1) colors)
         "#score" $= to_commas board.score
         "#level" $= board.level
          
-        ref <- tick board 'every 200
-        `board.timer = ref`
+        ref <- tick board 'every 400
+        board 'set_timer ref
         
         move board (-1) 0 'on_key 37
         rot  board        'on_key 38
         move board 1 0    'on_key 39
         move board 0 1    'on_key 40
         
-    -- Game State
-    -- ----------
-
+    -- There are three pieces which currently require shelling out to
+    -- Javascript.  `set_timer` is necessary because the prelude 
+    -- currently lacks a library for implementing type safe mutations.
+    -- `game_template` is an action which fetches the blank HTML
+    -- for the board background from an embedded script template
+    -- (see [source](https://github.com/texodus/forml/blob/master/src/forml/tetris.forml)) 
+        
+    set_timer ref board = `board.timer = ref` 
+    game_template       = `jQuery("#game").html()`
+    
+    -- `to_commas` pretty prints the current score, using the the
+    -- regex wrappers from the `prelude.string` module 
+    
+    to_commas: Num -> String | x =
+    
+        let r = "(\\d)(?=(\\d\\d\\d)+(?!\\d))"
+        in  to_string x 'replace (regex r "g") "$1,"
+         
+    to_commas 1000 == "1,000"
+    
+    
+    
+    -- `new_board` is a factory for generating a `Board` records
+    -- representing a new game.
+        
     new_board: JS Board = do
 
-        let new_row = yield 0 .. n_columns 'map λ_ = ""
+        let new_row = yield 0 .. n_columns 'map λ_ = (-1)
         
-        piece <- random_piece
+        piece <- random_piece 0
+        board <- sequence (0 .. n_rows 'map λ_ = new_row)
 
         return {
             piece = piece
-            board = do! sequence (0 .. n_rows 'map λ_ = new_row)
+            board = board
             score = 0
             timer = 0
             level = 1
 
-            x     = 3
-            y     = 0
+            x = 3
+            y = 0
         }
      
-
+    -- For the main game loop, we simply thread this gamestate through 
+    -- each function which needs it.  This makes testing convenient:
 
     private   
     with_board f =
     
         do! board <- new_board
             yield f board
+            
+    -- which lets us write quick tests that are guaranteed a clean
+    -- gamestate:
         
     with_board \board = length board.board == n_rows + 1
     with_board \board = length (get 0 board.board) == n_columns + 1
 
-
+    -- While we're at it, we're going to 
     
-    at x y b = get x (get y b) /= ""
+    at x y b = get x (get y b) /= (-1)
 
 
     -- 
@@ -175,6 +227,7 @@ module tetris
 
 
     paint board x y color =
+
         `board.board[x][y] = color`
 
 
@@ -190,18 +243,17 @@ module tetris
 
     
             
-    random_piece: JS Piece = do
+    random_piece: Num -> JS Piece | level = do
 
         r <- rand (length pieces)
-        c <- rand (length colors)
+        c <- rand (length (get level colors) - 2)
 
         let piece = get r pieces
-            color = get c colors
 
         yield piece 'map \row =
 
-            row 'map λ "red" = color
-                     | ""    = ""
+            row 'map λ 0 = c
+                     | _ = (-1)
                 
     rotate: Piece -> JS Piece | x =
 
@@ -232,19 +284,24 @@ module tetris
     
 
     draw: Board -> String
-    draw  { board: board, piece: piece, x: bx, y: by, _ } =
+    draw  { board: board, piece: piece, x: bx, y: by, level = level, _ } =
 
         var draw_block x y =
         
                 if board 'at x y
-                    "<div style='top:`y*30`px;left:`x*30`px;background-color:`get x (get y board)`;`css`'></div>"
+                
+                    let color = get ((get x (get y board)) + 2) (get (level - 1) colors)
+                    "<div style='top:`y*30`px;left:`x*30`px;background-color:`color`;`css`'></div>"
+
                 else (if ((x - bx >= 0)
                             && (x - bx < length (get 0 piece)) 
                             && (y - by >= 0)
                             && (y - by < length piece)
                             && piece 'at (x - bx) (y - by) )
                             
-                          "<div style='top:`y*30`px;left:`x*30`px;background-color:`get (x - bx) (get (y - by) piece)`;`css`'></div>"
+                          let color = get ((get (x - bx) (get (y - by) piece)) + 2) (get (level - 1) colors)
+                          "<div style='top:`y*30`px;left:`x*30`px;background-color:`color`;`css`'></div>"
+
                       else "")
 
             draw_row x = concat .: map (λf = f x) .: map draw_block
@@ -300,17 +357,28 @@ module tetris
 
                         else `undefined`
          
-        new_piece <- random_piece    
+        new_piece <- random_piece (board.level - 1)    
         `board.piece = new_piece`
         `board.x = 3`
         `board.y = 0`
  
- 
+  
         
     clear_row board x = do
 
         `board.score += 100`
         "#score" $= to_commas board.score
+
+        if board.score % 1000 == 0 then do
+            `board.level += 1`
+            "#level" $= board.level
+            "#board" $| "background-color" <| get 0 (get (board.level - 1) colors)
+            "#board" $| "border-color"     <| get 1 (get (board.level - 1) colors)
+            log board.timer
+            stop_timer board
+            ref <- tick board 'every ((0.7 ^ board.level) * 400)
+            board 'set_timer ref
+        else `undefined`
 
         s <- reverse (1 .. x)
 
@@ -319,11 +387,15 @@ module tetris
                 do! paint board row col <| get col (get (row - 1) board.board)  
  
  
+ 
+    stop_timer { timer = x, _ } = `clearInterval(x)`
+
+
         
     clear_lines board = do
     
         board.board 'for_each λ row =
-            if reduce (&&) (map (λx = x != "") (get row board.board))
+            if reduce (&&) (map (λx = x != (-1)) (get row board.board))
                  do! clear_row board row
             else
                  do! `undefined`
@@ -356,13 +428,6 @@ module tetris
                       
                       
 
-    to_commas: Num -> String | x =
-    
-        let regexp = "(\\d)(?=(\\d\\d\\d)+(?!\\d))"
-        do! `(x+"").replace(new RegExp(regexp, "g"), "$1,")`
-         
-    to_commas 1000 == "1,000"
-    
     
   
          

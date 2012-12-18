@@ -96,6 +96,7 @@ module prelude
     inline (>=): Num -> Num -> Bool   | x y = do! `x >= y`
     inline (<):  Num -> Num -> Bool   | x y = do! `x < y`
     inline (>):  Num -> Num -> Bool   | x y = do! `x > y`
+    inline (^):  Num -> Num -> Num    | x y = do! `Math.pow(x, y)`
 
     -- Equality is overloaded to match records and arrays. By constraining the type of
     -- this operator, we need only dispatch on the type of the first element,
@@ -250,6 +251,17 @@ module prelude
 
         let x = "test"
         in "hello `x`" is "hello test"
+        
+        Regex = { regex: {} }
+        
+        regex: String -> String -> Regex | r o = do! `new RegExp(r, o)`
+        
+        replace: Regex -> String -> String -> String
+               | r        s         t       = 
+               
+                   do! `(t).replace(r, s)`
+                   
+        to_string: _ -> String | x = do! `x + ""`
 
     open string
 
