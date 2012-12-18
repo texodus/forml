@@ -391,7 +391,7 @@ module prelude
             var report_failed spec results =
 
                     let items = spec.results_.items_
-                        desc  = spec.description.split "__::__" !! 1
+                        desc  = split spec.description "__::__" !! 1
                         exp   = stringify (items !! 0).expected
                         act   = stringify (items !! 0).actual
                         line  = get_line spec.description
