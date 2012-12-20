@@ -219,9 +219,8 @@ instance (Show b) => Infer (Pattern b) Type where
 
     infer (ListPattern xs) = do ts <- mapM infer xs
                                 t' <- newTVar Star
-                                (qs :=> t) <- freshInst list_scheme
+                                t <- freshInst list_scheme
                                 mapM_ (unify t') ts
-                                predicate qs
                                 return t
 
     infer (RecordPattern (unzip . M.toList -> (names, patterns)) p) =
@@ -234,22 +233,22 @@ instance (Show b) => Infer (Pattern b) Type where
 
            let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) p' Star)
            t' <- newTVar Star
-           sc <- find $ quantify (tv r) ([] :=> r)
+           sc <- find $ quantify (tv r) r
            case sc of
              Nothing ->
                  do unify t' r
                     return t'
              Just (Forall _ scr, sct) ->
-                 do (_ :=> t'') <- freshInst sct
-                    (qs :=> t''') <- return$ inst (map TypeVar$ tv t'') scr
-                    (_ :=> t) <- freshInst (quantify (tv t''' L.\\ tv t'') (qs :=> t'''))
+                 do t''  <- freshInst sct
+                    t''' <- return$ inst (map TypeVar$ tv t'') scr
+                    t    <- freshInst (quantify (tv t''' L.\\ tv t'') t''')
                     unify t r
                     unify t' t''
                     s <- get_substitution
                     let t''' = apply s t
                         r''' = apply s r
-                        qt = quantify (tv t''') $ [] :=> t'''
-                        rt = quantify (tv r''') $ [] :=> r'''
+                        qt = quantify (tv t''') t'''
+                        rt = quantify (tv r''') r'''
                     if qt /= rt
                         then do add_error$ "Object constructor does not match signature\n" 
                                              ++ "  Expected: " ++ show qt ++ "\n" 

@@ -79,8 +79,7 @@ instance Infer (Expression Definition) Type where
     infer (SymbolExpression i) =
 
         do sc <- find (show i)
-           (ps :=> t) <- freshInst sc
-           predicate ps
+           t <- freshInst sc
            return t
 
     infer (JSExpression _) =
@@ -102,7 +101,7 @@ instance Infer (Expression Definition) Type where
         do t <- newTVar Star
            as <- get_assumptions
            [_ :>: q] <- with_scope$ ims as
-           (_ :=> t') <- freshInst q
+           t' <- freshInst q
            unify t t'
            return t
 
@@ -129,22 +128,22 @@ instance Infer (Expression Definition) Type where
         do ts <- mapM infer xs
            let r = TypeRecord (TRecord (M.fromList (zip (map f names) ts)) TComplete Star)
            t' <- newTVar Star
-           sc <- find $ quantify (tv r) ([] :=> r)
+           sc <- find $ quantify (tv r) r
            case sc of
              Nothing ->
                  do unify t' r
                     return t'
              Just (Forall _ scr, sct) ->
-                 do (_ :=> t'') <- freshInst sct
-                    (qs :=> t''') <- return$ inst (map TypeVar$ tv t'') (scr)
-                    (_ :=> t) <- freshInst (quantify (tv t''' \\ tv t'') (qs :=> t'''))
+                 do t''  <- freshInst sct
+                    t''' <- return$ inst (map TypeVar$ tv t'') (scr)
+                    t    <- freshInst (quantify (tv t''' \\ tv t'') t''')
                     unify t r
                     unify t' t''
                     s <- get_substitution
                     let t''' = apply s t
                         r''' = apply s r
-                        qt   = quantify (tv t''') $ [] :=> t'''
-                        rt   = quantify (tv r''') $ [] :=> r'''
+                        qt   = quantify (tv t''') t'''
+                        rt   = quantify (tv r''') r'''
                         sct' = apply s t''
                     if qt /= rt
                         then do add_error$ "Record does not match expected signature for " ++ show sct' ++ "\n"
@@ -211,15 +210,6 @@ instance Infer (Axiom (Expression Definition)) Type where
 
 
 
--- Generalization
-
-split :: Monad m => ClassEnv -> [TypeVar] -> [TypeVar] -> [Pred] -> m ([Pred], [Pred])
-split ce fs _ ps =
-
-    do ps' <- reduce ce ps
-       let (ds, rs) = partition (all (`elem` fs) . tv) ps'
-       return (ds, rs) -- \\ rs')
-
 instance Infer [Definition] () where
     infer bs =
 
@@ -241,9 +231,7 @@ instance Infer [Definition] () where
 
            mapM (\(t, as) -> f (unify t) as) (zip def_types axiom_types)
 
-           ps  <- get_predicates
            as  <- get_assumptions
-           ps' <- substitute ps
            ss  <- get_substitution
            fs' <- substitute as
 
@@ -252,19 +240,13 @@ instance Infer [Definition] () where
                vss = map tv ts'
                gs  = foldr1 union vss \\ fs
 
-           ce <- get_classenv
-           (ds, rs) <- split ce fs (foldr1 intersect vss) ps'
-
            if restricted then
-               let gs'  = gs \\ tv rs
-                   scs' = map (quantify gs' . ([]:=>)) ts'
-               in do predicate (ds ++ rs)
-                     assume (zipWith (:>:) is scs')
+               let scs' = map (quantify gs) ts'
+               in do assume (zipWith (:>:) is scs')
                      return ()
              else
-               let scs' = map (quantify gs . (rs:=>)) ts'
-               in do predicate ds
-                     assume (zipWith (:>:) is scs')
+               let scs' = map (quantify gs) ts'
+               in do assume (zipWith (:>:) is scs')
                      return ()
 
         where get_name (Definition _ _ (Symbol x) _) = x
@@ -297,29 +279,22 @@ instance Infer Definition () where
     infer (Definition _ _ name axs) =
 
         do sc <- find$ f name
-           (qs :=> t)  <- freshInst sc
+           t  <- freshInst sc
            axiom_types <- with_scope$ mapM (with_scope . infer) axs
 
            s <- get_substitution
            mapM (flip unify t) axiom_types  -- TODO apply sub to axiom_types?
 
            as <- get_assumptions
-           ce <- get_classenv
-           ps <- get_predicates
 
-           let qs' = apply s qs
-               t'  = apply s t
+           let t'  = apply s t
                fs  = tv (apply s as)
                gs  = tv t' \\ fs
-               sc' = quantify gs (qs' :=> t')
-               ps' = filter (not . entail ce qs') (apply s ps)
+               sc' = quantify gs t'
 
-           (_, rs) <- split ce fs gs ps'
 
            if sc /= sc' then
                add_error$ "Signature too general\n\n    Expected: " ++ show sc ++ "\n    Actual: " ++ show sc'
-             else if not (null rs) then
-               add_error$ "Context too weak\n\n    Expected: " ++ show sc ++ "\n    Actual: " ++ show sc'
              else
                assume (f name :>: sc)
 
@@ -358,7 +333,7 @@ instance Infer BindGroup [Assumption] where
               g name (TypeAxiom t) = [ name :>: to_scheme' t' | t' <- enumerate_types t ]
 
               to_scheme' :: Type -> Scheme
-              to_scheme' t = quantify (tv t) ([] :=> t)
+              to_scheme' t = quantify (tv t) t
 
               sigs :: [Definition] -> [Assumption]
               sigs [] = []
@@ -395,7 +370,7 @@ instance Infer BindGroup [Assumption] where
               
                   let f (_ :>: scheme) =
 
-                          [ do (_ :=> t) <- freshInst scheme
+                          [ do t <- freshInst scheme
                                return t ]
 
                       f _ = []
@@ -406,7 +381,7 @@ instance Infer BindGroup [Assumption] where
                   in  do schemes <- sequence $ concat $ map f assumptions
                          let symbols = concat $ map g assumptions 
                          let rec = TypeRecord (TRecord (M.fromList (zip symbols schemes)) TComplete Star)
-                         return $ quantify (tv rec) ([] :=> rec)
+                         return $ quantify (tv rec) rec
 
 
               h (Symbol x) = x
@@ -430,12 +405,12 @@ instance Infer BindGroup [Assumption] where
 
 
 to_scheme :: TypeDefinition -> UnionType -> [Assumption]
-to_scheme (TypeDefinition n vs) t = [ quantify (vars y) ([]:=> y) :>>: def_type y
+to_scheme (TypeDefinition n vs) t = [ quantify (vars y) y :>>: def_type y
                                           | y <- enumerate_types t ]
 
     where vars y = map (\x -> TVar x (infer_kind x y)) vs
 
-          def_type y = quantify (vars y) ([] :=> foldl app poly_type (map TypeVar (vars y)))
+          def_type y = quantify (vars y) (foldl app poly_type (map TypeVar (vars y)))
 
           poly_type = Type (TypeConst n (to_kind (length vs)))
 
@@ -551,16 +526,13 @@ tiProgram :: Program -> [(Namespace, [Assumption])] -> ([(Namespace, [Assumption
 tiProgram (Program bgs) env =
 
     runTI $ do TI (\x -> (x { modules = env }, ()))
-               assume$ "true"  :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
-               assume$ "false" :>: (Forall [] ([] :=> Type (TypeConst "Bool" Star)))
-               assume$ "error" :>: (Forall [Star] ([] :=> TypeGen 0))
-               assume$ "run"   :>: (Forall [Star] ([] :=> (TypeApplication js_type (TypeGen 0) -:> TypeGen 0)))
+               assume$ "true"  :>: (Forall [] (Type (TypeConst "Bool" Star)))
+               assume$ "false" :>: (Forall [] (Type (TypeConst "Bool" Star)))
+               assume$ "error" :>: (Forall [Star] (TypeGen 0))
+               assume$ "run"   :>: (Forall [Star] (TypeApplication js_type (TypeGen 0) -:> TypeGen 0))
                infer'$ to_group bgs
                s  <- get_substitution
-               ce <- get_classenv
-               ps <- get_predicates
                ms <- TI (\y -> (y, modules y))
-               rs <- reduce ce (apply s ps)
                e  <- get_errors
                return ((apply s ms), S.toList . S.fromList $ e)
 
