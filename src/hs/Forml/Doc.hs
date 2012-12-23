@@ -54,20 +54,20 @@ get_title d x = case lines x of
                   _ -> (d, x)
 
 
-docs :: String -> [String] -> [Title] -> [Program] -> [Source] -> IO ()
-docs _ [] [] [] [] = return ()
-docs js (tests:testses) (title:titles) (program @ (Program xs):programs) (source:sources) =
+docs :: String -> [String] -> [Title] -> [String] -> [Program] -> [Source] -> IO ()
+docs _ [] [] [] [] [] = return ()
+docs js (tests:testses) (filename':filenames) (title:titles) (program @ (Program xs):programs) (source:sources) =
 
   let html     = highlight (get_tests xs) $ toHTML (annotate_tests source program)
 
-      filename = [qq|$title.html|]
+      filename = [qq|$filename'.html|]
       compiled = [qq|<script>$js $tests</script>|]
       hook     = [qq|<script>$htmljs;window.document.title='{title}';$('header h1').html('{title}')</script>|]
 
-  in  do monitor [qq|Docs {title}.html|] $
+  in  do monitor [qq|Docs {filename}|] $
             do writeFile filename $ concat [header, css', scripts, compiled, html, hook, footer]
                return $ Right ()
          
-         docs js testses titles programs sources
+         docs js testses filenames titles programs sources
 
-docs _ _ _ _ _ = error "Paradox: `docs` called with non equivalent arguments"
+docs _ _ _ _ _ _ = error "Paradox: `docs` called with non equivalent arguments"

@@ -19,6 +19,8 @@ import System.Directory
 import System.Environment
 import System.IO
 
+
+import Data.String.Utils (split)
 import Data.List as L
 
 import           Forml.CLI
@@ -31,8 +33,7 @@ import           Forml.Javascript.Utils   (prelude)
 import qualified Forml.Optimize           as O
 import           Forml.Parser
 import           Forml.Static
-import           Forml.TypeCheck          hiding (split)
-import Data.String.Utils (split)
+import           Forml.TypeCheck
 
 to_parsed :: Title -> Source -> TypeSystem -> Either [Error] (TypeSystem, Program)
 to_parsed name src env = case parseForml name src of
@@ -41,11 +42,14 @@ to_parsed name src env = case parseForml name src of
                                            (as, []) -> Right (as, x)
                                            (_, y)   -> Left y
 
+to_filename = head . split "." . last . split "/"
+
 parse_forml :: [Filename] -> IO ([Filename], TypeSystem, [(Program, Source)], [Title])
 parse_forml filenames =
 
     do sources <- mapM get_source filenames
-       foldM parse' ("prelude.forml" : filenames, [], [], []) (prelude' : sources)
+       (_, a, b, c) <- foldM parse' ("prelude.forml" : filenames, [], [], []) (prelude' : sources)
+       return $ (to_filename `fmap` ("prelude.forml" : filenames), a, b, c)
 
     where parse' :: ([Filename], TypeSystem, [(Program, Source)], [Title]) -> String -> IO ([Filename], TypeSystem, [(Program, Source)], [Title])
           parse' (zs, ts, as, titles) src'' =
@@ -105,7 +109,7 @@ main' (parseArgs -> rc') =
 
           compile rc =
 
-              do (_, types, src', titles) <- parse_forml$ inputs rc
+              do (filenames, types, src', titles) <- parse_forml$ inputs rc
                  let src'' = O.run_optimizer (fmap fst src') types
                  let (js', tests') = gen_js (fmap snd src') src''
 
@@ -117,7 +121,7 @@ main' (parseArgs -> rc') =
 
                  tests <- case rc of
                               RunConfig { optimize = True, run_tests = Phantom } ->
-                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS") (drop 1 titles) (drop 1 tests')
+                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS") (drop 1 filenames) (drop 1 tests')
                               _ -> warn "Closure [tests]" tests'
 
                  writeFile (output rc ++ ".js") js
@@ -126,10 +130,10 @@ main' (parseArgs -> rc') =
                  if write_docs rc
                      then let programs = map fst (drop 1 src')
                               sources  = map snd (drop 1 src')
-                          in  do docs js tests (drop 1 titles) programs sources
+                          in  do docs js tests (drop 1 filenames) (drop 1 titles) programs sources
                      else monitor "Docs" $ return $ Right ()
 
-                 sequence (zipWith (test rc js) (drop 1 titles) tests)
+                 sequence (zipWith (test rc js) (drop 1 filenames) tests)
 
                  if (show_types rc)
                       then putStrLn ("\nTypes\n\n  " ++ concat (map f types))
