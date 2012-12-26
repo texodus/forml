@@ -67,6 +67,10 @@ instance Syntax Double where
 instance Syntax Int where
     syntax = read <$> many1 digit
 
+instance (Syntax a) => Syntax (Addr a) where
+
+    syntax = addr syntax
+
 instance Syntax String where
     syntax = do char '"'
                 (escaped_char <|> anyChar) `manyTill` char '"'

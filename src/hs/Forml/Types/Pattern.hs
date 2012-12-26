@@ -34,6 +34,7 @@ import Forml.Types.Literal
 import Forml.Types.Type
 import Forml.Types.Symbol
 import Forml.TypeCheck.Types
+import Forml.TypeCheck.Unify
 
 import Prelude hiding (curry, (++))
 import System.IO.Unsafe (unsafePerformIO)
