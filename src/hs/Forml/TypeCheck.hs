@@ -1,12 +1,17 @@
 
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE NamedFieldPuns         #-}
 {-# LANGUAGE OverlappingInstances   #-}
+{-# LANGUAGE QuasiQuotes            #-}
 {-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# LANGUAGE ViewPatterns           #-}
@@ -38,8 +43,6 @@ import           Forml.Parser
 import           Forml.Parser.Utils
 
 import           Forml.TypeCheck.Types
-import           Forml.TypeCheck.Unify
-
 import Data.Graph (graphFromEdges, SCC(..))
 import Data.Graph.SCC (sccList)
 
@@ -58,7 +61,7 @@ instance Infer (Expression Definition) Type where
            unify (tx `fn` t) te
            return t
 
-    infer (ApplyExpression e (x:xs)) = infer (ApplyExpression (ApplyExpression e [x]) xs)
+    infer (ApplyExpression e (x:xs)) = infer (ApplyExpression (ApplyExpression e (x:[])) xs)
 
     infer (IfExpression a b c) =
 
@@ -76,7 +79,8 @@ instance Infer (Expression Definition) Type where
     infer (SymbolExpression i) =
 
         do sc <- find (show i)
-           freshInst sc
+           t <- freshInst sc
+           return t
 
     infer (JSExpression _) =
 
@@ -131,7 +135,7 @@ instance Infer (Expression Definition) Type where
                     return t'
              Just (Forall _ scr, sct) ->
                  do t''  <- freshInst sct
-                    t''' <- return$ inst (map TypeVar$ tv t'') scr
+                    t''' <- return$ inst (map TypeVar$ tv t'') (scr)
                     t    <- freshInst (quantify (tv t''' \\ tv t'') t''')
                     unify t r
                     unify t' t''
@@ -170,7 +174,7 @@ instance Infer (Expression Definition) Type where
 
         do t <- newTVar Star
            ts <- mapM infer x
-           mapM_ (unify t) ts
+           mapM (unify t) ts
            t' <- newTVar Star
            unify t' (TypeApplication (Type (TypeConst "Array" (KindFunction Star Star))) t)
            return t'
@@ -181,13 +185,11 @@ instance Infer (Expression Definition) Type where
 
 instance (Infer a t) => Infer (Addr a) t where
 
-    infer (Addr s _ x) =
-
-        do m <- get_msg
-           set_msg new_msg
-           z <- infer x
-           set_msg m
-           return z
+    infer (Addr s _ x) = do m <- get_msg
+                            set_msg new_msg
+                            z <- infer x
+                            set_msg m
+                            return z
 
         where new_msg = "  at line " ++ show (sourceLine s) ++ ", column " ++ show (sourceColumn s) ++ "\n"
 
@@ -197,7 +199,7 @@ instance Infer (Axiom (Expression Definition)) Type where
 
         do ts <- mapM infer y
            case z of
-             Just q -> infer q >>= flip unify bool_type
+             (Just q) -> infer q >>= (flip unify) bool_type
              _ -> return ()
            t  <- infer x
            return (foldr fn t ts)
@@ -227,7 +229,7 @@ instance Infer [Definition] () where
                                g (apply s x)
                                f g xs
 
-           mapM_ (\(t, as) -> f (unify t) as) (zip def_types axiom_types)
+           mapM (\(t, as) -> f (unify t) as) (zip def_types axiom_types)
 
            as  <- get_assumptions
            ss  <- get_substitution
@@ -237,10 +239,15 @@ instance Infer [Definition] () where
                fs  = tv fs'
                vss = map tv ts'
                gs  = foldr1 union vss \\ fs
-               scs' = map (quantify gs) ts'
 
-           assume (zipWith (:>:) is scs')
-           return ()
+           if restricted then
+               let scs' = map (quantify gs) ts'
+               in do assume (zipWith (:>:) is scs')
+                     return ()
+             else
+               let scs' = map (quantify gs) ts'
+               in do assume (zipWith (:>:) is scs')
+                     return ()
 
         where get_name (Definition _ _ (Symbol x) _) = x
               get_name (Definition _ _ (Operator x) _) = x
@@ -276,7 +283,7 @@ instance Infer Definition () where
            axiom_types <- with_scope$ mapM (with_scope . infer) axs
 
            s <- get_substitution
-           mapM_ (`unify` t) axiom_types
+           mapM (flip unify t) axiom_types  -- TODO apply sub to axiom_types?
 
            as <- get_assumptions
 
@@ -309,13 +316,13 @@ instance Infer BindGroup [Assumption] where
     infer (Scope imps tts es iss ts) =
 
         do --as <- get_assumptions
-           mapM_ import' imps
+           mapM import' imps
            as' <- get_assumptions
            infer tts
-           mapM_ assume$ sigs es
-           mapM_ infer iss
+           mapM assume$ sigs es
+           mapM infer iss
            with_scope$ mapM infer es
-           mapM_ (infer . Test) ts
+           mapM infer (map Test ts)
            as'' <- get_assumptions
            set_assumptions as'
            return (as'' \\ as')
@@ -361,14 +368,18 @@ instance Infer BindGroup [Assumption] where
                                   
               to_record assumptions =
               
-                  let f (_ :>: scheme) = [ freshInst scheme ]
+                  let f (_ :>: scheme) =
+
+                          [ do t <- freshInst scheme
+                               return t ]
+
                       f _ = []
                       
                       g (i :>: _) = [i]
                       g _ = []
                       
-                  in  do schemes <- sequence $ concatMap f assumptions
-                         let symbols = concatMap g assumptions 
+                  in  do schemes <- sequence $ concat $ map f assumptions
+                         let symbols = concat $ map g assumptions 
                          let rec = TypeRecord (TRecord (M.fromList (zip symbols schemes)) TComplete Star)
                          return $ quantify (tv rec) rec
 
@@ -399,12 +410,15 @@ to_scheme (TypeDefinition n vs) t = [ quantify (vars y) y :>>: def_type y
 
     where vars y = map (\x -> TVar x (infer_kind x y)) vs
 
-          def_type y = quantify (vars y) (foldl TypeApplication poly_type (map TypeVar (vars y)))
+          def_type y = quantify (vars y) (foldl app poly_type (map TypeVar (vars y)))
 
           poly_type = Type (TypeConst n (to_kind (length vs)))
 
           to_kind 0 = Star
           to_kind n = KindFunction Star (to_kind$ n - 1)
+
+          app :: Type -> Type -> Type
+          app y x = TypeApplication y x
 
           -- TODO this is still wrong - have to check for all enumerated types
 
@@ -417,15 +431,13 @@ to_scheme (TypeDefinition n vs) t = [ quantify (vars y) y :>>: def_type y
 
           infer_kinds x (TypeApplication a b) = infer_kinds x a ++ infer_kinds x b
           infer_kinds x (TypeVar (TVar y k)) | x == y = [k]
-          infer_kinds x (TypeRecord (TRecord m _ _)) = concatMap (infer_kinds x) (M.elems m)
+          infer_kinds x (TypeRecord (TRecord m _ _)) = concat$ map (infer_kinds x) (M.elems m)
           infer_kinds _ _ = []
 
 -- | Computes all possible types from a type signature AST.
 
 enumerate_types :: UnionType -> [Type]
-enumerate_types (UnionType types) =
-
-    to_unit . concatMap enumerate_type . S.toList $ types
+enumerate_types (UnionType types) = to_unit . concat . map enumerate_type . S.toList $ types
 
     where term_type (VariableType x)      = [ TypeVar (TVar x Star) ]
           term_type (SymbolType x)        = [ Type (TypeConst (show x) Star) ]
@@ -486,24 +498,24 @@ sort_dep (concat -> xs) = unwrap `map` sccList graph
           
           to_node :: Definition -> (Definition, String, [String])
           to_node def @ (Definition _ _ n as) =
-              (def, show n, concatMap get_symbols . get_expressions $ as)
+              (def, show n, concat . map get_symbols . get_expressions $ as)
                  
           get_expressions [] = []
           get_expressions (TypeAxiom _: xs') = get_expressions xs'
           get_expressions (EqualityAxiom (Match _ (Just y)) (Addr _ _ x): xs') = y : x : get_expressions xs'
           get_expressions (EqualityAxiom _ (Addr _ _ x): xs') = x : get_expressions xs'
 
-          get_symbols (RecordExpression (unzip . M.toList -> (_, xs))) = concatMap get_symbols xs
+          get_symbols (RecordExpression (unzip . M.toList -> (_, xs))) = concat (map get_symbols xs)
           get_symbols (AccessorExpression (Addr _ _ x) _) = get_symbols x
-          get_symbols (ApplyExpression a b) = get_symbols a ++ concatMap get_symbols b
+          get_symbols (ApplyExpression a b) = get_symbols a ++ concat (map get_symbols b)
           get_symbols (IfExpression a b c) = get_symbols a ++ get_symbols b ++ get_symbols c
           get_symbols (LiteralExpression _) = []
           get_symbols (SymbolExpression x) = [show x]
           get_symbols (JSExpression _) = []
           get_symbols (LazyExpression (Addr _ _ x) _)      = get_symbols x
-          get_symbols (FunctionExpression as) = concatMap get_symbols$ get_expressions as
+          get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions as
           get_symbols (LetExpression _ x) = get_symbols x
-          get_symbols (ListExpression x) = concatMap get_symbols x
+          get_symbols (ListExpression x) = concat (map get_symbols x)
           get_symbols _ = error "Unimplemented TypeCheck 544"
 
 
@@ -514,15 +526,15 @@ tiProgram :: Program -> [(Namespace, [Assumption])] -> ([(Namespace, [Assumption
 tiProgram (Program bgs) env =
 
     runTI $ do TI (\x -> (x { modules = env }, ()))
-               assume$ "true"  :>: Forall [] (Type (TypeConst "Bool" Star))
-               assume$ "false" :>: Forall [] (Type (TypeConst "Bool" Star))
-               assume$ "error" :>: Forall [Star] (TypeGen 0)
-               assume$ "run"   :>: Forall [Star] (TypeApplication js_type (TypeGen 0) -:> TypeGen 0)
+               assume$ "true"  :>: (Forall [] (Type (TypeConst "Bool" Star)))
+               assume$ "false" :>: (Forall [] (Type (TypeConst "Bool" Star)))
+               assume$ "error" :>: (Forall [Star] (TypeGen 0))
+               assume$ "run"   :>: (Forall [Star] (TypeApplication js_type (TypeGen 0) -:> TypeGen 0))
                infer'$ to_group bgs
                s  <- get_substitution
                ms <- TI (\y -> (y, modules y))
                e  <- get_errors
-               return (apply s ms, S.toList . S.fromList $ e)
+               return ((apply s ms), S.toList . S.fromList $ e)
 
     where infer' [] = return ()
           infer' (x:xs) =

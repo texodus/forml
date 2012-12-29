@@ -71,7 +71,7 @@ module tetris
     pieces: Array Piece =
     
         let x = 0
-            o = -1
+            o = (-1)
 
         [ [ [ x ]
             [ x ]
@@ -102,7 +102,7 @@ module tetris
             
     colors = [ [ "#0C3555", "#08789E", "#76F61E", "#F7D909", "#E11E6A" ]
                [ "#320010", "#74220F", "#B8A04E", "#E1D46C", "#80611D" ]
-               [ "#542437", "#53777A", "#C02942", "#D95B43", "#53777A" ] ]
+               [ "#542437", "#53777A", "#C02942", "#D95B43", "#53777A" ]  ]
     
     -- The game state.
 
@@ -170,10 +170,10 @@ module tetris
         
     new_board: JS Board = do
 
-        let new_row = yield 0 .. n_columns 'map λ _ = -1
+        let new_row = yield 0 .. n_columns 'map λ_ = (-1)
         
         piece <- random_piece 0
-        board <- sequence (0 .. n_rows 'map λ _ = new_row)
+        board <- sequence (0 .. n_rows 'map λ_ = new_row)
 
         return {
             piece = piece
@@ -198,10 +198,12 @@ module tetris
     -- which lets us write quick tests that are guaranteed a clean
     -- gamestate:
         
-    with_board λ board = length board.board == n_rows + 1
-    with_board λ board = length (get 0 board.board) == n_columns + 1
+    with_board \board = length board.board == n_rows + 1
+    with_board \board = length (get 0 board.board) == n_columns + 1
 
-    at x y b = get x (get y b) /= -1
+    -- While we're at it, we're going to 
+    
+    at x y b = get x (get y b) /= (-1)
 
 
     -- 

@@ -85,10 +85,9 @@ main  = do args <- getArgs
 
 main' :: [String] -> IO ()
 main' (parseArgs -> rc') =
-
-    if watch rc'
-    then watch' rc'
-    else compile rc'
+         if watch rc'
+                 then watch' rc'
+                 else compile rc'
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 

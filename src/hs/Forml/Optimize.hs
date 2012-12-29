@@ -35,8 +35,7 @@ import Forml.Types.Pattern
 import Forml.Types.Statement  hiding (Test, find, modules, namespace)
 import Forml.Types.Symbol
 
-import Forml.TypeCheck.Types
-import Forml.TypeCheck.Unify hiding (get_namespace)
+import Forml.TypeCheck.Types hiding (get_namespace)
 
 import Forml.Parser
 import Forml.Parser.Utils

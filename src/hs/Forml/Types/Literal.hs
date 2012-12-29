@@ -9,7 +9,6 @@ import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 
 import Forml.Parser.Utils
 import Forml.TypeCheck.Types
-import Forml.TypeCheck.Unify
 
 data Literal = StringLiteral String | IntLiteral Int | DoubleLiteral Double deriving (Eq)
 
