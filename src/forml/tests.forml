@@ -136,7 +136,9 @@ module "Tests for TCO bugs"
     
 
 
-module "Tests for typing bugs"    
+module "Tests for typing bugs"  
+
+    open prelude  
     
     ff x = gg x + 1
     gg x = ff x - 1

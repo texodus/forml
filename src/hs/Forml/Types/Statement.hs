@@ -286,7 +286,7 @@ instance Open String where
             print' (y:[]) = [jmacroE| `(ref y)` |]
             print' (y:ys) = [jmacroE| `(print' ys)`[`(y)`] |]
 
-        in  declare x [jmacroE| `(print' $ reverse ns)`[`(x)`] || window[`(x)`] |] ++ open (Namespace ns) xs
+        in  declare x [jmacroE| `(print' $ reverse ns)`[`(x)`] || (typeof global == "undefined" ? window : global)[`(x)`] |] ++ open (Namespace ns) xs
 
 
 

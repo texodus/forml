@@ -120,9 +120,10 @@ main' (parseArgs -> rc') =
                        else do warn "Closure [libs]" js'
 
                  tests <- case rc of
-                              RunConfig { optimize = True, run_tests = Phantom } ->
+                              RunConfig { optimize = True } ->
                                   zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS") (drop 1 filenames) (drop 1 tests')
-                              _ -> warn "Closure [tests]" tests'
+                              _ -> warn "Closure [tests]" (drop 1 tests')
+
 
                  writeFile (output rc ++ ".js") js
                  zipWithM writeFile (map (++ ".spec.js") titles) tests

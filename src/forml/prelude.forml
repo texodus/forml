@@ -403,13 +403,13 @@ module prelude
             var report_failed spec results =
 
                     let items = spec.results_.items_
-                        desc  = split spec.description "__::__" !! 1
+                        desc  = split "__::__" spec.description !! 1
                         exp   = stringify (items !! 0).expected
                         act   = stringify (items !! 0).actual
                         line  = get_line spec.description
                     
                     do  if is_error == 0
-                            then log "\r                        " 
+                            then log "\r                                          " 
                             else return {}
 
                         `is_error = 1`
@@ -433,7 +433,7 @@ module prelude
                         else report_failed spec results
 
             var reporter = { reportSpecResults:   report 
-                             reportRunnerResults: `phantom.exit(is_error)` }
+                             reportRunnerResults: `if (typeof phantom != "undefined") { phantom.exit(is_error); }` }
 
             do env <- `jasmine.getEnv()`
 

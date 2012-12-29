@@ -39,7 +39,7 @@ instance Syntax Namespace where
     syntax = Namespace <$> (many1 lower `sepBy1` char '.')
 
 instance ToJExpr Namespace where
-    toJExpr (Namespace []) = ref "window"
+    toJExpr (Namespace []) = [jmacroE| (typeof global == "undefined" ? window : global) |]
     toJExpr (Namespace (end -> x : xs)) = [jmacroE| `(Namespace xs)`[`(x)`] |]
 
 
