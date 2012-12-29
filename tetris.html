@@ -871,232 +871,375 @@ U=P.array.reverse||("undefined"==typeof global?window:global).reverse,R=P.array.
 [-1,0,0]],[[-1,0,0],[0,0,-1]]];var G=[["#0C3555","#08789E","#76F61E","#F7D909","#E11E6A"],["#320010","#74220F","#B8A04E","#E1D46C","#80611D"],["#542437","#53777A","#C02942","#D95B43","#53777A"]];this.colors=G;this.play=function(){var a=x(),b=w();$("body").append(a);J("#board")("background-color")(G[b.level-1][0])();J("#board")("border-color")(G[b.level-1][1])();a=j(b.score);if("undefined"!=typeof $){var c=$("#score").get(0);"undefined"!=typeof c&&(c.innerHTML=a)}a=b.level;"undefined"!=typeof $&&(c=
 $("#level").get(0),"undefined"!=typeof c&&(c.innerHTML=a));a=s(b);a=g(400)(a)();Q(a)(b)();a=M(b)(-1)(0);N(37)(a)();a=e(b);N(38)(a)();a=M(b)(1)(0);N(39)(a)();b=M(b)(0)(1);return N(40)(b)()};this.set_timer=Q;this.game_template=x;this.to_commas=j;this.new_board=w;this.with_board=function(a){var b=w();return a(b)};this.at=d;this.is_valid=b;this.paint=a;this.css="position: absolute;\nwidth: 26px;\nborder: 3px solid rgba(0,0,0,0.4);\nborder-right-width: 1px;\nborder-top-width: 1px;\nborder-radius: 3px;\nheight: 26px;";
 this.random_piece=q;this.rotate=h;this.draw=t;this.every=g;this.move=M=function(a){return function(c){return function(d){return function(){a.x+=c;a.y+=d;var e;if(b(a)()){var f=t(a);e=function(){if("undefined"!=typeof $){var a=$("#board").get(0);"undefined"!=typeof a&&(a.innerHTML=f)}}}else e=function(){a.x-=c;a.y-=d};return e()}}}};this.rot=e;this.new_piece=c;this.clear_row=v;this.stop_timer=p;this.clear_lines=r;this.tick=s};("undefined"==typeof global?window:global).tetris=Y;
- var is_array=function(a){return a instanceof Array},__undefined__="undefined",run=function(a){return a()},error=function(a){throw a;},exhaust=function(){error("Pattern Match Exhausted")},__check=function(a,f){return a.hasOwnProperty(f)};
-describe("",function(){describe("readme",function(){var a=readme.fib,f=readme.fib_apos,l=readme.person,g=readme.point,h=readme.magnitude,m=readme.map_excl,n=readme.hello_world,i=readme.maybe,p=readme.sum,j=readme.has_value,q=prelude._eq_eq||("undefined"==typeof global?window:global)._eq_eq,a=prelude.fib||("undefined"==typeof global?window:global).fib,r=prelude.string.length||("undefined"==typeof global?window:global).length,s=("undefined"==typeof global?window:global).prelude.array,a=readme.fib,f=
-readme.fib_apos,l=readme.person,g=readme.point,h=readme.magnitude,m=readme.map_excl,n=readme.hello_world,i=readme.maybe,p=readme.sum,j=readme.has_value;new function(){it("185_185__::__        fib' 7 == 13",function(){expect(f(7)).toEqual(13)});it("186_186__::__        fib' 0 == 0",function(){expect(f(0)).toEqual(0)});it('188_188__::__        "hello" ** 3 == "hellohellohello"',function(){expect(function(k){return function(b){for(var c=void 0,a=k,d=b,b="";"undefined"==typeof c;)if(c=b,0!==d)var e=a,
-c=b,a=e,d=d-1,b=""+c+e,c=void 0;return c}}("hello")(3)).toEqual("hellohellohello")});it('189_189__::__        length ("a" ** 10000) == 10000',function(){expect(r(function(k){return function(b){for(var c=void 0,a=k,d=b,b="";"undefined"==typeof c;)if(c=b,0!==d)var e=a,c=b,a=e,d=d-1,b=""+c+e,c=void 0;return c}}("a")(1E4))).toEqual(1E4)});it("212_212__::__        array.map fib [3,4,5] == [2,3,5]",function(){expect(s.map(a)([3,4,5])).toEqual([2,3,5])});it('227_227__::__        person("Andrew", "123 Fake St.").message is "Andrew lives at 123 Fake St."',
-function(){expect(l("Andrew")("123 Fake St.").message).toEqual("Andrew lives at 123 Fake St.")});it("231_231__::__        20 == point.x + point.y",function(){expect(20).toEqual(function(a){return function(b){b=a+b;return b}}(g.x)(g.y))});it('237_237__::__        magnitude {x: 3, y: 4, other: "test"} == 5',function(){expect(h({other:"test",x:3,y:4})).toEqual(5)});it('238_238__::__        magnitude {x: 4, y: 3, test: "other"} == 5',function(){expect(h({test:"other",x:4,y:3})).toEqual(5)});it("249_254multi__::__        let fil =\n        \n            \u03bb x when x > 5 = x\n            | x            = 5\n    \n        map! fil [2, 6, 3, 7] is [5, 6, 5, 7]",
-function(){expect(function(){try{return q(m(function(b){return 5<b?b:5})([2,6,3,7]))([5,6,5,7])}catch(a){return{error:a}}}()).toEqual(!0)});it("269_269__::__        8 == do! hello_world >>= \u03bbx = `x + 3`",function(){expect(8).toEqual(function(){var a=n();return a+3}())});it("283_286multi__::__        let x = 0\n            test = lazy do! `x = x + 1; x`\n    \n        in  1 == do! test >> test >> test >> test",function(){expect(function(){try{var a=0,b,c=void 0;b=function(){c||(c=a+=1);return c};
-var f=q(1),d;var e;e=function(){run(b);return run(b)};run(function(){run(e);return run(b)});d=run(b);return f(d)}catch(g){return{error:g}}}()).toEqual(!0)});it("319_319__::__        maybe 3 {just: 4} == 4",function(){expect(i(3)({just:4})).toEqual(4)});it("320_320__::__        maybe 3 {nothing} == 3",function(){expect(i(3)({nothing:!0})).toEqual(3)});it("331_334multi__::__        sum { head: 2\n              tail: { head: 3\n                      tail: { nil } } }\n            == 5",function(){expect(p({head:2,
-tail:{head:3,tail:{nil:!0}}})).toEqual(5)});it("343_343__::__        has_value {just: 4}",function(){expect(function(){try{return j({just:4})}catch(a){return{error:a}}}()).toEqual(!0)});it("344_344__::__        not (has_value {nothing})",function(){expect(function(){try{var a;a=!j({nothing:!0});return a}catch(b){return{error:b}}}()).toEqual(!0)})}})});
-</script><script type="text/javascript">
-$("header ul").prepend('<li><a href="https://github.com/texodus/forml/zipball/master">Download <strong>ZIP File</strong></a></li><li><a href="https://github.com/texodus/forml/tarball/master">Download <strong>TAR Ball</strong></a></li><li><a href="https://github.com/texodus/forml">View On <strong>GitHub</strong></a></li>').css("width", "360");
-$("header h1").after('<br style="clear: both;"/>');
-$("h1").css("font-family", "Montserrat");
-$("header h1:first-letter").css("color", "#E53007");
+ var is_array=function(c){return c instanceof Array},__undefined__="undefined",run=function(c){return c()},error=function(c){throw c;},exhaust=function(){error("Pattern Match Exhausted")},__check=function(c,e){return c.hasOwnProperty(e)};
+describe("",function(){describe("tetris",function(){var c=tetris.n_rows,e=tetris.n_columns,f=tetris.pieces,j=tetris.to_commas,g=tetris.with_board,k=tetris.is_valid,d=tetris.rotate,l=tetris.tick,i=prelude.string.length||("undefined"==typeof global?window:global).length,h=prelude._eq_eq||("undefined"==typeof global?window:global)._eq_eq,i=prelude.array.length||("undefined"==typeof global?window:global).length,c=tetris.n_rows,e=tetris.n_columns,f=tetris.pieces,j=tetris.to_commas,g=tetris.with_board,
+k=tetris.is_valid,d=tetris.rotate,l=tetris.tick;new function(){it('161_161__::__        to_commas 1000 == "1,000"',function(){expect(j(1E3)).toEqual("1,000")});it("198_198__::__        with_board \\board = length board.board == n_rows + 1",function(){expect(function(){try{return g(function(a){var a=h(i(a.board)),b;b=c+1;return a(b)})}catch(b){return{error:b}}}()).toEqual(!0)});it("199_199__::__        with_board \\board = length (get 0 board.board) == n_columns + 1",function(){expect(function(){try{return g(function(a){var b=
+i;a=a.board[0];b=h(b(a));a=e+1;return b(a)})}catch(b){return{error:b}}}()).toEqual(!0)});it("268_269multi__::__        get 3 pieces is\n            do! rotate (get 3 pieces)",function(){expect(function(b){return function(a){a=a[b];return a}}(3)(f)).toEqual(function(){var b=d,a;a=f[3];return b(a)()}())});it("271_272multi__::__        get 1 pieces is\n            do! rotate (get 1 pieces) >>= rotate >>= rotate >>= rotate",function(){expect(function(b){return function(a){a=a[b];return a}}(1)(f)).toEqual(function(){var b=
+d,a;a=f[1];b=b(a);b=d(b());b=d(b());b=d(b());return b()}())});it("274_275multi__::__        get 4 pieces isnt\n            do! rotate (get 4 pieces) >>= rotate",function(){expect(function(){try{var b;b=f[4];var a;var c=d(f[4]);a=d(c())();var e;e=!h(b)(a);return e}catch(g){return{error:g}}}()).toEqual(!0)});it("417_424multi__::__        with_board \u03bb board =\n        \n            do! tick board\n                i <- is_valid board\n                yield (board.y == 1) \n                          && i\n                          && board.score == 0\n                          && board.level == 1",
+function(){expect(function(){try{return g(function(a){l(a)();var b=k(a)(),a=h(a.y)(1)&&b&&h(a.score)(0)&&h(a.level)(1);return a})}catch(b){return{error:b}}}()).toEqual(!0)})}})});
+</script><link href='http://fonts.googleapis.com/css?family=Orbitron:500' rel='stylesheet' type='text/css'>
+<script type="text/javascript">
+$("header ul").prepend('<li><a id="play_tetris">Play<strong>Tetris</strong></a></li><li><a href="https://github.com/texodus/forml/blob/master/src/forml/tetris.forml">View On <strong>GitHub</strong></a></li>').css("width", "270");
+$("#play_tetris").click(tetris.play);
 </script>
 
-<p>Forml is a contemporary programming language for the discriminating programmer, intended to fill a niche somewhere between <a href="http://www.haskell.org">Haskell</a> and <a href="http://www.ruby.org">Ruby</a>, should such a niche turn out to exist.</p>
-<h1 id="philosophy">Philosophy</h1>
-<ol style="list-style-type: decimal">
-<li><p>Writing software is unnecessarily hard, because syntax is sufficiently abstracted from thought process to lose something in the translation. A modern programming language should be designed for reading - an API exposing the programmer - a philosophy lifted unapologetically from <a href="http://www.artima.com/intv/ruby4.html">Ruby</a>.</p></li>
-<li><p>Writing software is unnecessarily hard, because making mistakes is too easy. A modern programming language should prevent the programmer from writing incorrect code, in so far as it doesn't conflict with 1.</p></li>
-</ol>
-<h1 id="features">Features</h1>
-<ul>
-<li><p>Buzzwords: functional, strict, expressive, pure(ish), static(y), inferred, fast, fun. Strong like a gorilla, yet soft and yielding like a Nerf ball.</p></li>
-<li><p>Targets Javascript, but please regard this as an implementation detail - forml is not intended as an answer to &quot;the Javascript problem.&quot; Simple foreign function interface, which allows the introduction of untyped values for quick &amp; dirty code integration, which can later be restricted via explicit typing.</p></li>
-<li><p>Type system which is designed to be simple and catch obvious errors, not entirely exhaustive, dictatorial and somewhat combative (I'm looking at you, Haskell). Strucural types, partials records, arbitrary unions, ability to introduce unrestricted types via FFI.</p></li>
-<li><p>Sugary, flexible syntax.</p></li>
-<li><p>Inline testing, compiles to a separate suite.</p></li>
-<li><p>Fast. Automatic tail call optimization, inline functions, designed for use with <a href="https://developers.google.com/closure/">Google Closure Compiler</a> advanced optimizations mode.</p></li>
-<li><p>Heavily inspired by <a href="http://www.haskell.org/haskellwiki/Haskell">Haskell</a> , <a href="http://msdn.microsoft.com/en-us/vstudio/hh388569.aspx">F#</a> , <a href="http://coffeescript.org/">Coffeescript</a>. , (<a href="http://en.wikipedia.org/wiki/Category:ML_programming_language_family">_</a>)(<a href="http://www.smlnj.org/">S</a>)(<a href="http://caml.inria.fr/">OCA</a>)ML , <a href="http://clojure.org/">Clojure</a> , <a href="http://www.haskell.org/haskellwiki/Jmacro">JMacro</a> , <a href="http://www.ruby-lang.org/en/">Ruby</a></p></li>
-</ul>
-<h1 id="installation">Installation</h1>
-<p>Mac OSX (tested on Snow Leopard &amp; Lion). Note that Forml also requires <a href="https://developers.google.com/closure/">Closure</a> for optimizations and either <a href="http://phantomjs.org">Phantom.js</a> or <a href="http://nodejs.org">Node.js</a></p>
-<p>Install the <a href="http://hackage.haskell.org/platform/index.html">Haskell Platform</a>, then</p>
-<pre><code>$ cabal install forml</pre>
-</code>
-<p>To compile some forml files:</p>
-<pre><code>$ forml -o app test.forml test2.forml</pre>
-</code>
-<p>will create an app.js and app.spec.js with the compiled code and test suite respectively.</p>
-<p>Forml will by default try to minify/optimize your code with Closure, via the $CLOSURE environment variable, which should point to the closure jar. Failing this, forml will attempt to post your code to the Closure web service.</p>
-<p>Additionally, forml will attempt to run the test suite with the phantomjs binary, which it expects to find on your PATH. You may optionally specifiy to run your suite via node.js with</p>
-<pre><code>$ forml -node-test test.forml</pre>
-</code>
-<p>To compile literate forml (eg, Forml code embedded in Markdown):</p>
-<pre><code>$ forml test.lforml</pre>
-</code>
-<p>To see the inferred types:</p>
-<pre><code>$ forml -t test.forml</pre>
-</code>
-<p>To turn off optimizing (eg, Closure) or testing:</p>
-<pre><code>$ forml -no-test -no-opt test.forml</pre>
-</code>
-<p>To watch a file for changes and incrementally compile:</p>
-<pre><code>$ forml -w test.forml</pre>
-</code>
-<p>To generate documentation and test runner (like this file):</p>
-<pre><code>$ forml -docs test.forml</pre>
-</code>
-<h1 id="tutorial">Tutorial</h1>
-<p>This is unfortunately not comprehensive, and presumes some working knowledge of ML or Haskell. For more examples, see the annotated <a href="http://texodus.github.com/forml/Prelude.html">prelude</a>, <a href="http://texodus.github.com/forml/Parsec.html">parsec</a> and <a href="http://texodus.github.com/forml/tetris.html">tetris</a>.</p>
-<p>Forml supports a flexible, forgiving syntax that supports many synonymous forms. This will be illustrated by adherring to an entirely random, arbitrary style throughout.</p>
-<p>The basic unit of code organization in forml is the <code>module</code>, which is simply a collection of definitions in a namespace (see <a href="#">Modules</a>). Within a module, the compiler recognizes strictly ordered logical sections divided by <code>open</code> statements and sub modules; within a section, however, declarations can be in any order.</p>
-<pre><code>module readme
+<script id="game" type="text/html">
+<div style='position:fixed;top:0;bottom:0;left:0;right:0;background-color:rgba(0,0,0,0.9)'>
+<div id='container' style='position:relative;margin-left:auto;margin-right:auto;width:500px'>
 
+<div style='position:absolute;right:0px;width:170px;top:20px;height:100px;font-family:Helvetica;color:white;font-size:1em'>SCORE</div>
+<div id='score' style='position:absolute;right:0px;width:170px;top:40px;height:100px;font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
+
+<div style='position:absolute;right:0px;width:170px;top:100px;height:100px;font-family:Helvetica;color:white;font-size:1em'>LEVEL</div>
+<div id='level' style='position:absolute;right:0px;width:170px;top:120px;height:100px;font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
+
+<div id='board' style='position:absolute;left:0px;top:20px;border: 3px solid;width:300px;height:600px;opacity:0.9'>
+</div>
+</div>
+</div>
+</script>
+
+
+<p>An implementation of the classic 80s computer game TET&#1071;IS, written in the programming language <a href="http://texodus.github.com/forml">Forml</a>. <a href="https://github.com/texodus/forml/blob/master/src/forml/tetris.forml">Tetris.forml</a> is an example of <a href="http://en.wikipedia.org/wiki/Literate_programming">literate programming</a> - the source when compiled generates this page. You can run the test suite to see the <a href="http://pivotal.github.com/jasmine">Jasmine</a> test report, or just play Tetris.</p>
+<h2 id="architecture">Architecture</h2>
+<p>The entire application will live in the <code>tetris</code> module in the global namespace. We're going to need forml's standard library, the <code>prelude</code>, as well as a number of sub modules: the data representation for the game will need additional functions from <code>array</code> module, and the <code>html</code> module for manipulating the UI.</p>
+<pre><code>module tetris
+
+    open prelude.string
     open prelude
-    open prelude.string</code></pre>
-<h2 id="definitions">Definitions</h2>
-<p>Simple function. Forml allows functions to be written in ML style, or in more traditional java style.</p>
-<pre><code>    square x = x * x
+    open prelude.html
+    open prelude.array</code></pre>
+<p>The order of import here is important - each <code>open</code> statement defines a new section, where subsequent <code>open</code>s shadow already imported symbols. Because some symbols in <code>prelude.html</code> are shadowed by those in <code>prelude.array</code>, we can bind the <code>prelude.html</code> to a record- typed symbol. This allows us to access all the symbols from <code>prelude.html</code>, as well as use the <code>array</code> symbol as a function parameter.</p>
+<pre><code>    open prelude.html as html</code></pre>
+<p>Some basic constants describing the physical laws of Tetris.</p>
+<pre><code>    n_rows    = 19
+    n_columns = 9 </code></pre>
+<p>The <code>Piece</code> type is a type synonym - it declares a local alias which can be used to make the type signatures easier to read.</p>
+<pre><code>    Piece = Array (Array Num)</code></pre>
+<p>The classic Tetris pieces.</p>
+<pre><code>    pieces: Array Piece =
 
-    add(x, y) = x + y</code></pre>
-<p>With pattern matching</p>
-<pre><code>    fib 0 = 0 | 1 = 1 | n = fib (n - 1) + fib (n - 2)</code></pre>
-<p>Patterns can be separated with <code>|</code>, or by repeating the definition's name ala Haskell. Definitions can have optional type annotations, which may restrict the inferred type of the definition, but must not be more general</p>
-<pre><code>    private
+        let x = 0
+            o = (-1)
 
-    fib&#39; : Num -&gt; Num
+        [ [ [ x ]
+            [ x ]
+            [ x ]
+            [ x ] ]
 
-    fib&#39; 0 = 0
-    fib&#39; 1 = 1
-    fib&#39; n = fib&#39; (n - 1) + fib&#39; (n - 2)</code></pre>
-<p>Operators can be defined much like in Haskell. Precedence is currently fixed, though you can declare right associative operators by ending them with a <code>:</code>. For performance, you can declare functions to be <code>inline</code>. This example will compile to a loop, as it is tail recursive.</p>
-<pre><code>    inline (**): 
+          [ [ x, o ]
+            [ x, o ]
+            [ x, x ] ]
 
-         String -&gt; Num -&gt; String
-         text   ** n    =
+          [ [ o, x ]
+            [ o, x ]
+            [ x, x ] ]
 
-             var f(_, 0, acc) = acc       -- `let` and `var` are synonyms
-                 f(text, n, acc) =
-                     f(text, n - 1, acc +++ text)
+          [ [ x, x ]
+            [ x, x ] ]
 
-             in f(text, n, &quot;&quot;)            -- `in` is optional</code></pre>
-<h2 id="testing">Testing</h2>
-<p>Tests are a first class concept in forml - any unbound in a module (or in other words, any expression which isn't part of a definition), which is inferred as type <code>Bool</code>, is treated as a test, and is compiled to a <a href="http://pivotal.github.com/jasmine">Jasmine</a> suite in a separate file from your definitions.</p>
-<pre><code>    <span class='test' id='test_185_185'>fib&#39; 7 == 13</span>
-    <span class='test' id='test_186_186'>fib&#39; 0 == 0</span>
+          [ [ o, x, o ]
+            [ x, x, x ] ]
 
-    <span class='test' id='test_188_188'>&quot;hello&quot; ** 3 == &quot;hellohellohello&quot;</span>
-    <span class='test' id='test_189_189'>length (&quot;a&quot; ** 10000) == 10000</span></code></pre>
-<p>For example, this file is the result of running the forml compiler with the <code>-docs</code> flag for <a href="https://github.com/texodus/forml/blob/master/src/forml/readme.forml">readme.forml</a>, and incorporates both the compiled output and the Jasmine suite. You can execute this suite by clicking the <code>RUN TESTS</code> button, which will highlight the test results in this document</p>
-<h2 id="modules">Modules</h2>
-<p>Namespaces are not symbols, so this won't work:</p>
-<pre><code>    prelude.log "Hello, World!"    -- Won't compile!</pre>
-</code>
-<p>Instead, you must qualify the import and supply a symbol name to bind to. The alias will be typed to a record whose fields are the first-class definitions in the module.</p>
-<pre><code>    open prelude.array as array
+          [ [ x, x, o ]
+            [ o, x, x ] ]
 
-    <span class='test' id='test_212_212'>array.map fib [3,4,5] == [2,3,5]</span></code></pre>
-<h2 id="records">Records</h2>
-<p>Forml has the basic primative types from Javascript: Num, String, Bool; plus a record, which is structurally typed and implemented as a simple Javascript object.</p>
-<pre><code>    person name address = { 
-        name    = name
-        address = address
-        message = &quot;`name` lives at `address`&quot;
-    }
+          [ [ o, x, x ]
+            [ x, x, o ] ] ]</code></pre>
+<p>The valid piece colors.</p>
+<pre><code>    colors = [ [ &quot;#0C3555&quot;, &quot;#08789E&quot;, &quot;#76F61E&quot;, &quot;#F7D909&quot;, &quot;#E11E6A&quot; ]
+               [ &quot;#320010&quot;, &quot;#74220F&quot;, &quot;#B8A04E&quot;, &quot;#E1D46C&quot;, &quot;#80611D&quot; ]
+               [ &quot;#542437&quot;, &quot;#53777A&quot;, &quot;#C02942&quot;, &quot;#D95B43&quot;, &quot;#53777A&quot; ]  ]</code></pre>
+<p>The game state.</p>
+<pre><code>    Board =
 
-    <span class='test' id='test_227_227'>person(&quot;Andrew&quot;, &quot;123 Fake St.&quot;).message is &quot;Andrew lives at 123 Fake St.&quot;</span>
+        { piece: Piece
+          board: Array (Array Num)
+          x: Num
+          score: Num
+          y: Num
+          timer: Num
+          level: Num }</code></pre>
+<h2 id="main">Main</h2>
+<p>When the <code>Play Tetris</code> button is clicked, the action bound to the symbol <code>play</code> is realized: the application's HTML UI is appended to the page, the game's state is initialized, and handlers are configured for the game's keyboard events &amp; timing loop.</p>
+<pre><code>    play = do
 
-    point = {x: 10, y: 10}
+        game  &lt;- game_template
+        board &lt;- new_board
 
-    <span class='test' id='test_231_231'>20 == point.x + point.y</span></code></pre>
-<p>Also supports partial records.</p>
-<pre><code>    magnitude {x: x, y: y, _} = sqrt (square x + square y)
+        &quot;body&quot;   $+ game
+        &quot;#board&quot; $| &quot;background-color&quot; &lt;| get 0 (get (board.level - 1) colors)
+        &quot;#board&quot; $| &quot;border-color&quot;     &lt;| get 1 (get (board.level - 1) colors)
+        &quot;#score&quot; $= to_commas board.score
+        &quot;#level&quot; $= board.level
 
-    <span class='test' id='test_237_237'>magnitude {x: 3, y: 4, other: &quot;test&quot;} == 5</span>
-    <span class='test' id='test_238_238'>magnitude {x: 4, y: 3, test: &quot;other&quot;} == 5</span></code></pre>
-<p>Anonymous functions also follow Haskell, can be written with <code>\</code> or <code>&#955;</code>, and allows pattern seperation via <code>|</code></p>
-<p>Note this function mutates its argument, so we name it with an exclamation.</p>
-<pre><code>    map!: (a -&gt; b) -&gt; Array a -&gt; Array b
-    map! f xs = do! `xs.map(f)`
+        ref &lt;- tick board &#39;every 400
+        board &#39;set_timer ref
 
-    <span class='test' id='test_249_254multi'>let fil =
+        move board (-1) 0 &#39;on_key 37
+        rot  board        &#39;on_key 38
+        move board 1 0    &#39;on_key 39
+        move board 0 1    &#39;on_key 40</code></pre>
+<p>There are three pieces which currently require shelling out to Javascript. <code>set_timer</code> is necessary because the prelude currently lacks a library for implementing type safe mutations. <code>game_template</code> is an action which fetches the blank HTML for the board background from an embedded script template (see <a href="https://github.com/texodus/forml/blob/master/src/forml/tetris.forml">source</a>)</p>
+<pre><code>    set_timer ref board = `board.timer = ref` 
+    game_template       = `jQuery(&quot;#game&quot;).html()`</code></pre>
+<p><code>to_commas</code> pretty prints the current score, using the the regex wrappers from the <code>prelude.string</code> module</p>
+<pre><code>    to_commas: Num -&gt; String | x =
 
-        &#955; x when x &gt; 5 = x
-        | x            = 5
+        let r = &quot;(\\d)(?=(\\d\\d\\d)+(?!\\d))&quot;
+        in  to_string x &#39;replace (regex r &quot;g&quot;) &quot;$1,&quot;
 
-    map! fil [2, 6, 3, 7] is [5, 6, 5, 7]</span></code></pre>
-<h2 id="interop-side-effects">Interop &amp; Side Effects</h2>
-<p>Forml technically allows unrestricted side effects, but by default wraps them in a <code>JS a</code> type, which can be composed with the <code>&gt;&gt;=</code> and <code>&gt;&gt;</code> operators, or a variation of Haskell's <code>do</code> notation.</p>
-<pre><code>    hello_world = do
+    <span class='test' id='test_161_161'>to_commas 1000 == &quot;1,000&quot;</span></code></pre>
+<p><code>new_board</code> is a factory for generating a <code>Board</code> records representing a new game.</p>
+<pre><code>    new_board: JS Board = do
 
-        `console.log(&quot;Hello World&quot;)` -- Calls to Javascript always return type `JS a`
-        x &lt;- `Math.sqrt(9)`          -- `x` is inferred to be the unrestricted type `a`
-        let z = x + 1                -- `x` is now restricted to type `Num`
-        return (z + 1)               -- type of `hello_world` is inferred to be `JS Num`
+        let new_row = yield 0 .. n_columns &#39;map &#955;_ = (-1)
 
-    <span class='test' id='test_269_269'>8 == do! hello_world &gt;&gt;= &#955;x = `x + 3`</span></code></pre>
-<p>Though this function is inferred to be <code>a -&gt; b</code>, you can restrict it with a signature.</p>
-<pre><code>    inline
-    sqrt: Num -&gt; Num                 
-    sqrt x = do! `Math.sqrt(x)`      -- `do!` realizes its argument immediately</code></pre>
-<p>Forml also supports additional keywords <code>lazy</code> and <code>yield</code>. Both take expressions as arguments (as opposed to <code>do</code> syntax), but return an unrealized type <code>JS a</code>, the difference being that <code>lazy</code> will only evaluate it's arguments once, then cache the result.</p>
-<pre><code>    <span class='test' id='test_283_286multi'>let x = 0
-        test = lazy do! `x = x + 1; x`
+        piece &lt;- random_piece 0
+        board &lt;- sequence (0 .. n_rows &#39;map &#955;_ = new_row)
 
-    in  1 == do! test &gt;&gt; test &gt;&gt; test &gt;&gt; test</span></code></pre>
-<h2 id="types-aliases-unions">Types, Aliases &amp; Unions</h2>
-<p>Forml lacks algebraic data types in the ML sense, instead opting for only structural typing of records. However, you can add explicit type signatures to tell the Forml compiler it is OK to overload the types of specific symbols.</p>
-<pre><code>    num_or_string:
+        return {
+            piece = piece
+            board = board
+            score = 0
+            timer = 0
+            level = 1
 
-          (Num | String) -&gt; String
-        | x when num? x   = &quot;Num&quot;
-        | _               = &quot;String&quot;</code></pre>
-<p>Types may be given a polymorphic alias in much the same way you'd define a function.</p>
-<pre><code>    Maybe a = {just: a} | {nothing}</code></pre>
-<p>algebraic data types to be declared in a local scope, for all records which are structurally equivalent to those declared. For instance, we could declare a <code>Maybe a</code> ADT in forml via</p>
-<p>... where <code>{nothing}</code> is shorthand for the strucural type <code>{nothing: {}}</code>. When <code>Maybe a</code> is in scope, any record type with only the <code>just</code> or <code>nothing</code> keys will be inferred to be a type <code>Maybe a</code>.</p>
-<pre><code>    maybe x {just: y} = y
-    maybe x {nothing} = x
+            x = 3
+            y = 0
+        }</code></pre>
+<p>For the main game loop, we simply thread this gamestate through each function which needs it. This makes testing convenient:</p>
+<pre><code>    private   
+    with_board f =
 
-    <span class='test' id='test_319_319'>maybe 3 {just: 4} == 4</span>
-    <span class='test' id='test_320_320'>maybe 3 {nothing} == 3</span></code></pre>
-<p>Once a type such as this has a name, you may even refer to it recursively (note the <code>type</code> keyword is always optional).</p>
-<pre><code>    type List a = { head: a, tail: List a } | { nil }
+        do! board &lt;- new_board
+            yield f board</code></pre>
+<p>which lets us write quick tests that are guaranteed a clean gamestate:</p>
+<pre><code>    <span class='test' id='test_198_198'>with_board \board = length board.board == n_rows + 1</span>
+    <span class='test' id='test_199_199'>with_board \board = length (get 0 board.board) == n_columns + 1</span></code></pre>
+<p>While we're at it, we're going to</p>
+<pre><code>    at x y b = get x (get y b) /= (-1)
 
-    sum: List Num -&gt; Num
-    sum { head: x, tail: xs } = x + sum xs
-    sum { nil } = 0
 
-    <span class='test' id='test_331_334multi'>sum { head: 2
-          tail: { head: 3
-                  tail: { nil } } }
-        == 5</span></code></pre>
-<p>In case this sort of things floats your boat, you can also declare polymorphic types in &quot;java&quot; style, with <code>&lt; &gt;</code>.</p>
-<pre><code>    has_value: Maybe&lt;a&gt; -&gt; Bool
-    has_value {just: _} = true
-    has_value _ = false
 
-    <span class='test' id='test_343_343'>has_value {just: 4}</span>
-    <span class='test' id='test_344_344'>not (has_value {nothing})</span></code></pre>
-<h1 id="changes">Changes</h1>
-<p>0.1.3</p>
-<ul>
-<li>Fixed many parsing bugs, including negative numbers, indentation on anonymous functions &amp; do blocks, string-escaping, <code>isnt</code>, accessor ordering.</li>
-<li>Operator partials ala Haskell, <code>sum = reduce (+)</code></li>
-<li>Fixed type checking of mutually recursive definitions.</li>
-<li>Fixed Node.js test suite to work nearly-identically to Phantom.js</li>
-<li>Fixed output to use sensible filenames, and respect the <code>-o</code> option.</li>
-<li><a href="http://texodus.github.com/forml/tetris.html">Tetris!</a></li>
-</ul>
-<p>0.1.2</p>
-<ul>
-<li>Added accessor function syntax for treating record fields as functions (eg <code>x.map f == x |&gt; .map f</code>)</li>
-<li>Added <code>_</code> as valid type variable for throwaway unique types.</li>
-<li>Module aliases allow binding a module to a structurally typed symbol (eg <code>open prelude.list as list</code>).</li>
-<li>Prelude expanded, with special attention to the <code>array</code> module.</li>
-<li>Embedded prelude tests are skipped.</li>
-<li>Bug fixes.</li>
-</ul>
-<p>0.1.1</p>
-<ul>
-<li>Documentation generation has been greatly improved. Better styling, generates individual pages for each file.</li>
-<li>The prelude is now embedded in the compiler. Simply import it via <code>open prelude</code> - the compiler will include the code automatically. Currently weighs in at ~11k, if you care about that sort of thing.</li>
-<li>Command line interface is more pleasant to work with</li>
-</ul>
-<h1 id="contributors">Contributors</h1>
-<p>A special thanks to everyone who has contributed to forml!</p>
-<ul>
-<li><a href="https://github.com/jvshahid">jvshahid</a></li>
-<li><a href="https://github.com/JHawk">jhawk</a></li>
-<li><a href="https://github.com/mightybyte">mightybyte</a></li>
-<li><a href="https://github.com/taku0">taku0</a></li>
-<li><a href="https://github.com/brow">brow</a></li>
-<li><a href="https://github.com/dignati">dignati</a></li>
-</ul><script>$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents);window.document.title='Forml';$('header h1').html('Forml')</script>
+
+
+    is_valid board =
+
+        let intersect row col =
+                not (board.piece &#39;at col row
+                     &amp;&amp; board.board &#39;at (board.x + col) (board.y + row))
+
+            intersect_row row =
+                reduce (&amp;&amp;) &lt;|
+                    map (intersect row) (0 .. length (get row board.piece) - 1)
+
+        yield board.x &gt;= 0
+              &amp;&amp; board.x + length (get 0 board.piece) &lt;= n_columns + 1
+              &amp;&amp; board.y + length board.piece &lt;= n_rows + 1
+              &amp;&amp; reduce (&amp;&amp;) &lt;| map intersect_row (0 .. length board.piece - 1)
+
+
+
+    paint board x y color =
+
+        `board.board[x][y] = color`
+
+
+    css =
+
+        &quot;position: absolute;
+         width: 26px;
+         border: 3px solid rgba(0,0,0,0.4);
+         border-right-width: 1px;
+         border-top-width: 1px;
+         border-radius: 3px;
+         height: 26px;&quot;    
+
+
+
+    random_piece: Num -&gt; JS Piece | level = do
+
+        r &lt;- rand (length pieces)
+        c &lt;- rand (length (get level colors) - 2)
+
+        let piece = get r pieces
+
+        yield piece &#39;map \row =
+
+            row &#39;map &#955; 0 = c
+                     | _ = (-1)
+
+    rotate: Piece -&gt; JS Piece | x =
+
+        var new_row acc piece index col =
+
+                if index &lt; length piece
+
+                    do acc &lt;- put (get col (get index piece)) acc
+                       new_row acc piece (index + 1) col
+
+                else return do! reverse acc
+
+        sequence &lt;| map (new_row [] x 0) (0 .. length (get 0 x) - 1)
+
+    <span class='test' id='test_268_269multi'>get 3 pieces is
+        do! rotate (get 3 pieces)</span>
+
+    <span class='test' id='test_271_272multi'>get 1 pieces is
+        do! rotate (get 1 pieces) &gt;&gt;= rotate &gt;&gt;= rotate &gt;&gt;= rotate</span>
+
+    <span class='test' id='test_274_275multi'>get 4 pieces isnt
+        do! rotate (get 4 pieces) &gt;&gt;= rotate</span>
+
+
+
+
+
+
+
+    draw: Board -&gt; String
+    draw  { board: board, piece: piece, x: bx, y: by, level = level, _ } =
+
+        var draw_block x y =
+
+                if board &#39;at x y
+
+                    let color = get ((get x (get y board)) + 2) (get (level - 1) colors)
+                    &quot;&lt;div style=&#39;top:`y*30`px;left:`x*30`px;background-color:`color`;`css`&#39;&gt;&lt;/div&gt;&quot;
+
+                else (if ((x - bx &gt;= 0)
+                            &amp;&amp; (x - bx &lt; length (get 0 piece)) 
+                            &amp;&amp; (y - by &gt;= 0)
+                            &amp;&amp; (y - by &lt; length piece)
+                            &amp;&amp; piece &#39;at (x - bx) (y - by) )
+
+                          let color = get ((get (x - bx) (get (y - by) piece)) + 2) (get (level - 1) colors)
+                          &quot;&lt;div style=&#39;top:`y*30`px;left:`x*30`px;background-color:`color`;`css`&#39;&gt;&lt;/div&gt;&quot;
+
+                      else &quot;&quot;)
+
+            draw_row x = concat .: map (&#955;f = f x) .: map draw_block
+            rows       = 0 .. n_rows &#39;map &#955;_ = 0 .. n_columns
+
+        in  concat &lt;: zip_with draw_row (0 .. n_rows) rows 
+
+
+
+    every: Num -&gt; JS _ -&gt; JS Num
+    every n action = `setInterval(action, n)`
+
+
+
+    move: Board -&gt; Num -&gt; Num -&gt; JS {} | board x y = do
+
+        `board.x += x`
+        `board.y += y`
+
+        z &lt;- is_valid board
+        if z
+            &quot;#board&quot; $= draw board
+        else do
+           `board.x = board.x - x`
+           `board.y = board.y - y`
+
+
+
+    rot board = do
+
+        let old_piece = board.piece 
+        rotated_piece &lt;- rotate board.piece
+        `board.piece = rotated_piece`
+        x &lt;- is_valid board
+        if x
+            &quot;#board&quot; $= draw board
+        else `board.piece = old_piece`
+
+
+
+
+
+
+    new_piece board = do
+
+        board.piece &#39;for_each &#955; row =
+            do! get row board.piece &#39;for_each &#955; col =
+                    do! if board.piece &#39;at col row 
+                            &amp;&amp; (board.y + row &lt;= n_rows + 1)
+                            &amp;&amp; (board.x + col &lt;= n_columns + 1) then do
+
+                            paint board (board.y + row) (board.x + col) (get col (get row board.piece)) 
+
+                        else `undefined`
+
+        new_piece &lt;- random_piece (board.level - 1)    
+        `board.piece = new_piece`
+        `board.x = 3`
+        `board.y = 0`
+
+
+
+    clear_row board x = do
+
+        `board.score += 100`
+        &quot;#score&quot; $= to_commas board.score
+
+        if board.score % 1000 == 0 then do
+            `board.level += 1`
+            &quot;#level&quot; $= board.level
+            &quot;#board&quot; $| &quot;background-color&quot; &lt;| get 0 (get (board.level - 1) colors)
+            &quot;#board&quot; $| &quot;border-color&quot;     &lt;| get 1 (get (board.level - 1) colors)
+            log board.timer
+            stop_timer board
+            ref &lt;- tick board &#39;every ((0.7 ^ board.level) * 400)
+            board &#39;set_timer ref
+        else `undefined`
+
+        s &lt;- reverse (1 .. x)
+
+        yield s &#39;map &#955; row =
+            do! get row board.board &#39;for_each &#955; col =
+                do! paint board row col &lt;| get col (get (row - 1) board.board)  
+
+
+
+    stop_timer { timer = x, _ } = `clearInterval(x)`
+
+
+
+    clear_lines board = do
+
+        board.board &#39;for_each &#955; row =
+            if reduce (&amp;&amp;) (map (&#955;x = x != (-1)) (get row board.board))
+                 do! clear_row board row
+            else
+                 do! `undefined`
+
+
+
+    tick board = do
+
+        `board.y += 1`
+        x &lt;- is_valid board
+
+        if x
+            log &quot;tick&quot;
+        else do
+            `board.y = board.y - 1`
+            new_piece board
+            clear_lines board
+
+
+        &quot;#board&quot; $= draw board
+
+    <span class='test' id='test_417_424multi'>with_board &#955; board =
+
+        do! tick board
+            i &lt;- is_valid board
+            yield (board.y == 1) 
+                      &amp;&amp; i
+                      &amp;&amp; board.score == 0
+                      &amp;&amp; board.level == 1</span></code></pre><script>$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents);window.document.title='TETЯIS';$('header h1').html('TETЯIS')</script>
       </section>
       <footer>
         <div id="test_suite"></div>
