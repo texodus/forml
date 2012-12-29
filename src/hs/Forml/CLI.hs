@@ -47,7 +47,7 @@ parseArgs = fst . runState argsParser
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
                                                        RunConfig a _ c d e f g <- argsParser
-                                                       return $ RunConfig (x':a) name c d e f g
+                                                       return $ RunConfig a name c d e f g
                                          ('-':_) -> error "Could not parse options"
                                          z       -> do RunConfig a _ c d e f g <- argsParser
                                                        let b = last $ split "/" $ head $ split "." z
