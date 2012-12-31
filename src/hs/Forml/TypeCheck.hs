@@ -43,6 +43,9 @@ import           Forml.Parser
 import           Forml.Parser.Utils
 
 import           Forml.TypeCheck.Types
+
+import           Forml.Deps
+
 import Data.Graph (graphFromEdges, SCC(..))
 import Data.Graph.SCC (sccList)
 
@@ -157,18 +160,10 @@ instance Infer (Expression Definition) Type where
 
     infer (LetExpression xs x) =
 
-        with_scope$ do infer' defs
+        with_scope$ do mapM_ ((>>= assume) . infer) defs
                        infer x
 
         where defs = to_group (map DefinitionStatement xs)
-
-              infer' [] = return []
-              infer' (x:xs) =
-
-                 do a <- infer x
-                    assume a
-                    as <- infer' xs
-                    return$ a ++ as
 
     infer (ListExpression x) =
 
@@ -259,20 +254,6 @@ instance Infer [Definition] () where
               f (EqualityAxiom (Match p _) _) = p
               f _ = error "Fatal error occurred while reticulating splines"
 
-
-data BindGroup =
-
-    Scope {
-         imports :: [(Namespace, Maybe String)],
-         statements :: [Statement],
-         explicits :: [Definition],
-         implicits :: [[Definition]],
-         tests :: [Addr (Expression Definition)]
-     } 
-
-   | Module String [BindGroup]
-
-   deriving (Show)
 
 instance Infer Definition () where
 
@@ -485,39 +466,6 @@ instance Infer [Statement] () where
 
     infer (_ : xs) = infer xs
 
-sort_dep :: [[Definition]] -> [[Definition]]
-sort_dep [] = []
-sort_dep (concat -> xs) = unwrap `map` sccList graph
-
-    where (graph, reverse_lookup, _) = graphFromEdges . map to_node $ xs 
-
-          unwrap (AcyclicSCC v) = [ get_node . reverse_lookup $ v ]
-          unwrap (CyclicSCC v)  = map (get_node . reverse_lookup) v  
-    
-          get_node (d, _, _) = d
-          
-          to_node :: Definition -> (Definition, String, [String])
-          to_node def @ (Definition _ _ n as) =
-              (def, show n, concat . map get_symbols . get_expressions $ as)
-                 
-          get_expressions [] = []
-          get_expressions (TypeAxiom _: xs') = get_expressions xs'
-          get_expressions (EqualityAxiom (Match _ (Just y)) (Addr _ _ x): xs') = y : x : get_expressions xs'
-          get_expressions (EqualityAxiom _ (Addr _ _ x): xs') = x : get_expressions xs'
-
-          get_symbols (RecordExpression (unzip . M.toList -> (_, xs))) = concat (map get_symbols xs)
-          get_symbols (AccessorExpression (Addr _ _ x) _) = get_symbols x
-          get_symbols (ApplyExpression a b) = get_symbols a ++ concat (map get_symbols b)
-          get_symbols (IfExpression a b c) = get_symbols a ++ get_symbols b ++ get_symbols c
-          get_symbols (LiteralExpression _) = []
-          get_symbols (SymbolExpression x) = [show x]
-          get_symbols (JSExpression _) = []
-          get_symbols (LazyExpression (Addr _ _ x) _)      = get_symbols x
-          get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions as
-          get_symbols (LetExpression _ x) = get_symbols x
-          get_symbols (ListExpression x) = concat (map get_symbols x)
-          get_symbols _ = error "Unimplemented TypeCheck 544"
-
 
 js_type :: Type
 js_type = Type (TypeConst "JS" (KindFunction Star Star))
@@ -543,34 +491,4 @@ tiProgram (Program bgs) env =
                  assume a
                  infer' xs
 
-
-
-
-to_group :: [Statement] -> [BindGroup]
-to_group [] = []
-to_group xs =
-
-    case takeWhile not_module xs of
-        [] -> to_group' xs
-        yx -> sort_deps (foldl f (Scope [] [] [] [] []) yx)
-                   : to_group' (dropWhile not_module xs)
-
-    where to_group' [] = []
-          to_group' (ModuleStatement x y:ys) = Module (show x) (to_group y) : to_group ys
-          to_group' _ = error "Unexpected"
-
-          sort_deps s @ Scope { implicits = b } = s { implicits = sort_dep b }
-
-          not_module (ModuleStatement _ _) = False
-          not_module _ = True
-
-          f s @ Scope { implicits = b} (DefinitionStatement x @ (Definition _ _ _ (EqualityAxiom _ _:_))) =
-              s { implicits = b ++ [[x]] }
-          f s @ Scope { explicits = a} (DefinitionStatement x @ (Definition _ _ _ (TypeAxiom _:_))) =
-              s { explicits = a ++ [x] }
-          f s @ Scope { tests = c } (ExpressionStatement x) = s { tests = c ++ [x] }
-          f s @ Scope { imports = i } (ImportStatement ns Nothing) = s { imports = i ++ [(ns, Nothing)] }
-          f s @ Scope { imports = i } (ImportStatement ns (Just alias)) = s { imports = i ++ [(ns, Just alias)] }
-          f s @ Scope { statements = t } x @ (TypeStatement _ _) = s { statements = t ++ [x] }
-          f x _ = x
 
