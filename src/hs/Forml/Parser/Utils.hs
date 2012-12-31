@@ -94,7 +94,7 @@ same :: Parser ()
 same = spaces >> do pos <- getPosition
                     s <- get
                     if (sourceColumn pos) /= (sourceColumn s)
-                       then parserFail $ "not indented to exactly " ++ show (sourceColumn s)
+                       then parserFail $ "indented to exactly " ++ show (sourceColumn s + 1)
                        else do put $ setSourceLine s (sourceLine pos)
                                return ()
 
@@ -111,7 +111,7 @@ spaces = try emptyline `manyTill` try line_start >> return ()
           in_block = do pos <- getPosition
                         s <- get
                         if (sourceColumn pos) < (sourceColumn s)
-                           then parserFail $ "not indented to at least " ++ show (sourceColumn s)
+                           then parserFail $ "indented to at least " ++ show (sourceColumn s + 1)
                            else do put $ setSourceLine s (sourceLine pos)
                                    return ()
 
@@ -121,13 +121,17 @@ comment = try empty_line <|> try commented_code <|> try code <|> markdown_commen
 
     where markdown_comment = anyChar `manyTill` newline *> return "\n"
           empty_line = whitespace *> newline *> return "\n"
-          code = (\x y -> x ++ rstrip y ++ "\n") <$> string "    " <*> (anyChar `manyTill` newline)
-          commented_code = do string "    "
-                              x <- noneOf "\n" `manyTill` try (string "--")
-                              anyChar `manyTill` newline
-                              return $ if length (strip x) > 0
-                                           then "    " ++ rstrip x ++ "\n"
-                                           else "\n"
+          code = (\x y -> x ++ rstrip y ++ "\n")
+              <$> string "    " <*> (anyChar `manyTill` newline)
+
+          commented_code = do
+
+              string "    "
+              x <- noneOf "\n" `manyTill` try (string "--")
+              anyChar `manyTill` newline
+              return $ if length (strip x) > 0
+                       then "    " ++ rstrip x ++ "\n"
+                       else "\n"
 
 sep_with :: Show a => String -> [a] -> String
 sep_with x = concat . L.intersperse x . fmap show
@@ -195,10 +199,10 @@ valid_partial_op x = not_reserved$
     where reserved_words = [ ".", ","  ]
 
 
-type_sep    :: Parser Char
-indentPairs :: String -> Parser a -> String -> Parser a
-not_comma   :: Parser ()
-comma       :: Parser ()
+type_sep     :: Parser Char
+indentPairs  :: String -> Parser a -> String -> Parser a
+not_comma    :: Parser ()
+comma        :: Parser ()
 optional_sep :: ParsecT T.Text () (StateT SourcePos Identity) ()
 
 type_sep          = try (spaces *> char '|' <* whitespace)
@@ -206,7 +210,7 @@ not_comma         = whitespace >> newline >> spaces >> notFollowedBy (string "}"
 comma             = P.spaces *> string "," *> P.spaces
 optional_sep      = try (try comma <|> not_comma)
 
-indentPairs a p b = string a *> P.spaces *> withPosTemp p <* P.spaces <* string b
+indentPairs a p b = string a *> P.spaces *> (try p <|> withPosTemp p) <* P.spaces <* string b
 
 indentAsymmetricPairs :: String -> Parser a -> Parser b -> Parser a
 indentAsymmetricPairs a p b = string a *> P.spaces *> withPosTemp p <* P.spaces <* b
@@ -216,8 +220,8 @@ withPosTemp p = do x <- get
                    p' <- try (Just <$> withPos p) <|> return Nothing
                    put x
                    case p' of
-                     Just p' -> return p'
-                     Nothing -> parserFail ("expression continuation indented to " ++ show x)
+                       Just p' -> return p'
+                       Nothing -> parserFail ("expression continuation indented to " ++ show x)
 
 
 db :: Show a => a -> a

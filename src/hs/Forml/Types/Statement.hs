@@ -78,7 +78,7 @@ instance Syntax Statement where
                   (type_statement <?> "Type Definition")
                   <|> (try import_statement <?> "Import Statement")
                   <|> (module_statement <?> "Module Declaration")
-                  <|> (try def_statement <?> "Symbol Definition")
+                  <|> (def_statement <?> "Symbol Definition")
                   <|> (expression_statement <?> "Assertion")
 
               def_statement = DefinitionStatement <$> syntax

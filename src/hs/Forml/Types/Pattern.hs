@@ -77,7 +77,7 @@ instance (Syntax a, Show a) => Syntax (Match a) where
                            string "when"
                            spaces
                            indented
-                           ex <- withPos syntax
+                           ex <- withPosTemp syntax
                            spaces
                            indented
                            return $ Match x (Just ex)
@@ -192,7 +192,7 @@ instance (Syntax a, Show a) => Syntax (Pattern a) where
               array = f <$> indentAsymmetricPairs "[:" v (try (string ":]") <|> string "]")
 
                   where v = do whitespace
-                               withPos (syntax `sepBy` optional_sep)
+                               withPosTemp (syntax `sepBy` optional_sep)
 
                         f []     = RecordPattern (M.fromList [(Symbol "nil", AnyPattern)]) Complete
                         f (x:xs) = RecordPattern (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)]) Complete

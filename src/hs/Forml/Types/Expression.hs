@@ -148,7 +148,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
               let' = withPosTemp $ do string "var" <|> string "let"
                                       whitespace1
-                                      defs <- withPos def
+                                      defs <- withPosTemp def
                                       spaces
                                       try (do string "in"
                                               spaces
@@ -159,7 +159,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                   where def = try syntax `sepBy1` (try comma <|> try (spaces *> same))
 
               do'  = do s <- getPosition
-                        string "do"
+                        _ <- string "do"
                         i <- try (string "!") <|> return ""
                         P.spaces
                         l <- withPosTemp line
@@ -207,11 +207,13 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                          whitespace1
                          LazyExpression <$> withPosTemp (addr syntax) <*> return Every
 
-              if' = withPos $ do string "if"
-                                 whitespace1
-                                 e <- withPos$ try infix' <|> other
-                                 spaces
-                                 try (jStyle e) <|> hStyle e
+              if' = withPosTemp $ do
+
+                    string "if"
+                    whitespace1
+                    e <- withPosTemp$ try infix' <|> other
+                    spaces
+                    try (jStyle e) <|> hStyle e
 
                     where jStyle e = do indented
                                         cont e
@@ -220,11 +222,11 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                         whitespace1
                                         cont e
 
-                          cont e   = do t <- withPos$ try infix' <|> other
+                          cont e   = do t <- withPosTemp$ try infix' <|> other
                                         P.spaces
                                         string "else"
                                         whitespace1
-                                        IfExpression e t <$> withPos (try infix' <|> other)
+                                        IfExpression e t <$> withPosTemp (try infix' <|> other)
 
               infix' = buildExpressionParser table term
 
@@ -250,7 +252,6 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                        return (\x -> ApplyExpression
                                                          (SymbolExpression (Operator "-"))
                                                          [LiteralExpression (IntLiteral 0), x])
-                                  
 
                         px s   = Prefix (try neg)
                                  where neg = do spaces
@@ -339,7 +340,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                         eq_axiom   = do patterns <- syntax
                                         string "="
                                         P.spaces
-                                        ex <- withPosTemp $ withPos (addr syntax)
+                                        ex <- withPosTemp (addr syntax)
                                         return $ EqualityAxiom patterns ex
 
               js = g <$> indentPairs "`" (many $ noneOf "`") "`"
@@ -362,7 +363,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
               record = indentPairs "{" (try inherit <|> (RecordExpression . M.fromList <$>  pairs')) "}"
 
-                  where pairs' = withPos $ (try key_eq_val <|> try function')
+                  where pairs' = withPosTemp $ (try key_eq_val <|> try function')
                                          `sepBy` optional_sep
 
                         function' = do n <- syntax
@@ -374,7 +375,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                         string "="
                                         spaces
                                         indented
-                                        ex <- withPos (addr syntax)
+                                        ex <- withPosTemp (addr syntax)
                                         return $ EqualityAxiom patterns ex
 
                         inherit = do ex <- syntax
@@ -388,7 +389,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                         whitespace
                                         string "=" <|> string ":"
                                         spaces
-                                        value <- withPos syntax
+                                        value <- withPosTemp syntax
                                         return (key, value)
 
               literal = do (sourceColumn -> x) <- getPosition
@@ -422,12 +423,12 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
               list    = ListExpression <$> indentPairs "[" v "]"
                   where v = do whitespace
-                               withPos (syntax `sepBy` optional_sep)
+                               withPosTemp (syntax `sepBy` optional_sep)
 
               array   = f <$> indentAsymmetricPairs "[:" v (try (string ":]") <|> string "]")
 
                   where v = do whitespace
-                               withPos (syntax `sepBy` optional_sep)
+                               withPosTemp (syntax `sepBy` optional_sep)
 
                         f [] = RecordExpression (M.fromList [(Symbol "nil", SymbolExpression (Symbol "true"))])
                         f (x:xs) = RecordExpression (M.fromList [(Symbol "head", x), (Symbol "tail", f xs)])
