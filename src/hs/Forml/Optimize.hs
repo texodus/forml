@@ -35,6 +35,8 @@ import Forml.Types.Pattern
 import Forml.Types.Statement  hiding (Test, find, modules, namespace)
 import Forml.Types.Symbol
 
+import Forml.Deps
+
 import Forml.TypeCheck.Types hiding (get_namespace)
 
 import Forml.Parser
@@ -119,50 +121,55 @@ instance (Optimize a) => Optimize (Addr a) where
 
 instance Optimize (Expression Definition) where
 
-    optimize (ApplyExpression f' @ (SymbolExpression f) args) =
+    optimize (ApplyExpression f' args ) = ApplyExpression <$> optimize f' <*> mapM optimize args
+
+    optimize a @ (AccessorExpression x xs) =
+
+        do is <- get_env
+           case (InlineRecord a) `lookup` is of
+             Just (m @ (Match pss _), ex) ->
+
+                 do ex'   <- optimize ex
+                    m'    <- optimize m
+                    return $ FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]
+
+             _ -> flip AccessorExpression xs <$> optimize x
+
+    optimize (SymbolExpression f) =
 
         do is <- get_env
            case (InlineSymbol f) `lookup` is of
-             Just (m @ (Match pss _), ex) | length pss == length args ->
+             Just (m @ (Match pss _), ex) ->
 
-                 do args' <- mapM optimize args
-                    ex'   <- optimize ex
+                 do ex'   <- optimize ex
                     m'    <- optimize m
-                    return $ ApplyExpression (FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]) args'
+                    return $ FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]
 
-             _ -> ApplyExpression <$> optimize f' <*> mapM optimize args
-
-    optimize (ApplyExpression a @ (AccessorExpression x xs) args) =
-    
-        do is <- get_env
-           case (InlineRecord a) `lookup` is of
-             Just (m @ (Match pss _), ex) | length pss == length args ->
-
-                 do args' <- mapM optimize args
-                    ex'   <- optimize ex
-                    m'    <- optimize m
-                    return $ ApplyExpression (FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]) args'
-
-             _ -> ApplyExpression <$> optimize a <*> mapM optimize args
+             _ -> return $ SymbolExpression f
 
     optimize (ApplyExpression f args) = ApplyExpression <$> optimize f <*> mapM optimize args
     optimize (IfExpression a b c) = IfExpression <$> optimize a <*> optimize b <*> optimize c
     optimize (LazyExpression x l) = flip LazyExpression l <$> optimize x
     optimize (FunctionExpression xs) = FunctionExpression <$> mapM optimize xs
-    optimize (AccessorExpression x xs) = flip AccessorExpression xs <$> optimize x
     optimize (ListExpression ex) = ListExpression <$> mapM optimize ex
 
-    optimize (LetExpression ds ex) =
+    optimize (LetExpression ds ex) = do
 
-        do ds' <- mapM optimize ds
-           LetExpression ds' <$> optimize ex
+        stmts <- mapM optimize ds
+        LetExpression (filter is_inline stmts) <$> optimize ex
+
+        where
+
+            is_inline (Definition _ True _ _) = False
+            is_inline _ = True
 
     optimize (RecordExpression (M.toList -> xs)) =
 
         let (keys, vals) = unzip xs
         in  RecordExpression . M.fromList . zip keys <$> mapM optimize vals
 
-    optimize x = return x
+    optimize (JSExpression x) = return $ JSExpression x
+    optimize (LiteralExpression x) = return $ LiteralExpression x
 
 
 -- TODO wrong
@@ -281,13 +288,19 @@ instance Optimize Statement where
 
     optimize (DefinitionStatement d) = DefinitionStatement <$> optimize d
     optimize (ExpressionStatement (Addr s e x)) = ExpressionStatement . Addr s e <$> optimize x
-    optimize (ModuleStatement x xs) =
+    optimize (ModuleStatement x xs) = do
 
-        do ns <- get_namespace
-           set_namespace$ ns `mappend` x
-           xs' <- with_env$ optimize xs
-           set_namespace ns
-           return$ ModuleStatement x xs'
+        ns <- get_namespace
+        set_namespace$ ns `mappend` x
+        xs' <- with_env$ optimize $ sorted_defs xs
+        set_namespace ns
+        return$ ModuleStatement x xs'
+
+        where
+
+            get_defs [] = []
+            get_defs (DefinitionStatement d : xs) = [d] : get_defs xs
+            get_defs (_ : xs) = get_defs xs
 
     optimize ss @ (ImportStatement (Namespace x) (Just alias)) = 
 
