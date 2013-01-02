@@ -207,26 +207,27 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                          whitespace1
                          LazyExpression <$> withPosTemp (addr syntax) <*> return Every
 
-              if' = withPosTemp $ do
+              if' = do
 
                     string "if"
                     whitespace1
-                    e <- withPosTemp$ try infix' <|> other
-                    spaces
+                    e <- syntax
+                    P.spaces
                     try (jStyle e) <|> hStyle e
 
-                    where jStyle e = do indented
-                                        cont e
+                    where jStyle e = do cont e
 
                           hStyle e = do string "then"
                                         whitespace1
+                                        P.spaces
                                         cont e
 
-                          cont e   = do t <- withPosTemp$ try infix' <|> other
+                          cont e   = do t <- syntax
                                         P.spaces
                                         string "else"
                                         whitespace1
-                                        IfExpression e t <$> withPosTemp (try infix' <|> other)
+                                        P.spaces
+                                        IfExpression e t <$> syntax
 
               infix' = buildExpressionParser table term
 

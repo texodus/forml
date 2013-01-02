@@ -238,11 +238,9 @@ module tetris
     -- Notice that in checking whether a game state is valid, 
     -- `inline` predicates actually change the behavior of the 
     -- function.  If the predicates defined in the `let` block were
-    -- not `inline`, as well as the `all?` function from the `prelude.array`
-    -- module, `is_valid` would throw array-out-of-bounds exceptions
+    -- not `inline`, `is_valid` would throw array-out-of-bounds exceptions
     -- on bounded-ness violating game states, since the predicates
-    -- to `all?` (which is just `reduce (&&)`) would be evaluated
-    -- non-lazily (since the `&&` operator is lazy, as in javascript).
+    -- to `&&` depend on the lazy evaluation of this function (as in javascript).
 
     is_valid {board: board, piece: piece, x: x, y: y, _} =
     
@@ -263,7 +261,7 @@ module tetris
             inline y_bound? =
                 y + length piece <= n_rows + 1
 
-        all? [ x >= 0, x_bound?, y_bound?, intersect? ]
+        x >= 0 && x_bound? && y_bound? && intersect?
 
     -- Generate a random piece by selecting from `pieces`, then
     -- color it with a random color from the current palette.
@@ -345,16 +343,20 @@ module tetris
                     let color = get ((get x (get y board)) + 2) (get (level - 1) colors)
                     block_string x y color
 
-                else (if ((x - bx >= 0)
+                else if ((x - bx >= 0)
                             && (x - bx < length (piece 'get 0)) 
                             && (y - by >= 0)
                             && (y - by < length piece)
                             && piece 'at (x - bx) (y - by) )
                             
-                          let color = colors 'get (level - 1) 'get ((piece 'get (y - by) 'get (x - bx)) + 2)
-                          block_string x y color
+                    let color =
+                         colors
+                          'get (level - 1)
+                          'get ((piece 'get (y - by) 'get (x - bx)) + 2)
 
-                      else "")
+                    block_string x y color
+
+                else ""
 
             draw_row x = concat .: map (λf = f x) .: map draw_block
             rows       = 0 .. n_rows 'map λ_ = 0 .. n_columns
