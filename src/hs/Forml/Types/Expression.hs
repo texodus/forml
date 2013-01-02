@@ -235,7 +235,8 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                  , [ix "*", ix "/"]
                                  , [ Prefix neg ]
                                  , [ix "+", ix "-"]
-                                 , [ Infix user_op_right AssocRight, Infix user_op_left AssocLeft ]
+                                 , [ Infix user_op_left AssocLeft ]
+                                 , [ Infix user_op_right AssocRight ]
                                  , [ix "<", ix "<=", ix ">=", ix ">", ix "==", ix "!=", ix "isnt", ix "is"]
                                  , [ix "&&", ix "||", ix "and", ix "or" ] ]
 
@@ -262,10 +263,12 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
                         term   = try other
 
-                        user_op_left = try $ do spaces
-                                                op' <- not_system (many1 operator)
-                                                spaces
-                                                return $ f op'
+                        user_op_left  = try $ do spaces
+                                                 op' @ (end -> x : _) <- g operator
+                                                 spaces
+                                                 if x /= ':'
+                                                     then return $ f op'
+                                                     else parserFail "Operator"
 
                         user_op_right = try $ do spaces
                                                  op' @ (end -> x : _) <- g operator
@@ -498,6 +501,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
     toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
+    toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
 
     toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y]) =
         toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])

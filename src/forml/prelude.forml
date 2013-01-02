@@ -63,6 +63,26 @@ module prelude
     5  == do! return 5
     10 == do! `5 + 5`
 
+    do_times 0 _ = `undefined`
+    do_times n f =
+    
+        f >> do_times (n - 1) f
+
+
+    inline fmap:
+
+          (a -> b) -> JS a -> JS b 
+        | f           js    = do
+
+            val <- js
+            yield f val
+
+    inline clone: a -> JS a | x =
+
+        if array? x
+            `$.extend(true, [], x)`
+        else 
+            `$.extend(true, {}, x)`
 
 
     inline log: a -> JS {} 
@@ -542,10 +562,16 @@ module prelude
         inline sequence: Array (JS a) -> JS (Array a)
             | xs = `xs.map(run)`
         
-        inline (..): Num -> Num -> Array Num 
-            x .. y = do! `var z = [];
-                          for (var i = x; i <= y; i++) z.push(i);
-                          return z`
+        (..): Num -> Num -> Array Num 
+        x .. y =  
+
+            if x > y
+            then do! reverse (y .. x)
+            else do!
+
+                `var z = [];
+                 for (var i = x; i <= y; i++) z.push(i);
+                 return z`
 
         times: Num -> a -> Array a
             | n _ when n < 0 = []
@@ -554,10 +580,12 @@ module prelude
         inline put: a -> Array a -> JS (Array a)
             | x xs =
                  
-                 do y <- `jQuery.extend(true,[],xs)`
+                 do y <- clone xs
                     yield push! x y
         
         all? = reduce (&&)
+
+        sum  = reduce (+)
 
         inline
         for_each: (Num -> _) -> Array _ -> JS {}
@@ -579,6 +607,9 @@ module prelude
         let x = []
             _ = push! 1 x
         x == [1]
+
+        1 .. 3 == [1, 2, 3]
+        3 .. 1 == [3, 2, 1]
 
         reduce (&&) [true, true, true]
 
