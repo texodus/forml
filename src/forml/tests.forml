@@ -10,15 +10,15 @@
 
 module "Benchmarks for the prelude"
     
-    title x = 
-        do log "\r                                  "
-           log x
-           return true
-
     open prelude
     open prelude.speedtest
     open prelude.list
     open prelude.string
+
+    title x = 
+        do log "\r                                  "
+           log x
+           return true
 
     -- Here we have 5 implementations of 
     -- (Project Euler problem #1)[http://projecteuler.net/problem=1].

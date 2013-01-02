@@ -71,7 +71,7 @@ module tetris
     pieces: Array Piece =
     
         let x = 0
-            o = (-1)
+            o = -1
 
         [ [ [ x ]
             [ x ]
@@ -110,14 +110,17 @@ module tetris
 
         { piece: Piece
           board: Array (Array Num)
-          x: Num
           score: Num
-          y: Num
           timer: Num
-          level: Num }
+          level: Num
+
+          x: Num
+          y: Num }
+
+
         
-    -- Main
-    -- ----
+    -- Main Loop
+    -- ---------
     -- When the `Play Tetris` button is clicked, the action bound to
     -- the symbol `play` is realized:  the application's HTML UI is
     -- appended to the page, the game's state is initialized, and 
@@ -130,8 +133,8 @@ module tetris
         board <- new_board
 
         "body"   $+ game
-        "#board" $| "background-color" <| get 0 (get (board.level - 1) colors)
-        "#board" $| "border-color"     <| get 1 (get (board.level - 1) colors)
+        "#board" $| "background-color" <| (colors 'get (board.level - 1) 'get 0)
+        "#board" $| "border-color"     <| (colors 'get (board.level - 1) 'get 1)
         "#score" $= to_commas board.score
         "#level" $= board.level
          
@@ -140,8 +143,8 @@ module tetris
         
         move board (-1) 0 'on_key 37
         rot  board        'on_key 38
-        move board 1 0    'on_key 39
-        move board 0 1    'on_key 40
+        move board 1    0 'on_key 39
+        move board 0    1 'on_key 40
         
     -- There are three pieces which currently require shelling out to
     -- Javascript.  `set_timer` is necessary because the prelude 
@@ -162,18 +165,44 @@ module tetris
         in  to_string x 'replace (regex r "g") "$1,"
          
     to_commas 1000 == "1,000"
+
+    -- Heartbeat
+    -- ---------
+
+    tick board = do
+
+        `board.y += 1`
+
+        if is_valid board
+            log "tick"
+        else do
+            `board.y = board.y - 1`
+            new_piece board
+            clear_lines board
+
+        "#board" $= draw board
+
+    with_board λ board =
     
+        do! tick board
+            yield (board.y == 1) 
+                      && is_valid board
+                      && board.score == 0
+                      && board.level == 1
+                      
     
-    
+
+    -- State
+    -- -----
     -- `new_board` is a factory for generating a `Board` records
     -- representing a new game.
         
     new_board: JS Board = do
 
-        let new_row = yield 0 .. n_columns 'map λ_ = (-1)
+        let new_row = yield -1 'times (n_columns + 1)
         
         piece <- random_piece 0
-        board <- sequence (0 .. n_rows 'map λ_ = new_row)
+        board <- sequence (new_row 'times (n_rows + 1))
 
         return {
             piece = piece
@@ -198,51 +227,47 @@ module tetris
     -- which lets us write quick tests that are guaranteed a clean
     -- gamestate:
         
-    with_board \board = length board.board == n_rows + 1
-    with_board \board = length (get 0 board.board) == n_columns + 1
+    with_board λ board = board.board 'length == n_rows + 1
+    with_board λ board = board.board 'get 0 'length == n_columns + 1
 
-    -- While we're at it, we're going to 
+    -- It would be helpful to have a function for quickly asserting 
+    -- whether a point has a block.
     
-    at x y b = get x (get y b) /= (-1)
+    inline at x y b = b 'get y 'get x /= -1
 
+    -- Notice that in checking whether a game state is valid, 
+    -- `inline` predicates actually change the behavior of the 
+    -- function.  If the predicates defined in the `let` block were
+    -- not `inline`, as well as the `all?` function from the `prelude.array`
+    -- module, `is_valid` would throw array-out-of-bounds exceptions
+    -- on bounded-ness violating game states, since the predicates
+    -- to `all?` (which is just `reduce (&&)`) would be evaluated
+    -- non-lazily (since the `&&` operator is lazy, as in javascript).
 
-    -- 
-
+    is_valid {board: board, piece: piece, x: x, y: y, _} =
     
-    is_valid board =
-    
-        let intersect row col =
-                not (board.piece 'at col row
-                     && board.board 'at (board.x + col) (board.y + row))
-    
-            intersect_row row =
-                reduce (&&) <|
-                    map (intersect row) (0 .. length (get row board.piece) - 1)
-    
-        yield board.x >= 0
-              && board.x + length (get 0 board.piece) <= n_columns + 1
-              && board.y + length board.piece <= n_rows + 1
-              && reduce (&&) <| map intersect_row (0 .. length board.piece - 1)
-    
+        let by f n =
+                0 .. (n - 1) |> map f |> all?
 
+            inline intersect? =
 
-    paint board x y color =
+                length piece 'by λ row =
+                    length (piece 'get row) 'by λ col =
 
-        `board.board[x][y] = color`
+                        not (piece 'at col row
+                          && board 'at (x + col) (y + row))
 
+            inline x_bound? =
+                x + length (get 0 piece) <= n_columns + 1
 
-    css =
-    
-        "position: absolute;
-         width: 26px;
-         border: 3px solid rgba(0,0,0,0.4);
-         border-right-width: 1px;
-         border-top-width: 1px;
-         border-radius: 3px;
-         height: 26px;"    
+            inline y_bound? =
+                y + length piece <= n_rows + 1
 
-    
-            
+        all? [ x >= 0, x_bound?, y_bound?, intersect? ]
+
+    -- Generate a random piece by selecting from `pieces`, then
+    -- color it with a random color from the current palette.
+
     random_piece: Num -> JS Piece | level = do
 
         r <- rand (length pieces)
@@ -250,10 +275,14 @@ module tetris
 
         let piece = get r pieces
 
-        yield piece 'map \row =
+        yield piece 'map λ row =
 
             row 'map λ 0 = c
                      | _ = (-1)
+
+    -- Rotate a piece 90 degrees.  Although this function is pure, internally
+    -- it mutates arrays for construction, so we've just left its
+    -- return type `JS Piece` to reflect these side-effects.
                 
     rotate: Piece -> JS Piece | x =
 
@@ -276,12 +305,35 @@ module tetris
             
     get 4 pieces isnt
         do! rotate (get 4 pieces) >>= rotate
-            
 
 
 
     
+    -- Rendering
+    -- ---------
+
+
+    paint board x y color =
+
+        `board.board[x][y] = color`
+
+    css =
     
+        "position: absolute;
+         width: 26px;
+         border: 3px solid rgba(0,0,0,0.4);
+         border-right-width: 1px;
+         border-top-width: 1px;
+         border-radius: 3px;
+         height: 26px;"
+
+    inline
+    block_string:
+
+          Num -> Num -> String -> String
+        | x      y      color   =
+
+            "<div style='top:`y*30`px;left:`x*30`px;background-color:`color`;`css`'></div>"
 
     draw: Board -> String
     draw  { board: board, piece: piece, x: bx, y: by, level = level, _ } =
@@ -291,16 +343,16 @@ module tetris
                 if board 'at x y
                 
                     let color = get ((get x (get y board)) + 2) (get (level - 1) colors)
-                    "<div style='top:`y*30`px;left:`x*30`px;background-color:`color`;`css`'></div>"
+                    block_string x y color
 
                 else (if ((x - bx >= 0)
-                            && (x - bx < length (get 0 piece)) 
+                            && (x - bx < length (piece 'get 0)) 
                             && (y - by >= 0)
                             && (y - by < length piece)
                             && piece 'at (x - bx) (y - by) )
                             
-                          let color = get ((get (x - bx) (get (y - by) piece)) + 2) (get (level - 1) colors)
-                          "<div style='top:`y*30`px;left:`x*30`px;background-color:`color`;`css`'></div>"
+                          let color = colors 'get (level - 1) 'get ((piece 'get (y - by) 'get (x - bx)) + 2)
+                          block_string x y color
 
                       else "")
 
@@ -311,39 +363,31 @@ module tetris
 
 
 
+    -- Player Events
+    -- -------------
+
     every: Num -> JS _ -> JS Num
     every n action = `setInterval(action, n)`
-
-
     
     move: Board -> Num -> Num -> JS {} | board x y = do
     
         `board.x += x`
         `board.y += y`
         
-        z <- is_valid board
-        if z
+        if is_valid board
             "#board" $= draw board
         else do
            `board.x = board.x - x`
            `board.y = board.y - y`
-
-
     
     rot board = do
         
         let old_piece = board.piece 
         rotated_piece <- rotate board.piece
         `board.piece = rotated_piece`
-        x <- is_valid board
-        if x
+        if is_valid board
             "#board" $= draw board
         else `board.piece = old_piece`
-        
-        
-
-
-
     
     new_piece board = do
 
@@ -361,8 +405,6 @@ module tetris
         `board.piece = new_piece`
         `board.x = 3`
         `board.y = 0`
- 
-  
         
     clear_row board x = do
 
@@ -372,8 +414,8 @@ module tetris
         if board.score % 1000 == 0 then do
             `board.level += 1`
             "#level" $= board.level
-            "#board" $| "background-color" <| get 0 (get (board.level - 1) colors)
-            "#board" $| "border-color"     <| get 1 (get (board.level - 1) colors)
+            "#board" $| "background-color" <| (colors 'get (board.level - 1) 'get 0)
+            "#board" $| "border-color"     <| (colors 'get (board.level - 1) 'get 1)
             log board.timer
             stop_timer board
             ref <- tick board 'every ((0.7 ^ board.level) * 400)
@@ -386,11 +428,7 @@ module tetris
             do! get row board.board 'for_each λ col =
                 do! paint board row col <| get col (get (row - 1) board.board)  
  
- 
- 
     stop_timer { timer = x, _ } = `clearInterval(x)`
-
-
         
     clear_lines board = do
     
@@ -399,33 +437,6 @@ module tetris
                  do! clear_row board row
             else
                  do! `undefined`
-
-
-
-    tick board = do
-
-        `board.y += 1`
-        x <- is_valid board
-        
-        if x
-            log "tick"
-        else do
-            `board.y = board.y - 1`
-            new_piece board
-            clear_lines board
-            
-
-        "#board" $= draw board
-
-    with_board λ board =
-    
-        do! tick board
-            i <- is_valid board
-            yield (board.y == 1) 
-                      && i
-                      && board.score == 0
-                      && board.level == 1
-                      
                       
 
     
