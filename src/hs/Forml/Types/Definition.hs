@@ -9,6 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables, MultiParamTypeClasses #-}
 
 module Forml.Types.Definition where
@@ -19,6 +20,7 @@ import Language.Javascript.JMacro
 import Control.Applicative
 import Control.Monad
 import Data.Monoid
+import Data.Serialize
 
 import Text.Parsec hiding ((<|>), State, many, spaces, parse, label)
 import qualified Text.Parsec as P
@@ -36,14 +38,19 @@ import Forml.Types.Expression
 
 import Prelude hiding (curry, (++))
 
+import GHC.Generics
+
 
 
 -- Definition
 -- --------------------------------------------------------------------------------
 
-data Visibility = Public | Private deriving (Eq)
+data Visibility = Public | Private deriving (Eq, Generic)
 
-data Definition = Definition Visibility Bool Symbol [Axiom (Expression Definition)] deriving (Eq)
+data Definition = Definition Visibility Bool Symbol [Axiom (Expression Definition)] deriving (Eq, Generic)
+
+instance Serialize Definition
+instance Serialize Visibility
 
 instance Show Definition where
     show (Definition Public _ name ax) =[qq|$name {sep_with "\\n" ax}|]

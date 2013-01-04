@@ -14,6 +14,7 @@
 {-# LANGUAGE TypeSynonymInstances   #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# LANGUAGE ViewPatterns           #-}
+{-# LANGUAGE DeriveGeneric          #-}
 
 module Forml.Optimize where
 import System.IO.Unsafe ()
@@ -26,6 +27,7 @@ import Control.Applicative
 import Control.Monad
 import Data.Char
 import Data.Monoid
+import Data.Serialize
 
 import Forml.Types.Axiom
 import Forml.Types.Definition
@@ -41,14 +43,14 @@ import Forml.TypeCheck.Types hiding (get_namespace)
 
 import Forml.Parser
 import Forml.Parser.Utils
-
 import qualified Forml.Javascript.Utils as J
 
 import Prelude hiding (curry)
 import Text.Parsec.Pos (newPos)
 
+import GHC.Generics
 
-data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq)
+data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq, Generic)
 
 type Inlines = [((Namespace, Inlineable), (Match (Expression Definition), Expression Definition))]
 type Inline  = [(Inlineable, (Match (Expression Definition), Expression Definition))]
@@ -57,9 +59,12 @@ data OptimizeState = OptimizeState { ns :: Namespace
                                    , assumptions :: [(Namespace, [Assumption])]
                                    , inlines :: Inlines
                                    , tco :: [String]
-                                   , env :: Inline }
+                                   , env :: Inline } deriving (Eq, Generic)
 
 data Optimizer a = Optimizer (OptimizeState -> (OptimizeState, a))
+
+instance Serialize Inlineable
+instance Serialize OptimizeState
 
 instance Monad Optimizer where
 
@@ -386,10 +391,10 @@ instance Optimize Program where
 
     optimize (Program xs) = Program <$> optimize xs
 
-run_optimizer :: [Program] -> [(Namespace, [Assumption])] -> [Program]
-run_optimizer ps as = g ps as gen_state
+gen_state as = OptimizeState (Namespace []) as [] [] []
 
-    where g ps @ (optimize . head -> Optimizer f) as st = case f st of (st', p) -> p : g (tail ps) as st'
+run_optimizer :: Program -> OptimizeState -> (OptimizeState, Program)
+run_optimizer p @ (optimize -> Optimizer f) as = f as
 
-          gen_state = OptimizeState (Namespace []) as [] [] []
+          
 

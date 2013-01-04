@@ -5,6 +5,7 @@
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE DeriveGeneric        #-}
 
 module Forml.Types.TypeDefinition where
 
@@ -16,10 +17,15 @@ import qualified Data.List           as L
 import           Text.Parsec         hiding (State, label, many, parse, spaces,
                                       (<|>))
 
+import GHC.Generics
+import Data.Serialize
+
 import           Forml.Parser.Utils
 
 
-data TypeDefinition = TypeDefinition String [String]
+data TypeDefinition = TypeDefinition String [String] deriving (Generic)
+
+instance Serialize TypeDefinition
 
 
 instance Show TypeDefinition where

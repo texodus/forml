@@ -9,6 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables, MultiParamTypeClasses #-}
 
 module Forml.Types.Pattern where
@@ -38,6 +39,9 @@ import Forml.TypeCheck.Types
 import Prelude hiding (curry, (++))
 import System.IO.Unsafe (unsafePerformIO)
 import Data.Monoid (mappend)
+import qualified Data.Serialize as S
+
+import GHC.Generics
 
 
 
@@ -46,7 +50,7 @@ import Data.Monoid (mappend)
 -- Pattern
 -- --------------------------------------------------------------------------------
 
-data Match a = Match [Pattern a] (Maybe a) deriving (Eq)
+data Match a = Match [Pattern a] (Maybe a) deriving (Eq, Generic)
 data Pattern a = VarPattern String
                | AnyPattern
                | LiteralPattern Literal
@@ -54,8 +58,10 @@ data Pattern a = VarPattern String
                | ListPattern [Pattern a]
                | ViewPattern a (Pattern a)
                | AliasPattern [Pattern a]
-               deriving (Eq)
+               deriving (Eq, Generic)
 
+instance (S.Serialize a) => S.Serialize (Match a)
+instance (S.Serialize a) => S.Serialize (Pattern a)
 
 instance (Show a) => Show (Match a) where
     show (Match p Nothing)  = sep_with " " p
@@ -118,7 +124,9 @@ instance (Show a) => ToJExpr (PatternMatch a) where
         in   [jmacroE| `(x)` && `(ref n)`.length == `(length xs)` |]
     toJExpr (PM _ x) = error $ "Unimplemented " ++ show x
 
-data Partial = Partial | Complete deriving (Eq, Show)
+data Partial = Partial | Complete deriving (Eq, Show, Generic)
+
+instance S.Serialize Partial
 
 instance (Show a) => Show (Pattern a) where
     show (VarPattern x)     = x

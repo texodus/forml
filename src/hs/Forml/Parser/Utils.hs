@@ -10,6 +10,9 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 
 
 module Forml.Parser.Utils where
@@ -19,6 +22,7 @@ import Control.Monad.Identity
 import Control.Monad.State hiding (lift)
 
 import Text.Parsec hiding ((<|>), State, many, spaces, parse, label)
+import Text.Parsec.Pos
 import qualified Text.Parsec as P
 import Text.Parsec.Indent  hiding (same)
 
@@ -26,7 +30,9 @@ import qualified Data.Map as M
 import qualified Data.List as L
 
 import Data.String.Utils
+import qualified Data.Serialize as S
 
+import GHC.Generics
 
 import qualified Data.Text as T
 import System.IO.Unsafe (unsafePerformIO)
@@ -34,7 +40,14 @@ import System.IO.Unsafe (unsafePerformIO)
 
 
 
-data Addr a = Addr SourcePos SourcePos a deriving (Eq)
+data Addr a = Addr SourcePos SourcePos a deriving (Eq, Generic)
+
+instance (S.Serialize a) => S.Serialize (Addr a)
+instance S.Serialize SourcePos where
+
+    get = return $ newPos "Serialized Optimization" 0 0
+    put _ = return ()
+
 
 instance Functor Addr where
 

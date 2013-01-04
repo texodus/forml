@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleContexts, NamedFieldPuns, OverlappingInstances,
              QuasiQuotes, RankNTypes, RecordWildCards, TemplateHaskell,
-             ViewPatterns #-}
+             ViewPatterns, DeriveGeneric #-}
 
 module Forml.Types.Type where
 
 import Control.Applicative
-import Text.InterpolatedString.Perl6
 
+import Text.InterpolatedString.Perl6
 import Text.Parsec        hiding (State, label, many, parse, spaces, (<|>))
 import Text.Parsec.Indent hiding (same)
 
@@ -14,23 +14,29 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Forml.Parser.Utils
-
 import Forml.Types.Symbol
 
+import Data.Serialize
+
+import GHC.Generics
 
 data UnionType = UnionType (S.Set ComplexType)
-               deriving (Ord, Eq)
+               deriving (Ord, Eq, Generic)
 
 data ComplexType = RecordType (M.Map Symbol UnionType)
                  | InheritType SimpleType (M.Map Symbol UnionType)
                  | FunctionType UnionType UnionType
                  | SimpleType SimpleType
-                 deriving (Eq, Ord)
+                 deriving (Eq, Ord, Generic)
 
 data SimpleType = PolymorphicType SimpleType [UnionType]
                 | SymbolType Symbol
                 | VariableType String
-                deriving (Ord, Eq)
+                deriving (Ord, Eq, Generic)
+
+instance Serialize SimpleType
+instance Serialize UnionType
+instance Serialize ComplexType
 
 instance Show UnionType where
     show (UnionType xs)         = [qq|{sep_with " | " $ S.toList xs}|]

@@ -9,6 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Forml.Types.Namespace where
 
@@ -19,13 +20,18 @@ import Control.Applicative
 import Text.Parsec hiding ((<|>), State, many, spaces, parse, label)
 import Data.Monoid
 import qualified Data.List as L
+import Data.Serialize
+
+import GHC.Generics
 
 import Forml.Parser.Utils
 import Forml.Javascript.Utils
 
 import Prelude hiding (curry, (++))
 
-newtype Namespace = Namespace [String] deriving (Eq)
+newtype Namespace = Namespace [String] deriving (Eq, Ord, Generic)
+
+instance Serialize Namespace
 
 instance Monoid Namespace where
     mempty = Namespace []

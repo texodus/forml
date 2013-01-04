@@ -5,11 +5,14 @@
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE DeriveGeneric        #-}
 
 module Forml.Parser where
 
 import Control.Applicative
 import Data.String.Utils
+import qualified Data.Serialize as S
+import GHC.Generics
 import Forml.Parser.Utils hiding (spaces)
 import Text.Parsec         hiding (State, label, many, parse, (<|>))
 
@@ -105,7 +108,9 @@ highlight [] x = x
 highlight ((a, b):xs) y = highlight xs (replace ("--" ++ serial a b) ("<span class='test' id='test_" ++ serial a b ++ "'>") (replace (serial a b ++ "--") "</span>" y))
 
 
-newtype Program = Program [Statement]
+newtype Program = Program [Statement] deriving (Generic)
+
+instance S.Serialize Program
 
 instance Show Program where
      show (Program ss) = sep_with "\n\n" ss

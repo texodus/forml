@@ -9,6 +9,8 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE ViewPatterns         #-}
+{-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE StandaloneDeriving   #-}
 
 module Forml.Types.Expression where
 
@@ -28,7 +30,7 @@ import qualified Data.List         as L
 import qualified Data.Map          as M
 import           Data.Monoid
 import           Data.String.Utils hiding (join)
-
+import           Data.Serialize
 
 import Forml.Javascript.Utils
 import Forml.Parser.Utils
@@ -37,6 +39,8 @@ import Forml.Types.Literal
 import Forml.Types.Pattern
 import Forml.Types.Symbol
 import Forml.Types.Type
+
+import qualified GHC.Generics as G
 
 import Prelude hiding (curry, (++))
 
@@ -48,7 +52,7 @@ import Prelude hiding (curry, (++))
 class ToLocalStat a where
     toLocal :: a -> JStat
 
-data Lazy = Once | Every deriving (Eq)
+data Lazy = Once | Every deriving (Eq, G.Generic)
 
 data Expression d = ApplyExpression (Expression d) [Expression d]
                   | IfExpression (Expression d) (Expression d) (Maybe (Expression d))
@@ -62,7 +66,16 @@ data Expression d = ApplyExpression (Expression d) [Expression d]
                   | LetExpression [d] (Expression d)
                   | ListExpression [Expression d]
                   | AccessorExpression (Addr (Expression d)) [Symbol]
-                  deriving (Eq)
+                  deriving (Eq, G.Generic)
+
+instance (Serialize d) => Serialize (Expression d)
+instance Serialize Lazy
+
+instance Serialize JExpr where
+
+    get = return [jmacroE| undefined |]
+    put _ = return ()
+
 
 instance (Show d) => Show (Expression d) where
 

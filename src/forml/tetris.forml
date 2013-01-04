@@ -279,9 +279,7 @@ module tetris
 
         x >= 0 && x_bound? && y_bound? && intersect?
 
-    with_board λ board =
-
-        is_valid board
+    with_board is_valid
 
     with_board λ board =
 

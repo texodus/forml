@@ -10,7 +10,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances, KindSignatures #-}
+{-# LANGUAGE UndecidableInstances, KindSignatures, DeriveGeneric #-}
 
 module Forml.TypeCheck.Types where
 
@@ -25,6 +25,9 @@ import qualified Data.Set as S
 import Control.Monad
 import Control.Arrow
 import Data.Monoid
+import Data.Serialize
+
+import GHC.Generics
 
 import Forml.Types.Namespace hiding (Module)
 
@@ -33,7 +36,7 @@ type Id = String
 enumId :: Int -> Id
 enumId n = 'v' : show n
 
-data Kind = Star | KindFunction Kind Kind deriving (Show, Eq, Ord)
+data Kind = Star | KindFunction Kind Kind deriving (Show, Eq, Ord, Generic)
 
 type Key = String
 
@@ -42,18 +45,25 @@ data Type = TypeVar TypeVar
           | TypeApplication Type Type
           | TypeRecord TypeRecord
           | TypeGen Int
-            deriving Eq
+            deriving (Eq, Generic)
 
-data TPartial = TComplete | TPartial Type deriving (Eq, Show)
+data TPartial = TComplete | TPartial Type deriving (Eq, Show, Generic)
 
 data TypeRecord = TRecord (M.Map Key Type) TPartial Kind
-                deriving (Show, Eq)
+                deriving (Show, Eq, Generic)
 
 data TypeVar = TVar Id Kind
-               deriving (Show, Eq, Ord)
+               deriving (Show, Eq, Ord, Generic)
 
 data TypeConst = TypeConst Id Kind -- (?)
-                 deriving (Show, Eq, Ord)
+                 deriving (Show, Eq, Ord, Generic)
+
+instance Serialize Kind
+instance Serialize Type
+instance Serialize TPartial
+instance Serialize TypeRecord
+instance Serialize TypeVar
+instance Serialize TypeConst
 
 instance Show Type where
     show (TypeVar (TVar i _)) = i
@@ -310,7 +320,9 @@ match _ _ = fail "Types do not match"
 -- Type Schemes
 -- --------------------------------------------------------------------------------
 
-data Scheme = Forall [Kind] Type deriving Eq
+data Scheme = Forall [Kind] Type deriving (Eq, Generic)
+
+instance Serialize Scheme
 
 instance Show Scheme where
     show (Forall [] t) = show t
@@ -335,7 +347,9 @@ toScheme t     = Forall [] t
 -- Assumptions
 -- --------------------------------------------------------------------------------
 
-data Assumption = Id :>: Scheme | Scheme :>>: Scheme deriving (Eq)
+data Assumption = Id :>: Scheme | Scheme :>>: Scheme deriving (Eq, Generic)
+
+instance Serialize Assumption
 
 newtype A = A [Assumption]
 

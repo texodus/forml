@@ -13,7 +13,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances, KindSignatures #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Forml.Types.Statement where
 
@@ -28,7 +30,10 @@ import Text.Parsec.Indent  hiding (same)
 
 import Data.String.Utils
 import Data.Monoid
+import qualified Data.Serialize as S
 import qualified Data.List as L
+
+import GHC.Generics
 
 import Forml.Parser.Utils
 
@@ -57,6 +62,9 @@ data Statement = TypeStatement TypeDefinition UnionType
                | ExpressionStatement (Addr (Expression Definition))
                | ImportStatement Namespace (Maybe String)
                | ModuleStatement Namespace [Statement]
+               deriving (Generic)
+
+instance S.Serialize Statement
 
 instance Show Statement where
     show (TypeStatement t c)     = [qq|type $t = $c|]

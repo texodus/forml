@@ -1,17 +1,26 @@
+{-# LANGUAGE DeriveGeneric #-}
 
 module Forml.Types.Symbol where
 
 import Language.Javascript.JMacro
 
 import Control.Applicative
+
 import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import qualified Data.Map as M
+
 import Forml.Parser.Utils
+
+import qualified Data.Map as M
 import Data.String.Utils
+import Data.Serialize
+
+import GHC.Generics
 
 data Symbol = Symbol String
             | Operator String
-            deriving (Ord, Eq)
+            deriving (Ord, Eq, Generic)
+
+instance Serialize Symbol
 
 instance Show Symbol where
     show (Symbol s)   = s

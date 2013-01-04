@@ -21,6 +21,7 @@ data RunConfig = RunConfig { inputs :: [String]
                            , optimize :: Bool
                            , run_tests :: TestMode
                            , write_docs :: Bool
+                           , implicit_prelude :: Int
                            , watch :: Bool }
 
 
@@ -29,7 +30,7 @@ parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False True Phantom False False
+                          []     -> return $ RunConfig [] "default" False True Phantom False 2 False
                           (x':xs) -> do put xs
                                         case x' of
                                          "-w"    -> do x <- argsParser
@@ -38,6 +39,8 @@ parseArgs = fst . runState argsParser
                                                           return $ x { write_docs = True }
                                          "-t"    -> do x <- argsParser
                                                        return $ x { show_types = True }
+                                         "-no-prelude" -> do x <- argsParser
+                                                             return $ x { implicit_prelude = 1 }
                                          "-no-opt" -> do x <- argsParser
                                                          return $ x { optimize = False }
                                          "-no-test" -> do x <- argsParser
@@ -46,13 +49,13 @@ parseArgs = fst . runState argsParser
                                                             return $ x { run_tests = Node }
                                          "-o"    -> do (name:ys) <- get
                                                        put ys
-                                                       RunConfig a _ c d e f g <- argsParser
-                                                       return $ RunConfig a name c d e f g
+                                                       RunConfig a _ c d e f g h <- argsParser
+                                                       return $ RunConfig a name c d e f g h
                                          ('-':_) -> error "Could not parse options"
-                                         z       -> do RunConfig a _ c d e f g <- argsParser
+                                         z       -> do RunConfig a _ c d e f g h <- argsParser
                                                        let b = last $ split "/" $ head $ split "." z
 
-                                                       return $ RunConfig (x':a) b c d e f g
+                                                       return $ RunConfig (x':a) b c d e f g h
 
 
 

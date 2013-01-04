@@ -10,6 +10,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Forml.Types.Axiom where
 
@@ -24,7 +25,9 @@ import Forml.Javascript.Utils
 import Forml.Types.Type
 import Forml.Types.Pattern
 
+import GHC.Generics
 
+import Data.Serialize
 import Data.Monoid
 
 import Prelude hiding (curry, (++))
@@ -35,7 +38,9 @@ import Prelude hiding (curry, (++))
 
 data Axiom a = TypeAxiom UnionType
              | EqualityAxiom (Match a) (Addr a)
-             deriving (Eq)
+             deriving (Eq, Generic)
+
+instance (Serialize a) => Serialize (Axiom a)
 
 instance (Show a) => Show (Axiom a) where
     show (TypeAxiom x) = ": " ++ show x

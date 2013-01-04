@@ -7,6 +7,7 @@
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE ViewPatterns         #-}
+{-# LANGUAGE DeriveGeneric        #-}
 
 module Main(main) where
 
@@ -18,10 +19,15 @@ import Control.Monad.State hiding (lift)
 import System.Directory
 import System.Environment
 import System.IO
+import System.IO.Unsafe
 
 
 import Data.String.Utils (split)
 import Data.List as L
+import qualified Data.Serialize as S
+import qualified Data.ByteString as B
+
+import GHC.Generics
 
 import           Forml.CLI
 import           Forml.Closure
@@ -44,40 +50,68 @@ to_parsed name src env = case parseForml name src of
 
 to_filename = head . split "." . last . split "/"
 
-parse_forml :: [Filename] -> IO ([Filename], TypeSystem, [(Program, Source)], [Title])
-parse_forml filenames =
+data Compiled = Compiled { filename :: Filename
+                         , types    :: TypeSystem
+                         , program  :: Program
+                         , source   :: Source
+                         , title    :: Title
+                         , js       :: String
+                         , opt_st   :: O.OptimizeState
+                         , tests    :: String } deriving (Generic)
+
+instance S.Serialize Compiled
+
+db :: Show a => a -> a
+db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
+                            return x
+
+
+
+parse_forml :: [Filename] -> Compiled -> IO [Compiled]
+parse_forml filenames c' =
 
     do sources <- mapM get_source filenames
-       (_, a, b, c) <- foldM parse' ("prelude.forml" : filenames, [], [], []) (prelude' : sources)
-       return $ (to_filename `fmap` ("prelude.forml" : filenames), a, b, c)
+       foldM parse'
+             [c']
+             (sources `zip` filenames)
 
-    where parse' :: ([Filename], TypeSystem, [(Program, Source)], [Title]) -> String -> IO ([Filename], TypeSystem, [(Program, Source)], [Title])
-          parse' (zs, ts, as, titles) src'' =
+    where parse' :: [Compiled]
+                 -> (Source, Filename)
+                 -> IO [Compiled]
 
-             do let (title, src) = get_title (head . split "." . last . split "/" . head $ zs) src''
-                let src' = to_literate (head zs) . (++ "\n") $ src
-                (ts', as') <- monitor [qq|Loading {head zs}|] $ return$ to_parsed (head zs) src' ts
-                return (tail zs, ts ++ ts', as ++ [(as', src')], titles ++ [title])
+          parse' acc (src'', filename) = do
+
+              let Compiled { types = ts, opt_st = opt } = last acc
+              let (title, src) = get_title (to_filename filename) src''
+              let src'         = to_literate filename . (++ "\n") $ src
+
+              (ts', ast) <- monitor [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
+
+              let (opt', opt_ast) = O.run_optimizer ast (opt { O.assumptions = ts'})
+              let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
+
+              return $ acc ++ [Compiled (to_filename filename) ts' opt_ast src' title js' opt' tests']
 
           get_source filename =
              do hFile <- openFile filename ReadMode
                 hGetContents hFile
 
-gen_js :: [Source] -> [Program] -> (String, [String])
-gen_js src p = (g, h)
-
-    where g = unserialize $ zipWith (render whole_program) src p
-          h = map (unserialize . (:[])) $ zipWith (render_spec whole_program) src p
-
-          unserialize x = compress $ read' prelude ++ "\n" ++ (unlines $ map read' x)
-
-          read' xs @ ('"':_) = read xs
-          read' x = x
-          
-          whole_program = Program $ get_program p
+          whole_program p = Program $ get_program p
           
           get_program (Program ss: ps) = ss ++ get_program ps
           get_program [] = []
+
+
+gen_js :: Source -> Program -> Program -> (String, String)
+gen_js src p whole_program = (g, h)
+
+    where g = unserialize $ render whole_program src p
+          h = unserialize $ render_spec whole_program src p
+
+          unserialize x = compress $ read' x
+
+read' xs @ ('"':_) = read xs
+read' x = x
 
 main :: IO ()
 main  = do args <- getArgs
@@ -109,34 +143,39 @@ main' (parseArgs -> rc') =
 
           compile rc =
 
-              do (filenames, types, src', titles) <- parse_forml$ inputs rc
-                 let src'' = O.run_optimizer (fmap fst src') types
-                 let (js', tests') = gen_js (fmap snd src') src''
+              do compiled <- drop (implicit_prelude rc)
+                     `fmap` parse_forml (inputs rc) (Compiled "" [] (Program []) "" "" [] (O.gen_state []) [])
+                  
+                 _ <- mapM (\ c @ (Compiled { .. }) -> B.writeFile (filename ++ ".obj") $ S.encode c)
+                           (drop (2 - implicit_prelude rc) compiled)
 
-               --  writeFile "prelude.types" (B.toString $ S.encode as)
+                 js' <- ((read' prelude ++ "\n") ++) `fmap`
+                        if optimize rc
+                        then monitor [qq|Closure {output rc}.js |]$ closure_local (js . last $ compiled) "ADVANCED_OPTIMIZATIONS"
+                        else do warn "Closure [libs]" (js . last $ compiled)
 
-                 js <- if optimize rc
-                       then monitor [qq|Closure {output rc}.js |]$ closure_local js' "ADVANCED_OPTIMIZATIONS"
-                       else do warn "Closure [libs]" js'
-
-                 tests <- case rc of
+                 tests' <- case rc of
                               RunConfig { optimize = True } ->
-                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS") (drop 1 filenames) (drop 1 tests')
-                              _ -> warn "Closure [tests]" (drop 1 tests')
+                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS")
+                                               (map filename compiled)
+                                               (map tests compiled)
+                              _ -> warn "Closure [tests]" (map tests compiled)
 
-
-                 writeFile (output rc ++ ".js") js
-                 zipWithM writeFile (map (++ ".spec.js") titles) tests
+                 writeFile (output rc ++ ".js") js'
+                 _ <- zipWithM writeFile (map (++ ".spec.js") (map filename compiled)) tests'
 
                  if write_docs rc
-                     then let programs = map fst (drop 1 src')
-                              sources  = map snd (drop 1 src')
-                          in  do docs js tests (drop 1 filenames) (drop 1 titles) programs sources
+                     then docs js'
+                              tests'
+                              (map filename compiled)
+                              (map title compiled)
+                              (map program compiled)
+                              (map source compiled)
                      else monitor "Docs" $ return $ Right ()
 
-                 sequence (zipWith (test rc js) (drop 1 filenames) tests)
+                 _ <- sequence (zipWith (test rc js') (map filename compiled) tests')
 
                  if (show_types rc)
-                      then putStrLn ("\nTypes\n\n  " ++ concat (map f types))
+                      then putStrLn ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
                       else return ()
  

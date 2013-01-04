@@ -40,7 +40,7 @@ Executable forml
     containers == 0.4.2.1,
     GraphSCC == 1.0.2,
     pandoc,
-    jmacro,
+    jmacro == 0.6.3,
     MissingH,
     interpolatedstring-perl6,
     transformers,
@@ -54,7 +54,9 @@ Executable forml
     file-embed,
     process,
     directory,
-    utf8-string == 0.3.7
+    utf8-string == 0.3.7,
+    ghc-prim,
+    cereal == 0.3.5.2
  
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields

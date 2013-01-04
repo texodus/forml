@@ -1,4 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric #-}
+
 
 module Forml.Types.Literal where
 
@@ -10,7 +12,12 @@ import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
 import Forml.Parser.Utils
 import Forml.TypeCheck.Types
 
-data Literal = StringLiteral String | IntLiteral Int | DoubleLiteral Double deriving (Eq)
+import GHC.Generics
+import Data.Serialize
+
+data Literal = StringLiteral String | IntLiteral Int | DoubleLiteral Double deriving (Eq, Generic)
+
+instance Serialize Literal
 
 instance Show Literal where
    show (StringLiteral x) = show x
