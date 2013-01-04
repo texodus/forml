@@ -59,7 +59,7 @@ module tetris
     -- Tetris.
     
     n_rows    = 19
-    n_columns = 9 
+    n_columns = 9
 
     -- The `Piece` type is a type synonym - it declares a local alias which
     -- can be used to make the type signatures easier to read.
@@ -132,14 +132,8 @@ module tetris
         game  <- game_template
         board <- new_board
 
-        "body"   $+ game
-        "#board" $| "background-color" <| (colors 'get (board.level - 1) 'get 0)
-        "#board" $| "border-color"     <| (colors 'get (board.level - 1) 'get 1)
-        "#score" $= to_commas board.score
-        "#level" $= board.level
-         
-        ref <- tick board 'every 400
-        board 'set_timer ref
+        "body" $+ game
+        draw_board board
         
         move board (-1) 0 'on_key 37
         rot  board        'on_key 38
@@ -185,9 +179,7 @@ module tetris
 
         `board.y += 1`
 
-        if is_valid board
-            `{}`           -- TODO shortcut `if` for JS {} and {}
-        else do
+        if not (is_valid board) then do
             `board.y = board.y - 1`
             new_piece board
             clear_lines board
@@ -385,7 +377,8 @@ module tetris
         `board.piece = rotated_piece`
         if is_valid board
             "#board" $= draw board
-        else `board.piece = old_piece`
+        else 
+            `board.piece = old_piece`
 
     with_board λ board =
 
@@ -399,13 +392,14 @@ module tetris
 
         board.piece 'for_each λ row = do!
             get row board.piece 'for_each λ col = do!
+
                 if board.piece 'at col row 
                     && (board.y + row <= n_rows + 1)
-                    && (board.x + col <= n_columns + 1) then do
+                    && (board.x + col <= n_columns + 1)
 
                     paint board (board.y + row) (board.x + col) (get col (get row board.piece)) 
 
-                else `undefined`
+                
          
         new_piece <- random_piece (board.level - 1)    
         `board.piece = new_piece`
@@ -414,15 +408,13 @@ module tetris
 
     -- Check for lines, and update the game state if the player has made
     -- a line.
-                      
+
     clear_lines board = do
     
         board.board 'for_each λ row = do!
             if reduce (&&) (map (λx = x != (-1)) (get row board.board))
                  clear_row board row
-            else
-                 `undefined`
-
+            
     with_board λ board = do!
         
         let line = 5 'times (n_columns + 1)
@@ -433,22 +425,16 @@ module tetris
 
     -- Clear a single line.
         
-    clear_row board x = do
+    clear_row: Board -> Num -> JS {} | board x = do
 
         `board.score += 100`
-        "#score" $= to_commas board.score
 
-        if board.score % 1000 == 0 then do
+        if board.score % 1000 == 0
             `board.level += 1`
-            "#level" $= board.level
-            "#board" $| "background-color" <: colors 'get (board.level - 1) 'get 0
-            "#board" $| "border-color"     <: colors 'get (board.level - 1) 'get 1
-            stop_timer board
-            ref <- tick board 'every ((0.7 ^ board.level) * 400)
-            board 'set_timer ref
-        else `undefined`
+       
+        draw_board board
 
-        sequence <: x .. 1 'map λ row =
+        ignore <: sequence <: x .. 1 'map λ row =
             board.board 'get row 'for_each λ col = do!
 
                 board.board 'get (row - 1)
@@ -462,6 +448,17 @@ module tetris
         clear_row board 9
         yield board.score == 100
               && sum (map sum board.board) == -200
+
+    draw_board board = do
+
+        "#score" $= to_commas board.score
+        "#level" $= board.level
+        "#board" $| "background-color" <: colors 'get (board.level - 1) 'get 0
+        "#board" $| "border-color"     <: colors 'get (board.level - 1) 'get 1
+        stop_timer board
+        ref <- tick board 'every ((0.7 ^ board.level) * 400)
+        board 'set_timer ref
+    
                       
 
     

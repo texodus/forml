@@ -68,7 +68,6 @@ module prelude
     
         f >> do_times (n - 1) f
 
-
     inline fmap:
 
           (a -> b) -> JS a -> JS b 
@@ -237,6 +236,9 @@ module prelude
     ((λx = x + 1) .: (λx = x * 2) .: λx = x - 3) 4 == 3
     id [1, 2, 3] == [1, 2, 3]
     flip (λx y = x - y) 3 5 == 2
+
+    inline ignore = flip (>>) yield {}
+
 
 
 

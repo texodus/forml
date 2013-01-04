@@ -51,7 +51,7 @@ class ToLocalStat a where
 data Lazy = Once | Every deriving (Eq)
 
 data Expression d = ApplyExpression (Expression d) [Expression d]
-                  | IfExpression (Expression d) (Expression d) (Expression d)
+                  | IfExpression (Expression d) (Expression d) (Maybe (Expression d))
                   | LiteralExpression Literal
                   | SymbolExpression Symbol
                   | JSExpression JExpr
@@ -70,18 +70,19 @@ instance (Show d) => Show (Expression d) where
         | f `elem` "abcdefghijklmnopqrstuvwxyz" = [qq|$x {sep_with " " y}|]
         | length y == 2                         = [qq|{y !! 0} $x {y !! 1}|]
 
-    show (ApplyExpression x y)   = [qq|$x {sep_with " " y}|]
-    show (IfExpression a b c)    = [qq|if $a then $b else $c|]
-    show (LiteralExpression x)   = show x
-    show (SymbolExpression x)    = show x
-    show (ListExpression x)      = [qq|[ {sep_with ", " x} ]|]
-    show (FunctionExpression as) = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
-    show (JSExpression x)        = "`" ++ show (renderJs x) ++ "`"
-    show (LazyExpression x Once)      = "lazy " ++ show x
-    show (LazyExpression x Every)      = "do " ++ show x
-    show (LetExpression ax e)    = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
-    show (RecordExpression m)    = [qq|\{ {unsep_with " = " m} \}|]
-    show (InheritExpression x m) = [qq|\{ $x with {unsep_with " = " m} \}|]
+    show (IfExpression a b (Just c)) = [qq|if $a then $b else $c|]
+    show (IfExpression a b Nothing)  = [qq|if $a then $b|]
+    show (ApplyExpression x y)    = [qq|$x {sep_with " " y}|]
+    show (LiteralExpression x)    = show x
+    show (SymbolExpression x)     = show x
+    show (ListExpression x)       = [qq|[ {sep_with ", " x} ]|]
+    show (FunctionExpression as)  = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
+    show (JSExpression x)         = "`" ++ show (renderJs x) ++ "`"
+    show (LazyExpression x Once)  = "lazy " ++ show x
+    show (LazyExpression x Every) = "do " ++ show x
+    show (LetExpression ax e)     = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
+    show (RecordExpression m)     = [qq|\{ {unsep_with " = " m} \}|]
+    show (InheritExpression x m)  = [qq|\{ $x with {unsep_with " = " m} \}|]
     show (AccessorExpression x m) = [qq|$x.{sep_with "." m}|]
 
 
@@ -209,25 +210,30 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
               if' = do
 
-                    string "if"
-                    whitespace1
-                    e <- syntax
-                    P.spaces
-                    try (jStyle e) <|> hStyle e
+                  string "if"
+                  whitespace1
+                  e <- syntax
+                  P.spaces
+                  hStyle e <|> jStyle e
 
-                    where jStyle e = do cont e
+                  where
 
-                          hStyle e = do string "then"
-                                        whitespace1
-                                        P.spaces
-                                        cont e
+                      hStyle e = do
+                          string "then"
+                          whitespace1
+                          P.spaces
+                          jStyle e
 
-                          cont e   = do t <- syntax
-                                        P.spaces
-                                        string "else"
-                                        whitespace1
-                                        P.spaces
-                                        IfExpression e t <$> syntax
+                      jStyle e = do 
+                          (Addr a b t) <- addr syntax
+                          P.spaces
+                          IfExpression e t <$> (else' <|> return Nothing)
+
+                      else' = do
+                          string "else"
+                          whitespace1
+                          P.spaces
+                          Just <$> syntax
 
               infix' = buildExpressionParser table term
 
@@ -552,7 +558,7 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
         [jmacroE| (function() { `(foldl1 mappend $ map toLocal bs)`; return `(ex)` })() |]
 
-    toJExpr (IfExpression x y z) =
+    toJExpr (IfExpression x y (Just z)) =
 
         [jmacroE| (function(){
                      if (`(x)`) {
@@ -561,6 +567,17 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
                         return `(z)`
                      }
                    })() |]
+
+    toJExpr (IfExpression x y Nothing) =
+
+        [jmacroE| (function(){
+                     if (`(x)`) {
+                        return `(y)`;
+                     } else {
+                        return (function() { return {}; });
+                     }
+                   })() |]
+
 
     toJExpr x = error $ "Unimplemented " ++ show x
 

@@ -115,6 +115,11 @@ with_env xs =
 get_addr :: Addr a -> a
 get_addr (Addr _ _ x) = x
 
+instance (Optimize a) => Optimize (Maybe a) where
+
+    optimize (Just x) = Just <$> optimize x
+    optimize Nothing  = return Nothing
+
 instance (Optimize a) => Optimize (Addr a) where
 
     optimize (Addr s e a) = Addr s e <$> optimize a
@@ -214,7 +219,8 @@ instance Optimize Definition where
 
              is_recursive' (ApplyExpression (SymbolExpression x) _) | name == x = True
              is_recursive' (LetExpression _ e) = is_recursive' e
-             is_recursive' (IfExpression _ a b) = is_recursive' a || is_recursive' b
+             is_recursive' (IfExpression _ a (Just b)) = is_recursive' a || is_recursive' b
+             is_recursive' (IfExpression _ a _) = is_recursive' a
              is_recursive' _ = False
 
              axioms (t @ (TypeAxiom _): xs) = t : axioms xs
@@ -270,7 +276,7 @@ instance Optimize Definition where
                                                   })() |]
 
                        replace pss (LetExpression x e) = LetExpression x (replace pss e)
-                       replace pss (IfExpression x a b) = IfExpression x (replace pss a) (replace pss b)
+                       replace pss (IfExpression x a b) = IfExpression x (replace pss a) (replace pss `fmap` b)
                        replace _ x = x
 
                        bind_local :: ToJExpr a => [String] -> [a] -> JStat

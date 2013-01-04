@@ -66,7 +66,7 @@ instance Infer (Expression Definition) Type where
 
     infer (ApplyExpression e (x:xs)) = infer (ApplyExpression (ApplyExpression e (x:[])) xs)
 
-    infer (IfExpression a b c) =
+    infer (IfExpression a b (Just c)) =
 
         do ta <- infer a
            tb <- infer b
@@ -76,6 +76,20 @@ instance Infer (Expression Definition) Type where
            unify t tb
            unify t tc
            return t
+
+    infer (IfExpression a b Nothing) =
+
+        do ta <- infer a
+           tb <- infer b
+           t  <- newTVar Star
+           unify ta bool_type
+           unify t tb
+           is_js <- t `can_unify` TypeRecord (TRecord M.empty TComplete Star)
+           if is_js
+               then t `unify` TypeRecord (TRecord M.empty TComplete Star)
+               else t `unify` TypeApplication (Type (TypeConst "JS" (KindFunction Star Star))) (TypeRecord (TRecord M.empty TComplete Star))
+           return t
+
 
     infer (LiteralExpression s) = infer s
 
