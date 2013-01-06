@@ -21,7 +21,7 @@ data RunConfig = RunConfig { inputs :: [String]
                            , optimize :: Bool
                            , run_tests :: TestMode
                            , write_docs :: Bool
-                           , implicit_prelude :: Int
+                           , implicit_prelude :: Bool
                            , watch :: Bool }
 
 
@@ -30,7 +30,7 @@ parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False True Phantom False 2 False
+                          []     -> return $ RunConfig [] "default" False True Phantom False True False
                           (x':xs) -> do put xs
                                         case x' of
                                          "-w"    -> do x <- argsParser
@@ -40,7 +40,7 @@ parseArgs = fst . runState argsParser
                                          "-t"    -> do x <- argsParser
                                                        return $ x { show_types = True }
                                          "-no-prelude" -> do x <- argsParser
-                                                             return $ x { implicit_prelude = 1 }
+                                                             return $ x { implicit_prelude = False }
                                          "-no-opt" -> do x <- argsParser
                                                          return $ x { optimize = False }
                                          "-no-test" -> do x <- argsParser

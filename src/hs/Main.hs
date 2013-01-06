@@ -8,6 +8,7 @@
 {-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE ViewPatterns         #-}
 {-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE OverloadedStrings    #-}
 
 module Main(main) where
 
@@ -26,6 +27,7 @@ import Data.String.Utils (split)
 import Data.List as L
 import qualified Data.Serialize as S
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 
 import GHC.Generics
 
@@ -40,6 +42,8 @@ import qualified Forml.Optimize           as O
 import           Forml.Parser
 import           Forml.Static
 import           Forml.TypeCheck
+
+import qualified Codec.Compression.GZip as G
 
 to_parsed :: Title -> Source -> TypeSystem -> Either [Error] (TypeSystem, Program)
 to_parsed name src env = case parseForml name src of
@@ -143,22 +147,35 @@ main' (parseArgs -> rc') =
 
           compile rc =
 
-              do compiled <- drop (implicit_prelude rc)
-                     `fmap` parse_forml (inputs rc) (Compiled "" [] (Program []) "" "" [] (O.gen_state []) [])
-                  
-                 _ <- mapM (\ c @ (Compiled { .. }) -> B.writeFile (filename ++ ".obj") $ S.encode c)
-                           (drop (2 - implicit_prelude rc) compiled)
+              let empty_state =
+                      Compiled "" [] (Program []) "" "" [] (O.gen_state []) [] in
 
-                 js' <- ((read' prelude ++ "\n") ++) `fmap`
-                        if optimize rc
-                        then monitor [qq|Closure {output rc}.js |]$ closure_local (js . last $ compiled) "ADVANCED_OPTIMIZATIONS"
-                        else do warn "Closure [libs]" (js . last $ compiled)
+              do state <- if implicit_prelude rc
+                          then return $ case S.decode prelude' of
+                              Left x -> error x
+                              Right x -> x
+                          else return $ empty_state
+
+                 compiled <- drop 1 `fmap` parse_forml (inputs rc) state
+                  
+                 _ <- mapM (\ c @ (Compiled { .. }) ->
+                                monitor [qq|Compiling {filename}.obj |] $ fmap Right $
+                                B.writeFile (filename ++ ".obj") $ B.concat $ BL.toChunks $ G.compress $ BL.fromChunks [S.encode c])
+                           compiled
+
+
+                 let js'' = read' prelude ++ "\n"
+                               ++ if implicit_prelude rc then js state ++ (concatMap js compiled) else concatMap js compiled
+
+                 js' <- if optimize rc
+                        then monitor [qq|Closure {output rc}.js |]$ closure_local js'' "ADVANCED_OPTIMIZATIONS"
+                        else do warn "Closure [libs]" js''
 
                  tests' <- case rc of
                               RunConfig { optimize = True } ->
                                   zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS")
-                                               (map filename compiled)
-                                               (map tests compiled)
+                                      (map filename compiled)
+                                      (map ((read' prelude ++) . tests) compiled)
                               _ -> warn "Closure [tests]" (map tests compiled)
 
                  writeFile (output rc ++ ".js") js'

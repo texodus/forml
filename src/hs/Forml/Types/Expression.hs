@@ -30,7 +30,8 @@ import qualified Data.List         as L
 import qualified Data.Map          as M
 import           Data.Monoid
 import           Data.String.Utils hiding (join)
-import           Data.Serialize
+import           Data.Serialize as S
+import qualified Data.ByteString as B
 
 import Forml.Javascript.Utils
 import Forml.Parser.Utils
@@ -73,9 +74,11 @@ instance Serialize Lazy
 
 instance Serialize JExpr where
 
-    get = return [jmacroE| undefined |]
-    put _ = return ()
-
+    get = do result <- S.get
+             return $ case parseJM result of
+                         Left x -> error (show x ++ "\n\n" ++ result)
+                         Right (BlockStat [ _, AssignStat _ x]) -> x
+    put x = S.put . replace "jmId_" "x" . show . renderJs $ [jmacro| var xxx = `(x)`; |]
 
 instance (Show d) => Show (Expression d) where
 

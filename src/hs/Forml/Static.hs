@@ -13,14 +13,17 @@ module Forml.Static where
 import Text.InterpolatedString.Perl6
 
 import qualified Data.ByteString.UTF8 as B
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString as BS
 import           Data.FileEmbed
 import           Data.Monoid
 
+import qualified Codec.Compression.GZip as G
 
 jasmine  :: String
 header   :: String
 css      :: String
-prelude' :: String
+prelude' :: B.ByteString
 jquery   :: String
 footer   :: String
 report   :: String
@@ -33,7 +36,8 @@ css'     :: String
 htmljs   = "$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents)"
 console  = "prelude.html.console_runner()"
 
-prelude' = B.toString $(embedFile "src/forml/prelude.forml")
+prelude' = BS.concat . BL.toChunks . G.decompress $ BL.fromChunks [$(embedFile "prelude.obj")]
+
 jquery   = B.toString $(embedFile "lib/js/jquery.js")
 header   = B.toString $(embedFile "src/html/header.html")
 footer   = B.toString $(embedFile "src/html/footer.html")
@@ -52,3 +56,5 @@ prettify = B.toString $(embedFile "lib/js/prettify.js")
 css      = B.toString $(embedFile "lib/js/jasmine-1.0.1/jasmine.css") 
                `mappend` B.toString $(embedFile "src/html/styles.css") 
                `mappend` B.toString $(embedFile "lib/js/prettify.css")
+
+
