@@ -33,8 +33,8 @@ console  :: String
 scripts  :: String
 css'     :: String
 
-htmljs   = "$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', prelude.html.table_of_contents)"
-console  = "prelude.html.console_runner()"
+htmljs   = "$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', $prelude.$html.table_of_contents)"
+console  = "$prelude.$html.console_runner()"
 
 prelude' = BS.concat . BL.toChunks . G.decompress $ BL.fromChunks [$(embedFile "prelude.obj")]
 

@@ -46,10 +46,7 @@ instance Syntax Namespace where
 
 instance ToJExpr Namespace where
     toJExpr (Namespace []) = [jmacroE| (typeof global == "undefined" ? window : global) |]
-    toJExpr (Namespace (end -> x : xs)) = [jmacroE| `(Namespace xs)`[`(x)`] |]
-
-
-
+    toJExpr (Namespace (end -> x : xs)) = [jmacroE| `(Namespace xs)`["$" ++ `(x)`] |]
 
 data Module = Module Namespace [Module]
             | Var String

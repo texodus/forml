@@ -53,7 +53,7 @@ module tetris
     -- typed symbol.  This allows us to access all the symbols from
     -- `prelude.html`, as well as use the `array` symbol as a function parameter.
     
-    open prelude.html   as html
+    open prelude.html as html
     
     -- Some basic constants describing the physical laws of
     -- Tetris.
@@ -142,7 +142,6 @@ module tetris
         
     -- There are a few pieces which currently require shelling out to
     -- Javascript.  
-
     -- `game_template` is an action which fetches the blank HTML
     -- for the board background from an embedded script template
     -- (see [source](https://github.com/texodus/forml/blob/master/src/forml/tetris.forml)) 
@@ -172,38 +171,8 @@ module tetris
          
     to_commas 1000 == "1,000"
 
-    -- Heartbeat
-    -- ---------
-
-    tick board = do
-
-        `board.y += 1`
-
-        if not (is_valid board) then do
-            `board.y = board.y - 1`
-            new_piece board
-            clear_lines board
-
-        "#board" $= draw board
-
-    with_board λ board =
-    
-        do! tick board
-            tick board
-            yield board.y == 2
-
-    with_board λ board =
-
-        let board_sim n = do
-                sequence (tick board 'times n)
-                yield sum <| map sum board.board
-    
-        in  do! before <- board_sim 16
-                after  <- board_sim 5
-                yield before == -200 and after > -200
                       
     
-
     -- State
     -- -----
     -- `new_board` is a factory for generating a `Board` records
@@ -229,16 +198,20 @@ module tetris
 
     (n_rows + 1) * (n_columns + 1) == do!
         new_board 'fmap (sum .: map length .: .board)
-        
      
     -- For the main game loop, we simply thread this gamestate through 
-    -- each function which needs it.  This makes testing convenient:
+    -- each function which needs it.  This makes testing convenient, since
+    -- we can trivially recreate intermediate game states.  The `with_board`
+    -- combinator introduces a new gamestate into scope, and isolates
+    -- test behavior by clearing timers which may have been created in `f`.
 
     private   
     with_board f =
     
         do! board <- new_board
-            yield f board
+            let result = f board
+            stop_timer board
+            yield result
             
     -- which lets us write quick tests that are guaranteed a clean
     -- gamestate:
@@ -251,12 +224,17 @@ module tetris
     
     inline at x y b = b 'get y 'get x /= -1
 
-    -- Notice that in checking whether a game state is valid, 
-    -- `inline` predicates actually change the behavior of the 
+    -- Determining whether a particular game state is valid involves
+    -- testing whether the current piece is within the dimensions of
+    -- the game board, and whether it intersects any previously
+    -- laid block.  For clarity, these predicates are arranged as
+    -- `let` bindings in the definition of `is_valid`, where the
+    -- `inline` annotations actually change the behavior of the 
     -- function.  If the predicates defined in the `let` block were
     -- not `inline`, `is_valid` would throw array-out-of-bounds exceptions
-    -- on bounded-ness violating game states, since the predicates
-    -- to `&&` depend on the lazy evaluation of this function (as in javascript).
+    -- on bounded-ness violating game states, since these predicates
+    -- to `&&` depend on the lazy evaluation of this function (as in
+    -- javascript).
 
     is_valid {board: board, piece: piece, x: x, y: y, _} =
     
@@ -264,9 +242,8 @@ module tetris
                 0 .. (n - 1) |> map f |> all?
 
             inline intersect? =
-
-                length piece 'by λ row =
-                    length (piece 'get row) 'by λ col =
+                piece 'length 'by λ row =
+                    piece 'get row 'length 'by λ col =
 
                         not (piece 'at col row
                           && board 'at (x + col) (y + row))
@@ -278,6 +255,9 @@ module tetris
                 y + length piece <= n_rows + 1
 
         x >= 0 && x_bound? && y_bound? && intersect?
+
+    -- We can use these in combination with `tick` to verify its
+    -- expected behavior.
 
     with_board is_valid
 
@@ -296,20 +276,38 @@ module tetris
         do! sequence (tick board 'times 400)
             yield not (is_valid board)
 
+    -- The `tick` function itself is quite simple, and represents the
+    -- game state update invoked at the game's speed interval.        
+
+    tick board = do
+        `board.y += 1`
+        if not (is_valid board) then do
+            `board.y = board.y - 1`
+            new_piece board
+            clear_lines board
+        "#board" $= draw board
+
+    with_board λ board = do!
+        tick board
+        tick board
+        yield board.y == 2
+
+    with_board λ board =
+        let board_sim n = do
+                sequence (tick board 'times n)
+                yield sum <| map sum board.board
+        in  do! before <- board_sim 16
+                after  <- board_sim 5
+                yield before == -200 and after > -200
+
     -- Generate a random piece by selecting from `pieces`, then
     -- color it with a random color from the current palette.
 
     random_piece: Num -> JS Piece | level = do
-
         r <- rand (length pieces)
         c <- rand (length (get level colors) - 2)
-
         let piece = get r pieces
-
-        yield piece 'map λ row =
-
-            row 'map λ 0 = c
-                     | _ = (-1)
+        yield piece 'map (map λ 0 = c | _ = -1)
 
     4 <= do! random_piece 0 'fmap (sum .: map sum .: map (map ((+) 1)))
 
@@ -343,28 +341,26 @@ module tetris
 
     -- Player Events
     -- -------------
-    -- Moving left, right and down is handled by move
+    -- Moving left, right and down is handled by `move`.
 
-    move: Board -> Num -> Num -> JS {} | board x y = do
-    
-        `board.x += x`
-        `board.y += y`
-        
-        if is_valid board
-            "#board" $= draw board
-        else do
-           `board.x = board.x - x`
-           `board.y = board.y - y`
+    move:
+          Board -> Num -> Num -> JS {}
+        | board    x      y    = do
+            `board.x += x`
+            `board.y += y`
+            if is_valid board
+                "#board" $= draw board
+            else do
+                `board.x = board.x - x`
+                `board.y = board.y - y`
 
-    with_board λ board =
+    with_board λ board = do!
+        move board 1 0
+        yield board.x == 4
 
-        do! move board 1 0
-            yield board.x == 4
-
-    with_board λ board =
-
-        do! sequence (move board 1 0 'times 50)
-            yield is_valid board
+    with_board λ board = do!
+        move board 1 0 'times 50 'sequence
+        yield is_valid board
 
     -- The up key rotates the current piece
     

@@ -152,3 +152,19 @@ module "Tests for parser bugs"
 
     var x = do! `[ {x: 1}, {x: 2}, {x: 3} ]`
     stringify (x !! 0).x == "1"
+
+
+module "Test that definition names dont collide with namespaces"
+
+   open prelude 
+
+   module nametest
+       x = 1
+
+   nametest = {}
+
+   module "Seperator"
+
+   open nametest
+
+   x == 1

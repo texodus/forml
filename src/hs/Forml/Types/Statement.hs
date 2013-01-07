@@ -179,10 +179,10 @@ instance Javascript Meta JStat where
         return $ open target_namespace y
 
     toJS (Meta { modules, 
-                 expr      = ImportStatement target_namespace (Just alias), 
+                 expr      = ImportStatement target_namespace @ (Namespace ns) (Just alias), 
                  namespace = (find modules . (++ target_namespace) -> Just y) }) =
 
-        return $ declare alias target_namespace
+        return $ declare alias (Namespace $ ns)
 
     toJS meta @ (Meta { expr = ImportStatement _ _, .. }) = 
 
@@ -195,7 +195,7 @@ instance Javascript Meta JStat where
     toJS meta @ (Meta { target = Library, namespace = Namespace [], expr = ModuleStatement ns xs, .. }) =
         
         do xs' <- toJS $ fmap (\z -> meta { namespace =  ns, expr = z }) xs
-           return $ declare_window (show ns)
+           return $ declare_window (render_ns ns)
                  [jmacroE| new (function() { 
                                `(xs')`;
                            }) |]
@@ -203,7 +203,7 @@ instance Javascript Meta JStat where
     toJS meta @ (Meta { target = Library, expr = ModuleStatement ns xs, .. }) =
         
         do xs' <- toJS $ fmap (\z -> meta { namespace = namespace ++ ns, expr = z }) xs
-           return $ declare_this (show ns)
+           return $ declare_this (render_ns ns)
                  [jmacroE| new (function() { 
                                `(xs')`;
                            }) |]
@@ -273,7 +273,7 @@ instance Open Statement where
     open ns (DefinitionStatement (Definition _ _ _ (TypeAxiom _: [])) : xs) = open ns xs
     open ns (DefinitionStatement (Definition _ _ n _) : xs) =
 
-        let f = ref . replace " " "_" . show
+        let f = ref . render_ns
             x = [jmacroE| `(f ns)`[`(n)`] |] in
 
         [jmacro| `(declare (replace " " "_" $ to_name n) x)`;
@@ -281,21 +281,29 @@ instance Open Statement where
 
     open nss (ModuleStatement ns @ (Namespace (n:_)) _:xs) =
 
-        [jmacro| `(declare n (ref . replace " " "_" . show $ nss ++ ns))`;
+        [jmacro| `(declare (clean_ns n) (ref . render_ns $ nss ++ ns))`;
                  `(open nss xs)`; |]
 
     open ns (_ : xs) = open ns xs
 
 instance Open String where
     open _ [] = mempty
-    open (Namespace (map (replace " " "_") -> ns)) (x:xs) =
+    open (Namespace ns) (x:xs) =
 
         let print' []     = error "Empty Namespace"
-            print' (y:[]) = [jmacroE| `(ref y)` |]
-            print' (y:ys) = [jmacroE| `(print' ys)`[`(y)`] |]
+            print' (y:[]) = [jmacroE| `(ref $ clean_ns y)` |]
+            print' (y:ys) = [jmacroE| `(print' ys)`[`(clean_ns y)`] |]
 
         in  declare x [jmacroE| `(print' $ reverse ns)`[`(x)`] || (typeof global == "undefined" ? window : global)[`(x)`] |] ++ open (Namespace ns) xs
 
+render_ns :: Namespace -> String
+render_ns (Namespace xs) =
+
+    concat . L.intersperse "." . map clean_ns $ xs
+
+
+clean_ns = ("$" ++) . replace " " "_"
+     
 
 
 
