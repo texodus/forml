@@ -190,7 +190,7 @@ not_reserved x = do y <- x
                        else return y
 
     where reserved_words = [ "if", "then", "else", "let", "when", "with", "and", "or", "do", "do!", "var",
-                             "module", "open", "yield", "lazy", "inline", "in", "is", "isnt",
+                             "module", "open", "yield", "lazy", "inline", "in", "is", "isnt", "where",
                              "|", "\\", "=", ":", ",", "->", "<-" ]
 
 not_system :: Parser String -> Parser String

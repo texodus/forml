@@ -64,7 +64,19 @@ instance Syntax Definition where
                 (x, y) <- try prefix <|> try infix''
                 return $ Definition vis inl x y
 
-        where infix'' =
+        where where' = do
+                  string "where"
+                  whitespace1
+                  P.spaces
+                  Just <$> withPosTemp (syntax `sepBy1` (try comma <|> try (spaces *> same)))
+
+              where_clause ex = do
+                  where'' <- option Nothing (try where')
+                  return $ case where'' of
+                      Just defs -> LetExpression defs ex
+                      Nothing -> ex
+
+              infix'' =
 
                   do whitespace
                      first_arg <- try syntax
@@ -79,8 +91,10 @@ instance Syntax Definition where
                   where no_args_eq_axiom patterns =
 
                           do whitespace *> string "=" *> spaces *> indented
-                             ex <- withPos (addr syntax)
-                             return $ EqualityAxiom patterns ex
+                             (Addr a b ex') <- withPosTemp (addr syntax)
+                             P.spaces
+                             ex <- where_clause ex'
+                             return $ EqualityAxiom patterns (Addr a b ex)
 
               prefix = 
 
@@ -125,8 +139,10 @@ instance Syntax Definition where
                       no_args_eq_axiom patterns =
 
                           do P.spaces *> string "=" *> P.spaces
-                             ex <- withPos (addr syntax)
-                             return $ EqualityAxiom patterns ex
+                             (Addr a b ex') <- withPosTemp (addr syntax)
+                             P.spaces
+                             ex <- where_clause ex'
+                             return $ EqualityAxiom patterns (Addr a b ex)
 
                       infix_axiom =
                           

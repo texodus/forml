@@ -165,7 +165,8 @@ instance Optimize (Expression Definition) where
 
     optimize (LetExpression ds ex) = do
 
-        stmts <- mapM optimize ds
+        stmts' <- mapM optimize (sorted_defs . map DefinitionStatement $ ds)
+        let stmts = map (\(DefinitionStatement d) -> d) stmts'
         LetExpression (filter is_inline stmts) <$> optimize ex
 
         where

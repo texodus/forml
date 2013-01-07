@@ -4,7 +4,7 @@
 -- <link href='http://fonts.googleapis.com/css?family=Orbitron:500' rel='stylesheet' type='text/css'>
 -- <script type="text/javascript">
 -- $("header ul").prepend('<li><a id="play_tetris">Play<strong>Tetris</strong></a></li><li><a href="https://github.com/texodus/forml/blob/master/src/forml/tetris.forml">View On <strong>GitHub</strong></a></li>').css("width", "270");
--- $("#play_tetris").click(tetris.play);
+-- $("#play_tetris").click($tetris.play);
 -- </script>
 
 -- <script id="game" type="text/html">
@@ -153,7 +153,6 @@ module tetris
     -- `set_timer` is necessary because the prelude 
     -- currently lacks a library for implementing type safe mutations.
 
-
     every: Num -> JS _ -> JS Num
     every n action = `setInterval(action, n)`
 
@@ -206,12 +205,11 @@ module tetris
     -- test behavior by clearing timers which may have been created in `f`.
 
     private   
-    with_board f =
-    
-        do! board <- new_board
-            let result = f board
-            stop_timer board
-            yield result
+    with_board f = do!
+        board <- new_board
+        let result = f board
+        stop_timer board
+        yield result
             
     -- which lets us write quick tests that are guaranteed a clean
     -- gamestate:
@@ -237,44 +235,52 @@ module tetris
     -- javascript).
 
     is_valid {board: board, piece: piece, x: x, y: y, _} =
-    
-        let by f n =
-                0 .. (n - 1) |> map f |> all?
-
-            inline intersect? =
-                piece 'length 'by λ row =
-                    piece 'get row 'length 'by λ col =
-
-                        not (piece 'at col row
-                          && board 'at (x + col) (y + row))
-
-            inline x_bound? =
-                x + length (get 0 piece) <= n_columns + 1
-
-            inline y_bound? =
-                y + length piece <= n_rows + 1
 
         x >= 0 && x_bound? && y_bound? && intersect?
+
+        where by f n = 0 .. (n - 1) |> map f |> all?
+
+              inline intersect? =
+                  piece 'length 'by λ r =
+                      piece 'get r 'length 'by λ c =
+                          let piece? = piece 'at c r
+                              board? = board 'at (x + c) (y + r)
+                          not (piece? && board?)
+
+              inline x_bound? =
+                  x + length (get 0 piece) <= n_columns + 1
+
+              inline y_bound? =
+                  y + length piece <= n_rows + 1
 
     -- We can use these in combination with `tick` to verify its
     -- expected behavior.
 
     with_board is_valid
 
-    with_board λ board =
+    with_board λ board = do!
+        sequence (tick board 'times 45)
+        yield is_valid board
 
-        do! sequence (tick board 'times 45)
-            yield is_valid board
+    with_board λ board = do!
+        new_piece board
+        yield not (is_valid board)
 
-    with_board λ board =
+    with_board λ board = do!
+        sequence (tick board 'times 400)
+        yield not (is_valid board)
 
-        do! new_piece board
-            yield not (is_valid board)
+    -- Game Initialization
+    -- -------------------
 
-    with_board λ board =
-
-        do! sequence (tick board 'times 400)
-            yield not (is_valid board)
+    draw_board board = do
+        "#score" $= to_commas board.score
+        "#level" $= board.level
+        "#board" $| "background-color" <: colors 'get (board.level - 1) 'get 0
+        "#board" $| "border-color"     <: colors 'get (board.level - 1) 'get 1
+        stop_timer board
+        ref <- tick board 'every ((0.7 ^ board.level) * 400)
+        board 'set_timer ref
 
     -- The `tick` function itself is quite simple, and represents the
     -- game state update invoked at the game's speed interval.        
@@ -316,16 +322,11 @@ module tetris
     -- return type `JS Piece` to reflect these side-effects.
                 
     rotate: Piece -> JS Piece | x =
-
         var new_row acc piece index col =
-
-                if index < length piece
-                
-                    do acc <- put (get col (get index piece)) acc
-                       new_row acc piece (index + 1) col
-
+                if index < length piece then do
+                    acc <- put (get col (get index piece)) acc
+                    new_row acc piece (index + 1) col
                 else return do! reverse acc
-        
         sequence <| map (new_row [] x 0) (0 .. length (get 0 x) - 1)
 
     get 3 pieces is
@@ -365,7 +366,6 @@ module tetris
     -- The up key rotates the current piece
     
     rot board = do
-        
         let old_piece = board.piece 
         rotated_piece <- rotate board.piece
         `board.piece = rotated_piece`
@@ -374,13 +374,14 @@ module tetris
         else 
             `board.piece = old_piece`
 
-    with_board λ board =
+    with_board λ board = do!
+        orig <- clone board
+        rot board 'times 4 'sequence
+        yield orig == board
 
-       do! orig <- clone board
-           rot board 'times 4 'sequence
-           yield orig == board
-
-             
+    -- Once a piece has hit the bottom, we need to cement it to the
+    -- game board, then generate a new game piece and update the game's
+    -- state.
     
     new_piece board = do
 
@@ -392,8 +393,6 @@ module tetris
                     && (board.x + col <= n_columns + 1)
 
                     paint board (board.y + row) (board.x + col) (get col (get row board.piece)) 
-
-                
          
         new_piece <- random_piece (board.level - 1)    
         `board.piece = new_piece`
@@ -403,29 +402,26 @@ module tetris
     -- Check for lines, and update the game state if the player has made
     -- a line.
 
-    clear_lines board = do
-    
+    clear_lines board =
         board.board 'for_each λ row = do!
             if reduce (&&) (map (λx = x != (-1)) (get row board.board))
                  clear_row board row
             
     with_board λ board = do!
-        
         let line = 5 'times (n_columns + 1)
         `board.board[9] = line`
         clear_lines board
         yield board.score == 100
               && sum (map sum board.board) == -200
 
-    -- Clear a single line.
+    -- Once a full row has been found, we call `clear_row` to
+    -- update the state of the board, moving all of the blocks above down
+    -- and incrementing the score.
         
     clear_row: Board -> Num -> JS {} | board x = do
-
         `board.score += 100`
-
         if board.score % 1000 == 0
             `board.level += 1`
-       
         draw_board board
 
         ignore <: sequence <: x .. 1 'map λ row =
@@ -436,36 +432,28 @@ module tetris
                             'paint board row col
  
     with_board λ board = do!
-        
         let line = 5 'times (n_columns + 1)
         `board.board[9] = line`
         clear_row board 9
         yield board.score == 100
               && sum (map sum board.board) == -200
 
-    draw_board board = do
-
-        "#score" $= to_commas board.score
-        "#level" $= board.level
-        "#board" $| "background-color" <: colors 'get (board.level - 1) 'get 0
-        "#board" $| "border-color"     <: colors 'get (board.level - 1) 'get 1
-        stop_timer board
-        ref <- tick board 'every ((0.7 ^ board.level) * 400)
-        board 'set_timer ref
     
                       
 
     
     -- Rendering
     -- ---------
+    -- The `paint` function encapsulates the mutation of a single
+    -- cell on the board.  Forml currently does not support mutation
+    -- natively in any way except through the Javascript FFI, and 
+    -- these calls are tracked through the type system as the `JS a`
+    -- type.  However, unlike Haskell, forml 
 
-
-    paint board x y color =
-
+    inline paint board x y color =
         `board.board[x][y] = color`
 
     css =
-    
         "position: absolute;
          width: 26px;
          border: 3px solid rgba(0,0,0,0.4);
@@ -479,47 +467,38 @@ module tetris
 
           Num -> Num -> String -> String
         | x      y      color   =
-
             let style =
-
                     "top:`y*30`px;
                      left:`x*30`px;
                      background-color:`color`;
                      `css`"
-
             "<div style='`style`'></div>"
 
     draw: Board -> String
     draw { board: board, piece: piece, x: bx, y: by, level = level, _ } =
 
-        var draw_block x y =
-        
-                if board 'at x y
-                
-                    let color = colors 'get (level - 1) 'get (2 + (board 'get y 'get x))
-                    block_string x y color
+        0 .. n_rows 
+          'map λ_ = 0 .. n_columns 
+          'zip_with draw_row (0 .. n_rows)
+          'concat
 
-                else if ((x - bx >= 0)
-                            && (x - bx < length (piece 'get 0)) 
-                            && (y - by >= 0)
-                            && (y - by < length piece)
-                            && piece 'at (x - bx) (y - by) )
-                            
-                    let color =
-                         colors
-                          'get (level - 1)
-                          'get ((piece 'get (y - by) 'get (x - bx)) + 2)
+        where draw_row x = concat .: map ((|>) x) .: map draw_block
 
-                    block_string x y color
+              draw_block x y when board 'at x y =
+                  let color = colors 'get (level - 1) 'get (2 + (board 'get y 'get x))
+                  block_string x y color
 
-                else ""
+              draw_block x y when piece_bounds? x y =
+                  let c_idx = piece  'get (y - by) 'get (x - bx)
+                      color = colors 'get (level - 1) 'get (c_idx + 2)
+                  block_string x y color
 
-            draw_row x = concat .: map ((|>) x) .: map draw_block
-            rows       = 0 .. n_rows 'map λ_ = 0 .. n_columns
+              draw_block _ _ = ""
 
-        in  concat <: zip_with draw_row (0 .. n_rows) rows
-
-
-    
-  
+              inline piece_bounds? x y =
+                  x - bx >= 0
+                    && x - bx < piece 'get 0 'length
+                    && y - by >= 0
+                    && y - by < length piece
+                    && piece 'at (x - bx) (y - by)
          

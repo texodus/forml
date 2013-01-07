@@ -81,11 +81,10 @@ instance (Syntax a, Show a) => Syntax (Match a) where
 
           conditional = do x <- try jStyle <|> try hStyle
                            string "when"
+                           whitespace1
                            spaces
-                           indented
-                           ex <- withPosTemp syntax
+                           ex <- syntax
                            spaces
-                           indented
                            return $ Match x (Just ex)
 
 newtype Condition = Condition JExpr
