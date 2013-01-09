@@ -25,7 +25,6 @@ data RunConfig = RunConfig { inputs :: [String]
 
 parseArgs :: [String] -> RunConfig
 parseArgs = fst . runState argsParser
-
   where argsParser = do args <- get
                         case args of
                           []      -> return $ RunConfig [] "default" False True False Phantom False True False
@@ -56,20 +55,31 @@ parseArgs = fst . runState argsParser
                                                               let b = last $ split "/" $ head $ split "." z
                                                               return $ RunConfig (x':a) b c d e f g h i
 
+type StatusLogger a = String -> a -> IO a
 
+status_logger :: [SGR] -> String -> StatusLogger a
+status_logger sgrs rep = 
+  let logger str out =  
+        colors ((putStr $ "[" ++ rep ++ "] " ++ str) >> return out) $
+        do  putStr "\r["
+            setSGR sgrs
+            putStr rep
+            setSGR []
+            putStrLn$ "] " ++ str
+            return out in
+  logger
+
+success :: String -> a -> IO a
+success = status_logger [SetColor Foreground Dull Green] "*"
 
 warn :: String -> a -> IO a
-warn x js = colors ((putStr $ "[-] " ++ x) >> return js) $
-            do putStr "\r["
-               setSGR [SetColor Foreground Dull Yellow]
-               putStr "-"
-               setSGR []
-               putStrLn$ "] " ++ x
-               return js
+warn = status_logger [SetColor Foreground Dull Yellow] "-"
+
+failure :: String -> a -> IO a
+failure = status_logger [SetColor Foreground Dull Red] "X"
 
 colors :: IO a -> IO a -> IO a
 colors failure success =
-
           do (_, Just std_out', _, p) <-
                  createProcess (shell "tput colors 2> /dev/null") { std_out = CreatePipe }
              waitForProcess p
@@ -78,41 +88,23 @@ colors failure success =
                 [(x, "")] | x > (2 :: Integer) -> success
                 _ -> failure
 
-run_silent :: IO (Either [String] a) -> IO a
-run_silent d = 
+type Runner a = String -> IO (Either [String] a) -> IO a
+
+run_silent :: Runner a
+run_silent _ d = 
   do  d' <- d
       case d' of 
         Right y -> do return y
         Left  y -> do exitFailure
 
-monitor :: String -> IO (Either [String] a) -> IO a
+monitor :: Runner a
 monitor x d = do colors (return ()) $ putStr $ "[ ] " ++ x
                  hFlush stdout
                  d' <- d
                  case d' of
-                   Right y -> colors ((putStrLn $ "[*] " ++ x) >> return y) $
-                              do putStr "\r["
-                                 setSGR [SetColor Foreground Dull Green]
-                                 putStr "*"
-                                 setSGR []
-                                 putStrLn$ "] " ++ x
-                                 return y
-                   Left y  -> colors (errors y) $
-                              do putStr "\r["
-                                 setSGR [SetColor Foreground Dull Red]
-                                 putStr "X"
-                                 setSGR []
-                                 putStrLn$ "] " ++ x
-                                 putStrLn ""
-                                 if length y <= 5
+                   Right y -> success x y
+                   Left  y -> do  failure x y 
+                                  if length y <= 5
                                     then mapM putStrLn y >> return ()
                                     else mapM putStrLn (take 5 y) >> putStrLn ("\n" ++ show (length y - 5) ++ " additional errors")
-                                 exitFailure
-
-     where errors y =
-                  do putStrLn ("[X] " ++ x)
-                     if length y <= 5
-                        then mapM putStrLn y >> return ()
-                        else mapM putStrLn (take 5 y) >> putStrLn ("\n" ++ show (length y - 5) ++ " additional errors")
-                     exitFailure
-
+                                  exitFailure

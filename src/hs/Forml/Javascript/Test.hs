@@ -43,8 +43,9 @@ test RunConfig { run_tests = Node } js title tests =
            ExitSuccess   -> return$ Right ()
 
 test rc @ RunConfig { run_tests = Phantom } js title tests =
+      let runner = if silent rc then run_silent else monitor in
 
-      monitor [qq|Testing {title}.js [Phantom.js]|] $
+      runner [qq|Testing {title}.js [Phantom.js]|] $
       do writeFile (output rc ++ ".phantom.js")
                (jquery ++ jasmine ++ js ++ tests ++ console)
 

@@ -64,11 +64,7 @@ data Compiled = Compiled { filename :: Filename
 
 instance S.Serialize Compiled
 
-db :: Show a => a -> a
-db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
-                            return x
-
-parse_forml :: [Filename] -> Compiled -> IO [Compiled]
+parse_forml :: [Filename] -> Compiled -> Runner (TypeSystem, Program) -> IO [Compiled]
 parse_forml filenames compiled runner =
 
     do sources <- mapM get_source filenames
@@ -86,8 +82,7 @@ parse_forml filenames compiled runner =
               let (title, src) = get_title (to_filename filename) src''
               let src'         = to_literate filename . (++ "\n") $ src
 
-              (ts', ast) <- run_silent $ return $ to_parsed filename src' ts
-                --monitor [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
+              (ts', ast) <- runner [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
 
               let (opt', opt_ast) = O.run_optimizer ast (opt { O.assumptions = ts'})
               let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
@@ -126,6 +121,8 @@ main' (parseArgs -> rc') =
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
+          runner = if silent rc' then run_silent else monitor
+
           watch' rc =
               do x <- mapM getModificationTime . inputs $ rc
                  compile rc
@@ -150,26 +147,31 @@ main' (parseArgs -> rc') =
                               Right x -> x
                           else return $ empty_state
 
-                 compiled <- drop 1 `fmap` parse_forml (inputs rc) state
+                 compiled <- drop 1 `fmap` parse_forml (inputs rc) state runner
                   
                  _ <- mapM (\ c @ (Compiled { .. }) ->
-                                monitor [qq|Compiling {filename}.obj |] $ fmap Right $
+                                runner [qq|Compiling {filename}.obj |] $ fmap Right $
                                 B.writeFile (filename ++ ".obj") $ B.concat $ BL.toChunks $ G.compress $ BL.fromChunks [S.encode c])
                            compiled
 
                  let js'' = read' prelude ++ "\n"
                                ++ if implicit_prelude rc then js state ++ (concatMap js compiled) else concatMap js compiled
 
-                 js' <- if optimize rc
-                        then monitor [qq|Closure {output rc}.js |]$ closure_local js'' "ADVANCED_OPTIMIZATIONS"
-                        else do warn "Closure [libs]" js''
+                 js' <- case rc of
+                              RunConfig { optimize = True } ->
+                                runner [qq|Closure {output rc}.js |] $ closure_local js'' "ADVANCED_OPTIMIZATIONS"
+                              RunConfig { silent = False } ->
+                                do warn "Closure [libs]" js''
+                              _ -> do return js''
 
                  tests' <- case rc of
                               RunConfig { optimize = True } ->
-                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS")
+                                  zipWithM (\title t -> runner [qq|Closure {title}.spec.js |] $ closure_local t "SIMPLE_OPTIMIZATIONS")
                                       (map filename compiled)
                                       (map ((read' prelude ++) . tests) compiled)
-                              _ -> warn "Closure [tests]" (map tests compiled)
+                              RunConfig { silent = False } ->
+                                  warn "Closure [tests]" (map tests compiled)
+                              _ -> do return (map tests compiled)
 
                  writeFile (output rc ++ ".js") js'
                  _ <- zipWithM writeFile (map (++ ".spec.js") (map filename compiled)) tests'
@@ -181,7 +183,7 @@ main' (parseArgs -> rc') =
                               (map title compiled)
                               (map program compiled)
                               (map source compiled)
-                     else monitor "Docs" $ return $ Right ()
+                     else runner "Docs" $ return $ Right ()
 
                  _ <- sequence (zipWith (test rc js') (map filename compiled) tests')
 

@@ -25,11 +25,8 @@ import Data.List as L
 import Data.URLEncoded
 import Data.Maybe (fromMaybe)
 
-
-
 closure_local :: String -> String -> IO (Either a String)
 closure_local x y =
-
         do env' <- L.lookup "CLOSURE" <$> getEnvironment
            case env' of
              Just env ->
@@ -48,8 +45,6 @@ closure_local x y =
                                 return $ Right js
                         else putStr " remote]" >> hFlush stdout >> closure x y
              Nothing -> putStr " remote]" >> hFlush stdout >> closure x y
-
-
 
 closure :: String -> String -> IO (Either a String)
 closure x z = do let uri = fromMaybe undefined $ parseURI "http://closure-compiler.appspot.com/compile" 
