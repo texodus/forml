@@ -1,6 +1,4 @@
-
 module Forml.CLI where
-
 
 import Control.Monad.State hiding (lift)
 
@@ -12,13 +10,13 @@ import System.Process
 import Data.String.Utils
 
 
-
 data TestMode  = NoTest | Node | Phantom
 
 data RunConfig = RunConfig { inputs :: [String]
                            , output :: String
                            , show_types :: Bool
                            , optimize :: Bool
+                           , silent :: Bool
                            , run_tests :: TestMode
                            , write_docs :: Bool
                            , implicit_prelude :: Bool
@@ -30,32 +28,33 @@ parseArgs = fst . runState argsParser
 
   where argsParser = do args <- get
                         case args of
-                          []     -> return $ RunConfig [] "default" False True Phantom False True False
+                          []      -> return $ RunConfig [] "default" False True False Phantom False True False
                           (x':xs) -> do put xs
                                         case x' of
-                                         "-w"    -> do x <- argsParser
-                                                       return $ x { watch = True }
-                                         "-docs"    -> do x <- argsParser
-                                                          return $ x { write_docs = True }
-                                         "-t"    -> do x <- argsParser
-                                                       return $ x { show_types = True }
-                                         "-no-prelude" -> do x <- argsParser
-                                                             return $ x { implicit_prelude = False }
-                                         "-no-opt" -> do x <- argsParser
-                                                         return $ x { optimize = False }
-                                         "-no-test" -> do x <- argsParser
-                                                          return $ x { run_tests = NoTest }
-                                         "-node-test" -> do x <- argsParser
-                                                            return $ x { run_tests = Node }
-                                         "-o"    -> do (name:ys) <- get
-                                                       put ys
-                                                       RunConfig a _ c d e f g h <- argsParser
-                                                       return $ RunConfig a name c d e f g h
-                                         ('-':_) -> error "Could not parse options"
-                                         z       -> do RunConfig a _ c d e f g h <- argsParser
-                                                       let b = last $ split "/" $ head $ split "." z
-
-                                                       return $ RunConfig (x':a) b c d e f g h
+                                          "-w"          -> do x <- argsParser
+                                                              return $ x { watch = True }
+                                          "-docs"       -> do x <- argsParser
+                                                              return $ x { write_docs = True }
+                                          "-t"          -> do x <- argsParser
+                                                              return $ x { show_types = True }
+                                          "-no-prelude" -> do x <- argsParser
+                                                              return $ x { implicit_prelude = False }
+                                          "-no-opt"     -> do x <- argsParser
+                                                              return $ x { optimize = False }
+                                          "-silent"     -> do x <- argsParser
+                                                              return $ x { silent = True }
+                                          "-no-test"    -> do x <- argsParser
+                                                              return $ x { run_tests = NoTest }
+                                          "-node-test"  -> do x <- argsParser
+                                                              return $ x { run_tests = Node }
+                                          "-o"          -> do (name:ys) <- get
+                                                              put ys
+                                                              RunConfig a _ c d e f g h i <- argsParser
+                                                              return $ RunConfig a name c d e f g h i
+                                          ('-':_)       -> error "Could not parse options"
+                                          z             -> do RunConfig a _ c d e f g h i <- argsParser
+                                                              let b = last $ split "/" $ head $ split "." z
+                                                              return $ RunConfig (x':a) b c d e f g h i
 
 
 
@@ -79,7 +78,12 @@ colors failure success =
                 [(x, "")] | x > (2 :: Integer) -> success
                 _ -> failure
 
-
+run_silent :: IO (Either [String] a) -> IO a
+run_silent d = 
+  do  d' <- d
+      case d' of 
+        Right y -> do return y
+        Left  y -> do exitFailure
 
 monitor :: String -> IO (Either [String] a) -> IO a
 monitor x d = do colors (return ()) $ putStr $ "[ ] " ++ x

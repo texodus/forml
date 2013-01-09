@@ -22,7 +22,6 @@ import System.Environment
 import System.IO
 import System.IO.Unsafe
 
-
 import Data.String.Utils (split)
 import Data.List as L
 import qualified Data.Serialize as S
@@ -69,14 +68,12 @@ db :: Show a => a -> a
 db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
                             return x
 
-
-
 parse_forml :: [Filename] -> Compiled -> IO [Compiled]
-parse_forml filenames c' =
+parse_forml filenames compiled runner =
 
     do sources <- mapM get_source filenames
        foldM parse'
-             [c']
+             [compiled]
              (sources `zip` filenames)
 
     where parse' :: [Compiled]
@@ -89,7 +86,8 @@ parse_forml filenames c' =
               let (title, src) = get_title (to_filename filename) src''
               let src'         = to_literate filename . (++ "\n") $ src
 
-              (ts', ast) <- monitor [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
+              (ts', ast) <- run_silent $ return $ to_parsed filename src' ts
+                --monitor [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
 
               let (opt', opt_ast) = O.run_optimizer ast (opt { O.assumptions = ts'})
               let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
@@ -104,7 +102,6 @@ parse_forml filenames c' =
           
           get_program (Program ss: ps) = ss ++ get_program ps
           get_program [] = []
-
 
 gen_js :: Source -> Program -> Program -> (String, String)
 gen_js src p whole_program = (g, h)
@@ -123,14 +120,13 @@ main  = do args <- getArgs
 
 main' :: [String] -> IO ()
 main' (parseArgs -> rc') =
-         if watch rc'
-                 then watch' rc'
-                 else compile rc'
+          if watch rc'
+            then watch' rc'
+            else compile rc'
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
           watch' rc =
-
               do x <- mapM getModificationTime . inputs $ rc
                  compile rc
                  putStr "Waiting ..."
@@ -138,7 +134,6 @@ main' (parseArgs -> rc') =
                  wait rc x
 
           wait rc x =
-
               do threadDelay 1000
                  x' <- mapM getModificationTime . inputs $ rc
                  if x /= x' then do putStr "\r"
@@ -146,7 +141,6 @@ main' (parseArgs -> rc') =
                             else wait rc x
 
           compile rc =
-
               let empty_state =
                       Compiled "" [] (Program []) "" "" [] (O.gen_state []) [] in
 
@@ -162,7 +156,6 @@ main' (parseArgs -> rc') =
                                 monitor [qq|Compiling {filename}.obj |] $ fmap Right $
                                 B.writeFile (filename ++ ".obj") $ B.concat $ BL.toChunks $ G.compress $ BL.fromChunks [S.encode c])
                            compiled
-
 
                  let js'' = read' prelude ++ "\n"
                                ++ if implicit_prelude rc then js state ++ (concatMap js compiled) else concatMap js compiled
