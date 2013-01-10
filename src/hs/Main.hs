@@ -178,7 +178,7 @@ main' rc' =
                               _ -> do return (map tests compiled)
 
                  if flush rc 
-                    then putStr js' 
+                    then putStr js' >> hFlush stdout
                     else writeFile (output rc ++ ".js") js'
                  
                  _ <- zipWithM writeFile (map (++ ".spec.js") (map filename compiled)) tests'
