@@ -21,7 +21,8 @@ import System.Directory
 import System.Environment
 import System.IO
 import System.IO.Unsafe
-
+import System.Log.Logger
+import System.Log.Handler.Syslog
 
 import Data.String.Utils (split)
 import Data.List as L
@@ -65,18 +66,12 @@ data Compiled = Compiled { filename :: Filename
 
 instance S.Serialize Compiled
 
-db :: Show a => a -> a
-db x = unsafePerformIO $ do putStrLn$ "-- " ++ (show x)
-                            return x
-
-
-
-parse_forml :: [Filename] -> Compiled -> IO [Compiled]
-parse_forml filenames c' =
+parse_forml :: [Filename] -> Compiled -> Runner (TypeSystem, Program) -> IO [Compiled]
+parse_forml filenames compiled runner =
 
     do sources <- mapM get_source filenames
        foldM parse'
-             [c']
+             [compiled]
              (sources `zip` filenames)
 
     where parse' :: [Compiled]
@@ -89,7 +84,7 @@ parse_forml filenames c' =
               let (title, src) = get_title (to_filename filename) src''
               let src'         = to_literate filename . (++ "\n") $ src
 
-              (ts', ast) <- monitor [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
+              (ts', ast) <- runner [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
 
               let (opt', opt_ast) = O.run_optimizer ast (opt { O.assumptions = ts'})
               let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
@@ -105,7 +100,6 @@ parse_forml filenames c' =
           get_program (Program ss: ps) = ss ++ get_program ps
           get_program [] = []
 
-
 gen_js :: Source -> Program -> Program -> (String, String)
 gen_js src p whole_program = (g, h)
 
@@ -118,35 +112,36 @@ read' xs @ ('"':_) = read xs
 read' x = x
 
 main :: IO ()
-main  = do args <- getArgs
-           main' args
+main  = do  args <- getArgs
+            if silent $ parseArgs args 
+              then updateGlobalLogger "Global" (setLevel ERROR)
+              else updateGlobalLogger "Global" (setLevel INFO)
+            main' $ parseArgs args
 
-main' :: [String] -> IO ()
-main' (parseArgs -> rc') =
-         if watch rc'
-                 then watch' rc'
-                 else compile rc'
+main' :: RunConfig -> IO ()
+main' rc' =
+    if watch rc'
+      then watch' rc'
+      else compile rc'
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
-          watch' rc =
+          runner = if silent rc' then run_silent else monitor
 
-              do x <- mapM getModificationTime . inputs $ rc
-                 compile rc
-                 putStr "Waiting ..."
-                 hFlush stdout
-                 wait rc x
+          watch' rc =
+              do  x <- mapM getModificationTime . inputs $ rc
+                  compile rc
+                  infoM "Global" "Waiting ..."
+                  wait rc x
 
           wait rc x =
-
               do threadDelay 1000
                  x' <- mapM getModificationTime . inputs $ rc
-                 if x /= x' then do putStr "\r"
+                 if x /= x' then do infoM "Global" "\r"
                                     watch' rc
                             else wait rc x
 
           compile rc =
-
               let empty_state =
                       Compiled "" [] (Program []) "" "" [] (O.gen_state []) [] in
 
@@ -156,29 +151,36 @@ main' (parseArgs -> rc') =
                               Right x -> x
                           else return $ empty_state
 
-                 compiled <- drop 1 `fmap` parse_forml (inputs rc) state
+                 compiled <- drop 1 `fmap` parse_forml (inputs rc) state runner
                   
                  _ <- mapM (\ c @ (Compiled { .. }) ->
-                                monitor [qq|Compiling {filename}.obj |] $ fmap Right $
+                                runner [qq|Compiling {filename}.obj |] $ fmap Right $
                                 B.writeFile (filename ++ ".obj") $ B.concat $ BL.toChunks $ G.compress $ BL.fromChunks [S.encode c])
                            compiled
-
 
                  let js'' = read' prelude ++ "\n"
                                ++ if implicit_prelude rc then js state ++ (concatMap js compiled) else concatMap js compiled
 
-                 js' <- if optimize rc
-                        then monitor [qq|Closure {output rc}.js |]$ closure_local js'' "ADVANCED_OPTIMIZATIONS"
-                        else do warn "Closure [libs]" js''
+                 js' <- case rc of
+                              RunConfig { optimize = True } ->
+                                runner [qq|Closure {output rc}.js |] $ closure_local js'' "ADVANCED_OPTIMIZATIONS"
+                              RunConfig { silent = False } ->
+                                do warn "Closure [libs]" js''
+                              _ -> do return js''
 
                  tests' <- case rc of
                               RunConfig { optimize = True } ->
-                                  zipWithM (\title t -> monitor [qq|Closure {title}.spec.js |]$ closure_local t "SIMPLE_OPTIMIZATIONS")
+                                  zipWithM (\title t -> runner [qq|Closure {title}.spec.js |] $ closure_local t "SIMPLE_OPTIMIZATIONS")
                                       (map filename compiled)
                                       (map ((read' prelude ++) . tests) compiled)
-                              _ -> warn "Closure [tests]" (map tests compiled)
+                              RunConfig { silent = False } ->
+                                  warn "Closure [tests]" (map tests compiled)
+                              _ -> do return (map tests compiled)
 
-                 writeFile (output rc ++ ".js") js'
+                 if flush rc 
+                    then putStr js' >> hFlush stdout
+                    else writeFile (output rc ++ ".js") js'
+                 
                  _ <- zipWithM writeFile (map (++ ".spec.js") (map filename compiled)) tests'
 
                  if write_docs rc
@@ -188,11 +190,11 @@ main' (parseArgs -> rc') =
                               (map title compiled)
                               (map program compiled)
                               (map source compiled)
-                     else monitor "Docs" $ return $ Right ()
+                     else runner "Docs" $ return $ Right ()
 
                  _ <- sequence (zipWith (test rc js') (map filename compiled) tests')
 
                  if (show_types rc)
-                      then putStrLn ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
+                      then infoM "Global" $ ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
                       else return ()
  

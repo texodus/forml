@@ -25,18 +25,14 @@ import Data.List as L
 import Data.URLEncoded
 import Data.Maybe (fromMaybe)
 
-
-
 closure_local :: String -> String -> IO (Either a String)
 closure_local x y =
-
         do env' <- L.lookup "CLOSURE" <$> getEnvironment
            case env' of
              Just env ->
                  do exists' <- doesFileExist env
                     if exists' 
-                        then do putStr "[local]"
-                                hFlush stdout
+                        then do hFlush stdout
                                 writeFile "temp.js" x
                                 system$ "java -jar $CLOSURE --compilation_level "
                                           ++ y 
@@ -46,10 +42,8 @@ closure_local x y =
                                 system "rm temp.js"
                                 system "rm temp.compiled.js"
                                 return $ Right js
-                        else putStr " remote]" >> hFlush stdout >> closure x y
-             Nothing -> putStr " remote]" >> hFlush stdout >> closure x y
-
-
+                        else closure x y
+             Nothing -> closure x y
 
 closure :: String -> String -> IO (Either a String)
 closure x z = do let uri = fromMaybe undefined $ parseURI "http://closure-compiler.appspot.com/compile" 
@@ -65,7 +59,4 @@ closure x z = do let uri = fromMaybe undefined $ parseURI "http://closure-compil
                  rsp <- simpleHTTP (Request uri POST args y)
                  txt <- getResponseBody rsp
 
-                 putStr "[remote]"
-                 hFlush stdout
-
-                 return$ Right txt
+                 return $ Right txt
