@@ -21,6 +21,8 @@ import System.Directory
 import System.Environment
 import System.IO
 import System.IO.Unsafe
+import System.Log.Logger
+import System.Log.Handler.Syslog
 
 import Data.String.Utils (split)
 import Data.List as L
@@ -110,30 +112,32 @@ read' xs @ ('"':_) = read xs
 read' x = x
 
 main :: IO ()
-main  = do args <- getArgs
-           main' args
+main  = do  args <- getArgs
+            if silent $ parseArgs args 
+              then updateGlobalLogger "Global" (setLevel ERROR)
+              else updateGlobalLogger "Global" (setLevel INFO)
+            main' $ parseArgs args
 
-main' :: [String] -> IO ()
-main' (parseArgs -> rc') =
-          if watch rc'
-            then watch' rc'
-            else compile rc'
+main' :: RunConfig -> IO ()
+main' rc' =
+    if watch rc'
+      then watch' rc'
+      else compile rc'
 
     where f (x, y) = show x ++ "\n    " ++ concat (L.intersperse "\n    " (map show y)) ++ "\n\n  "
 
           runner = if silent rc' then run_silent else monitor
 
           watch' rc =
-              do x <- mapM getModificationTime . inputs $ rc
-                 compile rc
-                 putStr "Waiting ..."
-                 hFlush stdout
-                 wait rc x
+              do  x <- mapM getModificationTime . inputs $ rc
+                  compile rc
+                  infoM "Global" "Waiting ..."
+                  wait rc x
 
           wait rc x =
               do threadDelay 1000
                  x' <- mapM getModificationTime . inputs $ rc
-                 if x /= x' then do putStr "\r"
+                 if x /= x' then do infoM "Global" "\r"
                                     watch' rc
                             else wait rc x
 
@@ -188,6 +192,6 @@ main' (parseArgs -> rc') =
                  _ <- sequence (zipWith (test rc js') (map filename compiled) tests')
 
                  if (show_types rc)
-                      then putStrLn ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
+                      then infoM "Global" $ ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
                       else return ()
  
