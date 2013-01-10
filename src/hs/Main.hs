@@ -177,7 +177,10 @@ main' rc' =
                                   warn "Closure [tests]" (map tests compiled)
                               _ -> do return (map tests compiled)
 
-                 writeFile (output rc ++ ".js") js'
+                 if flush rc 
+                    then putStr js' 
+                    else writeFile (output rc ++ ".js") js'
+                 
                  _ <- zipWithM writeFile (map (++ ".spec.js") (map filename compiled)) tests'
 
                  if write_docs rc
