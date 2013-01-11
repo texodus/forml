@@ -307,8 +307,13 @@ module prelude
         
         option b {none} = b
              | _ {some: x} = x
-             
+
+        {none} == {none}
+        {some: 2} == {some: 2}
         option 3 {some: 2} == 2
+
+    -- HTML
+    -- ------
 
     module html
 
@@ -629,6 +634,8 @@ module prelude
     -- A simple implementation of a library for manipulating linked lists.
 
     module list
+        
+        open prelude.option
     
         List a = { head: a, tail: List a } 
                | { nil }
@@ -805,6 +812,17 @@ module prelude
 
         product [:1,2,4] == 8
                   
+        -- Find
+
+        find: (a -> Bool) -> List a -> Option a
+            | f {nil} = {none}
+            | f {head: h, tail: _} when f h = {some = h}
+            | f {head: _, tail: t} = find f t
+
+        [: 1,2] 'find (λx = x > 2) == {none}
+        [: 1,2,3,4] 'find (λx = x > 2) == {some: 3}
+        option 1 <| find (λx = x > 2) [: 1,2,3,4] == 3
+        
         -- Filter
 
         filter: (a -> Bool) -> List a -> List a
