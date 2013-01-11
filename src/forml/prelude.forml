@@ -706,6 +706,9 @@ module prelude
                  | f x when f (head x) = drop_while f (tail x)
                  | _ x = x
 
+        tails [:] = [:[:]]
+            | xxs = xxs :: tails <| tail xxs
+
         not (empty? (1 :: {nil}))
         empty? [:]
    
@@ -725,6 +728,9 @@ module prelude
 
         drop_while (λx = x < 0) {nil} == {nil}
         drop_while (λx = x > 0) [: 2, 1, 0 ] == [: 0 ]
+
+        tails [:] is [:[:]]
+        tails [:1,2,3] is [:[:1,2,3],[:2,3],[:3],[:]]
 
         -- Cardinality
         
@@ -746,7 +752,6 @@ module prelude
         -- List concatenation
 
         (++)
-
            | {nil} y                = y
            | {head: y, tail: ys} xs = y :: (ys ++ xs)
 
