@@ -805,6 +805,12 @@ module prelude
 
         foldr1 _ {nil} = error "Foldr1 called on empty list"
              | f x = foldr f (head x) (tail x)
+
+        partition f = 
+              let s {head: l1, tail: l2} x =
+                let l2' = head l2 in
+                if f x then [: x::l1,l2'] else [: l1,x::l2'] in
+              foldl s [:[:],[:]] .: reverse
         
         all? f = foldl1 (&&) .: map f
         any? f = foldl1 (||) .: map f
@@ -822,6 +828,9 @@ module prelude
 
         foldl (+) 0 [: 1, 2, 3, 4 ] == 10
         foldr (+) 0 [: 1, 2, 3, 4 ] == 10
+
+        partition (λx = true) [:] == [: [:],[:]]
+        partition (λx = x < 3) [:1,2,3,4] == [: [:1,2],[:3,4]]
         
         all? id [:true,true]
         not (all? id [:true,false])
