@@ -43,11 +43,11 @@ module prelude
 
     inline 
     (>>=): JS a -> (a -> JS b) -> JS b
-    (>>=)  x       y            = y (run x)
+    (>>=)  x       y            = `y(x())()`
 
     inline 
     (>>): JS a -> JS b -> JS b
-    (>>)  x       y     = `run x; return (run y)`
+    (>>)  x       y     = `y(x())`
 
     inline return:
 
@@ -504,8 +504,8 @@ module prelude
             do ".test" $| "position" <| "relative"
                ".test" $| "left"     <| "50px"
 
-               trivial <- `new jasmine.TrivialReporter()`
-               forml   <- `new jasmine.FormlReporter()`
+               trivial <- `new jasmine.TrivialReporter`
+               forml   <- `new jasmine.FormlReporter`
                env     <- jasmine.getEnv
 
                `env.addReporter trivial`

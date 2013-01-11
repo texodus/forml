@@ -207,7 +207,7 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                      option v $ try $ unit_bind v
 
                         unit_bind v = do P.spaces *> same
-                                         f v AnyPattern <$> addr line
+                                         f' v <$> line
 
                         f ex pat zx = ApplyExpression
                                          (SymbolExpression (Operator ">>="))
@@ -215,6 +215,10 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                                                     [ EqualityAxiom
                                                       (Match [pat] Nothing)
                                                       zx ]) ]
+
+                        f' ex zx = ApplyExpression
+                                         (SymbolExpression (Operator ">>"))
+                                         [ ex, zx ]
 
               lazy  = do string "lazy"
                          whitespace1
