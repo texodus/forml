@@ -706,6 +706,9 @@ module prelude
                  | f x when f (head x) = drop_while f (tail x)
                  | _ x = x
 
+        inits [:] = [:[:]]
+            | {head: x, tail: xs} = [:[:]] ++ (map (λy = x::y) (inits xs))
+
         tails [:] = [:[:]]
             | xxs = xxs :: tails <| tail xxs
 
@@ -728,6 +731,11 @@ module prelude
 
         drop_while (λx = x < 0) {nil} == {nil}
         drop_while (λx = x > 0) [: 2, 1, 0 ] == [: 0 ]
+
+        inits [:] is [:[:]]
+
+        -- this test exposes a unification issue
+        -- inits [:1,2,3] is [:[:],[:1],[:1,2],[:1,2,3]]
 
         tails [:] is [:[:]]
         tails [:1,2,3] is [:[:1,2,3],[:2,3],[:3],[:]]
