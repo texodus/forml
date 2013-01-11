@@ -19,15 +19,17 @@
 module Forml.Optimize where
 import System.IO.Unsafe ()
 
-import Language.Javascript.JMacro
-
-import qualified Data.Map as M
-
 import Control.Applicative
 import Control.Monad
+
+import qualified Data.Map as M
+import qualified Data.List as L
+
 import Data.Char
 import Data.Monoid
 import Data.Serialize
+
+import Language.Javascript.JMacro
 
 import Forml.Types.Axiom
 import Forml.Types.Definition
@@ -36,11 +38,9 @@ import Forml.Types.Namespace  hiding (Module)
 import Forml.Types.Pattern
 import Forml.Types.Statement  hiding (Test, find, modules, namespace)
 import Forml.Types.Symbol
-
+import Forml.Javascript.Utils hiding ((++))
 import Forml.Deps
-
 import Forml.TypeCheck.Types hiding (get_namespace)
-
 import Forml.Parser
 import Forml.Parser.Utils
 import qualified Forml.Javascript.Utils as J
@@ -120,6 +120,89 @@ with_env xs =
 get_addr :: Addr a -> a
 get_addr (Addr _ _ x) = x
 
+
+afmap d f (EqualityAxiom (Match pss cond) expr) =
+    EqualityAxiom (Match pss (fmap (replace_expr d f) cond)) (fmap (replace_expr d f) expr)
+
+afmap _ _ t = t
+
+dfmap d f (Definition a b c as) =
+    Definition a b c (fmap (afmap d f) as)
+
+replace_expr d f (ApplyExpression a b) =
+    ApplyExpression (replace_expr d f a) (replace_expr d f `map` b)
+replace_expr d f (IfExpression a b Nothing) =
+    IfExpression (replace_expr d f a) (replace_expr d f b) Nothing
+replace_expr d f (IfExpression a b (Just c)) =
+    IfExpression (replace_expr d f a) (replace_expr d f b) (Just (replace_expr d f c))
+replace_expr d f (LiteralExpression x) =
+    LiteralExpression x
+replace_expr d f (JSExpression j) =
+    JSExpression (replace_jexpr d j)
+replace_expr d f (LazyExpression a b) =
+    LazyExpression (fmap (replace_expr d f) a) b
+replace_expr d f (FunctionExpression as) = 
+    FunctionExpression (map (afmap d f) as)
+replace_expr d f (RecordExpression vs) =
+    RecordExpression (fmap (replace_expr d f) vs)
+replace_expr d f (LetExpression ds e) =
+    LetExpression (dfmap d f `map` ds) (replace_expr d f e)
+replace_expr d f (ListExpression xs) =
+    ListExpression (map (replace_expr d f) xs)
+replace_expr d f (AccessorExpression a ss) =
+    AccessorExpression (fmap (replace_expr d f) a) ss
+replace_expr d f (SymbolExpression (Symbol s)) = f (Symbol s)
+replace_expr d f (SymbolExpression s) = SymbolExpression s
+
+replace_expr _ _ s = s
+
+
+
+replace_stat dict (ReturnStat x)      = ReturnStat (replace_jexpr dict x)
+replace_stat dict (IfStat a b c)      = IfStat (replace_jexpr dict a) (replace_stat dict b) (replace_stat dict c)
+replace_stat dict (WhileStat a b c)   = WhileStat a (replace_jexpr dict b) (replace_stat dict c)
+replace_stat dict (ForInStat a b c d) = ForInStat a b (replace_jexpr dict c) (replace_stat dict d)
+replace_stat dict (SwitchStat a b c)  = SwitchStat (replace_jexpr dict a) b (replace_stat dict c)
+replace_stat dict (TryStat a b c d)   = TryStat (replace_stat dict a) b (replace_stat dict c) (replace_stat dict d)
+replace_stat dict (BlockStat xs)      = BlockStat (replace_stat dict `map` xs)
+replace_stat dict (ApplStat a b)      = ApplStat (replace_jexpr dict a) (replace_jexpr dict `map` b)
+replace_stat dict (PPostStat a b c)   = PPostStat a b (replace_jexpr dict c)
+replace_stat dict (AssignStat a b)    = AssignStat (replace_jexpr dict a) (replace_jexpr dict b)
+replace_stat dict (UnsatBlock a)      = UnsatBlock (replace_stat dict `fmap` a)
+
+replace_stat dict (DeclStat v t) = DeclStat v t
+replace_stat dict (UnsatBlock ident_supply) = UnsatBlock (replace_stat dict `fmap` ident_supply)
+replace_stat dict (AntiStat s) = AntiStat s
+replace_stat dict (ForeignStat s t) = ForeignStat s t
+replace_stat dict (BreakStat s) = (BreakStat s)
+
+replace_jval dict (JList xs)   = JList (replace_jexpr dict `map` xs)
+replace_jval dict (JHash m)    = JHash (M.map (replace_jexpr dict) m)
+replace_jval dict (JFunc xs x) = JFunc xs (replace_stat dict x)
+replace_jval dict (UnsatVal x) = UnsatVal (replace_jval dict `fmap` x)
+replace_jval dict x@(JDouble _) = x
+replace_jval dict x@(JInt _) = x
+replace_jval dict x@(JStr _) = x
+replace_jval dict x@(JRegEx _) = x
+replace_jval dict (JVar (StrI y)) =
+    case y `lookup` dict of
+         Just y' -> JVar . StrI . show . renderJs . toJExpr $ y'
+         Nothing -> JVar (StrI y)
+replace_jval _ (JVar x) = JVar x
+
+
+replace_jexpr dict (SelExpr e (StrI i))  = IdxExpr (replace_jexpr dict e) (ValExpr (JStr i))  -- Closure fix - advanced mode nukes these
+replace_jexpr dict (IdxExpr a b)         = IdxExpr (replace_jexpr dict a) (replace_jexpr dict b)
+replace_jexpr dict (InfixExpr a b c)     = InfixExpr a (replace_jexpr dict b) (replace_jexpr dict c)
+replace_jexpr dict (PPostExpr a b c)     = PPostExpr a b (replace_jexpr dict c)
+replace_jexpr dict (IfExpr a b c)        = IfExpr (replace_jexpr dict a) (replace_jexpr dict b) (replace_jexpr dict c)
+replace_jexpr dict (NewExpr a)           = NewExpr (replace_jexpr dict a)
+replace_jexpr dict (ApplExpr a b)        = ApplExpr (replace_jexpr dict a) (replace_jexpr dict `map` b)
+replace_jexpr dict (TypeExpr a b c)      = TypeExpr a (replace_jexpr dict b) c
+replace_jexpr dict (ValExpr a)           = ValExpr (replace_jval dict a)
+replace_jexpr dict (UnsatExpr a)         = UnsatExpr (replace_jexpr dict `fmap` a)
+
+
 instance (Optimize a) => Optimize (Maybe a) where
 
     optimize (Just x) = Just <$> optimize x
@@ -131,7 +214,43 @@ instance (Optimize a) => Optimize (Addr a) where
 
 instance Optimize (Expression Definition) where
 
-    optimize (ApplyExpression f' args ) = ApplyExpression <$> optimize f' <*> mapM optimize args
+    optimize (ApplyExpression (SymbolExpression s) args) = do
+
+        is <- get_env
+        case (InlineSymbol s) `lookup` is of
+            Just ((Match pss _), ex) | length pss == length args -> do
+                args' <- mapM optimize args
+                optimize $ replace_expr (concat $ zipWith gen_expr pss args') (gen_exprs args' pss) ex
+            _ -> ApplyExpression <$> optimize (SymbolExpression s) <*> mapM optimize args
+
+        where
+
+            gen_exprs args' pats (Symbol s) = 
+                case s `lookup` (concat $ zipWith gen_expr pats args') of
+                  Just ex -> ex
+                  Nothing -> (SymbolExpression (Symbol s))
+
+            gen_exprs _ _ s = SymbolExpression s
+
+            gen_expr (VarPattern x) y =
+                [(x, y)]
+            gen_expr (RecordPattern xs _) y =
+                concat $ zipWith gen_expr (M.elems xs) (map (to_accessor y) $ M.keys xs)
+            gen_expr (ListPattern xs) y =
+                concat $ zipWith gen_expr xs (map (to_array y) [0..])
+            gen_expr (AliasPattern xs) y =
+                concatMap (flip gen_expr y) xs
+            gen_expr _ _ =
+                []
+
+            to_array expr idx =
+                JSExpression [jmacroE| `(expr)`[idx] |]
+
+            to_accessor expr sym =
+                AccessorExpression (Addr undefined undefined expr) [sym]
+
+    optimize (ApplyExpression f' args ) =
+        ApplyExpression <$> optimize f' <*> mapM optimize args
 
     optimize a @ (AccessorExpression x xs) =
 
@@ -200,15 +319,15 @@ instance Optimize (Axiom (Expression Definition)) where
 
 instance Optimize Definition where
 
-    optimize (Definition a True name [eq @ (EqualityAxiom _ _)]) =
+    optimize (Definition a True name [eq @ (EqualityAxiom m ex)]) =
 
-        do (EqualityAxiom m ex) <- optimize eq
+        do eq <- optimize eq
            is  <- get_inline
            e   <- get_env
            ns  <- get_namespace
            set_inline (((ns, (InlineSymbol name)), (m, get_addr ex)) : is)
            set_env    ((InlineSymbol name, (m, get_addr ex)) : e)
-           return (Definition a True name [EqualityAxiom m ex])
+           return (Definition a True name [eq])
 
     optimize (Definition a True c (TypeAxiom _ : x)) = optimize (Definition a True c x)
     optimize (Definition _ True name _) = fail$ "Illegal inline definition '" ++ show name ++ "'"
@@ -304,7 +423,7 @@ instance Optimize Statement where
 
         ns <- get_namespace
         set_namespace$ ns `mappend` x
-        xs' <- with_env$ optimize $ sorted_defs xs
+        xs' <- with_env$ optimize xs
         set_namespace ns
         return$ ModuleStatement x xs'
 
@@ -381,12 +500,15 @@ instance Optimize Statement where
 
 instance Optimize [Statement] where
 
-    optimize [] = return []
-    optimize (x:xs) =
+    optimize xs = do
+        let (tests, defs) = L.partition is_expression xs
+        xs <- mapM optimize (sorted_defs defs)
+        ys <- mapM optimize tests
+        return (xs ++ ys)
 
-        do x <- optimize x
-           xs <- optimize xs
-           return (x:xs)
+        where
+            is_expression (ExpressionStatement _) = True
+            is_expression _ = False
 
 instance Optimize Program where
 

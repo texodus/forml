@@ -18,7 +18,7 @@
 
 module Forml.Deps where
 
-import qualified Data.Map                      as M
+import qualified Data.Map as M
 
 import Data.List
 
@@ -33,6 +33,8 @@ import           Forml.Parser.Utils
 
 import Data.Graph (graphFromEdges, SCC(..))
 import Data.Graph.SCC (sccList)
+
+import Language.Javascript.JMacro
 
 
 sort_dep :: [[Definition]] -> [[Definition]]
@@ -62,12 +64,53 @@ sort_dep (concat -> xs) = unwrap `map` sccList graph
           get_symbols (IfExpression a b Nothing) = get_symbols a ++ get_symbols b
           get_symbols (LiteralExpression _) = []
           get_symbols (SymbolExpression x) = [show x]
-          get_symbols (JSExpression _) = []
+          get_symbols (JSExpression x) = get_jexpr x
           get_symbols (LazyExpression (Addr _ _ x) _)      = get_symbols x
           get_symbols (FunctionExpression as) = concat$ map get_symbols$ get_expressions as
           get_symbols (LetExpression xs x) = (concat . map get_symbols . concat . map get_expressions . map (\(Definition _ _ _ as) -> as) $ xs) ++ get_symbols x
           get_symbols (ListExpression x) = concat (map get_symbols x)
           get_symbols _ = error "Unimplemented TypeCheck 544"
+
+          get_stat (ReturnStat x)      =  (get_jexpr x)
+          get_stat (IfStat a b c)      =  (get_jexpr a) ++ (get_stat b) ++ (get_stat c)
+          get_stat (WhileStat a b c)   =  (get_jexpr b) ++ (get_stat c)
+          get_stat (ForInStat a b c d) =  (get_jexpr c) ++ (get_stat d)
+          get_stat (SwitchStat a b c)  =  (get_jexpr a) ++ (get_stat c)
+          get_stat (TryStat a b c d)   =  (get_stat a) ++ (get_stat c) ++ (get_stat d)
+          get_stat (BlockStat xs)      =  concat (get_stat `map` xs)
+          get_stat (ApplStat a b)      =  (get_jexpr a) ++ concat (get_jexpr `map` b)
+          get_stat (PPostStat a b c)   =  (get_jexpr c)
+          get_stat (AssignStat a b)    =  (get_jexpr a) ++ (get_jexpr b)
+          get_stat (UnsatBlock a)      =  [] --(get_stat `fmap` a)
+          get_stat (DeclStat v t) = []
+          get_stat (UnsatBlock ident_supply) = [] --get_stat `fmap` ident_supply
+          get_stat (AntiStat s) = []
+          get_stat (ForeignStat s t) = []
+          get_stat (BreakStat s) = []
+
+          get_jval (JList xs)   = concat $ get_jexpr `map` xs
+          get_jval (JHash m)    = concat $ M.elems $ M.map get_jexpr m
+          get_jval (JFunc xs x) = get_stat x
+          get_jval (UnsatVal x) = [] -- get_jexpr `fmap` x
+          get_jval x@(JDouble _) = []
+          get_jval x@(JInt _) = []
+          get_jval x@(JStr _) = []
+          get_jval x@(JRegEx _) = []
+          get_jval (JVar (StrI x)) = [x]
+
+
+          get_jexpr (SelExpr e (StrI i))  = get_jexpr e
+          get_jexpr (IdxExpr a b)         = get_jexpr a ++ get_jexpr b
+          get_jexpr (InfixExpr a b c)     = get_jexpr b ++ get_jexpr c
+          get_jexpr (PPostExpr a b c)     = get_jexpr c
+          get_jexpr (IfExpr a b c)        = get_jexpr a ++ get_jexpr b ++ get_jexpr c
+          get_jexpr (NewExpr a)           = get_jexpr a
+          get_jexpr (ApplExpr a b)        = get_jexpr a ++ concat (get_jexpr `map` b)
+          get_jexpr (TypeExpr a b c)      = get_jexpr b
+          get_jexpr (ValExpr a)           = get_jval a
+          get_jexpr (UnsatExpr a)         = [] --get_jexpr `fmap` a
+
+
 
 
 sorted_defs :: [Statement] -> [Statement]

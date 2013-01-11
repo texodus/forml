@@ -522,14 +522,12 @@ instance Opt JExpr where
 instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "&&")) [x, y]) = [jmacroE| `(x)` && `(y)` |]
-    toJExpr (ApplyExpression (SymbolExpression (Operator "||")) [x, y]) = [jmacroE| `(x)` || `(y)` |]
 
     toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) [x, y]) =
         toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) [x,y])
 
-    toJExpr (ApplyExpression (SymbolExpression (Operator _)) x) =
-        error $ "Operator with " ++ show (length x) ++ " params"
+    toJExpr (ApplyExpression (SymbolExpression (Operator t)) x) =
+        error $ "Operator " ++ t ++ " with " ++ show (length x) ++ " params"
 
     toJExpr (ApplyExpression (SymbolExpression f) []) = ref (to_name f)
     toJExpr (ApplyExpression f []) = [jmacroE| `(f)` |]

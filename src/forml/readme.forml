@@ -244,17 +244,16 @@ module readme
     -- Anonymous functions also follow Haskell, can be written with `\` or `λ`, and
     -- allows pattern seperation via `|`
 
-    -- Note this function mutates its argument, so we name it with an exclamation.
-
-    map!: (a -> b) -> Array a -> Array b
-    map! f xs = do! `xs.map(f)`
+    map: (a -> b) -> Array a -> Array b
+    map f xs = do! `xs.map(f)`
 
     let fil =
     
         λ x when x > 5 = x
+        | 5            = 0
         | x            = 5
 
-    map! fil [2, 6, 3, 7] is [5, 6, 5, 7]
+    map fil [2, 6, 3, 7, 5] is [5, 6, 5, 7, 0]
 
     -- Interop & Side Effects
     -- ----------------------

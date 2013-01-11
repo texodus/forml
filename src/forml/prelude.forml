@@ -103,8 +103,8 @@ module prelude
     -- annotated to constrain inferrence - otherwise, these functions would all be
     -- inferred as `a -> b -> c`.
 
-    (&&): Bool -> Bool -> Bool | x y = do! `x && y`
-    (||): Bool -> Bool -> Bool | x y = do! `x || y`
+    inline (&&): Bool -> Bool -> Bool | x y = do! `x && y`
+    inline (||): Bool -> Bool -> Bool | x y = do! `x || y`
 
     inline (*):  Num -> Num -> Num    | x y = do! `x * y`
     inline (/):  Num -> Num -> Num    | x y = do! `x / y`
@@ -226,7 +226,7 @@ module prelude
     
     -- Function composition
 
-    inline x .: y = λz = x y(z)
+    x .: y = λz = x y(z)
     inline id x = x
     inline flip(f) x y = f(y, x)
 
@@ -499,23 +499,20 @@ module prelude
 
         table_of_contents =
 
-            do "code"  $. "prettyprint"
-               "code"  $. "lang-hs"
+            let jasmine: a
 
-               ".test" $| "position" <| "relative"
+            do ".test" $| "position" <| "relative"
                ".test" $| "left"     <| "50px"
 
-               `prettyPrint()`
-
                trivial <- `new jasmine.TrivialReporter()`
-               forml  <- `new jasmine.FormlReporter()`
-               env     <- `jasmine.getEnv()`
+               forml   <- `new jasmine.FormlReporter()`
+               env     <- jasmine.getEnv
 
                `env.addReporter trivial`
                `env.addReporter forml`
                `env.addReporter console_reporter`
 
-               `env.execute()`
+               env.execute
 
                reporter <- get ".jasmine_reporter"
                body     <- get "#test_suite"
