@@ -38,8 +38,8 @@ toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaul
 to_literate :: String -> String -> String
 to_literate "(Prelude)" = id
 to_literate filename
-    | (head . tail . split "." $ filename) == "forml" = unlines . map l . lines
-    | otherwise = id
+    | (head . reverse . split "." $ filename) == "lformal" = id
+    | otherwise = unlines . map l . lines
 
     where l (lstrip -> '-':'-':xs) = lstrip xs
           l x = "    " ++ x

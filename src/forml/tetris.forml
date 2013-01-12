@@ -2,26 +2,88 @@
 -- ------
 
 -- <link href='http://fonts.googleapis.com/css?family=Orbitron:500' rel='stylesheet' type='text/css'>
+
+-- <script id="menu" type="text/html">
+--     <li>
+--         <a id="play_tetris">
+--             Play<strong>Tetris</strong>
+--         </a>
+--     </li>
+--     <li>
+--         <a href="https://github.com/texodus/forml/blob/master/src/forml/tetris.forml">
+--             View On <strong>GitHub</strong>
+--         </a>
+--     </li>
+-- </script>
+
+-- <style type="text/css">
+--     #score_label {
+--        position: absolute;
+--        right: 0px;
+--        width: 170px;
+--        top: 20px;
+--        height: 100px;
+--        font-family:Helvetica;
+--        color:white;
+--        font-size:1em;
+--     }
+--     #background {
+--         position:fixed;
+--         top:0;
+--         bottom:0;
+--         left:0;
+--         right:0;
+--         background-color:rgba(0,0,0,0.9);
+--     }
+--     #score {
+--         position:absolute;
+--         right:0px;
+--         width:170px;
+--         top:40px;
+--         height:100px;
+--         font-family:Orbitron,Helvetica;
+--         color:white;
+--         font-weight:500;
+--         font-size:2em;
+--     }
+--     #container {
+--         position:relative;
+--         margin-left:auto;
+--         margin-right:auto;
+--         width:500px
+--     }
+--     #level {
+--         position:absolute;
+--         right:0px;
+--         width:170px;
+--         top:120px;
+--         height:100px;
+--         font-family:Orbitron,Helvetica;
+--         color:white;
+--         font-weight:500;
+--         font-size:2em
+--     }
+--     #board {position:absolute;left:0px;top:20px;border: 3px solid;width:300px;height:600px;opacity:0.9}
+--     #level_label {position:absolute;right:0px;width:170px;top:100px;height:100px;font-family:Helvetica;color:white;font-size:1em}
+--     header ul {width: 270px}
+--     .cell {
+--         position: absolute;
+--         width: 26px;
+--         border: 3px solid rgba(0,0,0,0.4);
+--         border-right-width: 1px;
+--         border-top-width: 1px;
+--         border-radius: 3px;
+--         height: 26px;
+--     }
+
+-- </style>
+
+
 -- <script type="text/javascript">
--- $("header ul").prepend('<li><a id="play_tetris">Play<strong>Tetris</strong></a></li><li><a href="https://github.com/texodus/forml/blob/master/src/forml/tetris.forml">View On <strong>GitHub</strong></a></li>').css("width", "270");
--- $("#play_tetris").click($tetris.play);
+--     $("header ul").prepend($("#menu").html());
+--     $("#play_tetris").click($tetris.play);
 -- </script>
 
--- <script id="game" type="text/html">
---    <div style='position:fixed;top:0;bottom:0;left:0;right:0;background-color:rgba(0,0,0,0.9)'>
---            <div id='container' style='position:relative;margin-left:auto;margin-right:auto;width:500px'>
-
---                <div style='position:absolute;right:0px;width:170px;top:20px;height:100px;font-family:Helvetica;color:white;font-size:1em'>SCORE</div>
---                <div id='score' style='position:absolute;right:0px;width:170px;top:40px;height:100px;font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
-
---                <div style='position:absolute;right:0px;width:170px;top:100px;height:100px;font-family:Helvetica;color:white;font-size:1em'>LEVEL</div>
---                <div id='level' style='position:absolute;right:0px;width:170px;top:120px;height:100px;font-family:Orbitron,Helvetica;color:white;font-weight:500;font-size:2em'></div>
-
---                <div id='board' style='position:absolute;left:0px;top:20px;border: 3px solid;width:300px;height:600px;opacity:0.9'>
---                </div>
---            </div>
---     </div>
--- </script>
 
 
 -- An implementation of the classic 80s computer game TETЯIS, written
@@ -135,10 +197,10 @@ module tetris
         "body" $+ game
         draw_board board
         
-        move board (-1) 0 'on_key 37
-        rot  board        'on_key 38
-        move board 1    0 'on_key 39
-        move board 0    1 'on_key 40
+        board 'move (-1) 0 'on_key 37
+        board 'rot         'on_key 38
+        board 'move 1    0 'on_key 39
+        board 'move 0    1 'on_key 40
         
     -- There are a few pieces which currently require shelling out to
     -- Javascript.  
@@ -146,6 +208,19 @@ module tetris
     -- for the board background from an embedded script template
     -- (see [source](https://github.com/texodus/forml/blob/master/src/forml/tetris.forml)) 
         
+    -- <script id="game" type="text/html">
+    --    <div id='background'>
+    --        <div id='container'>
+    --            <div id='score_label'>SCORE</div>
+    --            <div id='score'></div>
+    --            <div id='level_label'>LEVEL</div>
+    --            <div id='level'></div>
+    --            <div id='board'>
+    --            </div>
+    --        </div>
+    --     </div>
+    -- </script>
+
     game_template = `jQuery("#game").html()`
 
     -- for controlling the tick rate, we'll need a way to interface with
@@ -166,7 +241,7 @@ module tetris
     to_commas: Num -> String | x =
     
         let r = "(\\d)(?=(\\d\\d\\d)+(?!\\d))"
-        in  to_string x 'replace (regex r "g") "$1,"
+        in  x 'to_string 'replace (regex r "g") "$1,"
          
     to_commas 1000 == "1,000"
 
@@ -175,14 +250,16 @@ module tetris
     -- State
     -- -----
     -- `new_board` is a factory for generating a `Board` records
-    -- representing a new game.
+    -- representing a new game.  New games need a random piece,
+    -- so its type is `JS Board` to encapsulate this lack of 
+    -- referential transparency, though it performs no mutations.
         
     new_board: JS Board = do
 
         let new_row = yield -1 'times (n_columns + 1)
         
         piece <- random_piece 0
-        board <- sequence (new_row 'times (n_rows + 1))
+        board <- new_row 'times (n_rows + 1) 'sequence
 
         return {
             piece = piece
@@ -194,6 +271,10 @@ module tetris
             x = 3
             y = 0
         }
+
+    -- Each instance of `Board` returned by `new_board` should 
+    -- have a clean state which matches the expected parameters
+    -- of the game world.
 
     (n_rows + 1) * (n_columns + 1) == do!
         new_board 'fmap (sum .: map length .: .board)
@@ -214,8 +295,8 @@ module tetris
     -- which lets us write quick tests that are guaranteed a clean
     -- gamestate:
         
-    with_board λ board = board.board 'length == n_rows + 1
-    with_board λ board = board.board 'get 0 'length == n_columns + 1
+    with_board λ b = b.board 'length == n_rows + 1
+    with_board λ b = b.board 'get 0 'length == n_columns + 1
 
     -- It would be helpful to have a function for quickly asserting 
     -- whether a point has a block.
@@ -226,7 +307,7 @@ module tetris
     -- testing whether the current piece is within the dimensions of
     -- the game board, and whether it intersects any previously
     -- laid block.  For clarity, these predicates are arranged as
-    -- `let` bindings in the definition of `is_valid`, where the
+    -- `let` bindings in the definition of `is_valid`, lazily evaluated
     -- `inline` annotations actually change the behavior of the 
     -- function.  If the predicates defined in the `let` block were
     -- not `inline`, `is_valid` would throw array-out-of-bounds exceptions
@@ -238,9 +319,7 @@ module tetris
 
         x >= 0 && x_bound? && y_bound? && intersect?
 
-        where by f n = 0 .. (n - 1) |> map f |> all?
-
-              inline intersect? =
+        where inline intersect? =
                   piece 'length 'by λ r =
                       piece 'get r 'length 'by λ c =
                           let piece? = piece 'at c r
@@ -253,13 +332,17 @@ module tetris
               inline y_bound? =
                   y + length piece <= n_rows + 1
 
+              by f n = 0 .. (n - 1) |> map f |> all?
+
+              
+
     -- We can use these in combination with `tick` to verify its
     -- expected behavior.
 
     with_board is_valid
 
     with_board λ board = do!
-        sequence (tick board 'times 45)
+        tick board 'times 45 'sequence
         yield is_valid board
 
     with_board λ board = do!
@@ -267,7 +350,7 @@ module tetris
         yield not (is_valid board)
 
     with_board λ board = do!
-        sequence (tick board 'times 400)
+        tick board 'times 400 'sequence
         yield not (is_valid board)
 
     -- Game Initialization
@@ -279,7 +362,7 @@ module tetris
         "#board" $| "background-color" <: colors 'get (board.level - 1) 'get 0
         "#board" $| "border-color"     <: colors 'get (board.level - 1) 'get 1
         stop_timer board
-        ref <- tick board 'every ((0.7 ^ board.level) * 400)
+        ref <- board 'tick 'every (0.7 ^ board.level * 400)
         board 'set_timer ref
 
     -- The `tick` function itself is quite simple, and represents the
@@ -336,7 +419,7 @@ module tetris
         do! pieces 'get 1 'rotate >>= rotate >>= rotate >>= rotate
             
     get 4 pieces isnt
-        do! rotate (get 4 pieces) >>= rotate
+        do! pieces 'get 4 'rotate >>= rotate
 
 
 
@@ -345,8 +428,8 @@ module tetris
     -- Moving left, right and down is handled by `move`.
 
     move:
-          Board -> Num -> Num -> JS {}
-        | board    x      y    = do
+          Num -> Num -> Board -> JS Board
+        | x      y      board  = do
             `board.x += x`
             `board.y += y`
             if is_valid board
@@ -354,13 +437,14 @@ module tetris
             else do
                 `board.x = board.x - x`
                 `board.y = board.y - y`
+            yield board
 
     with_board λ board = do!
-        move board 1 0
+        board 'move 1 0
         yield board.x == 4
 
     with_board λ board = do!
-        move board 1 0 'times 50 'sequence
+        board 'move 1 0 >>= tick 'times 20 'sequence
         yield is_valid board
 
     -- The up key rotates the current piece
@@ -404,7 +488,7 @@ module tetris
 
     clear_lines board =
         board.board 'for_each λ row = do!
-            if reduce (&&) (map (λx = x != (-1)) (get row board.board))
+            if reduce (&&) (map (λx = x != -1) (get row board.board))
                  clear_row board row
             
     with_board λ board = do!
@@ -448,31 +532,20 @@ module tetris
     -- cell on the board.  Forml currently does not support mutation
     -- natively in any way except through the Javascript FFI, and 
     -- these calls are tracked through the type system as the `JS a`
-    -- type.  However, unlike Haskell, forml 
+    -- type.
 
     inline paint board x y color =
         `board.board[x][y] = color`
 
-    css =
-        "position: absolute;
-         width: 26px;
-         border: 3px solid rgba(0,0,0,0.4);
-         border-right-width: 1px;
-         border-top-width: 1px;
-         border-radius: 3px;
-         height: 26px;"
-
     inline
     block_string:
-
           Num -> Num -> String -> String
         | x      y      color   =
             let style =
                     "top:`y*30`px;
                      left:`x*30`px;
-                     background-color:`color`;
-                     `css`"
-            "<div style='`style`'></div>"
+                     background-color:`color`;"
+            in "<div style='`style`' class='cell'></div>"
 
     draw: Board -> String
     draw { board: board, piece: piece, x: bx, y: by, level = level, _ } =
@@ -482,7 +555,7 @@ module tetris
           'zip_with draw_row (0 .. n_rows)
           'concat
 
-        where draw_row x = concat .: map ((|>) x) .: map draw_block
+        where draw_row x = concat .: map ((') x) .: map draw_block
 
               draw_block x y when board 'at x y =
                   let color = colors 'get (level - 1) 'get (2 + (board 'get y 'get x))

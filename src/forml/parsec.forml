@@ -28,7 +28,7 @@ module parsec
     --  Applies a function to the parse result, only if the parse was
     --  successful.                    
     
-    inline (<$>):
+    (<$>):
     
         (a -> b) -> Parser a    -> Parser b
         f       <$> {parser = z} =

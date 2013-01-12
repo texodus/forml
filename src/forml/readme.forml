@@ -164,7 +164,7 @@ module readme
     -- For performance, you can declare functions to be `inline`.  This example
     -- will compile to a loop, as it is tail recursive.
 
-    inline (**): 
+    (**): 
 
          String -> Num -> String
          text   ** n    =
