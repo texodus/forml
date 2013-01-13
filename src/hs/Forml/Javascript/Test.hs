@@ -21,9 +21,10 @@ import Forml.CLI
 import Forml.Static
 
 test :: RunConfig -> String -> String -> String -> IO ()
-test RunConfig { run_tests = Node } js title tests =
+test rc @ RunConfig { run_tests = Node } js title tests =
+      let runner = if silent rc then run_silent else monitor in
 
-      monitor [qq|Testing {title}.js [Node.js]|] $
+      runner [qq|Testing {title}.js [Node.js]|] $
       do (Just std_in, Just std_out, _, p) <-
              createProcess (proc "node" []) { std_in = CreatePipe, std_out = CreatePipe }
 
@@ -58,10 +59,10 @@ test rc @ RunConfig { run_tests = Phantom } js title tests =
 
          z <- waitForProcess p
 
-         system$ "rm " ++ output rc ++ ".phantom.js"
+         system $ " rm " ++ output rc ++ ".phantom.js"
 
          case z of
              ExitFailure _ -> return$ Left []
              ExitSuccess   -> return$ Right ()
              
-test _ _ _ _ = warn "Testing" ()
+test rc _ _ _ = if silent rc then do return ()  else warn "Testing" ()

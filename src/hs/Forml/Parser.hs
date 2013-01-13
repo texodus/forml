@@ -20,7 +20,7 @@ import Forml.Types.Statement
 
 -- Parsing
 -- -----------------------------------------------------------------------------
--- A Sonnet program is represented by a set of statements
+-- A Forml program is represented by a set of statements
 
 parseForml :: String -> String -> Either ParseError Program
 parseForml name src = case parse ((comment <|> return "\n") `manyTill` eof) "Cleaning comments" src of

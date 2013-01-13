@@ -307,8 +307,13 @@ module prelude
         
         option b {none} = b
              | _ {some: x} = x
-             
+
+        {none} == {none}
+        {some: 2} == {some: 2}
         option 3 {some: 2} == 2
+
+    -- HTML
+    -- ------
 
     module html
 
@@ -629,6 +634,8 @@ module prelude
     -- A simple implementation of a library for manipulating linked lists.
 
     module list
+        
+        open option
     
         List a = { head: a, tail: List a } 
                | { nil }
@@ -699,6 +706,12 @@ module prelude
                  | f x when f (head x) = drop_while f (tail x)
                  | _ x = x
 
+        inits [:] = [:[:]]
+            | {head: x, tail: xs} = [:[:]] ++ (map (λy = x::y) (inits xs))
+
+        tails [:] = [:[:]]
+            | xxs = xxs :: tails <| tail xxs
+
         not (empty? (1 :: {nil}))
         empty? [:]
    
@@ -718,6 +731,14 @@ module prelude
 
         drop_while (λx = x < 0) {nil} == {nil}
         drop_while (λx = x > 0) [: 2, 1, 0 ] == [: 0 ]
+
+        inits [:] is [:[:]]
+
+        -- this test exposes a unification issue
+        -- inits [:1,2,3] is [:[:],[:1],[:1,2],[:1,2,3]]
+
+        tails [:] is [:[:]]
+        tails [:1,2,3] is [:[:1,2,3],[:2,3],[:3],[:]]
 
         -- Cardinality
         
@@ -739,7 +760,6 @@ module prelude
         -- List concatenation
 
         (++)
-
            | {nil} y                = y
            | {head: y, tail: ys} xs = y :: (ys ++ xs)
 
@@ -805,6 +825,17 @@ module prelude
 
         product [:1,2,4] == 8
                   
+        -- Find
+
+        find: (a -> Bool) -> List a -> Option a
+            | f {nil} = {none}
+            | f {head: h, tail: _} when f h = {some = h}
+            | f {head: _, tail: t} = find f t
+
+        [: 1,2] 'find (λx = x > 2) == {none}
+        [: 1,2,3,4] 'find (λx = x > 2) == {some: 3}
+        option 1 <| find (λx = x > 2) [: 1,2,3,4] == 3
+        
         -- Filter
 
         filter: (a -> Bool) -> List a -> List a
