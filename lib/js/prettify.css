@@ -101,9 +101,8 @@ pre.prettyprint {
   font-family: Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   line-height: 1.5;
-  border: 1px solid #ccc;
   padding: 15px 10px; 
-  border: 1px solid #111111; 
+  border: 1px solid #ccc; 
 border-width: 1px 1px 1px 1px !important;}
    }
 
