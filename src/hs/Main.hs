@@ -195,6 +195,6 @@ main' rc' =
                  _ <- sequence (zipWith (test rc js') (map filename compiled) tests')
 
                  if (show_types rc)
-                      then infoM "Global" $ ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
+                      then putStrLn $ ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
                       else return ()
  
