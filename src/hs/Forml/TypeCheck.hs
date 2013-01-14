@@ -156,18 +156,7 @@ instance Infer (Expression Definition) Type where
                     t    <- freshInst (quantify (tv t''' \\ tv t'') t''')
                     unify t r
                     unify t' t''
-                    s <- get_substitution
-                    let t''' = apply s t
-                        r''' = apply s r
-                        qt   = quantify (tv t''') t'''
-                        rt   = quantify (tv r''') r'''
-                        sct' = apply s t''
-                    if qt /= rt
-                        then do add_error$ "Record does not match expected signature for " ++ show sct' ++ "\n"
-                                             ++ "  Expected: " ++ show qt ++ "\n"
-                                             ++ "  Actual:   " ++ show rt
-                                return t'
-                        else return t'
+                    return t'
 
         where f (Symbol x) = x
               f (Operator x) = x

@@ -732,9 +732,7 @@ module prelude
         drop_while (λx = x > 0) [: 2, 1, 0 ] == [: 0 ]
 
         inits [:] is [:[:]]
-
-        -- this test exposes a unification issue
-        -- inits [:1,2,3] is [:[:],[:1],[:1,2],[:1,2,3]]
+        inits [:1,2,3] is [:[:],[:1],[:1,2],[:1,2,3]]
 
         tails [:] is [:[:]]
         tails [:1,2,3] is [:[:1,2,3],[:2,3],[:3],[:]]
