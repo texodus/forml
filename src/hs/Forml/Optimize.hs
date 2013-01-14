@@ -214,13 +214,16 @@ instance (Optimize a) => Optimize (Addr a) where
 
 instance Optimize (Expression Definition) where
 
+    optimize (ApplyExpression (ApplyExpression a b) c) =
+        optimize (ApplyExpression a (b ++ c))
+
     optimize (ApplyExpression (SymbolExpression s) args) = do
 
         is <- get_env
         case (InlineSymbol s) `lookup` is of
             Just ((Match pss _), ex) | length pss == length args -> do
                 args' <- mapM optimize args
-                optimize $ replace_expr (concat $ zipWith gen_expr pss args') (gen_exprs args' pss) ex
+                optimize $ replace_expr (concat $ zipWith gen_expr pss args') (gen_exprs args pss) ex
             _ -> ApplyExpression <$> optimize (SymbolExpression s) <*> mapM optimize args
 
         where
