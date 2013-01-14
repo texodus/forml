@@ -1,0 +1,21 @@
+
+
+
+
+module server
+
+    open prelude
+
+    require: String -> a
+
+    http = require "http"
+
+    inline untuple f = do! `function(x, y) { f(x)(y) }`
+
+    main =
+
+        .listen 3000
+            <: http.createServer
+            <: untuple \ req res = do!
+                yield res.write "Hello World"
+                res.end

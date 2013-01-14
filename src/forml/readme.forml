@@ -11,16 +11,15 @@
 -- Forml is a contemporary programming language for the discriminating
 -- programmer, intended to fill a niche
 -- somewhere between [Haskell](http://www.haskell.org) and
--- [Ruby](http://www.ruby.org), should such a niche turn out to exist. 
+-- [Ruby](http://www.ruby.org), should such a niche turn out to exist.   
 
 -- Philosophy
 -- ==========
 
 --     1) Writing software is unnecessarily hard, because syntax is sufficiently
---        abstracted from thought process to lose something in the translation. A 
---        modern programming language should be designed for reading - an API 
---        exposing the programmer - a philosophy lifted unapologetically
---        from [Ruby](http://www.artima.com/intv/ruby4.html).
+--        abstracted from thought process to lose something in the translation.
+--        A modern programming language should be designed for reading - an
+--        [API exposing the programmer](http://www.artima.com/intv/ruby4.html).
 
 --     2) Writing software is unnecessarily hard, because making mistakes is too
 --        easy. A modern programming language should prevent the programmer from
@@ -29,7 +28,8 @@
 -- Features
 -- ========
 
---   * Buzzwords:  functional, strict, expressive, pure(ish), static(y), inferred, fast, fun.
+--   * Buzzwords:  functional, strict, expressive, pure(ish), static(y), 
+--     inferred, fast, fun.
 --     Strong like a gorilla, yet soft and yielding like a Nerf ball.
 
 --   * Targets Javascript, but please regard this as an implementation detail -
@@ -40,16 +40,20 @@
 
 --   * Type system which is designed to be simple and catch obvious errors,
 --     not entirely exhaustive, dictatorial and somewhat combative (I'm looking
---     at you, Haskell).   Strucural types, partials records, arbitrary unions, 
+--     at you, Haskell).   Inferred, strucural types, partials records, 
 --     ability to introduce unrestricted types via FFI.
 
---   * Sugary, flexible syntax.
-
---   * Inline testing, compiles to a separate suite.
-
 --   * Fast.  Automatic tail call optimization,
---     inline functions, designed for use with [Google Closure Compiler](https://developers.google.com/closure/)
---     advanced optimizations mode.
+--     inline functions, designed for use with
+--     [Google Closure Compiler](https://developers.google.com/closure/)
+--     advanced optimizations mode.  See
+--     [Tests]((http://texodus.github.com/forml/prelude.html) for some
+--     simple benchmarks.
+
+--   * Flexible, expressive syntax.  Lots of sugar for obvious tasks.
+
+--   * Inline testing, compiles to a 
+--     [Jasmine](http://pivotal.github.com/jasmine) suite.
 
 --   * Heavily inspired by 
 --          [Haskell](http://www.haskell.org/haskellwiki/Haskell)
@@ -60,10 +64,15 @@
 --        , [JMacro](http://www.haskell.org/haskellwiki/Jmacro)
 --        , [Ruby](http://www.ruby-lang.org/en/)
 
+-- Examples
+-- ========
+--   * [Tetris](http://texodus.github.com/forml/tetris.html)
+--   * [Prelude](http://texodus.github.com/forml/prelude.html)
+--   * [Parsec](http://texodus.github.com/forml/parsec.html)
+
 -- Installation
 -- ============
-
--- Mac OSX (tested on Snow Leopard & Lion).  Note that Forml also requires
+-- (tested on Snow Leopard, Lion, Ubuntu).  Note that Forml also requires
 -- [Closure](https://developers.google.com/closure/) for optimizations and
 -- either [Phantom.js](http://phantomjs.org) or [Node.js](http://nodejs.org)
 
@@ -110,33 +119,31 @@
    
 --        <pre><code>$ forml -docs test.forml</pre></code>
 
+-- Be sure to check out [forml-mode](https://github.com/jvshahid/forml-mode) if you're into EMACS.
+
 
 -- Tutorial
 -- ========
 -- This is unfortunately not comprehensive, and presumes some working knowledge of 
--- ML or Haskell.  For more examples, see the annotated 
--- [prelude](http://texodus.github.com/forml/prelude.html),
--- [parsec](http://texodus.github.com/forml/parsec.html) and [tetris](http://texodus.github.com/forml/tetris.html).  
-
--- Forml supports a flexible, forgiving syntax that supports many synonymous forms.
+-- ML or Haskell.   Forml supports a flexible, forgiving syntax that supports many synonymous forms.
 -- This will be illustrated by adherring to an entirely random, arbitrary style throughout.
 
 -- The basic unit of code organization in forml is the `module`, which is simply
--- a collection of definitions in a namespace (see [Modules](#)).
--- Within a module, the compiler recognizes strictly ordered logical sections divided by 
--- `open` statements and sub modules;  within a section, however, declarations
--- can be in any order.
+-- a collection of definitions in a namespace.  
 
 module readme
+
+-- Within a module, the compiler recognizes strictly ordered logical sections divided by 
+-- `open` statements and sub modules;  within a section, however, declarations
+-- can be in any order.  `open` statements create local aliases for their own public definitions, which will shadow previously defined symbols.
 
     open prelude
     open prelude.string
     
     -- Definitions
     -- -----------
-    
-    -- Simple function.  Forml allows functions to be written in ML style, or
-    -- in more traditional java style.
+    -- Simple functions.  Forml allows function application via spaces as in
+    -- ML, or via `()`'s in a more traditional c style - 
 
     square x = x * x
 
@@ -159,22 +166,10 @@ module readme
     fib' 1 = 1
     fib' n = fib' (n - 1) + fib' (n - 2)
     
-    -- Operators can be defined much like in Haskell.  Precedence is currently fixed,
-    -- though you can declare right associative operators by ending them with a `:`.
-    -- For performance, you can declare functions to be `inline`.  This example
-    -- will compile to a loop, as it is tail recursive.
-
-    (**): 
-
-         String -> Num -> String
-         text   ** n    =
-
-             var f(_, 0, acc) = acc       -- `let` and `var` are synonyms
-                 f(text, n, acc) =
-                     f(text, n - 1, acc +++ text)
-             
-             in f(text, n, "")            -- `in` is optional
-    
+    -- Operators can be defined much like in Haskell.  Precedence is currently
+    -- fixed,
+    -- though you can declare right associative operators by ending them with 
+    -- a `:` character.
 
     -- Testing
     -- -------
@@ -188,8 +183,6 @@ module readme
     fib' 7 == 13
     fib' 0 == 0
     
-    "hello" ** 3 == "hellohellohello"
-    length ("a" ** 10000) == 10000
     
     -- For example, this file is the result of running the forml compiler with the `-docs`
     -- flag for [readme.forml](https://github.com/texodus/forml/blob/master/src/forml/readme.forml),
@@ -200,7 +193,6 @@ module readme
     
     -- Modules
     -- -------
-    
     -- Namespaces are not symbols, so this won't work:
     
     --        <pre><code>    prelude.log "Hello, World!"    -- Won't compile!</pre></code>
@@ -213,18 +205,26 @@ module readme
     open prelude.array as array
     
     array.map fib [3,4,5] == [2,3,5]
+
+    -- Notice this means aliased modules can be passed as arguments
+
+    mmap dict f xs = dict.map f xs
+
+    mmap array fib [3,4,5] == [2,3,5]
     
     
     -- Records
     -- -------
-
-    -- Forml has the basic primative types from Javascript:  Num, String, Bool;  plus
-    -- a record, which is structurally typed and implemented as a simple Javascript object.
+    -- Forml has the basic primative types from Javascript:  Num, String,
+    -- Bool;  plus
+    -- a record, which is structurally typed (and implemented as a simple
+    -- Javascript object, for the curious).  
     
     person name address = { 
         name    = name
         address = address
         message = "`name` lives at `address`"
+        say msg = "`name` says '`msg`'"
     }
 
     person("Andrew", "123 Fake St.").message is "Andrew lives at 123 Fake St."
@@ -232,17 +232,35 @@ module readme
     point = {x: 10, y: 10}
     
     20 == point.x + point.y
-   
-    -- Also supports partial records.
+
+    -- The sugared syntax `.field` represents an anonymous accessor function
+    -- for convenient piping.
+
+    person "Wilfred" "couch"
+        |> .say "I'm lazy"
+
+        == "Wilfred says 'I'm lazy'"
+
+    var people = [
+       person "Josh" "Jersey"
+       person "John" "Egypt"
+    ] in
+
+    people 'map (.name) == [ "Josh", "John" ]
+    
+    -- Records can be destructured in function argumentsn and can partially match
+    -- with the `_` character.  This type of function will apply to
+    -- any record with at least the keys in the partial match.
 
     magnitude {x: x, y: y, _} = sqrt (square x + square y)
 
     magnitude {x: 3, y: 4, other: "test"} == 5
     magnitude {x: 4, y: 3, test: "other"} == 5
 
- 
-    -- Anonymous functions also follow Haskell, can be written with `\` or `λ`, and
-    -- allows pattern seperation via `|`
+    -- Functions
+    -- --------- 
+    -- Anonymous functions also follow Haskell, can be written with `\` or
+    -- `λ`, and allows pattern seperation via `|`
 
     map: (a -> b) -> Array a -> Array b
     map f xs = do! `xs.map(f)`
@@ -255,6 +273,53 @@ module readme
 
     map fil [2, 6, 3, 7, 5] is [5, 6, 5, 7, 0]
 
+    -- All functions are curried, and can be partiall applied - even
+    -- operators.
+
+    x +* y = (2 * x) + (2 * y)
+
+    [1, 2, 3] 'map ((+*) 2) == [6, 8, 10]
+
+    add_twelve x y = x + y + 12
+
+    let f = add_twelve 5
+    f 10 == 27
+
+    -- Inlines
+    -- -------
+    -- Function inlining allows for macro like behavior, like lazy 
+    -- & conditional evaluation (the `'` operator here is equivalent
+    -- is "left-pipe" application, `x |> f == x 'f`).
+
+    inline whenever x f =
+         if x
+         then f
+         else {}
+
+    error "FAILURE" 'whenever (6 < 5) == {}
+
+    -- Tail Call Optimization
+    -- ----------------------
+    -- This example will compile to a `for` loop, as it is 
+    -- [tail recursive](http://en.wikipedia.org/wiki/Tail_call).  
+    -- `var` is a synonym for `let`, and `in` is an optional binding
+    -- separator.
+
+    (**): 
+
+         String -> Num -> String
+         text   ** n    =
+
+             var f(_, 0, acc) = acc
+                 f(text, n, acc) =
+                     f(text, n - 1, acc +++ text)
+             
+             in f(text, n, "")
+
+    "hello" ** 3 == "hellohellohello"
+    length ("a" ** 10000) == 10000
+
+
     -- Interop & Side Effects
     -- ----------------------
     -- Forml technically allows unrestricted side effects, but by default
@@ -266,7 +331,7 @@ module readme
         `console.log("Hello World")` -- Calls to Javascript always return type `JS a`
         x <- `Math.sqrt(9)`          -- `x` is inferred to be the unrestricted type `a`
         let z = x + 1                -- `x` is now restricted to type `Num`
-        return (z + 1)               -- type of `hello_world` is inferred to be `JS Num`
+        return (z + 1)                  -- type of `hello_world` is inferred to be `JS Num`
 
     8 == do! hello_world >>= λx = `x + 3`
 
@@ -289,11 +354,10 @@ module readme
 
     -- Types, Aliases & Unions
     -- -----------------------
-
-    -- Forml lacks algebraic data types in the ML sense, instead opting for
-    -- only structural typing of records.  However, you can add explicit type
-    -- signatures to tell the Forml compiler it is OK to overload the types
-    -- of specific symbols.
+    -- Forml is strong, statically typed, and types are inferred and
+    -- checked at copmile time.  Unlike in traditional Hindley Milner style
+    -- inferrence, forml allows you to break the rules with some explicit
+    -- type annotations.
 
     num_or_string:
 
@@ -301,19 +365,22 @@ module readme
         | x when num? x   = "Num"
         | _               = "String"
 
-    -- Types may be given a polymorphic alias in much the same way you'd 
-    -- define a function.
+    -- Structural types look just like the records they represent.
+
+    unwrap: {box: a} -> a
+    unwrap {box: x} = x
+
+    -- Algebraic data types and type aliases are declared the same way
+    -- (where the `type` keyword is optional).  `{nothing}` here is 
+    -- shorthand for the record type {nothing: {}}, useful for enum types.
 
     Maybe a = {just: a} | {nothing}
 
-    -- algebraic data types to be declared in a local scope, for all
-    -- records which are structurally equivalent to those declared.  For instance,
-    -- we could declare a `Maybe a` ADT in forml via
-  
-
-    -- ... where `{nothing}` is shorthand for the strucural type `{nothing: {}}`.
-    -- When `Maybe a` is in scope, any record type with only the `just` or `nothing`
-    -- keys will be inferred to be a type `Maybe a`.    
+    -- Notice there are no explicit type constructors - in forml, types
+    -- constructor functions are inferred from the fields of a record
+    -- and applied automatically.
+    -- For example, when `Maybe a` is in scope, any record type with the `just`
+    --  or `nothing` keys will be inferred to be a type `Maybe a`.
 
     maybe x {just: y} = y
     maybe x {nothing} = x
@@ -321,8 +388,10 @@ module readme
     maybe 3 {just: 4} == 4
     maybe 3 {nothing} == 3
 
-    -- Once a type such as this has a name, you may even refer to it recursively
-    -- (note the `type` keyword is always optional).
+    type Tree a =
+
+        {left_tree: Tree a, right_tree: Tree a}
+      | {leaf: a}
 
     type List a = { head: a, tail: List a } | { nil }
 
@@ -334,6 +403,10 @@ module readme
           tail: { head: 3
                   tail: { nil } } }
         == 5
+
+    -- Lists have a syntax sugar as well.
+
+    sum [: 3, 4, 5 ] == 12
 
     -- In case this sort of things floats your boat, you can also declare
     -- polymorphic types in "java" style, with `< >`.
@@ -347,6 +420,19 @@ module readme
     
     -- Changes
     -- =======
+
+    -- 0.2
+
+    -- * Incremental compilation, increased compilation speed
+    -- * Made inlines inline their arguments as well when fully applied,
+    --   like a macro.  Code generator works better with Closure, resulting
+    --   in smaller, more optimized JS.
+    -- * One-sided `if` expressions.
+    -- * `where` expressions.
+    -- * Silent mode
+    -- * Fixed namespace rendering error.
+    -- * Fixed definition ordering in let bindings.
+    -- * Fixed indentation error
 
     -- 0.1.3
 

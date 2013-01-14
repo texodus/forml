@@ -33,7 +33,7 @@ console  :: String
 scripts  :: String
 css'     :: String
 
-htmljs   = "$('code').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', $prelude.$html.table_of_contents)"
+htmljs   = "$('pre').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', $prelude.$html.table_of_contents)"
 console  = "$prelude.$html.console_runner()"
 
 prelude' = BS.concat . BL.toChunks . G.decompress $ BL.fromChunks [$(embedFile "prelude.obj")]
@@ -54,7 +54,7 @@ prettify = B.toString $(embedFile "lib/js/prettify.js")
                `mappend` B.toString $(embedFile "lib/js/lang-hs.js")
 
 css      = B.toString $(embedFile "lib/js/jasmine-1.0.1/jasmine.css") 
-               `mappend` B.toString $(embedFile "src/html/styles.css") 
                `mappend` B.toString $(embedFile "lib/js/prettify.css")
+               `mappend` B.toString $(embedFile "src/html/styles.css") 
 
 

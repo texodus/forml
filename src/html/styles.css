@@ -46,14 +46,14 @@ h3, h4, h5, h6 {
 }
 
 a {
-  color:#39c;
+  color:#E53007;
   font-weight:400;
   text-decoration:none;
 }
 
 a small {
   font-size:11px;
-  color:#777;
+  color:#E53007;
   margin-top:-0.6em;
   display:block;
 }
@@ -73,14 +73,11 @@ blockquote {
 code, pre {
   font-family:Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
   color:#333;
-  font-size:12px;
+  font-size:14px;
 }
 
 pre {
-  padding:8px 15px;
-  background: #f8f8f8;  
-  border-radius:5px;
-  border:1px solid #e5e5e5;
+  padding: 8px 25px;
   overflow-x: auto;
 }
 
