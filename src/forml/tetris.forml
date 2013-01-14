@@ -476,7 +476,7 @@ module tetris
                     && (board.y + row <= n_rows + 1)
                     && (board.x + col <= n_columns + 1)
 
-                    paint board (board.y + row) (board.x + col) (get col (get row board.piece)) 
+                    board.piece 'get row 'get col 'paint board (board.y + row) (board.x + col)
          
         new_piece <- random_piece (board.level - 1)    
         `board.piece = new_piece`

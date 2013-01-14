@@ -1,8 +1,9 @@
+-- Server
+-- ======
+-- The `server` module 
 
 
-
-
-module server
+module prelude.server
 
     open prelude
 
@@ -10,12 +11,12 @@ module server
 
     http = require "http"
 
-    inline untuple f = do! `function(x, y) { f(x)(y) }`
+    inline untuple f =
+        do! `function(x, y) { f(x)(y) }`
 
     main =
-
         .listen 3000
             <: http.createServer
             <: untuple \ req res = do!
-                yield res.write "Hello World"
+                yield res.write "YO"
                 res.end

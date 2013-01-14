@@ -227,7 +227,8 @@ module readme
         say msg = "`name` says '`msg`'"
     }
 
-    person("Andrew", "123 Fake St.").message is "Andrew lives at 123 Fake St."
+    person("Andrew", "123 Fake St.").message
+        is "Andrew lives at 123 Fake St."
 
     point = {x: 10, y: 10}
     
@@ -285,41 +286,6 @@ module readme
     let f = add_twelve 5
     f 10 == 27
 
-    -- Inlines
-    -- -------
-    -- Function inlining allows for macro like behavior, like lazy 
-    -- & conditional evaluation (the `'` operator here is equivalent
-    -- is "left-pipe" application, `x |> f == x 'f`).
-
-    inline whenever x f =
-         if x
-         then f
-         else {}
-
-    error "FAILURE" 'whenever (6 < 5) == {}
-
-    -- Tail Call Optimization
-    -- ----------------------
-    -- This example will compile to a `for` loop, as it is 
-    -- [tail recursive](http://en.wikipedia.org/wiki/Tail_call).  
-    -- `var` is a synonym for `let`, and `in` is an optional binding
-    -- separator.
-
-    (**): 
-
-         String -> Num -> String
-         text   ** n    =
-
-             var f(_, 0, acc) = acc
-                 f(text, n, acc) =
-                     f(text, n - 1, acc +++ text)
-             
-             in f(text, n, "")
-
-    "hello" ** 3 == "hellohellohello"
-    length ("a" ** 10000) == 10000
-
-
     -- Interop & Side Effects
     -- ----------------------
     -- Forml technically allows unrestricted side effects, but by default
@@ -352,10 +318,54 @@ module readme
 
     in  1 == do! test >> test >> test >> test
 
+    -- Tail Call Optimization
+    -- ----------------------
+    -- This example will compile to a `for` loop, as it is 
+    -- [tail recursive](http://en.wikipedia.org/wiki/Tail_call).  
+    -- `var` is a synonym for `let`, and `in` is an optional binding
+    -- separator.
+
+    (**): 
+
+         String -> Num -> String
+         text   ** n    =
+
+             var f(_, 0, acc) = acc
+                 f(text, n, acc) =
+                     f(text, n - 1, acc +++ text)
+             
+             in f(text, n, "")
+
+    "hello" ** 3 == "hellohellohello"
+    length ("a" ** 10000) == 10000
+
+    -- Inlines
+    -- -------
+    -- Function inlining allows for macro like behavior, like lazy 
+    -- & conditional evaluation (the `'` operator here is equivalent
+    -- is "left-pipe" application, `x |> f == x 'f`).
+
+    inline whenever x f =
+         if x
+         then f
+         else {}
+
+    error "I am executed conditionally" 'whenever (6 < 5) == {}
+
+    -- Arguments to an inline can be repeated, nested in yields, ifs or
+    -- anonymous functions, even removed entirely from the code. Inlines
+    -- can be used inside let bindings, too!
+
+    let inline comment _ = true
+
+    in  comment <: error "I'm compiled away"
+
+    
+
     -- Types, Aliases & Unions
     -- -----------------------
     -- Forml is strong, statically typed, and types are inferred and
-    -- checked at copmile time.  Unlike in traditional Hindley Milner style
+    -- checked at compile time.  Unlike in traditional Hindley Milner style
     -- inferrence, forml allows you to break the rules with some explicit
     -- type annotations.
 
