@@ -1,4 +1,5 @@
 
+{-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -13,43 +14,24 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
 {-# LANGUAGE UndecidableInstances   #-}
-{-# LANGUAGE ViewPatterns           #-}
-{-# LANGUAGE DeriveGeneric          #-}
 
-module Forml.Optimize.Inline where
-import System.IO.Unsafe ()
+module Forml.Optimize.Inline (inline_apply, Inlines, Inline, Inlineable(..)) where
+import           System.IO.Unsafe           ()
+import           Prelude                    hiding (curry)
+import           GHC.Generics
 
-import Control.Applicative
-import Control.Monad
+import qualified Data.Map                   as M
+import           Data.Serialize
 
-import qualified Data.Map as M
-import qualified Data.List as L
+import           Language.Javascript.JMacro
 
-import Data.Char
-import Data.Monoid
-import Data.Serialize
-
-import Language.Javascript.JMacro
-
-import Forml.Types.Axiom
-import Forml.Types.Definition
-import Forml.Types.Expression
-import Forml.Types.Namespace  hiding (Module)
-import Forml.Types.Pattern
-import Forml.Types.Statement  hiding (Test, find, modules, namespace)
-import Forml.Types.Symbol
-import Forml.Javascript.Utils hiding ((++))
-import Forml.Deps
-import Forml.TypeCheck.Types hiding (get_namespace)
-import Forml.Parser
-import Forml.Parser.Utils
-import Forml.Optimize.TailCall
-import qualified Forml.Javascript.Utils as J
-
-import Prelude hiding (curry)
-import Text.Parsec.Pos (newPos)
-
-import GHC.Generics
+import           Forml.Parser.Utils
+import           Forml.Types.Axiom
+import           Forml.Types.Definition
+import           Forml.Types.Expression
+import           Forml.Types.Namespace      hiding (Module)
+import           Forml.Types.Pattern
+import           Forml.Types.Symbol
 
 data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq, Generic)
 
@@ -57,6 +39,12 @@ type Inlines = [((Namespace, Inlineable), (Match (Expression Definition), Expres
 type Inline  = [(Inlineable, (Match (Expression Definition), Expression Definition))]
 
 instance Serialize Inlineable
+
+afmap ::
+    [(String, Expression Definition)] ->
+    (Symbol -> Expression Definition) ->
+    Axiom (Expression Definition) ->
+    Axiom (Expression Definition)
 
 afmap d f (EqualityAxiom (Match pss cond) expr) =
     EqualityAxiom (Match pss (fmap (replace_expr d f) cond)) (fmap (replace_expr d f) expr)
@@ -78,7 +66,7 @@ replace_expr d f (JSExpression j) =
     JSExpression (replace_jexpr d j)
 replace_expr d f (LazyExpression a b) =
     LazyExpression (fmap (replace_expr d f) a) b
-replace_expr d f (FunctionExpression as) = 
+replace_expr d f (FunctionExpression as) =
     FunctionExpression (map (afmap d f) as)
 replace_expr d f (RecordExpression vs) =
     RecordExpression (fmap (replace_expr d f) vs)
@@ -140,12 +128,19 @@ replace_jexpr dict (ValExpr a)           = ValExpr (replace_jval dict a)
 replace_jexpr dict (UnsatExpr a)         = UnsatExpr (replace_jexpr dict `fmap` a)
 
 
+inline_apply ::
+    [Pattern t] ->              -- Function being inlined's patterns
+    [Expression Definition] ->  -- Arguments to this function
+    [Expression Definition] ->  -- Optimized arguments to this functions
+    Expression Definition ->    -- Expression of the funciton being inline
+    Expression Definition       -- Resulting inlined expression
+
 inline_apply pss args opt_args ex = do
 
     replace_expr (concat $ zipWith gen_expr pss opt_args) (gen_exprs args pss) ex
 
     where
-        gen_exprs args' pats (Symbol s) = 
+        gen_exprs args' pats (Symbol s) =
             case s `lookup` (concat $ zipWith gen_expr pats args') of
               Just ex -> ex
               Nothing -> (SymbolExpression (Symbol s))
@@ -168,56 +163,3 @@ inline_apply pss args opt_args ex = do
 
         to_accessor expr sym =
             AccessorExpression (Addr undefined undefined expr) [sym]
-
-    --optimize (ApplyExpression f' args ) =
-    --    ApplyExpression <$> optimize f' <*> mapM optimize args
-
-    --optimize a @ (AccessorExpression x xs) =
-
-    --    do is <- get_env
-    --       case (InlineRecord a) `lookup` is of
-    --         Just (m @ (Match pss _), ex) ->
-
-    --             do ex'   <- optimize ex
-    --                m'    <- optimize m
-    --                return $ FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]
-
-    --         _ -> flip AccessorExpression xs <$> optimize x
-
-    --optimize (SymbolExpression f) =
-
-    --    do is <- get_env
-    --       case (InlineSymbol f) `lookup` is of
-    --         Just (m @ (Match pss _), ex) ->
-
-    --             do ex'   <- optimize ex
-    --                m'    <- optimize m
-    --                return $ FunctionExpression [EqualityAxiom m' (Addr undefined undefined ex')]
-
-    --         _ -> return $ SymbolExpression f
-
-    --optimize (ApplyExpression f args) = ApplyExpression <$> optimize f <*> mapM optimize args
-    --optimize (IfExpression a b c) = IfExpression <$> optimize a <*> optimize b <*> optimize c
-    --optimize (LazyExpression x l) = flip LazyExpression l <$> optimize x
-    --optimize (FunctionExpression xs) = FunctionExpression <$> mapM optimize xs
-    --optimize (ListExpression ex) = ListExpression <$> mapM optimize ex
-
-    --optimize (LetExpression ds ex) = do
-
-    --    stmts' <- mapM optimize (sorted_defs . map DefinitionStatement $ ds)
-    --    let stmts = map (\(DefinitionStatement d) -> d) stmts'
-    --    LetExpression (filter is_inline stmts) <$> optimize ex
-
-    --    where
-
-    --        is_inline (Definition _ True _ _) = False
-    --        is_inline _ = True
-
-    --optimize (RecordExpression (M.toList -> xs)) =
-
-    --    let (keys, vals) = unzip xs
-    --    in  RecordExpression . M.fromList . zip keys <$> mapM optimize vals
-
-    --optimize (JSExpression x) = return $ JSExpression x
-    --optimize (LiteralExpression x) = return $ LiteralExpression x
-

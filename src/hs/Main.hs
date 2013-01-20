@@ -1,36 +1,35 @@
+{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE NamedFieldPuns       #-}
 {-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE QuasiQuotes          #-}
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TupleSections        #-}
-{-# LANGUAGE ViewPatterns         #-}
-{-# LANGUAGE DeriveGeneric        #-}
-{-# LANGUAGE OverloadedStrings    #-}
 
 module Main(main) where
 
-import Text.InterpolatedString.Perl6
+import           Text.InterpolatedString.Perl6
 
-import Control.Concurrent
-import Control.Monad.State hiding (lift)
+import           Control.Concurrent
+import           Control.Monad.State           hiding (lift)
 
-import System.Directory
-import System.Environment
-import System.IO
-import System.IO.Unsafe
-import System.Log.Logger
-import System.Log.Handler.Syslog
+import           System.Directory
+import           System.Environment
+import           System.IO
+import           System.IO.Unsafe
+import           System.Log.Handler.Syslog
+import           System.Log.Logger
 
-import Data.String.Utils (split)
-import Data.List as L
-import qualified Data.Serialize as S
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString               as B
+import qualified Data.ByteString.Lazy          as BL
+import           Data.List                     as L
+import qualified Data.Serialize                as S
+import           Data.String.Utils             (split)
 
-import GHC.Generics
+import           GHC.Generics
 
 import           Forml.CLI
 import           Forml.Closure
@@ -38,13 +37,14 @@ import           Forml.Doc
 import           Forml.Javascript
 import           Forml.Javascript.Backend
 import           Forml.Javascript.Test
-import           Forml.Javascript.Utils   (prelude)
-import qualified Forml.Optimize           as O
+import           Forml.Javascript.Utils        (prelude)
+import qualified Forml.Optimize                as O
+import           Forml.Optimize.Optimizer      as OP
 import           Forml.Parser
 import           Forml.Static
 import           Forml.TypeCheck
 
-import qualified Codec.Compression.GZip as G
+import qualified Codec.Compression.GZip        as G
 
 to_parsed :: Title -> Source -> TypeSystem -> Either [Error] (TypeSystem, Program)
 to_parsed name src env = case parseForml name src of
@@ -61,7 +61,7 @@ data Compiled = Compiled { filename :: Filename
                          , source   :: Source
                          , title    :: Title
                          , js       :: String
-                         , opt_st   :: O.OptimizeState
+                         , opt_st   :: OptimizeState
                          , tests    :: String } deriving (Generic)
 
 instance S.Serialize Compiled
@@ -86,7 +86,7 @@ parse_forml filenames compiled runner =
 
               (ts', ast) <- runner [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
 
-              let (opt', opt_ast) = O.run_optimizer ast (opt { O.assumptions = ts'})
+              let (opt', opt_ast) = run_optimizer ast (opt { OP.assumptions = ts'})
               let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
 
               return $ acc ++ [Compiled (to_filename filename) ts' opt_ast src' title js' opt' tests']
@@ -96,7 +96,7 @@ parse_forml filenames compiled runner =
                 hGetContents hFile
 
           whole_program p = Program $ get_program p
-          
+
           get_program (Program ss: ps) = ss ++ get_program ps
           get_program [] = []
 
@@ -113,7 +113,7 @@ read' x = x
 
 main :: IO ()
 main  = do  args <- getArgs
-            if silent $ parseArgs args 
+            if silent $ parseArgs args
               then updateGlobalLogger "Global" (setLevel ERROR)
               else updateGlobalLogger "Global" (setLevel INFO)
             main' $ parseArgs args
@@ -143,7 +143,7 @@ main' rc' =
 
           compile rc =
               let empty_state =
-                      Compiled "" [] (Program []) "" "" [] (O.gen_state []) [] in
+                      Compiled "" [] (Program []) "" "" [] (OP.gen_state []) [] in
 
               do state <- if implicit_prelude rc
                           then return $ case S.decode prelude' of
@@ -152,7 +152,7 @@ main' rc' =
                           else return $ empty_state
 
                  compiled <- drop 1 `fmap` parse_forml (inputs rc) state runner
-                  
+
                  _ <- mapM (\ c @ (Compiled { .. }) ->
                                 runner [qq|Compiling {filename}.obj |] $ fmap Right $
                                 B.writeFile (filename ++ ".obj") $ B.concat $ BL.toChunks $ G.compress $ BL.fromChunks [S.encode c])
@@ -177,10 +177,10 @@ main' rc' =
                                   warn "Closure [tests]" (map tests compiled)
                               _ -> do return (map tests compiled)
 
-                 if flush rc 
+                 if flush rc
                     then putStr js' >> hFlush stdout
                     else writeFile (output rc ++ ".js") js'
-                 
+
                  _ <- zipWithM writeFile (map (++ ".spec.js") (map filename compiled)) tests'
 
                  if write_docs rc
@@ -197,4 +197,4 @@ main' rc' =
                  if (show_types rc)
                       then putStrLn $ ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
                       else return ()
- 
+

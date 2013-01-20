@@ -317,10 +317,10 @@ module prelude
 
     module html
 
-        HTML = { element:   a
+        HTML = { element:   _
                  inner:     JS String
                  on_click:  JS {} -> JS {}
-                 set:       b -> JS {}
+                 set:       _w -> JS {}
                  add_class: String -> JS {}
                  add_style: String -> String -> JS {} }
 
@@ -566,12 +566,11 @@ module prelude
             | xs = `xs.map(run)`
         
         (..): Num -> Num -> Array Num 
-        x .. y =  
+        x .. y = do! 
 
             if x > y
-            then do! reverse (y .. x)
-            else do!
-
+            then reverse (y .. x)
+            else 
                 `var z = [];
                  for (var i = x; i <= y; i++) z.push(i);
                  return z`
@@ -580,11 +579,11 @@ module prelude
             | n _ when n < 0 = []
             | n yld = 0 .. (n - 1) 'map \_ = yld
 
-        inline put: a -> Array a -> JS (Array a)
-            | x xs =
-                 
-                 do y <- clone xs
-                    yield push! x y
+        inline
+        put: a -> Array a -> JS (Array a)
+           | x    xs       = do
+                y <- clone xs
+                yield push! x y
         
         all? = reduce (&&)
 
