@@ -34,13 +34,13 @@ Executable forml
 
   Build-depends:
     base >= 4 && <= 5, 
-    bytestring >= 0.9.1 && <0.10,
+    bytestring >= 0.10.0 && <0.11,
     parsec,
     indents == 0.3.3,
-    containers == 0.4.2.1,
-    GraphSCC == 1.0.2,
+    containers >= 0.5.0.0 && <0.6,
+    GraphSCC >= 1.0.2 && <1.1,
     pandoc,
-    jmacro == 0.6.3,
+    jmacro >= 0.6.3 && <0.7,
     MissingH,
     interpolatedstring-perl6,
     mtl,
@@ -52,11 +52,11 @@ Executable forml
     file-embed,
     process,
     directory,
-    utf8-string == 0.3.7,
+    utf8-string >= 0.3.7 && <0.4,
     ghc-prim,
-    cereal == 0.3.5.2,
-    zlib == 0.5.4.0,
-    hslogger == 1.2.1
+    cereal >= 0.3.5.2 && <0.4,
+    zlib >= 0.5.4.0 && <0.6,
+    hslogger >= 1.2.1 && <1.3
 
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields

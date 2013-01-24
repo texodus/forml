@@ -32,7 +32,7 @@ toEntities (c:cs) | isAscii c = c : toEntities cs
                   | otherwise = [qq|&#{ord c};{toEntities cs}|]
 
 toHTML :: String -> String
-toHTML = toEntities . writeHtmlString defaultWriterOptions . readMarkdown defaultParserState
+toHTML = toEntities . writeHtmlString def . readMarkdown def
 
 
 to_literate :: String -> String -> String
