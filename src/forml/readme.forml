@@ -1,8 +1,9 @@
--- Forml
+-- Forml 
 -- =====
 
 -- <script type="text/javascript">
 -- $("header ul").prepend('<li><a href="https://github.com/texodus/forml/zipball/master">Download <strong>ZIP File</strong></a></li><li><a href="https://github.com/texodus/forml/tarball/master">Download <strong>TAR Ball</strong></a></li><li><a href="https://github.com/texodus/forml">View On <strong>GitHub</strong></a></li>').css("width", "360");
+-- $("header ul").append('<br/><img src="https://travis-ci.org/texodus/forml.png?branch=master"></img>')
 -- $("header h1").after('<br style="clear: both;"/>');
 -- $("h1").css("font-family", "Montserrat");
 -- $("header h1:first-letter").css("color", "#E53007");
