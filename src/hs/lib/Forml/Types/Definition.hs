@@ -167,9 +167,13 @@ instance Syntax Definition where
 -- TODO Visibility should be more than skin deep?
 
 instance Javascript Definition JStat where
-    toJS (Definition _ _ _ (TypeAxiom _: [])) = return mempty
-    toJS (Definition _ _ name as) = return [jmacro| `(declare_this (to_name name) $ toJExpr as)`; |]
+    toJS (Definition _ _ _ (TypeAxiom _: [])) =
+        return mempty
+    toJS (Definition _ _ name as) =
+        return [jmacro| `(declare_this (to_name name) $ toJExpr as)`; |]
 
 instance ToLocalStat Definition where
-    toLocal (Definition _ _ _ (TypeAxiom _: [])) = mempty
-    toLocal (Definition _ _ name as) = [jmacro| `(declare (to_name name) $ toJExpr as)`; |]
+    toLocal (Definition _ _ _ (TypeAxiom _: [])) =
+        mempty
+    toLocal (Definition _ _ name as) =
+        [jmacro| `(declare (to_name name) $ toJExpr as)`; |]

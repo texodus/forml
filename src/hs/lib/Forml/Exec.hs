@@ -9,7 +9,7 @@
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TupleSections        #-}
 
-module Main(main) where
+module Forml.Exec where
 
 import           Text.InterpolatedString.Perl6
 
@@ -111,12 +111,13 @@ gen_js src p whole_program = (g, h)
 read' xs @ ('"':_) = read xs
 read' x = x
 
-main :: IO ()
-main  = do  args <- getArgs
-            if silent $ parseArgs args
-              then updateGlobalLogger "Global" (setLevel ERROR)
-              else updateGlobalLogger "Global" (setLevel INFO)
-            main' $ parseArgs args
+exec :: IO ()
+exec  = do  
+    args <- getArgs
+    if silent $ parseArgs args
+      then updateGlobalLogger "Global" (setLevel ERROR)
+      else updateGlobalLogger "Global" (setLevel INFO)
+    main' $ parseArgs args        
 
 main' :: RunConfig -> IO ()
 main' rc' =
