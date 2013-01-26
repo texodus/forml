@@ -36,7 +36,7 @@ Library
     indents == 0.3.3,
     containers == 0.4.2.1,
     GraphSCC == 1.0.2,
-    pandoc,
+    pandoc == 1.10.0.5,
     jmacro == 0.6.3,
     MissingH,
     interpolatedstring-perl6,
