@@ -116,6 +116,8 @@ Test-Suite spec
   Main-Is:              Spec.hs
   Build-Depends:        base
                       , hspec >= 1.3
+                      , bytestring >= 0.9.1 && <0.10
+                      , silently == 1.2.0.2
                       , QuickCheck
                       , HUnit
                       , forml
