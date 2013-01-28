@@ -18,43 +18,47 @@ import qualified Data.ByteString as BS
 import           Data.FileEmbed
 import           Data.Monoid
 
+import Control.Arrow
+
 import qualified Codec.Compression.GZip as G
 
-jasmine  :: String
-header   :: String
-css      :: String
-prelude' :: B.ByteString
-jquery   :: String
-footer   :: String
-report   :: String
-prettify :: String
-htmljs   :: String
-console  :: String
-scripts  :: String
-css'     :: String
 
-htmljs   = "$('pre').addClass('prettyprint lang-hs');prettyPrint();$('#run_tests').bind('click', $prelude.$html.table_of_contents)"
 console  = "$prelude.$html.console_runner()"
+
+find key =
+    maybe (error key) id (lookup key statics)
+    where
+        conv = fmap (second B.toString)
+        statics = 
+            conv $(embedDir "lib") 
+            ++ conv $(embedDir "src/html")
+            ++ conv $(embedDir "src/css")
+            ++ conv $(embedDir "src/js")
+
 
 prelude' = BS.concat . BL.toChunks . G.decompress $ BL.fromChunks [$(embedFile "prelude.obj")]
 
-jquery   = B.toString $(embedFile "lib/js/jquery.js")
-header   = B.toString $(embedFile "src/html/header.html")
-footer   = B.toString $(embedFile "src/html/footer.html")
-report   = B.toString $(embedFile "src/js/FormlReporter.js")
+jquery   = find "js/jquery.js"
+report   = find "FormlReporter.js"
 
-scripts  = [qq|<script>$jquery $jasmine $report $prettify</script>|]
-css'     = [qq|<style type=\"text/css\">$css</style>|]
+html_template = find "template.html"
+
+scripts :: String
+scripts  =  [qq|<script>$jasmine $report $prettify</script>|]
 
 
-jasmine  = B.toString $(embedFile "lib/js/jasmine-1.0.1/jasmine.js") 
-               `mappend` B.toString $(embedFile "lib/js/jasmine-1.0.1/jasmine-html.js")
+jasmine  = find "js/jasmine-1.0.1/jasmine.js" 
+               `mappend` find "js/jasmine-1.0.1/jasmine-html.js"
 
-prettify = B.toString $(embedFile "lib/js/prettify.js") 
-               `mappend` B.toString $(embedFile "lib/js/lang-hs.js")
+ 
+prettify = find "js/prettify.js"
+               `mappend` find "js/lang-hs.js"
+               
 
-css      = B.toString $(embedFile "lib/js/jasmine-1.0.1/jasmine.css") 
-               `mappend` B.toString $(embedFile "lib/js/prettify.css")
-               `mappend` B.toString $(embedFile "src/html/styles.css") 
+css      = find "css/jasmine.css"  
+               `mappend` find "css/prettify.css"
+               `mappend` find "styles.css"
 
+css' :: String
+css' = [qq|<style type=\"text/css\">$css</style>|]
 

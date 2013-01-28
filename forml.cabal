@@ -9,21 +9,21 @@ Category:      Compiler
 Build-type:    Simple
 Cabal-version: >=1.8
 data-files:          
+  lib/css/jasmine.css, 
+  lib/css/prettify.css, 
+  lib/css/coda.css, 
   lib/js/jasmine-1.0.1/jasmine-html.js, 
-  lib/js/jasmine-1.0.1/jasmine.css, 
   lib/js/jasmine-1.0.1/jasmine.js, 
-  lib/js/coda.css, 
   lib/js/jquery.js, 
   lib/js/lang-hs.js, 
-  lib/js/prettify.css, 
   lib/js/prettify.js, 
   src/forml/parsec.forml, 
   src/forml/prelude.forml, 
   src/forml/tests.forml, 
   src/forml/readme.forml, 
+  src/css/styles.css
   src/html/footer.html, 
   src/html/header.html, 
-  src/html/styles.css,
   src/js/FormlReporter.js
 homepage: http://texodus.github.com/forml
 
@@ -53,8 +53,9 @@ Library
     ghc-prim,
     zlib == 0.5.4.0,
     cereal == 0.3.5.2,
-    hslogger == 1.2.1
- 
+    hslogger == 1.2.1,
+    HStringTemplate == 0.6.12
+     
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
                  -fno-warn-unused-do-bind -threaded

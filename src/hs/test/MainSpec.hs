@@ -33,7 +33,7 @@ src_files = [ "src/forml/prelude.forml"
 test_config :: RunConfig
 test_config =
 
-	RunConfig { inputs = src_files
+    RunConfig { inputs = src_files
               , output = "default.js"
               , show_types = False
               , optimize   = True

@@ -232,7 +232,44 @@ mgu x y = do z <- mgu' x y
 mgu' :: Type -> Type -> TI (Either String Substitution)
 mgu' x y = case x |=| y of
              Z z -> return $ Right z
-             Error e -> return $ Left e
+             Error e -> second_chance e x y
+
+    where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
+              
+              do as <- get_assumptions
+                 g  <- find x
+
+                 case g of
+                   Nothing -> return $ Left e --add_error e >> return []
+                   Just (x, sct) ->
+                       do t'' <- freshInst sct
+                          return $ Right x
+
+          second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
+          second_chance e (TypeApplication a b) (TypeApplication c d) =
+              do xss <- a `mgu'` c
+                 yss <- b `mgu'` d
+                 case (xss, yss) of
+                   (Right xss', Right yss') -> return$ Right$ xss' @@ yss'
+                   (Left e', _) -> return $ Left e'
+                   (_, Left e') -> return $ Left e'
+             
+          second_chance e r @ (Type (TypeConst x k)) t' =
+          
+                do as <- get_assumptions
+                   find' as
+                
+                where find' []              = return $ Left e
+                      find' ((i' :>>: Forall _ (Type (TypeConst x' k'))):as) 
+                          | x == x' = do i'' <- freshInst i'
+                                         i'' `mgu'` t'
+                      find' (_:as)          = find' as
+                                  
+                 
+          second_chance e y (Type x) = second_chance e (Type x) y     
+
+          second_chance e x y = return $ Left e
+
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t

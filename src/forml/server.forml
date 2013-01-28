@@ -3,7 +3,7 @@
 -- The `server` module 
 
 
-module prelude.server
+module server
 
     open prelude
 

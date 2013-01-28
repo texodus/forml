@@ -8,13 +8,14 @@
   color: #333333; }
 
 @media screen {
+
   /* string content */
   .str {
     color: #dd1144; }
 
   /* a keyword */
   .kwd {
-    color: #333333; }
+    color: purple; }
 
   /* a comment */
   .com {
@@ -30,7 +31,7 @@
 
   /* punctuation */
   .pun {
-    color: #333333; }
+    color: #999999; }
 
   /* lisp open bracket */
   .opn {

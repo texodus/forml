@@ -1,30 +1,9 @@
 -- Forml 
 -- =====
-
--- <script type="text/javascript">
--- $("header ul").prepend('<li><a href="https://github.com/texodus/forml/zipball/master">Download <strong>ZIP File</strong></a></li><li><a href="https://github.com/texodus/forml/tarball/master">Download <strong>TAR Ball</strong></a></li><li><a href="https://github.com/texodus/forml">View On <strong>GitHub</strong></a></li>').css("width", "360");
--- $("header ul").append('<br/><img src="https://travis-ci.org/texodus/forml.png?branch=master"></img>')
--- $("header h1").after('<br style="clear: both;"/>');
--- $("h1").css("font-family", "Montserrat");
--- $("header h1:first-letter").css("color", "#E53007");
--- </script>
-
--- Forml is a contemporary programming language for the discriminating
--- programmer, intended to fill a niche
--- somewhere between [Haskell](http://www.haskell.org) and
--- [Ruby](http://www.ruby.org), should such a niche turn out to exist.   
-
--- Philosophy
--- ==========
-
---     1) Writing software is unnecessarily hard, because syntax is sufficiently
---        abstracted from thought process to lose something in the translation.
---        A modern programming language should be designed for reading - an
---        [API exposing the programmer](http://www.artima.com/intv/ruby4.html).
-
---     2) Writing software is unnecessarily hard, because making mistakes is too
---        easy. A modern programming language should prevent the programmer from
---        writing incorrect code, in so far as it doesn't conflict with 1.
+-- A contemporary programming language for the discriminating
+-- programmer, intended to approximate the safety of [Haskell](http://www.haskell.org) and
+-- the expressiveness of [Ruby](http://www.ruby.org).  Should such an approximation turn out
+-- to exist.
 
 -- Features
 -- ========
@@ -80,11 +59,11 @@
 -- Install the
 -- [Haskell Platform](http://hackage.haskell.org/platform/index.html), then
 
---        <pre><code>$ cabal install forml</pre></code>
+-- <pre><code>$ cabal install forml</code></pre>
 
 -- To compile some forml files:
    
---        <pre><code>$ forml -o app test.forml test2.forml</pre></code>
+-- <pre><code>$ forml -o app test.forml test2.forml</code></pre>
 
 -- will create an app.js and app.spec.js with the compiled code and
 -- test suite respectively.
@@ -97,28 +76,28 @@
 -- which it expects to find on your PATH.  You may optionally specifiy to run your suite
 -- via node.js with
 
---        <pre><code>$ forml -node-test test.forml</pre></code>
+-- <pre><code>$ forml -node-test test.forml</code></pre>
 
 -- To compile literate
 -- forml (eg, Forml code embedded in Markdown):
    
---        <pre><code>$ forml test.lforml</pre></code>
+-- <pre><code>$ forml test.lforml</code></pre>
    
 -- To see the inferred types:
    
---        <pre><code>$ forml -t test.forml</pre></code>
+-- <pre><code>$ forml -t test.forml</code></pre>
    
 -- To turn off optimizing (eg, Closure) or testing:
    
---        <pre><code>$ forml -no-test -no-opt test.forml</pre></code>
+-- <pre><code>$ forml -no-test -no-opt test.forml</code></pre>
 
 -- To watch a file for changes and incrementally compile:
    
---        <pre><code>$ forml -w test.forml</pre></code>
+-- <pre><code>$ forml -w test.forml</code></pre>
 
 -- To generate documentation and test runner (like this file):
    
---        <pre><code>$ forml -docs test.forml</pre></code>
+-- <pre><code>$ forml -docs test.forml</code></pre>
 
 -- Be sure to check out [forml-mode](https://github.com/jvshahid/forml-mode) if you're into EMACS.
 
@@ -196,7 +175,7 @@ module readme
     -- -------
     -- Namespaces are not symbols, so this won't work:
     
-    --        <pre><code>    prelude.log "Hello, World!"    -- Won't compile!</pre></code>
+    --        <pre><code>    prelude.log "Hello, World!"    -- Won't compile!</code></pre>
     
     -- Instead, you must qualify the import and supply 
     -- a symbol name to bind to.  The alias will be typed

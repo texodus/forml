@@ -62,7 +62,8 @@ data Compiled = Compiled { filename :: Filename
                          , title    :: Title
                          , js       :: String
                          , opt_st   :: OptimizeState
-                         , tests    :: String } deriving (Generic)
+                         , tests    :: String
+                         , desc     :: String } deriving (Generic)
 
 instance S.Serialize Compiled
 
@@ -81,15 +82,15 @@ parse_forml filenames compiled runner =
           parse' acc (src'', filename) = do
 
               let Compiled { types = ts, opt_st = opt } = last acc
-              let (title, src) = get_title (to_filename filename) src''
+              let (title, desc, src) = get_title (to_filename filename) src''
               let src'         = to_literate filename . (++ "\n") $ src
-
+              
               (ts', ast) <- runner [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
 
               let (opt', opt_ast) = run_optimizer ast (opt { OP.assumptions = ts'})
               let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
 
-              return $ acc ++ [Compiled (to_filename filename) ts' opt_ast src' title js' opt' tests']
+              return $ acc ++ [Compiled (to_filename filename) ts' opt_ast src' title js' opt' tests' desc]
 
           get_source filename =
              do hFile <- openFile filename ReadMode
@@ -141,10 +142,10 @@ main' rc' =
                  if x /= x' then do infoM "Global" "\r"
                                     watch' rc
                             else wait rc x
-
+          empty_state =
+                      Compiled "" [] (Program []) "" "" [] (OP.gen_state []) [] ""
+          
           compile rc =
-              let empty_state =
-                      Compiled "" [] (Program []) "" "" [] (OP.gen_state []) [] in
 
               do state <- if implicit_prelude rc
                           then return $ case S.decode prelude' of
@@ -189,6 +190,7 @@ main' rc' =
                               tests'
                               (map filename compiled)
                               (map title compiled)
+                              (map desc compiled)
                               (map program compiled)
                               (map source compiled)
                      else runner "Docs" $ return $ Right ()

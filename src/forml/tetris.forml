@@ -1,5 +1,7 @@
 -- TETЯIS
 -- ------
+-- An implementation of the classic 80s computer game TETЯIS, written
+-- in the programming language [Forml](http://texodus.github.com/forml).
 
 -- <link href='http://fonts.googleapis.com/css?family=Orbitron:500' rel='stylesheet' type='text/css'>
 
@@ -34,6 +36,7 @@
 --         left:0;
 --         right:0;
 --         background-color:rgba(0,0,0,0.9);
+--         z-index: 10000000;
 --     }
 --     #score {
 --         position:absolute;
@@ -80,14 +83,13 @@
 
 
 -- <script type="text/javascript">
---     $("header ul").prepend($("#menu").html());
+--     $("ul.nav").append($("#menu").html());
 --     $("#play_tetris").click($tetris.play);
 -- </script>
 
 
 
--- An implementation of the classic 80s computer game TETЯIS, written
--- in the programming language [Forml](http://texodus.github.com/forml).
+
 -- [Tetris.forml](https://github.com/texodus/forml/blob/master/src/forml/tetris.forml) is an example of 
 -- [literate programming](http://en.wikipedia.org/wiki/Literate_programming) - the source when compiled
 -- generates this page.  You can run the test suite to see the [Jasmine](http://pivotal.github.com/jasmine) test report,
