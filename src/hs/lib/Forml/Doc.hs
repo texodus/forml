@@ -13,6 +13,8 @@ module Forml.Doc where
 
 import Text.InterpolatedString.Perl6
 import Text.Pandoc
+import Text.Pandoc.Writers.HTML
+import Text.Pandoc.Readers.Markdown
 
 import Data.Char         (isAscii, ord)
 import Data.String.Utils

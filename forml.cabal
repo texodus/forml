@@ -1,37 +1,34 @@
-Name:                forml
-Version:             0.2
-Synopsis:            A statically typed, functional programming language 
-License:             MIT
-Author:              Andrew Stein
-Maintainer:          steinlink@gmail.com
-Stability:           Experimental
-Category:            Compiler
-Build-type:          Simple
-Cabal-version:       >=1.4
+Name:          forml
+Version:       0.2
+Synopsis:      A statically typed, functional programming language 
+License:       MIT
+Author:        Andrew Stein
+Maintainer:    steinlink@gmail.com
+Stability:     Experimental
+Category:      Compiler
+Build-type:    Simple
+Cabal-version: >=1.8
 data-files:          
-                     lib/js/jasmine-1.0.1/jasmine-html.js, 
-                     lib/js/jasmine-1.0.1/jasmine.css, 
-                     lib/js/jasmine-1.0.1/jasmine.js, 
-                     lib/js/coda.css, 
-                     lib/js/jquery.js, 
-                     lib/js/lang-hs.js, 
-                     lib/js/prettify.css, 
-                     lib/js/prettify.js, 
-                     src/forml/parsec.forml, 
-                     src/forml/prelude.forml, 
-                     src/forml/tests.forml, 
-                     src/forml/readme.forml, 
-                     src/html/footer.html, 
-                     src/html/header.html, 
-                     src/html/styles.css,
-                     src/js/FormlReporter.js
-homepage:            http://texodus.github.com/forml
+  lib/js/jasmine-1.0.1/jasmine-html.js, 
+  lib/js/jasmine-1.0.1/jasmine.css, 
+  lib/js/jasmine-1.0.1/jasmine.js, 
+  lib/js/coda.css, 
+  lib/js/jquery.js, 
+  lib/js/lang-hs.js, 
+  lib/js/prettify.css, 
+  lib/js/prettify.js, 
+  src/forml/parsec.forml, 
+  src/forml/prelude.forml, 
+  src/forml/tests.forml, 
+  src/forml/readme.forml, 
+  src/html/footer.html, 
+  src/html/header.html, 
+  src/html/styles.css,
+  src/js/FormlReporter.js
+homepage: http://texodus.github.com/forml
 
-
-Executable forml
-  hs-source-dirs: src/hs
-  main-is: Main.hs
-
+Library
+  hs-source-dirs: src/hs/lib
   Build-depends:
     base >= 4 && <= 5, 
     bytestring >= 0.10.0 && <0.11,
@@ -39,7 +36,7 @@ Executable forml
     indents == 0.3.3,
     containers >= 0.5.0.0 && <0.6,
     GraphSCC >= 1.0.2 && <1.1,
-    pandoc,
+    pandoc == 1.10.0.4,
     jmacro >= 0.6.3 && <0.7,
     MissingH,
     interpolatedstring-perl6,
@@ -54,9 +51,55 @@ Executable forml
     directory,
     utf8-string >= 0.3.7 && <0.4,
     ghc-prim,
-    cereal >= 0.3.5.2 && <0.4,
     zlib >= 0.5.4.0 && <0.6,
+    cereal >= 0.3.5.2 && <0.4,
     hslogger >= 1.2.1 && <1.3
+ 
+  if impl(ghc >= 6.12.0)
+    ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
+                 -fno-warn-unused-do-bind -threaded
+                 -funfolding-use-threshold=16 -fexcess-precision
+                 -optc-O3 -optc-ffast-math
+  else
+    ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
+
+  exposed-modules:  
+    Forml.Javascript,
+    Forml.Javascript.Backend,
+    Forml.Javascript.Utils,
+    Forml.Optimize,
+    Forml.Optimize.Optimizer,
+    Forml.Optimize.Inline,
+    Forml.Optimize.TailCall,
+    Forml.Parser,
+    Forml.Parser.Utils,
+    Forml.TypeCheck,
+    Forml.TypeCheck.Types,
+    Forml.Types.Axiom,
+    Forml.Types.Definition,
+    Forml.Types.Expression,
+    Forml.Types.Literal,
+    Forml.Types.Namespace,
+    Forml.Types.Pattern,
+    Forml.Types.Statement,
+    Forml.Types.Symbol,
+    Forml.Types.Type,
+    Forml.Types.TypeDefinition,
+    Forml.Closure,
+    Forml.CLI,
+    Forml.Doc,
+    Forml.Deps,
+    Forml.Static,
+    Forml.Javascript.Test,
+    Forml.Exec
+
+Executable forml
+  hs-source-dirs: src/hs/main
+  main-is: Main.hs
+
+  Build-depends:
+    forml,
+    base >= 4 && <= 5
 
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
@@ -65,27 +108,16 @@ Executable forml
                  -optc-O3 -optc-ffast-math
   else
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
-  other-modules:  
-                  Forml.Javascript,
-                  Forml.Javascript.Backend,
-                  Forml.Javascript.Utils,
-                  Forml.Optimize,
-                  Forml.Parser,
-                  Forml.Parser.Utils,
-                  Forml.TypeCheck,
-                  Forml.TypeCheck.Types,
-                  Forml.Types.Axiom,
-                  Forml.Types.Definition,
-                  Forml.Types.Expression,
-                  Forml.Types.Literal,
-                  Forml.Types.Namespace,
-                  Forml.Types.Pattern,
-                  Forml.Types.Statement,
-                  Forml.Types.Symbol,
-                  Forml.Types.Type,
-                  Forml.Types.TypeDefinition,
-                  Forml.Closure,
-                  Forml.CLI,
-                  Forml.Doc,
-                  Forml.Static,
-                  Forml.Javascript.Test
+
+Test-Suite spec
+  Type:                 exitcode-stdio-1.0
+  Hs-Source-Dirs:       src/hs/test
+  Ghc-Options:          -Wall
+  Main-Is:              Spec.hs
+  Build-Depends:        base
+                      , hspec >= 1.3
+                      , bytestring >= 0.9.1 && <0.10
+                      , silently == 1.2.0.2
+                      , QuickCheck
+                      , HUnit
+                      , forml

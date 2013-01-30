@@ -232,69 +232,7 @@ mgu x y = do z <- mgu' x y
 mgu' :: Type -> Type -> TI (Either String Substitution)
 mgu' x y = case x |=| y of
              Z z -> return $ Right z
-             Error e -> second_chance e x y
-
-    where second_chance e x@ (TypeRecord (TRecord _ (TPartial _) _)) y =
-              
-              do as <- get_assumptions
-                 g  <- find x
-
-                 case g of
-                   Nothing -> return $ Left e --add_error e >> return []
-                   Just (x, sct) ->
-                       do t'' <- freshInst sct
-                          return $ Right x
-
-          second_chance e y x @ (TypeRecord (TRecord _ (TPartial _) _)) = second_chance e x y
-          second_chance e (TypeApplication a b) (TypeApplication c d) =
-              do xss <- a `mgu'` c
-                 yss <- b `mgu'` d
-                 case (xss, yss) of
-                   (Right xss', Right yss') -> return$ Right$ xss' @@ yss'
-                   (Left e', _) -> return $ Left e'
-                   (_, Left e') -> return $ Left e'
-             
-          second_chance e r @ (Type (TypeConst x k)) t' =
-          
-                do as <- get_assumptions
-                   find' as
-                
-                where find' []              = return $ Left e
-                      find' ((i' :>>: Forall _ (Type (TypeConst x' k'))):as) 
-                          | x == x' = do i'' <- freshInst i'
-                                         i'' `mgu'` t'
-                      find' (_:as)          = find' as
-                                  
-                 
-          second_chance e y (Type x) = second_chance e (Type x) y     
-
-          second_chance e x y = return $ Left e
-
-apply_rules t' r =
-        do sc <- find $ quantify (tv r) r
-           case sc of
-             Nothing ->
-                 do unify t' r
-                    return t'
-             Just (Forall _ scr, sct) ->
-                 do t''  <- freshInst sct
-                    t''' <- return$ inst (map TypeVar$ tv t'') scr
-                    t    <- freshInst (quantify (tv t''' \\ tv t'') t''')
-                    unify t r
-                    unify t' t''
-                    s <- get_substitution
-                    let t''' = apply s t
-                        r''' = apply s r
-                        qt   = quantify (tv t''') $ t'''
-                        rt   = quantify (tv r''') $ r'''
-                        sct' = apply s t''
-                    if qt /= rt
-                        then do add_error$ "Record does not match expected signature for " ++ show sct' ++ "\n"
-                                             ++ "  Expected: " ++ show qt ++ "\n"
-                                             ++ "  Actual:   " ++ show rt
-                                return t'
-                        else return t'
- 
+             Error e -> return $ Left e
 
 var_bind u t | t == TypeVar u   = return []
              | u `elem` tv t    = fail $ "occurs check fails: " ++ show u ++ show t
