@@ -21,7 +21,7 @@ spec = do
     describe "Forml Compiler" $ do
         it "should compile the prelude.forml & the tests suite" $ do
         	(std_out, _) <- capture $ main' test_config
-        	if length std_out > 1535 && length std_out < 1545
+        	if length std_out > 1555 && length std_out < 1560
         	    then return ()
         	    else assertFailure $ (show $ length std_out) ++ "\n" ++ std_out 
 
