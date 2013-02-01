@@ -156,7 +156,6 @@ instance Optimize Statement where
     optimize (DefinitionStatement d) = DefinitionStatement <$> optimize d
     optimize (ExpressionStatement (Addr s e x)) = ExpressionStatement . Addr s e <$> optimize x
     optimize (ModuleStatement x xs) = do
-
         ns <- get_namespace
         set_namespace$ ns `mappend` x
         xs' <- with_env$ optimize xs
@@ -168,12 +167,11 @@ instance Optimize Statement where
             get_defs (DefinitionStatement d : xs) = [d] : get_defs xs
             get_defs (_ : xs) = get_defs xs
 
-    optimize ss @ (ImportStatement (Namespace x) (Just alias)) = 
-
-        do is <- get_inline
-           e  <- get_env
-           n  <- get_namespace
-           rfind n is e
+    optimize ss @ (ImportStatement (Namespace x) (Just alias)) = do
+        is <- get_inline
+        e  <- get_env
+        n  <- get_namespace
+        rfind n is e
 
         where rfind (Namespace n) is e =
 

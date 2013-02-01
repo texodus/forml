@@ -16,6 +16,8 @@ import Control.Concurrent
 import System.Exit
 import System.IO
 import System.Process
+import System.Directory
+
 
 import Forml.CLI
 import Forml.Static
@@ -59,7 +61,7 @@ test rc @ RunConfig { run_tests = Phantom } js title tests =
 
          z <- waitForProcess p
 
-         system $ " rm " ++ output rc ++ ".phantom.js"
+         removeFile $ output rc ++ ".phantom.js"
 
          case z of
              ExitFailure _ -> return$ Left []
