@@ -12,9 +12,7 @@
 module Forml.Doc where
 
 import Text.InterpolatedString.Perl6
-import Text.Pandoc
-import Text.Pandoc.Writers.HTML
-import Text.Pandoc.Readers.Markdown
+import Text.Sundown.Html.String
 
 import Data.Char         (isAscii, ord)
 import Data.String.Utils
@@ -37,7 +35,7 @@ toEntities (c:cs) | isAscii c = c : toEntities cs
                   | otherwise = [qq|&#{ord c};{toEntities cs}|]
 
 toHTML :: String -> String
-toHTML = toEntities . writeHtmlString def . readMarkdown def
+toHTML input = renderHtml input allExtensions noHtmlModes True Nothing
 
 
 to_literate :: String -> String -> String
