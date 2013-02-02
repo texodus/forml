@@ -16,12 +16,13 @@ import           Text.InterpolatedString.Perl6
 import           Control.Concurrent
 import           Control.Monad.State           hiding (lift)
 
-import           System.Directory
-import           System.Environment
-import           System.IO
-import           System.IO.Unsafe
-import           System.Log.Handler.Syslog
-import           System.Log.Logger
+import System.Directory
+import System.Environment
+import System.Info
+import System.IO
+import System.IO.Unsafe
+import System.Log.Logger
+import System.Log.Handler.Syslog
 
 import qualified Data.ByteString               as B
 import qualified Data.ByteString.Lazy          as BL
@@ -29,7 +30,8 @@ import           Data.List                     as L
 import qualified Data.Serialize                as S
 import           Data.String.Utils             (split)
 
-import           GHC.Generics
+import GHC.Generics
+import GHC.IO.Encoding
 
 import           Forml.CLI
 import           Forml.Closure
@@ -43,17 +45,19 @@ import           Forml.Optimize.Optimizer      as OP
 import           Forml.Parser
 import           Forml.Static
 import           Forml.TypeCheck
+import Forml.Parser.Utils
 
 import qualified Codec.Compression.GZip        as G
 
 to_parsed :: Title -> Source -> TypeSystem -> Either [Error] (TypeSystem, Program)
 to_parsed name src env = case parseForml name src of
-                              Left x  -> Left [show x]
-                              Right x -> case tiProgram x env of
-                                           (as, []) -> Right (as, x)
-                                           (_, y)   -> Left y
+    Left x  -> Left [show x]
+    Right x -> case tiProgram x env of
+        (as, []) -> Right (as, x)
+        (_, y)   -> Left y
 
-to_filename = head . split "." . last . split "/"
+file_sep = if os == "mingw32" then "\\" else "/"
+to_filename = head . split "." . last . split file_sep
 
 data Compiled = Compiled { filename :: Filename
                          , types    :: TypeSystem
@@ -62,51 +66,45 @@ data Compiled = Compiled { filename :: Filename
                          , title    :: Title
                          , js       :: String
                          , opt_st   :: OptimizeState
-                         , tests    :: String } deriving (Generic)
+                         , tests    :: String
+                         , desc     :: String } deriving (Generic)
 
 instance S.Serialize Compiled
 
 parse_forml :: [Filename] -> Compiled -> Runner (TypeSystem, Program) -> IO [Compiled]
-parse_forml filenames compiled runner =
+parse_forml filenames compiled runner = do
+    sources <- mapM get_source filenames
+    foldM parse' [compiled] (sources `zip` filenames)
 
-    do sources <- mapM get_source filenames
-       foldM parse'
-             [compiled]
-             (sources `zip` filenames)
+    where
+        parse' acc (src'', filename) = do
+            let Compiled { types = ts, opt_st = opt } = last acc
+            let (title, desc, src) = get_title (to_filename filename) src''
+            let src'         = to_literate filename . (++ "\n") $ src
 
-    where parse' :: [Compiled]
-                 -> (Source, Filename)
-                 -> IO [Compiled]
+            (ts', ast) <- runner [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
 
-          parse' acc (src'', filename) = do
+            let (opt', opt_ast) = run_optimizer ast (opt { OP.assumptions = ts'})
+            let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
 
-              let Compiled { types = ts, opt_st = opt } = last acc
-              let (title, src) = get_title (to_filename filename) src''
-              let src'         = to_literate filename . (++ "\n") $ src
+            return $ acc ++ [Compiled (to_filename filename) ts' opt_ast src' title js' opt' tests' desc]
 
-              (ts', ast) <- runner [qq|Loading {filename}|] $ return $ to_parsed filename src' ts
+        get_source filename = do
+            hFile <- openFile filename ReadMode
+            hGetContents hFile
 
-              let (opt', opt_ast) = run_optimizer ast (opt { OP.assumptions = ts'})
-              let (js',  tests')  = gen_js src' (opt_ast) (whole_program $ map program acc ++ [opt_ast])
+        whole_program p = Program $ get_program p
 
-              return $ acc ++ [Compiled (to_filename filename) ts' opt_ast src' title js' opt' tests']
-
-          get_source filename =
-             do hFile <- openFile filename ReadMode
-                hGetContents hFile
-
-          whole_program p = Program $ get_program p
-
-          get_program (Program ss: ps) = ss ++ get_program ps
-          get_program [] = []
+        get_program (Program ss: ps) = ss ++ get_program ps
+        get_program [] = []
 
 gen_js :: Source -> Program -> Program -> (String, String)
-gen_js src p whole_program = (g, h)
-
-    where g = unserialize $ render whole_program src p
-          h = unserialize $ render_spec whole_program src p
-
-          unserialize x = compress $ read' x
+gen_js src p whole_program =
+    (unserialize g, unserialize h)
+    where 
+        g = render whole_program src p
+        h = render_spec whole_program src p
+        unserialize x = compress $ read' x   
 
 read' xs @ ('"':_) = read xs
 read' x = x
@@ -141,12 +139,15 @@ main' rc' =
                  if x /= x' then do infoM "Global" "\r"
                                     watch' rc
                             else wait rc x
-
+          empty_state =
+                      Compiled "" [] (Program []) "" "" [] (OP.gen_state []) [] ""
+          
           compile rc =
-              let empty_state =
-                      Compiled "" [] (Program []) "" "" [] (OP.gen_state []) [] in
 
-              do state <- if implicit_prelude rc
+              do setLocaleEncoding     utf8
+                 setFileSystemEncoding utf8
+                 setForeignEncoding    utf8
+                 state <- if implicit_prelude rc
                           then return $ case S.decode prelude' of
                               Left x -> error x
                               Right x -> x
@@ -189,6 +190,7 @@ main' rc' =
                               tests'
                               (map filename compiled)
                               (map title compiled)
+                              (map desc compiled)
                               (map program compiled)
                               (map source compiled)
                      else runner "Docs" $ return $ Right ()
@@ -198,4 +200,3 @@ main' rc' =
                  if (show_types rc)
                       then putStrLn $ ("\nTypes\n\n  " ++ concatMap (concatMap f . types) compiled)
                       else return ()
-

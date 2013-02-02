@@ -1,21 +1,20 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE NamedFieldPuns         #-}
+{-# LANGUAGE OverlappingInstances   #-}
+{-# LANGUAGE QuasiQuotes            #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE RecordWildCards        #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE ViewPatterns           #-}
 
 module Forml.Types.Statement where
 
@@ -25,31 +24,32 @@ import Language.Javascript.JMacro
 
 import Control.Applicative
 
-import Text.Parsec         hiding ((<|>), State, many, spaces, parse, label)
-import Text.Parsec.Indent  hiding (same)
+import Text.Parsec                   hiding (State, label, many,
+                                      parse, spaces, (<|>))
+import Text.Parsec.Indent            hiding (same)
 
-import Data.String.Utils
-import Data.Monoid
-import qualified Data.Serialize as S
-import qualified Data.List as L
+import qualified Data.List                     as L
+import           Data.Monoid
+import qualified Data.Serialize                as S
+import           Data.String.Utils
 
 import GHC.Generics
 
 import Forml.Parser.Utils
 
-import Forml.Types.Type
 import Forml.Types.Axiom
-import Forml.Types.TypeDefinition
-import Forml.Types.Symbol
 import Forml.Types.Definition
 import Forml.Types.Expression
 import Forml.Types.Namespace
+import Forml.Types.Symbol
+import Forml.Types.Type
+import Forml.Types.TypeDefinition
 
-import Forml.Javascript.Utils
 import Forml.Javascript.Backend
+import Forml.Javascript.Utils
 
-import Prelude hiding (curry, (++))
-import System.IO.Unsafe (unsafePerformIO)
+import Prelude                       hiding (curry, (++))
+import System.IO.Unsafe              (unsafePerformIO)
 
 
 
@@ -72,9 +72,9 @@ instance Show Statement where
     show (ExpressionStatement (Addr _ _ x)) = show x
     show (ImportStatement x Nothing) = [qq|open $x|]
     show (ImportStatement x (Just a)) = [qq|open $x as $a|]
-    show (ModuleStatement x xs) = replace "\n |" "\n     |" 
-                                  $ replace "\n\n" "\n\n    " 
-                                  $ "module " 
+    show (ModuleStatement x xs) = replace "\n |" "\n     |"
+                                  $ replace "\n\n" "\n\n    "
+                                  $ "module "
                                   ++ show x ++ "\n\n" ++ sep_with "\n\n" xs
 
 instance Syntax Statement where
@@ -98,7 +98,7 @@ instance Syntax Statement where
                      imports <- syntax
                      alias   <- try alias_statement <|> return Nothing
                      return $ ImportStatement imports alias
-                     
+
                   where alias_statement =
 
                             do spaces
@@ -106,7 +106,7 @@ instance Syntax Statement where
                                spaces
                                (Symbol x) <- syntax
                                return  (Just x)
-                                    
+
 
               module_statement = do try (string "module")
                                     whitespace1
@@ -127,11 +127,11 @@ instance Syntax Statement where
 
               expression_statement = do try (string "test" >> spaces) <|> return ()
                                         whitespace
-                                        x <- getPosition 
+                                        x <- getPosition
                                         y <- withPos$ addr syntax
                                         z <- getPosition
                                         return $ ExpressionStatement y
-                                                                   
+
 
 
 
@@ -158,7 +158,7 @@ instance Javascript Meta JStat where
 
     -- Expressions are ignored for Libraries, and rendered as tests for Test
     toJS (Meta { target = Library, expr = ExpressionStatement _ }) = return mempty
-    toJS (Meta { target = Test,    expr = ExpressionStatement a' @ (Addr a b e) }) = 
+    toJS (Meta { target = Test,    expr = ExpressionStatement a' @ (Addr a b e) }) =
 
         do message <- get_code a'
            return [jmacro| it(`(serial a b ++ "__::__" ++ message)`, function() {
@@ -166,25 +166,25 @@ instance Javascript Meta JStat where
                            }); |]
 
     -- Imports work identically for both targets
-    toJS (Meta { modules, 
-                 namespace = Namespace [], 
-                 expr      = ImportStatement target_namespace @ (find modules -> Nothing) _ }) = 
+    toJS (Meta { modules,
+                 namespace = Namespace [],
+                 expr      = ImportStatement target_namespace @ (find modules -> Nothing) _ }) =
 
-        fail [qq| Could not resolve namespace $target_namespace |]  
+        fail [qq| Could not resolve namespace $target_namespace |]
 
-    toJS (Meta { modules, 
-                 expr      = ImportStatement target_namespace Nothing, 
+    toJS (Meta { modules,
+                 expr      = ImportStatement target_namespace Nothing,
                  namespace = (find modules . (++ target_namespace) -> Just y) }) =
 
         return $ open target_namespace y
 
-    toJS (Meta { modules, 
-                 expr      = ImportStatement target_namespace @ (Namespace ns) (Just alias), 
+    toJS (Meta { modules,
+                 expr      = ImportStatement target_namespace @ (Namespace ns) (Just alias),
                  namespace = (find modules . (++ target_namespace) -> Just y) }) =
 
         return $ declare alias (Namespace $ ns)
 
-    toJS meta @ (Meta { expr = ImportStatement _ _, .. }) = 
+    toJS meta @ (Meta { expr = ImportStatement _ _, .. }) =
 
         let slice (Namespace ns) = Namespace . take (length ns - 1) $ ns
         in  toJS (meta { namespace = slice namespace })
@@ -193,18 +193,18 @@ instance Javascript Meta JStat where
     -- Modules in test mode must open the contents of the Library
 
     toJS meta @ (Meta { target = Library, namespace = Namespace [], expr = ModuleStatement ns xs, .. }) =
-        
+
         do xs' <- toJS $ fmap (\z -> meta { namespace =  ns, expr = z }) xs
            return $ declare_window (render_ns ns)
-                 [jmacroE| new (function() { 
+                 [jmacroE| new (function() {
                                `(xs')`;
                            }) |]
 
     toJS meta @ (Meta { target = Library, expr = ModuleStatement ns xs, .. }) =
-        
+
         do xs' <- toJS $ fmap (\z -> meta { namespace = namespace ++ ns, expr = z }) xs
            return $ declare_this (render_ns ns)
-                 [jmacroE| new (function() { 
+                 [jmacroE| new (function() {
                                `(xs')`;
                            }) |]
 
@@ -220,11 +220,11 @@ instance Javascript Meta JStat where
 
            return [jmacro| describe(`(show ns)`, function() {
                              `(open (namespace ++ ns) xs)`;
-                             `(imports')`; 
+                             `(imports')`;
                              `(open (namespace ++ ns) xs)`;
-        
+
                              var x = new (function {
-                                 `(rest')`; 
+                                 `(rest')`;
                              }());
                          }); |]
 
@@ -256,7 +256,7 @@ find [] _                            = Nothing
 
 find (Module _ xs : ms) n @ (Namespace []) = find ms n
 find (Module (Namespace ys) x : zs) n @ (Namespace xs)
-     | length xs >= length ys && take (length ys) xs == ys = 
+     | length xs >= length ys && take (length ys) xs == ys =
          find x (Namespace $ drop (length ys) xs)
      | otherwise = find zs n
 
@@ -303,7 +303,7 @@ render_ns (Namespace xs) =
 
 
 clean_ns = ("$" ++) . replace " " "_"
-     
+
 
 
 
@@ -322,8 +322,8 @@ instance ToStat Jasmine where
     toStat (Jasmine (ApplyExpression (SymbolExpression (Operator "!=")) [x, y])) =
 
         [jmacro| expect(`(x)`).toNotEqual(`(y)`); |]
-        
-    toStat (Jasmine e) = 
+
+    toStat (Jasmine e) =
 
         [jmacro| expect((function() {
                      try {

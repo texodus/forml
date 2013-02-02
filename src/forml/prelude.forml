@@ -1,5 +1,6 @@
--- Prelude
--- -------
+-- Prelude.forml
+-- -------------
+-- The standard library for the programming language Forml
 
 -- If you are familiar with Haskell or ML, the prelude may serve as a 
 -- good introduction to forml.

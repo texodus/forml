@@ -4,6 +4,7 @@ import Control.Monad.State hiding (lift)
 
 import System.Console.ANSI
 import System.Exit
+import System.Info
 import System.IO
 import System.Process
 
@@ -63,11 +64,11 @@ type StatusLogger a = String -> a -> IO a
 status_logger :: [SGR] -> String -> StatusLogger a
 status_logger sgrs rep = 
   let logger str out =  
-        colors ((putStr $ "[" ++ rep ++ "] " ++ str) >> return out) $
+        colors ((putStrLn $ "[" ++ rep ++ "] " ++ str) >> return out) $
         do  putStr "\r["
             setSGR sgrs
             putStr rep
-            setSGR []
+            setSGR [Reset]
             putStrLn$ "] " ++ str
             return out in
   logger
@@ -83,13 +84,16 @@ failure = status_logger [SetColor Foreground Dull Red] "X"
 
 colors :: IO a -> IO a -> IO a
 colors failure success =
-          do (_, Just std_out', _, p) <-
-                 createProcess (shell "tput colors 2> /dev/null") { std_out = CreatePipe }
-             waitForProcess p
-             c <- hGetContents std_out'
-             case reads (strip c) of
-                [(x, "")] | x > (2 :: Integer) -> success
-                _ -> failure
+    if os == "mingw32"
+        then success
+        else do
+            (_, Just std_out', _, p) <-
+                createProcess (shell "tput colors 2> /dev/null") { std_out = CreatePipe }
+            waitForProcess p
+            c <- hGetContents std_out'
+            case reads (strip c) of
+               [(x, "")] | x > (2 :: Integer) -> success
+               _ -> failure
 
 type Runner a = String -> IO (Either [String] a) -> IO a
 

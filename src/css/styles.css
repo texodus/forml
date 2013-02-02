@@ -1,0 +1,193 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:300italic,700italic,300,700);
+@import url(https://fonts.googleapis.com/css?family=Oswald:300);
+
+body {
+  color:black;
+  background: white;
+}
+
+h1 {
+  color:white;
+  margin:0 0 20px;
+  font-family: Montserrat, Helvetica;
+
+}
+#docs h1, #docs h2, #docs h3, #docs h4, #docs h5, #docs h6 {
+    color: black;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+pre, code {
+  font-size: 14px;
+}
+
+a {
+  text-decoration: none;
+  color: #E53007;
+  opacity: 1;
+}
+
+.lead {
+  font-family: Oswald;
+  color: whitesmoke;
+}
+
+header p {
+  font-family: Oswald;
+  color: whitesmoke;
+  margin-bottom: 20px;
+font-size: 21px;
+font-weight: 200;
+line-height: 30px;
+}
+
+p, ul, ol, table, pre, dl {
+  margin:0 0 20px;
+}
+
+h1, h2, h3 {
+  line-height:1.1;
+}
+
+h1 {
+  font-size:20px;
+}
+
+h2 {
+  font-size: 16px;
+}
+
+header {
+  z-index: -1;
+  padding: 50px;
+  box-shadow: inset 0px -10px 15px rgba(0,0,0,0.2);
+}
+
+.navbar {
+    box-shadow: 0px 10px 15px rgba(0,0,0,0.2);
+}
+
+header h1 {
+	font-size: 60px;
+}
+
+header h1:first-letter {
+	color: #E53007;
+}
+
+pre, .new_lifted {
+  border-radius:2px;
+  position:relative;
+  padding:1em;
+  background:#fcfcfc;
+  box-shadow: 0px 0px 1px 1px rgba(0,0,0,0.2);
+  -o-box-shadow: 0px 0px 1px 1px  rgba(0,0,0,0.2);
+  -moz-box-shadow: 0px 0px 1px 1px  rgba(0,0,0,0.2);
+}
+pre:before, pre:after {
+  bottom:14px;
+  content: "";
+  position: absolute;
+  z-index: -1;
+  -ms-transform: rotate(-2deg);
+  -webkit-transform: rotate(-2deg); /* Safari and Chrome */
+  -o-transform: rotate(-2deg); /* Opera */
+  -moz-transform: rotate(-2deg); /* Firefox */
+  box-shadow: 0 15px 5px rgba(0, 0, 0, 0.3);
+  height: 50px;
+  left: 5px;
+  max-width: 50%;
+  width: 50%;
+}
+pre:after {
+  
+  -ms-transform: rotate(2deg); /* IE 9 */
+  -webkit-transform: rotate(2deg); /* Safari and Chrome */
+  -o-transform: rotate(2deg); /* Opera */
+  -moz-transform: rotate(2deg); /* Firefox */
+  left: auto;
+  right: 5px;
+}
+
+.affix {
+  top: 40px;
+  height: 100%;
+}
+
+header {
+  background: url(masthead.jpg) 50% 50% gray;
+  margin-top: 40px;
+}
+
+@media (max-width: 767px) {
+  header {
+    padding: 50 50px;
+    margin: -20px -20px 0px -20px;
+  }
+  #test_suite {
+    margin: -5px -37px 0px -37px;
+  }
+  .row {
+    margin-top: 23px;
+  }
+}
+
+@media (min-width: 768px) {
+  header {
+    padding: 100px 50px;
+  }
+  #test_suite {
+    width: 2200px;
+    margin-top: -5px;
+    margin-left: -2000px;
+  }
+  .jasmine_reporter > .suite, .jasmine_reporter > .runner {
+    padding-left: 1950px;
+  }
+}
+
+@media (max-width: 979px) and (min-width: 768px) {
+  header {
+    margin-top: -20px;
+  }
+}
+
+@media (min-width: 980px) {
+  header {
+    margin-top: 40px;
+  }
+  #test_suite {
+    width: 2270px;
+    margin-top: -5px;
+  }
+}
+
+
+
+@media (min-width: 1200px) {
+  #test_suite {
+    width: 2370px;
+    margin-top: -5px;
+  }
+}
+
+#docs {
+  position: relative;
+  background: white;
+  z-index: 1000;
+  margin-left: -20px;
+  padding-left: 30px;
+  padding-top: 50px;
+}
+
+#docs ol, #docs ul {
+  padding-left: 20px;
+}
+
+footer {
+  background: #1b1b1b;
+  color: white;
+  position: relative;
+  z-index: 10;
+}
+

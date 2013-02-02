@@ -34,13 +34,13 @@ closure_local x y =
                     if exists' 
                         then do hFlush stdout
                                 writeFile "temp.js" x
-                                system$ "java -jar $CLOSURE --compilation_level "
+                                system$ "java -jar " ++ env ++ " --compilation_level "
                                           ++ y 
                                        --   ++ " --formatting=pretty_print --formatting=print_input_delimiter "
                                           ++ " --js temp.js --warning_level QUIET > temp.compiled.js"
                                 js <- readFile "temp.compiled.js"
-                                system "rm temp.js"
-                                system "rm temp.compiled.js"
+                                removeFile "temp.js"
+                                length js `seq` removeFile "temp.compiled.js"
                                 return $ Right js
                         else closure x y
              Nothing -> closure x y
