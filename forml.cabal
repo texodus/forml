@@ -30,10 +30,10 @@ Library
   hs-source-dirs: src/hs/lib
   Build-depends:
     base >= 4 && <= 5, 
-    bytestring >= 0.9.0 && <0.11,
+    bytestring >= 0.9.1 && <0.11,
     parsec,
     indents == 0.3.3,
-    containers >= 0.4.0.0 && <0.6,
+    containers >= 0.4.2.1 && <0.6,
     GraphSCC >= 1.0.2 && <1.1,
     sundown == 0.5.0.1,
     jmacro >= 0.6.3 && <0.7,
@@ -55,7 +55,7 @@ Library
     cereal >= 0.3.5.2 && <0.4,
     hslogger >= 1.2.1 && <1.3,
     HStringTemplate == 0.6.12
- 
+
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
                  -fno-warn-unused-do-bind -threaded
