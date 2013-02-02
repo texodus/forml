@@ -30,10 +30,8 @@ Library
   hs-source-dirs: src/hs/lib
   Build-depends:
     base >= 4 && <= 5, 
-    bytestring >= 0.9.1 && <0.11,
     parsec,
     indents == 0.3.3,
-    containers >= 0.4.2.1 && <0.6,
     GraphSCC >= 1.0.2 && <1.1,
     sundown == 0.5.0.1,
     jmacro >= 0.6.3 && <0.7,
@@ -55,6 +53,15 @@ Library
     cereal >= 0.3.5.2 && <0.4,
     hslogger >= 1.2.1 && <1.3,
     HStringTemplate == 0.6.12
+  -- latest haskell platform, or modern
+  if impl(ghc <= 7.4.2)
+    Build-depends:
+      bytestring >= 0.9.1 && <0.10,
+      containers >= 0.4.2.1 && <0.5
+  else
+    Build-depends:
+      bytestring >= 0.10.0 && <0.11,
+      containers >= 0.5.0.0 && <0.6
 
   if impl(ghc >= 6.12.0)
     ghc-options: -Wall -fwarn-tabs -funbox-strict-fields
@@ -117,8 +124,11 @@ Test-Suite spec
   Main-Is:              Spec.hs
   Build-Depends:        base
                       , hspec >= 1.3
-                      , bytestring >= 0.9.0 && <0.11
                       , silently >= 1.2.0.2 && <1.3
                       , QuickCheck
                       , HUnit
                       , forml
+  if impl(ghc <= 7.4.2)
+    Build-Depends:      bytestring >= 0.9.1 && <0.10
+  else
+    Build-Depends:      bytestring >= 0.10.0 && <0.11
