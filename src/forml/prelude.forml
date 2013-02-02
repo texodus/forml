@@ -50,6 +50,8 @@ module prelude
     (>>): JS a -> JS b -> JS b
     (>>)  x       y     = `x(); return y();`
 
+    inline (:=) x y = `x = y`
+
     inline return:
 
              a -> JS a
@@ -69,6 +71,8 @@ module prelude
     
         f >> do_times (n - 1) f
 
+    inline while cond act = `while (cond) { act(); }`
+
     inline fmap:
 
           (a -> b) -> JS a -> JS b 
@@ -84,7 +88,6 @@ module prelude
         else 
             `$.extend(true, {}, x)`
 
-
     inline log: a -> JS {} 
               | x  = `console.log(x)`
 
@@ -96,6 +99,10 @@ module prelude
         y = do z <- `x = 1`
                return z
     x == 0
+
+    let x = 0
+    do! while (x < 5) do x := x + 1
+        yield x == 5
 
 
     -- Numbers
