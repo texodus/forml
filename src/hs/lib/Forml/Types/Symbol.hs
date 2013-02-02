@@ -37,6 +37,7 @@ instance ToJExpr Symbol where
 to_name :: Symbol -> String
 to_name (Symbol "return") = "_return_"
 to_name (Symbol "new") = "_new_"
+to_name (Symbol "while") = "_while_"
 
 
 to_name (Symbol x) = replace "!" "_excl" $ replace " " "_" $ replace "'" "_apos" x

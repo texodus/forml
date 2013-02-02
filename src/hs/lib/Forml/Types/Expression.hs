@@ -19,6 +19,7 @@ import Language.Javascript.JMacro
 import Control.Applicative
 import Control.Monad
 import Control.Monad.State hiding (lift)
+import qualified Control.Monad.Trans.State.Strict as ST
 
 import           Text.InterpolatedString.Perl6
 import           Text.Parsec                   hiding (State, label, many, parse, spaces, (<|>))
@@ -523,7 +524,30 @@ instance Opt JExpr where
     opt (ValExpr a)           = ValExpr (opt a)
     opt (UnsatExpr a)         = UnsatExpr (opt a)
 
+newIdentSupply :: Maybe String -> [Ident]
+newIdentSupply Nothing     = newIdentSupply (Just "jmId")
+newIdentSupply (Just pfx') = [StrI (pfx ++ show x) | x <- [(0::Integer)..]]
+    where pfx = pfx'++['_']
+
+sat_ :: IdentSupply a -> a
+sat_ x = ST.evalState (runIdentSupply x) $ newIdentSupply (Just "<<unsatId>>")
+
+
 instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
+
+    toJExpr (ApplyExpression (SymbolExpression (Symbol "run"))
+         [LazyExpression (Addr s e (ApplyExpression (SymbolExpression (Symbol "run"))
+             [JSExpression (ValExpr (UnsatVal x))])) Every]) =
+
+        case sat_ x of
+            (JFunc [] (BlockStat [ReturnStat y])) -> y
+            _ -> [jmacroE| `(ValExpr (UnsatVal x))`() |]
+
+    toJExpr y @ (ApplyExpression (SymbolExpression (Symbol "run")) [JSExpression (ValExpr (UnsatVal x))]) =
+
+        case sat_ x of
+            (JFunc [] (BlockStat [ReturnStat y])) -> y
+            _ -> [jmacroE| `(ValExpr (UnsatVal x))`() |]
 
     toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
 
