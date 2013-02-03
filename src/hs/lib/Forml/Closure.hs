@@ -44,7 +44,7 @@ compilationLevel :: CompilationLevel -> String
 compilationLevel Advanced = "ADVANCED_OPTIMIZATIONS"
 compilationLevel Simple = "SIMPLE_OPTIMIZATIONS"
 
-closure_local, closure_remote, closure
+closure_local, closure_remote
   :: (Error e) => String -> CompilationLevel -> ErrorT e IO String
 
 closure_local x y =
@@ -76,4 +76,8 @@ closure_remote x z =
   in lift $ simpleHTTP (Request uri POST args y)
             >>= getResponseBody
 
-closure x z = closure_local x z `mplus` closure_remote x z
+closure :: (Error e) => Bool -> String -> CompilationLevel -> ErrorT e IO String
+closure remote x z =
+  closure_local x z `mplus`
+    if remote then closure_remote x z
+    else throwError (strMsg "Local Closure unavailable; pass -remote option to use public server")
