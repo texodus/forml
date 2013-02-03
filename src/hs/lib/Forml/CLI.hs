@@ -1,6 +1,7 @@
 module Forml.CLI where
 
 import Control.Monad.State hiding (lift)
+import Control.Monad.Trans.Error (ErrorT(..))
 
 import System.Console.ANSI
 import System.Exit
@@ -96,6 +97,9 @@ colors failure success =
                _ -> failure
 
 type Runner a = String -> IO (Either [String] a) -> IO a
+
+singleError :: ErrorT String IO a -> IO (Either [String] a)
+singleError = liftM (either (Left . (:[])) Right) . runErrorT
 
 run_silent :: Runner a
 run_silent _ d = 
