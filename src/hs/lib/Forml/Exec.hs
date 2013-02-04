@@ -162,17 +162,16 @@ main' rc' =
 
                  let js'' = read' prelude ++ "\n"
                                ++ if implicit_prelude rc then js state ++ (concatMap js compiled) else concatMap js compiled
-
                  js' <- case rc of
                               RunConfig { optimize = True } ->
-                                runner [qq|Closure {output rc}.js |] $ closure_local js'' "ADVANCED_OPTIMIZATIONS"
+                                runner [qq|Closure {output rc}.js |] . singleError $ closure (remote rc) js'' Advanced
                               RunConfig { silent = False } ->
                                 do warn "Closure [libs]" js''
                               _ -> do return js''
 
                  tests' <- case rc of
                               RunConfig { optimize = True } ->
-                                  zipWithM (\title t -> runner [qq|Closure {title}.spec.js |] $ closure_local t "SIMPLE_OPTIMIZATIONS")
+                                  zipWithM (\title t -> runner [qq|Closure {title}.spec.js |] . singleError $ closure (remote rc) t Simple)
                                       (map filename compiled)
                                       (map ((read' prelude ++) . tests) compiled)
                               RunConfig { silent = False } ->

@@ -39,6 +39,7 @@ test_config =
               , optimize   = True
               , silent     = False
               , flush      = False
+              , remote     = True
               , run_tests  = Phantom
               , write_docs = True
               , implicit_prelude = False
