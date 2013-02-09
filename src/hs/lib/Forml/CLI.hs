@@ -21,6 +21,7 @@ data RunConfig = RunConfig { inputs :: [String]
                            , silent :: Bool
                            , flush :: Bool
                            , remote :: Bool
+                           , pretty :: Bool
                            , run_tests :: TestMode
                            , write_docs :: Bool
                            , implicit_prelude :: Bool
@@ -31,7 +32,7 @@ parseArgs :: [String] -> RunConfig
 parseArgs = fst . runState argsParser
   where argsParser = do args <- get
                         case args of
-                          []      -> return $ RunConfig [] "default" False True False False False Phantom False True False
+                          []      -> return $ RunConfig [] "default" False True False False False False Phantom False True False
                           (x':xs) -> do put xs
                                         case x' of
                                           "-w"          -> do x <- argsParser
@@ -50,18 +51,20 @@ parseArgs = fst . runState argsParser
                                                               return $ x { flush = True }
                                           "-remote"     -> do x <- argsParser
                                                               return $ x { remote = True }
+                                          "-pretty"     -> do x <- argsParser
+                                                              return $ x { pretty = True }
                                           "-no-test"    -> do x <- argsParser
                                                               return $ x { run_tests = NoTest }
                                           "-node-test"  -> do x <- argsParser
                                                               return $ x { run_tests = Node }
                                           "-o"          -> do (name:ys) <- get
                                                               put ys
-                                                              RunConfig a _ c d e f g h i j k <- argsParser
-                                                              return $ RunConfig a name c d e f g h i j k
+                                                              RunConfig a _ c d e f g h i j k l <- argsParser
+                                                              return $ RunConfig a name c d e f g h i j k l
                                           ('-':_)       -> error "Could not parse options"
-                                          z             -> do RunConfig a _ c d e f g h i j k <- argsParser
+                                          z             -> do RunConfig a _ c d e f g h i j k l <- argsParser
                                                               let b = last $ split "/" $ head $ split "." z
-                                                              return $ RunConfig (x':a) b c d e f g h i j k
+                                                              return $ RunConfig (x':a) b c d e f g h i j k l
 
 type StatusLogger a = String -> a -> IO a
 

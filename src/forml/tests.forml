@@ -144,6 +144,7 @@ module "Tests for typing bugs"
     gg x = ff x - 1
 
 
+
 module "Tests for parser bugs"
 
     open prelude
@@ -154,17 +155,48 @@ module "Tests for parser bugs"
     stringify (x !! 0).x == "1"
 
 
+
+module underscores_in_module_names_are_valid
+    open prelude
+
+    add1 x = x + 1
+    
+    module nested_module
+        
+        sub1 x = x - 1
+
+
+
+module opening_the_underscored_module
+    
+    open prelude
+    open underscores_in_module_names_are_valid as uimnav
+    open underscores_in_module_names_are_valid.nested_module
+
+    same = uimnav.add1 .: sub1
+    same 2 is 2
+
+
+
+module "Test that definition starting with as parses correctly after an open"
+    open prelude
+
+    assume_this_would_parse n = n
+
+
+
 module "Test that definition names dont collide with namespaces"
 
-   open prelude 
+    open prelude 
 
-   module nametest
-       x = 1
+    module nametest
 
-   nametest = {}
+        x = 1
 
-   module "Seperator"
+    nametest = {}
 
-   open nametest
+    module "Seperator"
 
-   x == 1
+    open nametest
+
+    x == 1

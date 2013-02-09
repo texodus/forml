@@ -101,9 +101,9 @@ instance Syntax Statement where
 
                   where alias_statement =
 
-                            do spaces
+                            do many1 (char ' ')
                                string "as"
-                               spaces
+                               many1 $ (char ' ')
                                (Symbol x) <- syntax
                                return  (Just x)
 
