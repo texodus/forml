@@ -44,6 +44,7 @@ test_config =
               , run_tests  = Phantom
               , write_docs = True
               , implicit_prelude = False
+              , remote     = True
               , watch      = False }
 
 

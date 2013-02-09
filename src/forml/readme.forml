@@ -4,7 +4,7 @@
 -- programmer, intended to approximate the safety of [Haskell](http://www.haskell.org) and
 -- the expressiveness of [Ruby](http://www.ruby.org).  Should such an approximation turn out
 -- to exist. 
-
+-- <br/>
 -- [![Build Status](https://travis-ci.org/texodus/forml.png?branch=master)](https://travis-ci.org/texodus/forml)
 
 -- Features
@@ -328,11 +328,10 @@ module readme
     -- is "left-pipe" application, `x |> f == x 'f`).
 
     inline whenever x f =
-         if x
-         then f
-         else {}
 
-    error "I am executed conditionally" 'whenever (6 < 5) == {}
+         if x then f else true
+
+    "I am executed conditionally" 'error 'whenever (6 < 5)
 
     -- Arguments to an inline can be repeated, nested in yields, ifs or
     -- anonymous functions, even removed entirely from the code. Inlines
