@@ -62,13 +62,13 @@ module "Benchmarks for the prelude"
         z <- time (euler_4 10000)
         q <- time yield euler_5 10000 0
 
-        log "  Native JS:          `w / 1000`s"
+        log "  Native JS:         `w / 1000`s"
         log "  Forml TCO Unboxed: `q / 1000`s"
         log "  Forml TCO:         `x / 1000`s"
         log "  Forml Recursive:   `y / 1000`s"
         log "  Forml list:        `z / 1000`s"
-        
-        return <| (x <= y && y < z)
+
+        return <| (abs (x - y) <= 100 && y < z)
 
     string? (err yield euler_3(250000)).message
 

@@ -125,6 +125,10 @@ module prelude
     inline (>):  Num -> Num -> Bool   | x y = do! `x > y`
     inline (^):  Num -> Num -> Num    | x y = do! `Math.pow(x, y)`
 
+    inline abs: Num -> Num = do! `Math.abs`
+
+    abs (-10) == 10 and abs 4 == 4
+
     -- Equality is overloaded to match records and arrays. By constraining the type of
     -- this operator, we need only dispatch on the type of the first element,
     -- constraining 
