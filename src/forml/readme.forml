@@ -3,7 +3,9 @@
 -- A contemporary programming language for the discriminating
 -- programmer, intended to approximate the safety of [Haskell](http://www.haskell.org) and
 -- the expressiveness of [Ruby](http://www.ruby.org).  Should such an approximation turn out
--- to exist.
+-- to exist. 
+
+-- [![Build Status](https://travis-ci.org/texodus/forml.png?branch=master)](https://travis-ci.org/texodus/forml)
 
 -- Features
 -- ========

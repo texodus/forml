@@ -471,8 +471,8 @@ module tetris
     
     new_piece board = do
 
-        board.piece 'for_each λ row = do!
-            get row board.piece 'for_each λ col = do!
+        board.piece 'for_each_i λ _ row =
+            get row board.piece 'for_each_i λ _ col =
 
                 if board.piece 'at col row 
                     && (board.y + row <= n_rows + 1)
@@ -489,17 +489,10 @@ module tetris
     -- a line.
 
     clear_lines board =
-        board.board 'for_each λ row = do!
+        board.board 'for_each_i λ _ row =
             if reduce (&&) (map (λx = x != -1) (get row board.board))
                  clear_row board row
             
-    with_board λ board = do!
-        let line = 5 'times (n_columns + 1)
-        `board.board[9] = line`
-        clear_lines board
-        yield board.score == 100
-              && sum (map sum board.board) == -200
-
     -- Once a full row has been found, we call `clear_row` to
     -- update the state of the board, moving all of the blocks above down
     -- and incrementing the score.
@@ -510,8 +503,8 @@ module tetris
             `board.level += 1`
         draw_board board
 
-        ignore <: sequence <: x .. 1 'map λ row =
-            board.board 'get row 'for_each λ col = do!
+        x .. 1 'for_each λ row =
+            board.board 'get row 'for_each_i λ _ col =
 
                 board.board 'get (row - 1)
                             'get col
@@ -519,7 +512,7 @@ module tetris
  
     with_board λ board = do!
         let line = 5 'times (n_columns + 1)
-        `board.board[9] = line`
+        board.board 'get 9 := line
         clear_row board 9
         yield board.score == 100
               && sum (map sum board.board) == -200

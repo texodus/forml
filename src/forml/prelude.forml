@@ -598,8 +598,11 @@ module prelude
         sum  = reduce (+)
 
         inline
-        for_each: (Num -> _) -> Array _ -> JS {}
-            | f xs = `for (x in xs) { f(parseInt(x)); }`
+        for_each: (a -> JS _) -> Array a -> JS {}
+            | f qs = `for (var q in qs) { f(qs[q])(); }`
+
+        inline for_each_i: (a -> Num -> JS _) -> Array a -> JS {}
+            | f xs = `for (var x in xs) { f(xs[x])(parseInt(x))(); }`
         
         inline
         zip_with: (a -> b -> c) -> Array a -> Array b -> Array c
@@ -607,9 +610,9 @@ module prelude
         
             let z   = []
                 h m = m ys 'f (m xs) 
-                g   = flip push! z .: h .: get
+                g x = yield (flip push! z .: h .: get) x
         
-            in  do! xs 'for_each g
+            in  do! 0 .. (length xs - 1) 'for_each g
                     yield z 
 
         [3, 2, 1] == do! reverse [1, 2, 3]
@@ -951,7 +954,9 @@ module prelude
  
         -- Infinite sequence example
  
-        fibs = to_lazy <: 1 ::: return <: 1 ::: yield zip_with (λx y = x + y) fibs <: tail fibs
+        fibs = to_lazy <: 1 ::: return
+                       <: 1 ::: yield zip_with (λx y = x + y) fibs
+                       <: tail fibs
     
         -- Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
         -- is ridiculously faster than the recursive version.  For example, the runtime
