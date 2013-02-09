@@ -125,6 +125,10 @@ module prelude
     inline (>):  Num -> Num -> Bool   | x y = do! `x > y`
     inline (^):  Num -> Num -> Num    | x y = do! `Math.pow(x, y)`
 
+    inline abs: Num -> Num = do! `Math.abs`
+
+    abs (-10) == 10 and abs 4 == 4
+
     -- Equality is overloaded to match records and arrays. By constraining the type of
     -- this operator, we need only dispatch on the type of the first element,
     -- constraining 
@@ -954,9 +958,7 @@ module prelude
  
         -- Infinite sequence example
  
-        fibs = to_lazy <: 1 ::: return
-                       <: 1 ::: yield zip_with (λx y = x + y) fibs
-                       <: tail fibs
+        fibs = to_lazy <: 1 ::: return <: 1 ::: yield zip_with (λx y = x + y) fibs <: tail fibs
     
         -- Since the `lazy` keyword memoizes it's argument, this fibonacci implementation
         -- is ridiculously faster than the recursive version.  For example, the runtime

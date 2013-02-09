@@ -57,7 +57,8 @@ Library
     Build-depends:
       mtl >= 2.1.2 && < 2.2,
       bytestring >= 0.9.1 && <0.10,
-      containers >= 0.4.2.1 && <0.5
+      containers >= 0.4.2.1 && <0.5,
+      mtl >= 2.1.2 && < 2.2
   else
     Build-depends:
       mtl,
