@@ -42,7 +42,7 @@ instance Show Namespace where
     show (Namespace x) = concat $ L.intersperse "." x
 
 instance Syntax Namespace where
-    syntax = Namespace <$> (many1 lower `sepBy1` char '.')
+    syntax = Namespace <$> (many1 (lower <|> char '_') `sepBy1` char '.')
 
 instance ToJExpr Namespace where
     toJExpr (Namespace []) = [jmacroE| (typeof global == "undefined" ? window : global) |]

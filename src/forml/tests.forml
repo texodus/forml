@@ -153,18 +153,30 @@ module "Tests for parser bugs"
     var x = do! `[ {x: 1}, {x: 2}, {x: 3} ]`
     stringify (x !! 0).x == "1"
 
+module underscores_are_valid_in_module_names
+    open prelude
+
+    add1 x = x + 1
+
+module opening_the_underscored_module
+    
+    open prelude
+    open underscores_are_valid_in_module_names
+
+    add1 1 is 2
 
 module "Test that definition names dont collide with namespaces"
 
-   open prelude 
+    open prelude 
 
-   module nametest
-       x = 1
+    module nametest
 
-   nametest = {}
+        x = 1
 
-   module "Seperator"
+    nametest = {}
 
-   open nametest
+    module "Seperator"
 
-   x == 1
+    open nametest
+
+    x == 1
