@@ -29,7 +29,7 @@ parseForml name src = case parse ((comment <|> return "\n") `manyTill` eof) "Cle
 
 
 compress :: String -> String
-compress = run var . run nul . run fun
+compress = run var
 
     where run x src' = case parse ((try x <|> ((:[]) <$> anyChar)) `manyTill` eof) "Compressing" src' of
                          Right z -> concat z
@@ -42,40 +42,6 @@ compress = run var . run nul . run fun
                    spaces
                    string name
                    return $ "var " ++ name
-
-          nul = do string "var"
-                   spaces
-                   name <- many1 (alphaNum <|> char '_')
-                   string ";"
-                   spaces
-                   string name
-                   spaces
-                   string "="
-                   spaces
-                   string "null"
-                   return $ "var " ++ name
-
-          pairs = do string "{"
-                     inner <- (try pairs <|> try fun <|> try var <|> try nul <|> ((:[]) <$> anyChar)) `manyTill` string "}"
-                     return $ "{" ++ concat inner ++ "}"
-
-          fun = do string "(function()"
-                   spaces
-                   string "{"
-                   spaces
-                   string "return"
-                   spaces
-
-                   string "(function("
-                   name <- many1 (alphaNum <|> char '_')
-                   string ")"
-                   spaces
-                   content <- pairs
-                   spaces
-                   string ");"
-                   spaces
-                   string "})()"
-                   return $ "(function(" ++ name ++ ")" ++ content ++ ")"
 
 get_tests :: [Statement] -> [(SourcePos, SourcePos)]
 get_tests [] = []
