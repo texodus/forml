@@ -227,13 +227,9 @@ module tetris
 
     -- for controlling the tick rate, we'll need a way to interface with
     -- the javascript `setInterval` and `clearInterval`.
-    -- `set_timer` is necessary because the prelude 
-    -- currently lacks a library for implementing type safe mutations.
 
     every: Num -> JS _ -> JS Num
     every n action = `setInterval(action, n)`
-
-    set_timer ref board = `board.timer = ref` 
     
     stop_timer { timer = x, _ } = `clearInterval(x)`
     
@@ -365,15 +361,15 @@ module tetris
         "#board" $| "border-color"     <: colors 'get (board.level - 1) 'get 1
         stop_timer board
         ref <- board 'tick 'every (0.7 ^ board.level * 400)
-        board 'set_timer ref
+        board.timer := ref
 
     -- The `tick` function itself is quite simple, and represents the
     -- game state update invoked at the game's speed interval.        
 
     tick board = do
-        `board.y += 1`
+        board.y := board.y + 1
         if not (is_valid board) then do
-            `board.y = board.y - 1`
+            board.y := board.y - 1
             new_piece board
             clear_lines board
         "#board" $= draw board
@@ -432,13 +428,13 @@ module tetris
     move:
           Num -> Num -> Board -> JS Board
         | x      y      board  = do
-            `board.x += x`
-            `board.y += y`
+            board.x := board.x + x
+            board.y := board.y + y
             if is_valid board
                 "#board" $= draw board
             else do
-                `board.x = board.x - x`
-                `board.y = board.y - y`
+                board.x := board.x - x
+                board.y := board.y - y
             yield board
 
     with_board λ board = do!
@@ -454,11 +450,11 @@ module tetris
     rot board = do
         let old_piece = board.piece 
         rotated_piece <- rotate board.piece
-        `board.piece = rotated_piece`
+        board.piece := rotated_piece
         if is_valid board
             "#board" $= draw board
         else 
-            `board.piece = old_piece`
+            board.piece := old_piece
 
     with_board λ board = do!
         orig <- clone board
@@ -481,9 +477,9 @@ module tetris
                     board.piece 'get row 'get col 'paint board (board.y + row) (board.x + col)
          
         new_piece <- random_piece (board.level - 1)    
-        `board.piece = new_piece`
-        `board.x = 3`
-        `board.y = 0`
+        board.piece := new_piece
+        board.x := 3
+        board.y := 0
 
     -- Check for lines, and update the game state if the player has made
     -- a line.
@@ -498,9 +494,9 @@ module tetris
     -- and incrementing the score.
         
     clear_row: Board -> Num -> JS {} | board x = do
-        `board.score += 100`
+        board.score := board.score + 100
         if board.score % 1000 == 0
-            `board.level += 1`
+            board.level := board.level + 1
         draw_board board
 
         x .. 1 'for_each λ row =
@@ -530,7 +526,7 @@ module tetris
     -- type.
 
     inline paint board x y color =
-        `board.board[x][y] = color`
+        board.board 'get x 'get y := color
 
     inline
     block_string:

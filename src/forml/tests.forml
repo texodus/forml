@@ -200,3 +200,18 @@ module "Test that definition names dont collide with namespaces"
     open nametest
 
     x == 1
+
+module "Test inlines"
+
+    open prelude
+    open prelude.array
+
+    x = [ 1, 2, 3, 4 ]
+
+    let _ = do! x 'get 0 := 4
+
+    x == [ 4, 2, 3, 4 ]
+
+
+
+
