@@ -319,13 +319,13 @@ module tetris
 
         where inline intersect? =
                   piece 'length 'by λ r =
-                      piece 'get r 'length 'by λ c =
+                      piece[r] 'length 'by λ c =
                           let piece? = piece 'at c r
                               board? = board 'at (x + c) (y + r)
                           not (piece? && board?)
 
               inline x_bound? =
-                  x + length (get 0 piece) <= n_columns + 1
+                  x + length piece[0] <= n_columns + 1
 
               inline y_bound? =
                   y + length piece <= n_rows + 1
@@ -357,8 +357,8 @@ module tetris
     draw_board board = do
         "#score" $= to_commas board.score
         "#level" $= board.level
-        "#board" $| "background-color" <: colors 'get (board.level - 1) 'get 0
-        "#board" $| "border-color"     <: colors 'get (board.level - 1) 'get 1
+        "#board" $| "background-color" <: colors[board.level - 1, 0]
+        "#board" $| "border-color"     <: colors[board.level - 1, 1]
         stop_timer board
         ref <- board 'tick 'every (0.7 ^ board.level * 400)
         board.timer := ref
@@ -409,14 +409,14 @@ module tetris
                 else return do! reverse acc
         sequence <| map (new_row [] x 0) (0 .. length x[0] - 1)
 
-    get 3 pieces is
-        do! pieces 'get 3 'rotate
+    pieces[3] is
+        do! pieces[3] 'rotate
     
-    get 1 pieces is
-        do! pieces 'get 1 'rotate >>= rotate >>= rotate >>= rotate
+    pieces[1] is
+        do! pieces[1] 'rotate >>= rotate >>= rotate >>= rotate
             
-    get 4 pieces isnt
-        do! pieces 'get 4 'rotate >>= rotate
+    pieces[4] isnt
+        do! pieces[4] 'rotate >>= rotate
 
 
 
