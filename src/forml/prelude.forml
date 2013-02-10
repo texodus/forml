@@ -332,7 +332,7 @@ module prelude
         HTML = { element:   _
                  inner:     JS String
                  on_click:  JS {} -> JS {}
-                 set:       _w -> JS {}
+                 set:       _ -> JS {}
                  add_class: String -> JS {}
                  add_style: String -> String -> JS {} }
 

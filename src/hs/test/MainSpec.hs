@@ -30,7 +30,7 @@ spec = do
                           ++ "\n\nResults: (" ++ (show $ length std_out)
                           ++ " chars):\n\n" ++ std_out
             Right _ ->
-                 if length std_out > 1540 && length std_out < 1600
+                 if length std_out > 1860 && length std_out < 1920
                    then return ()
                    else assertFailure $
                           "\nResults: (" ++ (show $ length std_out)
@@ -39,7 +39,8 @@ spec = do
 src_files :: [[Char]]
 src_files = [ "src/forml/prelude.forml"
             , "src/forml/tests.forml"
-            , "src/forml/readme.forml" ]
+            , "src/forml/readme.forml"
+            , "src/forml/tetris.forml"  ]
 
 test_config :: RunConfig
 test_config =

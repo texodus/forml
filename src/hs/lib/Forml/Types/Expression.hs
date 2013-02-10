@@ -119,7 +119,6 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                       <|> accessor_val
                       <|> try apply
                       <|> function
-                      <|> try accessor
                       <|> inner
 
               inner = try accessor <|> inner_no_accessor
@@ -317,21 +316,41 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
               named_key = do x <- indentPairs "{" syntax "}"
                              return $ RecordExpression (M.fromList [(x, SymbolExpression (Symbol "true"))])
 
-              accessor = do s <- getPosition
-                            x <- indentPairs "(" syntax ")"
-                                 <|> js
-                                 <|> record
-                                 <|> literal
-                                 <|> try java_apply
-                                 <|> try symbol
-                                 <|> list
 
-                            f <- getPosition
-                            string "."
-                            z <- syntax `sepBy1` string "."
-                            return $ acc_exp (Addr s f) x z
+              accessor = do 
+                  s <- getPosition
+                  x <- indentPairs "(" syntax ")"
+                       <|> js
+                       <|> record
+                       <|> literal
+                       <|> try java_apply
+                       <|> try symbol
+                       <|> list
+                  
+                  accs s x
 
-              acc_exp f x z = AccessorExpression (f x) z
+                  where
+                      accs s x = dot_cont s x <|> get_cont s x <|> return x
+                      
+                      get_cont s x = do
+                          string "["
+                          P.spaces
+                          z <- syntax `sepBy1` (optional_sep <|> try (string "][") *> return ())
+                          P.spaces
+                          string "]"
+                          accs s (get_exp s x z)
+
+                      get_exp s x (z:zs) =
+                          get_exp s (ApplyExpression (SymbolExpression (Symbol "get")) [z, x]) zs
+                      get_exp s x [] = x  
+
+                      dot_cont s x = do
+                          f <- getPosition
+                          string "."
+                          z <- syntax `sepBy1` string "."
+                          accs s (acc_exp (Addr s f) x z)
+
+                      acc_exp f x z = AccessorExpression (f x) z
 
               java_apply = ApplyExpression <$> inner_no_accessor <*> try java
 

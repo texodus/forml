@@ -294,12 +294,12 @@ module tetris
     -- gamestate:
         
     with_board λ b = b.board 'length == n_rows + 1
-    with_board λ b = b.board 'get 0 'length == n_columns + 1
+    with_board λ b = b.board[0] 'length == n_columns + 1
 
     -- It would be helpful to have a function for quickly asserting 
     -- whether a point has a block.
     
-    inline at x y b = b 'get y 'get x /= -1
+    inline at x y b = b[y, x] /= -1
 
     -- Determining whether a particular game state is valid involves
     -- testing whether the current piece is within the dimensions of
@@ -340,7 +340,7 @@ module tetris
     with_board is_valid
 
     with_board λ board = do!
-        tick board 'times 45 'sequence
+        board 'tick 'times 45 'sequence
         yield is_valid board
 
     with_board λ board = do!
@@ -348,7 +348,7 @@ module tetris
         yield not (is_valid board)
 
     with_board λ board = do!
-        tick board 'times 400 'sequence
+        board 'tick 'times 400 'sequence
         yield not (is_valid board)
 
     -- Game Initialization
@@ -392,9 +392,8 @@ module tetris
 
     random_piece: Num -> JS Piece | level = do
         r <- rand (length pieces)
-        c <- rand (length (get level colors) - 2)
-        let piece = get r pieces
-        yield piece 'map (map λ 0 = c | _ = -1)
+        c <- rand (length colors[level] - 2)
+        yield pieces[r] 'map (map λ 0 = c | _ = -1)
 
     4 <= do! random_piece 0 'fmap (sum .: map sum .: map (map ((+) 1)))
 
@@ -405,10 +404,10 @@ module tetris
     rotate: Piece -> JS Piece | x =
         var new_row acc piece index col =
                 if index < length piece then do
-                    acc <- put (get col (get index piece)) acc
+                    acc <- put piece[index, col] acc
                     new_row acc piece (index + 1) col
                 else return do! reverse acc
-        sequence <| map (new_row [] x 0) (0 .. length (get 0 x) - 1)
+        sequence <| map (new_row [] x 0) (0 .. length x[0] - 1)
 
     get 3 pieces is
         do! pieces 'get 3 'rotate
@@ -468,13 +467,14 @@ module tetris
     new_piece board = do
 
         board.piece 'for_each_i λ _ row =
-            get row board.piece 'for_each_i λ _ col =
+            board.piece[row] 'for_each_i λ _ col =
 
                 if board.piece 'at col row 
                     && (board.y + row <= n_rows + 1)
                     && (board.x + col <= n_columns + 1)
 
-                    board.piece 'get row 'get col 'paint board (board.y + row) (board.x + col)
+                    board.piece[row, col]
+                        'paint board (board.y + row) (board.x + col)
          
         new_piece <- random_piece (board.level - 1)    
         board.piece := new_piece
@@ -486,7 +486,7 @@ module tetris
 
     clear_lines board =
         board.board 'for_each_i λ _ row =
-            if reduce (&&) (map (λx = x != -1) (get row board.board))
+            if reduce (&&) (map (λx = x != -1) board.board[row])
                  clear_row board row
             
     -- Once a full row has been found, we call `clear_row` to
@@ -500,15 +500,14 @@ module tetris
         draw_board board
 
         x .. 1 'for_each λ row =
-            board.board 'get row 'for_each_i λ _ col =
+            board.board[row] 'for_each_i λ _ col =
 
-                board.board 'get (row - 1)
-                            'get col
-                            'paint board row col
+                board.board[row - 1, col]
+                    'paint board row col
  
     with_board λ board = do!
         let line = 5 'times (n_columns + 1)
-        board.board 'get 9 := line
+        board.board[9] := line
         clear_row board 9
         yield board.score == 100
               && sum (map sum board.board) == -200
@@ -526,7 +525,7 @@ module tetris
     -- type.
 
     inline paint board x y color =
-        board.board 'get x 'get y := color
+        board.board[x, y] := color
 
     inline
     block_string:
@@ -549,19 +548,19 @@ module tetris
         where draw_row x = concat .: map ((') x) .: map draw_block
 
               draw_block x y when board 'at x y =
-                  let color = colors 'get (level - 1) 'get (2 + (board 'get y 'get x))
+                  let color = colors[level - 1, 2 + board[y, x]]
                   block_string x y color
 
               draw_block x y when piece_bounds? x y =
-                  let c_idx = piece  'get (y - by) 'get (x - bx)
-                      color = colors 'get (level - 1) 'get (c_idx + 2)
+                  let c_idx = piece[y - by, x - bx]
+                      color = colors[level - 1, c_idx + 2]
                   block_string x y color
 
               draw_block _ _ = ""
 
               inline piece_bounds? x y =
                   x - bx >= 0
-                    && x - bx < piece 'get 0 'length
+                    && x - bx < piece[0] 'length
                     && y - by >= 0
                     && y - by < length piece
                     && piece 'at (x - bx) (y - by)
