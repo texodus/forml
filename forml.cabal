@@ -34,7 +34,7 @@ Library
     indents == 0.3.3,
     GraphSCC >= 1.0.2 && <1.1,
     sundown == 0.5.0.1,
-    jmacro >= 0.6.3 && <0.7,
+    jmacro >= 0.6.4 && <0.7,
     transformers >= 0.3 && <0.4,
     MissingH,
     interpolatedstring-perl6,
@@ -52,6 +52,7 @@ Library
     cereal >= 0.3.5.2 && <0.4,
     hslogger >= 1.2.1 && <1.3,
     HStringTemplate == 0.6.12
+    
   -- latest haskell platform, or modern
   if impl(ghc <= 7.4.2)
     Build-depends:

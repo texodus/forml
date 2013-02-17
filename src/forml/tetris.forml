@@ -524,8 +524,8 @@ module tetris
     -- these calls are tracked through the type system as the `JS a`
     -- type.
 
-    inline paint board x y color =
-        board.board[x, y] := color
+    paint board a b color =
+        board.board[a, b] := color
 
     inline
     block_string:

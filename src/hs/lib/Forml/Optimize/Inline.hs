@@ -33,7 +33,7 @@ import           Forml.Types.Namespace      hiding (Module)
 import           Forml.Types.Pattern
 import           Forml.Types.Symbol
 
-data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq, Generic)
+data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq, Generic, Show)
 
 type Inlines = [((Namespace, Inlineable), (Match (Expression Definition), Expression Definition))]
 type Inline  = [(Inlineable, (Match (Expression Definition), Expression Definition))]
@@ -131,13 +131,12 @@ replace_jexpr dict (UnsatExpr a)         = UnsatExpr (replace_jexpr dict `fmap` 
 inline_apply ::
     [Pattern t] ->              -- Function being inlined's patterns
     [Expression Definition] ->  -- Arguments to this function
-    [Expression Definition] ->  -- Optimized arguments to this functions
     Expression Definition ->    -- Expression of the funciton being inline
     Expression Definition       -- Resulting inlined expression
 
-inline_apply pss args opt_args ex = do
+inline_apply pss args ex = do
 
-    replace_expr (concat $ zipWith gen_expr pss opt_args) (gen_exprs args pss) ex
+    replace_expr (concat $ zipWith gen_expr pss args) (gen_exprs args pss) ex
 
     where
         gen_exprs args' pats (Symbol s) =

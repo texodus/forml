@@ -33,7 +33,7 @@ data OptimizeState = OptimizeState { ns          :: Namespace
                                    , assumptions :: [(Namespace, [Assumption])]
                                    , inlines     :: Inlines
                                    , tco         :: [String]
-                                   , env         :: Inline } deriving (Eq, Generic)
+                                   , env         :: Inline } deriving (Eq, Generic, Show)
 
 data Optimizer a = Optimizer (OptimizeState -> (OptimizeState, a))
 
@@ -82,12 +82,11 @@ add_tco :: String -> Optimizer ()
 add_tco x = Optimizer (\y -> (y { tco = x : tco y }, ()))
 
 with_env :: forall b. Optimizer b -> Optimizer b
-with_env xs =
-
-    do e <- get_env
-       xs' <- xs
-       set_env e
-       return xs'
+with_env xs = do
+    e <- get_env
+    xs' <- xs
+    set_env e
+    return xs'
 
 gen_state as = OptimizeState (Namespace []) as [] [] []
 

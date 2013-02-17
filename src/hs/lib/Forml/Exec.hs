@@ -67,7 +67,7 @@ data Compiled = Compiled { filename :: Filename
                          , js       :: String
                          , opt_st   :: OptimizeState
                          , tests    :: String
-                         , desc     :: String } deriving (Generic)
+                         , desc     :: String } deriving (Generic, Show)
 
 instance S.Serialize Compiled
 

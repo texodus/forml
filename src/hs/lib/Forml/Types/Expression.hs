@@ -75,11 +75,13 @@ instance Serialize Lazy
 
 instance Serialize JExpr where
 
-    get = do result <- S.get
-             return $ case parseJM result of
-                         Left x -> error (show x ++ "\n\n" ++ result)
-                         Right (BlockStat [ _, AssignStat _ x]) -> x
-    put x = S.put . replace "jmId_" "x" . show . renderJs $ [jmacro| var xxx = `(x)`; |]
+    get = do
+        result <- S.get
+        return $ case parseJME result of
+            Left x -> error (show x ++ "\n\n" ++ result)
+            Right x -> x
+
+    put x = S.put . show . renderJs $ x
 
 instance (Show d) => Show (Expression d) where
 
@@ -498,7 +500,7 @@ instance (Functor m, Opt a) => Opt (m a) where
 instance Opt JStat where
     opt (ReturnStat x)      = ReturnStat (opt x)
     opt (IfStat a b c)      = IfStat (opt a) (opt b) (opt c)
-    opt (WhileStat a b c)     = WhileStat a (opt b) (opt c)
+    opt (WhileStat a b c)   = WhileStat a (opt b) (opt c)
     opt (ForInStat a b c d) = ForInStat a b (opt c) (opt d)
     opt (SwitchStat a b c)  = SwitchStat (opt a) (opt b) (opt c)
     opt (TryStat a b c d)   = TryStat (opt a) b (opt c) (opt d)
@@ -506,12 +508,11 @@ instance Opt JStat where
     opt (ApplStat a b)      = ApplStat (opt a) (opt b)
     opt (PPostStat a b c)   = PPostStat a b (opt c)
     opt (AssignStat a b)    = AssignStat (opt a) (opt b)
-    opt (UnsatBlock a)      = UnsatBlock (opt a)
-
+    opt (UnsatBlock a)      = opt (sat_ a)
+ 
     opt x = x
 
     -- opt (DeclStat    Ident (Maybe JLocalType)
-    -- opt (UnsatBlock (IdentSupply JStat)
     -- opt (AntiStat   String
     -- opt (ForeignStat Ident JLocalType
     -- opt (BreakStat
@@ -521,7 +522,7 @@ instance Opt JVal where
     opt (JList xs)   = JList (opt xs)
     opt (JHash m)    = JHash (M.map opt m)
     opt (JFunc xs x) = JFunc xs (opt x)
-    opt (UnsatVal x) = UnsatVal (opt x)
+    opt (UnsatVal x) = opt (sat_ x)
 
     opt x = x
 
@@ -541,16 +542,13 @@ instance Opt JExpr where
     opt (ApplExpr a b)        = ApplExpr (opt a) (map opt b)
     opt (TypeExpr a b c)      = TypeExpr a (opt b) c
     opt (ValExpr a)           = ValExpr (opt a)
-    opt (UnsatExpr a)         = UnsatExpr (opt a)
+    opt (UnsatExpr a)         = opt (sat_ a)
 
-newIdentSupply :: Maybe String -> [Ident]
-newIdentSupply Nothing     = newIdentSupply (Just "jmId")
-newIdentSupply (Just pfx') = [StrI (pfx ++ show x) | x <- [(0::Integer)..]]
-    where pfx = pfx'++['_']
-
+newIdentSupply :: String -> [Ident]
+newIdentSupply pfx = [StrI (pfx ++ show x) | x <- [(0::Integer)..]]
+    
 sat_ :: IdentSupply a -> a
-sat_ x = ST.evalState (runIdentSupply x) $ newIdentSupply (Just "<<unsatId>>")
-
+sat_ x = ST.evalState (runIdentSupply x) $ newIdentSupply "$$"
 
 instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 

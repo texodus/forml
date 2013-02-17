@@ -167,6 +167,8 @@ instance Syntax Definition where
 -- TODO Visibility should be more than skin deep?
 
 instance Javascript Definition JStat where
+    toJS (Definition _ True _ _) =
+        return mempty
     toJS (Definition _ _ _ (TypeAxiom _: [])) =
         return mempty
     toJS (Definition _ _ name as) =
