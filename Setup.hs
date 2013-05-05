@@ -58,31 +58,31 @@ main = defaultMainWithHooks
            simpleUserHooks { preBuild = preHook
                            , postBuild = postHook }
 
+alert msg = do
+    putStrLn ""
+    putStrLn "*************************************************************************************"
+    putStrLn "****"
+    putStrLn $ "**** " ++ msg
+    putStrLn ""
+
+
 preHook _ _ = do
     exists <- doesFileExist "prelude.obj"
     if exists then removeFile "prelude.obj" else return ()
     system "touch prelude.obj"
-    putStrLn "*************************************************************************************"
-    putStrLn "****** Building prelude-less compiler ***********************************************"
-    putStrLn "*************************************************************************************"
+    alert "Building prelude-less compiler"
     return emptyHookedBuildInfo
 
 postHook _ flags pkg_descr localbuildinfo = do
     --build pkg_descr localbuildinfo flags (allSuffixHandlers hooks)
-    putStrLn "*************************************************************************************"
-    putStrLn "****** Building prelude *************************************************************"
-    putStrLn "*************************************************************************************"
+    alert "Building prelude"
     retCode <- rawSystem "dist/build/Forml/forml" ["-no-test", "-no-prelude", "src/forml/prelude.forml"]
     case retCode of
         ExitFailure msg -> do
-            putStrLn "*************************************************************************************"
-            putStrLn "****** FAILED ***********************************************************************"
-            putStrLn "*************************************************************************************"
+            alert "FAILED"
             putStrLn (show msg)
         ExitSuccess -> do
-            putStrLn "*************************************************************************************"
-            putStrLn "****** Building Compiler ************************************************************"
-            putStrLn "*************************************************************************************"
+            alert "Building compiler"
             build pkg_descr localbuildinfo flags allSuffixHandlers 
 
 allSuffixHandlers :: [PPSuffixHandler]

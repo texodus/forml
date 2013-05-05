@@ -62,16 +62,15 @@ tail_call_optimize name xs' =
 
     where
         to_trampoline xs @ (EqualityAxiom (Match ps _) _ : _) =
-            J.scope . J.curry (length ps) ("_V"++) . to_trampoline' ps $ xs
+            opt . J.scope . J.curry (length ps) ("_V"++) . to_trampoline' ps $ xs
 
         to_trampoline' ps xs =
 
             [jmacro| var __result = undefined;
                      `(def_local (reverse . take (length ps) . map J.local_pool $ [0 .. 26]) local_var_names)`;
                      while (typeof __result == "undefined") {
-                         (function() {
                             `(to_trampoline'' xs __result)`;
-                         })();
+                         
                      }
                      return __result; |]
 

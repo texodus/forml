@@ -78,10 +78,10 @@ instance Serialize JExpr where
     get = do
         result <- S.get
         return $ case parseJME result of
-            Left x -> error (show x ++ "\n\n" ++ result)
+            Left x  -> error (show x ++ "\n\n" ++ result)
             Right x -> x
 
-    put x = S.put . show . renderJs $ x
+    put x = S.put . show . jsToDoc $ x
 
 instance (Show d) => Show (Expression d) where
 
@@ -190,11 +190,15 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
 
                         wrap s x = LazyExpression (Addr s s (ApplyExpression (SymbolExpression (Symbol "run")) [x])) Every
 
-                        bind = do p <- syntax
-                                  whitespace <* (string "<-" <|> string "←") <* whitespace
-                                  ex <- withPosTemp syntax
-                                  P.spaces *> same
-                                  f ex p <$> addr line
+                        bind = do 
+                            p <- syntax
+                            whitespace <* (string "<-" <|> string "←") <* whitespace
+                            ex <- withPosTemp syntax
+                            P.spaces *> same
+                            f ex p <$> addr line          
+                                  
+                                  
+                                  
 
                         let_bind = withPosTemp $ do string "let"
                                                     whitespace1
@@ -557,16 +561,26 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
              [JSExpression (ValExpr (UnsatVal x))])) Every]) =
 
         case sat_ x of
-            (JFunc [] (BlockStat [ReturnStat y])) -> y
-            _ -> [jmacroE| `(ValExpr (UnsatVal x))`() |]
+            (JFunc _ (BlockStat [ReturnStat y])) -> opt y
+            (JFunc _ (BlockStat [BlockStat [ReturnStat y]])) -> opt y
+            y -> [jmacroE| `(ValExpr (opt y))`() |]
+
+    toJExpr (ApplyExpression (SymbolExpression (Symbol "run"))
+         [LazyExpression (Addr s e (ApplyExpression (SymbolExpression (Symbol "run"))
+             [JSExpression (ValExpr (JFunc [] (BlockStat [ReturnStat y])))])) Every]) =
+
+        opt y
 
     toJExpr y @ (ApplyExpression (SymbolExpression (Symbol "run")) [JSExpression (ValExpr (UnsatVal x))]) =
 
         case sat_ x of
-            (JFunc [] (BlockStat [ReturnStat y])) -> y
-            _ -> [jmacroE| `(ValExpr (UnsatVal x))`() |]
+            (JFunc _ (BlockStat [ReturnStat y])) -> opt y
+            (JFunc _ (BlockStat [BlockStat [ReturnStat y]])) -> opt y
+            y -> [jmacroE| `(ValExpr (opt y))`() |]
 
-    toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = [jmacroE| `(x)`() |]
+    toJExpr (ApplyExpression (SymbolExpression (Symbol "run")) [x]) = 
+
+        [jmacroE| `(x)`() |]
 
     toJExpr (ApplyExpression (SymbolExpression f @ (Operator _)) xs) =
         toJExpr (ApplyExpression (SymbolExpression (Symbol (to_name f))) xs)

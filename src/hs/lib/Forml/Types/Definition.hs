@@ -175,6 +175,8 @@ instance Javascript Definition JStat where
         return [jmacro| `(declare_this (to_name name) $ toJExpr as)`; |]
 
 instance ToLocalStat Definition where
+    toLocal (Definition _ True _ _) =
+        mempty
     toLocal (Definition _ _ _ (TypeAxiom _: [])) =
         mempty
     toLocal (Definition _ _ name as) =
