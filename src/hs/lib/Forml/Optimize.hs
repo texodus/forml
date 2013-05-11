@@ -53,16 +53,17 @@ instance Optimize (Expression Definition) where
 
     optimize (ApplyExpression (SymbolExpression s) args) = do
         is <- get_env
-        args' <- mapM optimize args
         case (InlineSymbol s) `lookup` is of
             Just ((Match pss z), ex)
                 | length pss == length args -> do
-                    optimize $ inline_apply pss args' ex
+                    args' <- mapM optimize args
+                    optimize $ inline_apply pss args args' ex
                 | length pss > length args -> do
+                    args' <- mapM optimize args
                     optimize (FunctionExpression 
                         [ EqualityAxiom
                             (Match (drop (length args) pss) z)  
-                            (Addr undefined undefined (inline_apply (take (length args) pss) args' ex)) ])
+                            (Addr undefined undefined (inline_apply (take (length args) pss) args args' ex)) ])
 
             _ -> ApplyExpression <$> optimize (SymbolExpression s) <*> mapM optimize args
 

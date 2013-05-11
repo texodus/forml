@@ -6,7 +6,7 @@ Author:        Andrew Stein
 Maintainer:    steinlink@gmail.com
 Stability:     Experimental
 Category:      Compiler
-Build-type:    Custom
+Build-type:    Simple
 Cabal-version: >=1.8
 data-files:          
   lib/css/jasmine.css, 

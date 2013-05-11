@@ -127,16 +127,16 @@ replace_jexpr dict (TypeExpr a b c)      = TypeExpr a (replace_jexpr dict b) c
 replace_jexpr dict (ValExpr a)           = ValExpr (replace_jval dict a)
 replace_jexpr dict (UnsatExpr a)         = UnsatExpr (replace_jexpr dict `fmap` a)
 
-
 inline_apply ::
     [Pattern t] ->              -- Function being inlined's patterns
     [Expression Definition] ->  -- Arguments to this function
+    [Expression Definition] ->  -- Optimized arguments to this functions
     Expression Definition ->    -- Expression of the funciton being inline
     Expression Definition       -- Resulting inlined expression
 
-inline_apply pss args ex = do
+inline_apply pss args opt_args ex = do
 
-    replace_expr (concat $ zipWith gen_expr pss args) (gen_exprs args pss) ex
+    replace_expr (concat $ zipWith gen_expr pss opt_args) (gen_exprs args pss) ex
 
     where
         gen_exprs args' pats (Symbol s) =
