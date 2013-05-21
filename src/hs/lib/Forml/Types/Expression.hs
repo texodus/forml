@@ -41,6 +41,7 @@ import Forml.Types.Literal
 import Forml.Types.Pattern
 import Forml.Types.Symbol
 import Forml.Types.Type
+import Forml.Draw
 
 import qualified GHC.Generics as G
 
@@ -96,7 +97,7 @@ instance (Show d) => Show (Expression d) where
     show (SymbolExpression x)     = show x
     show (ListExpression x)       = [qq|[ {sep_with ", " x} ]|]
     show (FunctionExpression as)  = replace "\n |" "\n     |" $ [qq|(λ{sep_with "| " as})|]
-    show (JSExpression x)         = "`" ++ show (renderJs x) ++ "`"
+    show (JSExpression x)         = "`" ++ draw x ++ "`"
     show (LazyExpression x Once)  = "lazy " ++ show x
     show (LazyExpression x Every) = "do " ++ show x
     show (LetExpression ax e)     = replace "\n |" "\n     |" $ [qq|let {sep_with "\\n| " ax} in ($e)|]
@@ -143,11 +144,11 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                        (Addr s c (SymbolExpression x)) <- addr symbol   -- TODO or AccessorExpression
                        return (FunctionExpression
                            [EqualityAxiom
-                               (Match [VarPattern "__y"] Nothing)
+                               (Match [VarPattern "_y"] Nothing)
                                (Addr s c
                                    (AccessorExpression
                                        (Addr s c
-                                           (SymbolExpression (Symbol "__y")))
+                                           (SymbolExpression (Symbol "_y")))
                                        [x]))])         
 
               accessor_apply =
@@ -156,12 +157,12 @@ instance (Syntax d, Show d) => Syntax (Expression d) where
                        (Addr s c (ApplyExpression (SymbolExpression x) xs)) <- addr apply   -- TODO or AccessorExpression
                        return (FunctionExpression
                            [EqualityAxiom
-                               (Match [VarPattern "__y"] Nothing)
+                               (Match [VarPattern "_y"] Nothing)
                                (Addr s c
                                    (ApplyExpression
                                        (AccessorExpression
                                            (Addr s c
-                                               (SymbolExpression (Symbol "__y")))
+                                               (SymbolExpression (Symbol "_y")))
                                            [x])
                                        xs))])              
 
@@ -548,12 +549,6 @@ instance Opt JExpr where
     opt (ValExpr a)           = ValExpr (opt a)
     opt (UnsatExpr a)         = opt (sat_ a)
 
-newIdentSupply :: String -> [Ident]
-newIdentSupply pfx = [StrI (pfx ++ show x) | x <- [(0::Integer)..]]
-    
-sat_ :: IdentSupply a -> a
-sat_ x = ST.evalState (runIdentSupply x) $ newIdentSupply "$$"
-
 instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (ApplyExpression (SymbolExpression (Symbol "run"))
@@ -632,23 +627,11 @@ instance (Show d, ToLocalStat d) => ToJExpr (Expression d) where
 
     toJExpr (IfExpression x y (Just z)) =
 
-        [jmacroE| (function(){
-                     if (`(x)`) {
-                        return `(y)`;
-                     } else {
-                        return `(z)`
-                     }
-                   })() |]
+        [jmacroE| `(x)` ? `(y)` : `(z)` |]
 
     toJExpr (IfExpression x y Nothing) =
 
-        [jmacroE| (function(){
-                     if (`(x)`) {
-                        return `(y)`;
-                     } else {
-                        return (function() { return {}; });
-                     }
-                   })() |]
+        [jmacroE| `(x)` ? `(y)` : function() { return {}; } |]
 
 
     toJExpr x = error $ "Unimplemented " ++ show x

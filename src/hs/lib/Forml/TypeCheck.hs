@@ -136,8 +136,8 @@ instance Infer (Expression Definition) Type where
                   ApplyExpression
                   (FunctionExpression
                    [ EqualityAxiom
-                     (Match [RecordPattern (M.fromList [(y, VarPattern "__x__")]) Partial] Nothing)
-                     (Addr s f (SymbolExpression (Symbol "__x__"))) ] )
+                     (Match [RecordPattern (M.fromList [(y, VarPattern "_x")]) Partial] Nothing)
+                     (Addr s f (SymbolExpression (Symbol "_x"))) ] )
                   [acc ys]
 
     infer (RecordExpression (unzip . M.toList -> (names, xs))) =

@@ -164,7 +164,7 @@ main' rc' =
                                ++ if implicit_prelude rc then js state ++ (concatMap js compiled) else concatMap js compiled
                  js' <- case rc of
                               RunConfig { optimize = True } ->
-                                runner [qq|Closure {output rc}.js |] . singleError $ closure (remote rc) js'' Advanced
+                                runner [qq|Closure {output rc}.js |] . singleError $ closure (remote rc) js'' Simple
                               RunConfig { silent = False } ->
                                 do warn "Closure [libs]" js''
                               _ -> do return js''

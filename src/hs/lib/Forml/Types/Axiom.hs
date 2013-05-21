@@ -59,13 +59,26 @@ instance (Show a, ToJExpr a) => ToStat (Curried a) where
 
     toStat (Curried (EqualityAxiom (Match [] Nothing) (Addr _ _ ex) : xss)) = 
 
-        [jmacro|    return `(ex)`; |]
+        [jmacro| return `(ex)`; |]
 
     toStat (Curried (EqualityAxiom (Match pss Nothing) (Addr _ _ ex) : xss)) = 
 
-        [jmacro|    `(declare_bindings (var_names pss) pss)`;
-                    if (`(pss)`) return `(ex)`;
-                    `(Curried xss)`; |]
+        case toJExpr pss of
+            ValExpr (JVar (StrI "true")) -> [jmacro|
+                `(declare_bindings (var_names pss) pss)`;
+                return `(ex)`;
+            |]
+
+            InfixExpr "&&" (ValExpr (JVar (StrI "true"))) (ValExpr (JVar (StrI "true"))) -> [jmacro|
+                `(declare_bindings (var_names pss) pss)`;
+                return `(ex)`;
+            |]
+
+            x -> [jmacro|
+                `(declare_bindings (var_names pss) pss)`;
+                if (`(x)`) return `(ex)`;
+                `(Curried xss)`;
+            |]
                     
     toStat (Curried (EqualityAxiom (Match [] cond) (Addr _ _ ex) : xss)) = 
 

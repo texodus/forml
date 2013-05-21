@@ -18,12 +18,13 @@ import Text.InterpolatedString.Perl6
 import Language.Javascript.JMacro
 import Data.Monoid
 import Data.String.Utils
+import Forml.Draw
 
 import Prelude hiding (curry, (++), error)
 
 
 prelude :: String
-prelude = show $ renderJs 
+prelude = show $ draw 
           [jmacro| function !is_array(x) { 
                        return `(InfixExpr "instanceof" x (ref "Array"))`;
                    }
@@ -93,7 +94,7 @@ curry 0 _ jexpr = jexpr
 curry n f jexpr = func (f $ local_pool $ n - 1) (curry (n - 1) f jexpr)
 
 local_pool :: Int -> String
-local_pool n = [qq|__{ "abcdefghijklmnopqrstuvqxyz" !! n }__|]
+local_pool n = [qq|_{ "abcdefghijklmnopqrstuvqxyz" !! n }|]
 
 scope :: forall a. ToStat a => a -> JExpr
 scope x = [jmacroE| (function() { `(x)`; })() |]

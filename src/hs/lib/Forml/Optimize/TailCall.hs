@@ -77,10 +77,18 @@ tail_call_optimize name xs' =
             where to_trampoline'' [] _ = [jmacro| exhaust(); |]
                   to_trampoline'' (EqualityAxiom (Match pss cond) (Addr _ _ ex) : xss) result =
 
-                      [jmacro| `(declare_bindings var_names pss)`;
-                               if (`(pss)` && `(cond)`) {
-                                   `(result)` = `(replace pss ex)`;
-                               } else `(to_trampoline'' xss result)`; |]
+                      case [jmacroE| `(pss)` && `(cond)` |] of
+                          InfixExpr "&&" (ValExpr (JVar (StrI "true"))) (ValExpr (JVar (StrI "true"))) -> [jmacro|
+                              `(declare_bindings var_names pss)`;
+                              `(result)` = `(replace pss ex)`;
+                          |]
+
+                          x -> [jmacro|
+                              `(declare_bindings var_names pss)`;
+                              if (`(x)`) {
+                                  `(result)` = `(replace pss ex)`;
+                              } else `(to_trampoline'' xss result)`;
+                          |]
 
                   var_names = map J.ref . reverse . take (length ps) . map J.local_pool $ [0 .. 26]
 

@@ -32,6 +32,7 @@ import           Forml.Types.Expression
 import           Forml.Types.Namespace      hiding (Module)
 import           Forml.Types.Pattern
 import           Forml.Types.Symbol
+import Forml.Draw
 
 data Inlineable = InlineSymbol Symbol | InlineRecord (Expression Definition) deriving (Eq, Generic, Show)
 
@@ -111,7 +112,7 @@ replace_jval dict x@(JStr _) = x
 replace_jval dict x@(JRegEx _) = x
 replace_jval dict (JVar (StrI y)) =
     case y `lookup` dict of
-         Just y' -> JVar . StrI . show . jsToDoc . toJExpr $ y'
+         Just y' -> JVar . StrI . draw . toJExpr $ y'
          Nothing -> JVar (StrI y)
 replace_jval _ (JVar x) = JVar x
 

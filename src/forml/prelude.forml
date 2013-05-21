@@ -238,7 +238,7 @@ module prelude
     
     -- Function composition
 
-    x .: y = λz = x y(z)
+    inline x .: y = λz = x y(z)
     inline id x = x
     inline flip(f) x y = f(y, x)
 
